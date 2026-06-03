@@ -1,0 +1,50 @@
+# dependencies
+docs/
+gen/
+
+test.db
+creds.json
+
+node_modules/
+tmp/*
+# Expo
+.expo/
+dist/
+web-build/
+**/.wrangler
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+requests/
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+nginx-dev.conf
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+op.json
+yarn.lock
+modules/test.json
+modules/test.txt
+
+.playwright-mcp/
+*.log
+.firebase/**
+.env
