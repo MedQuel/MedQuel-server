@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-native",
+    "target": "esnext",
+    "module": "esnext",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "rootDir": "./",
+    "outDir": "./dist",
+    "types": [
+      "node",
+      "express"
+    ]
+  },
+  "include": [
+    "index.ts",
+    "src/**/**/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
