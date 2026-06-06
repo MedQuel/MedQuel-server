@@ -1,16 +1,25 @@
-import React from 'react';
 import { View } from 'react-native';
 
 import { FeatureCard } from '../../components/TestCard';
+import { useTheme } from '../../theme/ThemeContext';
+
 
 export default function HomeScreen() {
+  const theme = useTheme().theme;
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: theme.color.background,
+      }}
+    >
       <FeatureCard
         icon='home'
-        title='Home'
+        title='Home Screen'
         subtitle='Welcome to the home screen'
-        iconBackground='#eee'
       />
     </View>
   );
