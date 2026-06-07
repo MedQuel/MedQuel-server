@@ -17,26 +17,26 @@ export default function CurrentRankCard() {
     >
       <Text
         style={{
-          width: 28,
           fontSize: 12,
           fontWeight: '600',
           color: '#7B8794',
+          marginRight: 12,
         }}
       >
         #5
       </Text>
       <View
         style={{
-          width: 32,
-          height: 32,
-          borderRadius: 16,
           backgroundColor: '#5865F2',
+          borderRadius: 999,
+          paddingVertical: 8,
+          paddingHorizontal: 10,
           justifyContent: 'center',
           alignItems: 'center',
           marginRight: 10,
         }}
       >
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '700' }}>
+        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
           M
         </Text>
       </View>
