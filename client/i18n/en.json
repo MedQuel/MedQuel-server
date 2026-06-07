@@ -1,0 +1,38 @@
+{
+  "common": {
+    "app_name": "MedQuel",
+    "brand_name": "MedQuel",
+    "you": "You",
+    "loading": "Loading...",
+    "free": "Free",
+    "premium": "Premium",
+    "continue": "Continue",
+    "done": "Done",
+    "close": "Close",
+    "clear": "Clear",
+    "select": "Select",
+    "retry": "Retry",
+    "save": "Save",
+    "error": "Error"
+  },
+  "subjects": {
+    "surgery": "Surgery",
+    "anatomy": "Anatomy",
+    "pathology": "Pathology",
+    "physiology": "Physiology",
+    "biochemistry": "Biochemistry",
+    "pharmacology": "Pharmacology"
+  },
+  "splash": {
+    "login": "Log In"
+  },
+  "home": {
+    "title": "Home"
+  },
+  "components": {
+    "test_card": {
+      "title": "Test Card",
+      "subtitle": "This is a test card component."
+    }
+  }
+}
