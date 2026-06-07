@@ -1,68 +1,63 @@
-import react from 'react';
-import { View, Text, ViewStyle, StyleProp, TextInput } from 'react-native'
+import React from 'react';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { Icon } from 'react-native-boxes';
-import { useState } from 'react';
 
 export type searchBarProps = {
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
-    style?: StyleProp<ViewStyle>;
     iconName?: string;
-    
 };
 
-
-
-
-export function CustomSearchBar(props: searchBarProps) {
+export function CustomSearchBar({
+    value,
+    onChangeText,
+    placeholder,
+    iconName,
+}: searchBarProps) {
     return (
-        <View
-            style={[
-                {
-                    flexDirection: 'row',
-
-                    alignItems: 'center',
-                    backgroundColor: '#F5F6FA',
-                    borderRadius: 12,
-                    
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
-
-
-                },
-                props.style
-            ]}
-        >
-            {props.iconName && (
+        <View style={styles.container}>
+            {iconName && (
                 <Icon
-                    name={props.iconName}
+                    name={iconName}
                     size={15}
                     color="#999"
-                    style={{ marginRight: 10 }}
+                    style={styles.icon}
                 />
             )}
-            <TextInput
-                underlineColorAndroid="transparent"
-                value={props.value}
-                onChangeText={props.onChangeText}
-                placeholder={props.placeholder}
-                placeholderTextColor="#999"
-                style={{
-                    flex: 1,
-                    fontSize: 13,
-                    outlineWidth:0,
-                    // @ts-ignore
-                    outline:'none',
-                    color: '#000',
 
-                }}
+            <TextInput
+                value={value}
+                onChangeText={onChangeText}
+                placeholder={placeholder}
+                placeholderTextColor="#999"
+                style={styles.input}
             />
         </View>
-    )
+    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F5F6FA',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+
+    icon: {
+        marginRight: 10,
+    },
+
+    input: {
+        flex: 1,
+        fontSize: 13,
+        color: '#000',
+    },
+});

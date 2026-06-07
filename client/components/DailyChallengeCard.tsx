@@ -2,17 +2,17 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 
 export type DailyChallengeCardProps = {
-  title?: string;
+  title: string;
   questions?: number;
-  duration?: number;
+  duration: number;
   difficulty?: "Beginner" | "Intermediate" | "Advanced";
   hoursLeft?: number;
-  epReward?: number;
+  epReward: number;
   onStart?: () => void;
 }
 
 export  function DailyChallengeCard(
- props: DailyChallengeCardProps) {
+ {title, questions, duration, difficulty, hoursLeft, epReward, onStart}: DailyChallengeCardProps) {
   return (
     <View
       style={{
@@ -32,8 +32,8 @@ export  function DailyChallengeCard(
           height: 110,
           borderRadius: 65,
           backgroundColor: "rgba(52, 51, 51, 0.1)",
-          top: -30,
-          right: -20,
+          top: 0,
+          right: 0,
         }}
       />
 
@@ -89,7 +89,7 @@ export  function DailyChallengeCard(
           paddingBottom: 6,
         }}
       >
-        {props.title}
+        {title}
       </Text>
 
       
@@ -101,7 +101,7 @@ export  function DailyChallengeCard(
           paddingBottom: 20,
         }}
       >
-        {props.questions} questions · {props.duration} min · {props.difficulty}
+        {questions} questions · {duration} min · {difficulty}
       </Text>
 
      
@@ -168,7 +168,7 @@ export  function DailyChallengeCard(
                 fontWeight: "500",
               }}
             >
-              {props.hoursLeft}h left
+              {hoursLeft}h left
             </Text>
           </View>
 
@@ -192,14 +192,14 @@ export  function DailyChallengeCard(
                 fontWeight: "700",
               }}
             >
-              +{props.epReward} EP
+              +{epReward} EP
             </Text>
           </View>
         </View>
 
       
         <TouchableOpacity
-          onPress={props.onStart}
+          onPress={onStart}
           activeOpacity={0.85}
           style={{
             backgroundColor: "#FFFFFF",
