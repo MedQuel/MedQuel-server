@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
 type LeaderboardRankCardProps = {
   rank: number;
   initials: string;
@@ -10,7 +9,6 @@ type LeaderboardRankCardProps = {
   points: number;
   color: string;
 };
-
 export default function LeaderboardRankCard({
   rank,
   initials,
@@ -20,105 +18,93 @@ export default function LeaderboardRankCard({
   color,
 }: LeaderboardRankCardProps) {
   return (
-    <View style={styles.card}>
-    
-      <Text style={styles.rank}>#{rank}</Text>
-
-    
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#D9E5FF',
+        borderRadius: 16,
+        padding: 14,
+        marginVertical: 6,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#7A7A7A',
+          marginRight: 12,
+        }}
+      >
+        #{rank}
+      </Text>
       <LinearGradient
         colors={[`${color}40`, `${color}10`]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[
-          styles.avatar,
-          {
-            borderColor: color,
-          },
-        ]}
+        style={{
+          borderColor: color,
+          borderWidth: 2,
+          borderRadius: 999,
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginRight: 12,
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+        }}
       >
-        <Text style={[styles.avatarText, { color }]}>{initials}</Text>
+        <Text
+          style={{
+            fontWeight: '700',
+            fontSize: 14,
+            color,
+          }}
+        >
+          {initials}
+        </Text>
       </LinearGradient>
-
-      <View style={styles.info}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.specialty}>{specialty}</Text>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: '600',
+            color: '#1E293B',
+          }}
+        >
+          {name}
+        </Text>
+        <Text
+          style={{
+            fontSize: 13,
+            color: '#94A3B8',
+            marginTop: 2,
+          }}
+        >
+          {specialty}
+        </Text>
       </View>
-
-      <View style={styles.pointsContainer}>
-        <Text style={styles.points}>
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text
+          style={{
+            fontSize: 18,
+            fontWeight: '700',
+            color: '#111827',
+          }}
+        >
           {points.toLocaleString()}
         </Text>
-        <Text style={styles.ep}>EP</Text>
+        <Text
+          style={{
+            fontSize: 11,
+            color: '#94A3B8',
+            marginTop: 2,
+          }}
+        >
+          EP
+        </Text>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D9E5FF',
-    borderRadius: 16,
-    padding: 14,
-    marginVertical: 6,
-    width: '100%',
-    maxWidth: 420,
-  },
-
-  rank: {
-    width: 35,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#7A7A7A',
-  },
-
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  avatarText: {
-    fontWeight: '700',
-    fontSize: 14,
-  },
-
-  info: {
-    flex: 1,
-  },
-
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-
-  specialty: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-
-  pointsContainer: {
-    alignItems: 'flex-end',
-  },
-
-  points: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-
-  ep: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-});
