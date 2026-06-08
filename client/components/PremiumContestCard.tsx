@@ -11,7 +11,6 @@ export default function PremiumContestCard() {
         padding: 16,
         borderWidth: 1,
         borderColor: '#14396D',
-        width: '100%',
       }}
     >
       <View
@@ -22,7 +21,13 @@ export default function PremiumContestCard() {
           marginBottom: 14,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
           <View
             style={{
               flexDirection: 'row',
@@ -59,7 +64,6 @@ export default function PremiumContestCard() {
           >
             Radiology
           </Text>
-
           <View
             style={{
               backgroundColor: '#3A1520',
@@ -79,7 +83,6 @@ export default function PremiumContestCard() {
             </Text>
           </View>
         </View>
-
         <Text
           style={{
             color: '#25C9FF',
@@ -90,7 +93,6 @@ export default function PremiumContestCard() {
           ⚡ +500
         </Text>
       </View>
-
       <Text
         style={{
           color: '#FFFFFF',
@@ -101,7 +103,6 @@ export default function PremiumContestCard() {
       >
         Radiology Sprint
       </Text>
-
       <View
         style={{
           flexDirection: 'row',
@@ -135,7 +136,6 @@ export default function PremiumContestCard() {
             80 Qs
           </Text>
         </View>
-
         <View
           style={{
             flex: 1,
@@ -162,7 +162,6 @@ export default function PremiumContestCard() {
             90m
           </Text>
         </View>
-
         <View
           style={{
             flex: 1,
@@ -194,12 +193,12 @@ export default function PremiumContestCard() {
       <TouchableOpacity
         activeOpacity={0.9}
         style={{
-          height: 54,
           borderRadius: 14,
           justifyContent: 'center',
           alignItems: 'center',
           flexDirection: 'row',
           backgroundColor: '#7C3AED',
+          paddingVertical: 16,
         }}
       >
         <MaterialCommunityIcons
@@ -207,7 +206,6 @@ export default function PremiumContestCard() {
           size={18}
           color="#FFF"
         />
-
         <Text
           style={{
             color: '#FFF',
