@@ -1,18 +1,18 @@
-import { View } from 'react-native';
+import { View, Text } from 'react-native';
 
-import { FeatureCard } from '../../components/TestCard';
 import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+
 
 export default function HomeScreen() {
   const { theme } = useTheme();
+  useBottomBar(true, 'home');
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <FeatureCard
-        icon='home'
-        title={theme.i18n.t('components.test_card.title')}
-        subtitle={theme.i18n.t('components.test_card.subtitle')}
-      />
+      <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.text }}>
+        Home Screen!
+      </Text>
     </View>
   );
 }
