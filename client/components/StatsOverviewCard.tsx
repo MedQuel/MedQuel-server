@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function StatsOverviewCard() {
@@ -29,30 +29,68 @@ export default function StatsOverviewCard() {
       color: '#4F7CFF',
     },
   ];
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Stats Overview</Text>
-
-      <View style={styles.cardsRow}>
+    <View
+      style={{
+        paddingHorizontal: 8,
+        paddingTop: 8,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: '600',
+          color: '#1F2937',
+          marginBottom: 10,
+        }}
+      >
+        Stats Overview
+      </Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+        }}
+      >
         {stats.map((item, index) => (
-          <View key={index} style={styles.card}>
+          <View
+            key={index}
+            style={{
+              flex: 1,
+              marginHorizontal: 6,
+              borderWidth: 1,
+              borderColor: '#D9E4FF',
+              borderRadius: 14,
+              backgroundColor: '#F8FAFF',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 16,
+            }}
+          >
             <Ionicons
               name={item.icon as any}
               size={15}
               color={item.color}
             />
-
             <Text
-              style={[
-                styles.value,
-                { color: item.color },
-              ]}
+              style={{
+                fontSize: 15,
+                fontWeight: '700',
+                marginTop: 4,
+                lineHeight: 18,
+                color: item.color,
+              }}
             >
               {item.value}
             </Text>
-
-            <Text style={styles.label}>
+            <Text
+              style={{
+                marginTop: 2,
+                fontSize: 11,
+                color: '#94A3B8',
+                lineHeight: 13,
+              }}
+            >
               {item.label}
             </Text>
           </View>
@@ -61,53 +99,3 @@ export default function StatsOverviewCard() {
     </View>
   );
 }
-
-const CARD_WIDTH = 88;
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-  },
-
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 10,
-  },
-
-  cardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-
-  card: {
-    width: CARD_WIDTH,
-    height: 76,
-    marginHorizontal: 6,
-
-    borderWidth: 1,
-    borderColor: '#D9E4FF',
-    borderRadius: 14,
-
-    backgroundColor: '#F8FAFF',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  value: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginTop: 4,
-    lineHeight: 18,
-  },
-
-  label: {
-    marginTop: 2,
-    fontSize: 11,
-    color: '#94A3B8',
-    lineHeight: 13,
-  },
-});
