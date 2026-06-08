@@ -1,35 +1,30 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
-import { CardView } from 'react-native-boxes';
+import { CardView, ThemeContext } from 'react-native-boxes';
 
 export type FeatureContestCardProps = {
-  title?: string;
-  subtitle?: string;
-  status?: string;
+  title: string;
+  subtitle: string;
+  status: string;
   difficulty?: string;
-  mode?: 'light' | 'dark';
 } & ViewStyle;
 
-export function FeatureContestCard(props: FeatureContestCardProps) {
-  const mode = props.mode ?? 'dark';
-  const isDark = mode === 'dark';
+export function FeatureContestCard({ title, subtitle, status, difficulty = 'Hard', ...style }: FeatureContestCardProps) {
+  const theme = useContext(ThemeContext);
+  const isDark = theme.name === 'dark';
 
   return (
     <CardView
-      style={{
-        width: '100%',
-        maxWidth: 340,
-        minHeight: 170,
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 0,
-        backgroundColor: isDark ? '#1b1450' : '#6c5ef7',
-        shadowColor: '#000',
-        shadowOpacity: 0.14,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 3,
-      }}
+      style={[
+        {
+          borderRadius: theme.dimens.space.lg + theme.dimens.space.sm,
+          overflow: 'hidden',
+          borderWidth: 0,
+          backgroundColor: isDark ? theme.colors.forground : theme.colors.accent,
+          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.14)',
+        },
+        style,
+      ]}
     >
       <View style={{ flex: 1, padding: 18, justifyContent: 'space-between' }}>
         <View>
@@ -39,33 +34,33 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
               paddingHorizontal: 10,
               paddingVertical: 5,
               borderRadius: 999,
-              backgroundColor: 'rgba(255,255,255,0.14)',
+              backgroundColor: theme.colors.semitransparent,
               marginBottom: 12,
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 0.5 }}>{props.status ?? 'COMPETING'}</Text>
+            <Text style={{ color: theme.colors.invert.text, fontSize: 11, fontWeight: '700' }}>{status}</Text>
           </View>
 
-          <Text style={{ color: '#fff', fontSize: 21, fontWeight: '800', lineHeight: 26 }}>
-            {props.title ?? 'Medical Championship'}
+          <Text style={{ color: theme.colors.invert.text, fontSize: 21, fontWeight: '800', lineHeight: 26 }}>
+            {title}
           </Text>
 
-          <Text style={{ marginTop: 8, color: 'rgba(255,255,255,0.82)', fontSize: 12 }}>
-            {props.subtitle ?? 'All India contest prep'}
+          <Text style={{ marginTop: 8, color: isDark ? theme.colors.caption : theme.colors.invert.heading, fontSize: 12 }}>
+            {subtitle}
           </Text>
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Neon</Text>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: theme.colors.semitransparent }}>
+              <Text style={{ color: theme.colors.invert.text, fontSize: 11, fontWeight: '700' }}>Neon</Text>
             </View>
-            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{props.difficulty ?? 'Hard'}</Text>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: theme.colors.semitransparent }}>
+              <Text style={{ color: theme.colors.invert.text, fontSize: 11, fontWeight: '700' }}>{difficulty}</Text>
             </View>
           </View>
 
-          <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: '#ffffff' }} />
+          <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: theme.colors.invert.text }} />
         </View>
       </View>
     </CardView>

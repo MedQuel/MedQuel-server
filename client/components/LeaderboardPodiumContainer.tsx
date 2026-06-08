@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
-import { CardView } from 'react-native-boxes';
+import { CardView, ThemeContext } from 'react-native-boxes';
 
 export type PodiumUser = {
   key: string;
@@ -12,8 +12,7 @@ export type PodiumUser = {
 
 export type LeaderboardPodiumContainerProps = {
   users?: PodiumUser[];
-  mode?: 'light' | 'dark';
-  title?: string;
+  title: string;
 } & ViewStyle;
 
 const defaultUsers: PodiumUser[] = [
@@ -22,35 +21,31 @@ const defaultUsers: PodiumUser[] = [
   { key: 'third', name: 'Dr. Amit K.', score: '3,419', initials: 'AK', color: '#f39b63' },
 ];
 
-export function LeaderboardPodiumContainer(props: LeaderboardPodiumContainerProps) {
-  const mode = props.mode ?? 'dark';
-  const isDark = mode === 'dark';
-  const users = props.users ?? defaultUsers;
+export function LeaderboardPodiumContainer({ users = defaultUsers, title, ...style }: LeaderboardPodiumContainerProps) {
+  const theme = useContext(ThemeContext);
+  const isDark = theme.name === 'dark';
   const orderedUsers = [users[0], users[1], users[2]].filter(Boolean) as PodiumUser[];
 
-  const background = isDark ? '#0f1d47' : '#eef4ff';
-  const cardBorder = isDark ? '#203570' : '#d7e5ff';
+  const background = isDark ? theme.colors.forground : theme.colors.background;
+  const cardBorder = isDark ? theme.colors.background : theme.colors.accentLight;
 
   return (
     <CardView
-      style={{
-        width: '100%',
-        maxWidth: 360,
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: cardBorder,
-        backgroundColor: background,
-        padding: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 3,
-      }}
+      style={[
+        {
+          borderRadius: theme.dimens.space.lg + theme.dimens.space.sm,
+          overflow: 'hidden',
+          borderWidth: 1,
+          borderColor: cardBorder,
+          backgroundColor: background,
+          padding: theme.dimens.space.lg - theme.dimens.space.xs * 4,
+          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.12)',
+        },
+        style,
+      ]}
     >
-      <Text style={{ color: isDark ? '#f6f8ff' : '#16325c', fontSize: 18, fontWeight: '800', marginBottom: 18 }}>
-        {props.title ?? 'LeaderboardPodiumContainer'}
+      <Text style={{ color: theme.colors.heading, fontSize: 18, fontWeight: '800', marginBottom: 18 }}>
+        {title}
       </Text>
 
       <View style={{ height: 190, justifyContent: 'flex-end' }}>
@@ -77,7 +72,7 @@ export function LeaderboardPodiumContainer(props: LeaderboardPodiumContainerProp
                     borderRadius: 28,
                     backgroundColor: user.color,
                     borderWidth: 3,
-                    borderColor: isDark ? '#f4f7ff' : '#ffffff',
+                    borderColor: theme.colors.invert.text,
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: -18,
@@ -95,17 +90,17 @@ export function LeaderboardPodiumContainer(props: LeaderboardPodiumContainerProp
                     borderTopRightRadius: 14,
                     borderBottomLeftRadius: 8,
                     borderBottomRightRadius: 8,
-                    backgroundColor: isWinner ? '#ffd166' : user.color,
+                    backgroundColor: isWinner ? theme.colors.warning : user.color,
                     alignItems: 'center',
                     justifyContent: 'flex-end',
                     paddingBottom: 12,
                     paddingHorizontal: 6,
                   }}
                 >
-                  <Text style={{ color: isWinner ? '#1c2333' : '#ffffff', fontSize: 11, fontWeight: '800', textAlign: 'center' }}>
+                  <Text style={{ color: isWinner ? theme.colors.heading : theme.colors.invert.text, fontSize: 11, fontWeight: '800', textAlign: 'center' }}>
                     {user.name}
                   </Text>
-                  <Text style={{ color: isWinner ? '#1c2333' : 'rgba(255,255,255,0.9)', fontSize: 10, marginTop: 4 }}>
+                  <Text style={{ color: isWinner ? theme.colors.heading : theme.colors.invert.heading, fontSize: 10, marginTop: 4 }}>
                     {user.score}
                   </Text>
                 </View>

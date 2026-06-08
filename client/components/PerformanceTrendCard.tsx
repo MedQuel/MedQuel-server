@@ -1,48 +1,45 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Text, View, ViewStyle } from 'react-native';
-import { CardView } from 'react-native-boxes';
+import { CardView, ThemeContext } from 'react-native-boxes';
 
 export type PerformanceTrendCardProps = {
-  title?: string;
-  subtitle?: string;
+  title: string;
+  subtitle: string;
   data?: number[];
-  mode?: 'light' | 'dark';
 } & ViewStyle;
 
 const defaultData = [20, 42, 34, 60, 48, 72, 55, 88];
 
-export function PerformanceTrendCard(props: PerformanceTrendCardProps) {
-  const mode = props.mode ?? 'light';
-  const isDark = mode === 'dark';
-  const data = props.data ?? defaultData;
+export function PerformanceTrendCard({ title, subtitle, data = defaultData, ...style }: PerformanceTrendCardProps) {
+  const theme = useContext(ThemeContext);
+  const isDark = theme.name === 'dark';
   const maxValue = Math.max(...data, 1);
 
   return (
     <CardView
-      style={{
-        width: '100%',
-        maxWidth: 340,
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 0,
-        backgroundColor: isDark ? '#101b2f' : '#3e7df2',
-        padding: 16,
-        shadowColor: '#000',
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 3,
-      }}
+      style={[
+        {
+          borderRadius: theme.dimens.space.lg + theme.dimens.space.sm,
+          overflow: 'hidden',
+          borderWidth: 0,
+          backgroundColor: isDark ? theme.colors.forground : theme.colors.accent,
+          padding: theme.dimens.space.lg - theme.dimens.space.xs * 4,
+          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.12)',
+        },
+        style,
+      ]}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View>
-          <Text style={{ color: '#ffffff', fontSize: 18, fontWeight: '800' }}>{props.title ?? 'Performance Trend'}</Text>
-          <Text style={{ marginTop: 4, color: 'rgba(255,255,255,0.8)', fontSize: 11.5 }}>{props.subtitle ?? 'Weekly progress overview'}</Text>
+          <Text style={{ color: theme.colors.invert.text, fontSize: 18, fontWeight: '800' }}>{title}</Text>
+          <Text style={{ marginTop: 4, color: isDark ? theme.colors.caption : theme.colors.invert.heading, fontSize: 11.5 }}>
+            {subtitle}
+          </Text>
         </View>
 
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.16)' }} />
-          <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.16)' }} />
+          <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: theme.colors.semitransparent }} />
+          <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: theme.colors.semitransparent }} />
         </View>
       </View>
 
@@ -51,7 +48,7 @@ export function PerformanceTrendCard(props: PerformanceTrendCardProps) {
           marginTop: 16,
           height: 140,
           borderRadius: 18,
-          backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.12)',
+          backgroundColor: isDark ? theme.colors.background : theme.colors.accentLight,
           paddingHorizontal: 10,
           paddingTop: 10,
           justifyContent: 'flex-end',
@@ -62,11 +59,11 @@ export function PerformanceTrendCard(props: PerformanceTrendCardProps) {
             const barHeight = Math.max((value / maxValue) * 92, 14);
             const barColor = isDark
               ? index % 2 === 0
-                ? '#4fd1c5'
-                : '#7da6ff'
+                ? theme.colors.success
+                : theme.colors.accentLight
               : index % 2 === 0
-                ? '#73c8ff'
-                : '#1e3f95';
+                ? theme.colors.invert.text
+                : theme.colors.heading;
 
             return (
               <View key={index} style={{ alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>

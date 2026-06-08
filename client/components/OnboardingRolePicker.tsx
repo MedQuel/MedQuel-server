@@ -1,127 +1,111 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Pressable, Text, View, ViewStyle } from 'react-native';
-import { CardView, Center, Icon } from 'react-native-boxes';
+import { CardView, Center, Icon, ThemeContext } from 'react-native-boxes';
 
 export type RoleOption = {
   key: string;
   title: string;
   subtitle: string;
-  icon?: string;
+  icon: string;
 };
 
 export type OnboardingRolePickerProps = {
-  options?: RoleOption[];
-  selectedKey?: string;
+  value: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  selected?: boolean;
   onSelect?: (key: string) => void;
-  mode?: 'light' | 'dark';
-  icon?: string;
-  title?: string;
-  subtitle?: string;
   iconBackground?: string;
 } & ViewStyle;
 
-const defaultOptions: RoleOption[] = [
+export const defaultRoleOptions: RoleOption[] = [
   { key: 'mbbs', title: 'MBBS Student', subtitle: 'Undergraduate medical program', icon: 'graduation-cap' },
   { key: 'postgraduate', title: 'Postgraduate', subtitle: 'MD/MS/Residency preparation', icon: 'book' },
   { key: 'doctor', title: 'Practicing Doctor', subtitle: 'Continuing medical education', icon: 'stethoscope' },
 ];
 
-export function OnboardingRolePicker(props: OnboardingRolePickerProps) {
-  const mode = props.mode ?? 'light';
-  const options = props.options ?? defaultOptions;
-  const selectedKey = props.selectedKey ?? options[0]?.key;
-  const isDark = mode === 'dark';
+export function OnboardingRolePicker({
+  value,
+  title,
+  subtitle,
+  icon,
+  selected = false,
+  onSelect,
+  iconBackground,
+  ...style
+}: OnboardingRolePickerProps) {
+  const theme = useContext(ThemeContext);
+  const isDark = theme.name === 'dark';
 
-  const containerBackground = isDark ? '#0f172a' : '#ffffff';
-  const borderColor = isDark ? '#3559c7' : '#d7e4f5';
+  const rowBackground = selected ? theme.colors.accentLight : theme.colors.forground;
+  const textColor = selected || isDark ? theme.colors.text : theme.colors.heading;
+  const captionColor = selected || isDark ? theme.colors.caption : theme.colors.invert.caption;
 
   return (
-    <View style={{ width: '100%', maxWidth: 360 }}>
-      <CardView
-        style={{
-          padding: 10,
-          borderRadius: 20,
-          backgroundColor: containerBackground,
+    <CardView
+      style={[
+        {
+          padding: theme.dimens.space.md,
+          borderRadius: theme.dimens.space.lg,
+          backgroundColor: theme.colors.forground,
           borderWidth: 1,
-          borderColor,
-          shadowColor: '#000',
-          shadowOpacity: 0.08,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 2,
-        }}
+          borderColor: selected ? theme.colors.accent : theme.colors.background,
+          boxShadow: '0 6px 16px rgba(0, 0, 0, 0.08)',
+        },
+        style,
+      ]}
+    >
+      <Pressable
+        onPress={() => onSelect?.(value)}
+        style={({ pressed }) => [
+          {
+            minHeight: 64,
+            borderRadius: theme.dimens.space.md + theme.dimens.space.xs * 4,
+            paddingVertical: theme.dimens.space.md,
+            paddingHorizontal: theme.dimens.space.md + theme.dimens.space.xs * 2,
+            backgroundColor: rowBackground,
+            borderWidth: selected ? 1.5 : 1,
+            borderColor: selected ? theme.colors.accent : theme.colors.background,
+            flexDirection: 'row',
+            alignItems: 'center',
+            opacity: pressed ? 0.92 : 1,
+          },
+        ]}
       >
-        <View style={{ gap: 10 }}>
-          {options.map((option) => {
-            const selected = option.key === selectedKey;
-            const rowBackground = selected
-              ? isDark
-                ? 'rgba(53, 89, 199, 0.22)'
-                : '#edf4ff'
-              : isDark
-                ? '#111d33'
-                : '#ffffff';
+        <Center
+          style={{
+            width: theme.dimens.icon.lg + theme.dimens.space.md,
+            height: theme.dimens.icon.lg + theme.dimens.space.md,
+            borderRadius: theme.dimens.space.md + theme.dimens.space.xs * 2,
+            marginRight: theme.dimens.space.md + theme.dimens.space.xs * 2,
+            backgroundColor: iconBackground ?? theme.colors.background,
+          }}
+        >
+          <Icon name={icon} />
+        </Center>
 
-            return (
-              <Pressable
-                key={option.key}
-                onPress={() => props.onSelect?.(option.key)}
-                style={({ pressed }) => [
-                  {
-                    minHeight: 64,
-                    borderRadius: 14,
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    backgroundColor: rowBackground,
-                    borderWidth: selected ? 1.5 : 1,
-                    borderColor: selected ? '#4d79ff' : isDark ? '#22314f' : '#dbe6f3',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    opacity: pressed ? 0.92 : 1,
-                  },
-                ]}
-              >
-                <Center
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    marginRight: 12,
-                    backgroundColor: isDark ? '#122543' : '#f2f7ff',
-                  }}
-                >
-                  {option.icon ? <Icon name={option.icon} /> : null}
-                </Center>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#f8fbff' : '#1f2a44' }}>
-                    {option.title}
-                  </Text>
-                  <Text style={{ marginTop: 3, fontSize: 10.5, color: isDark ? '#9fb0d4' : '#7b8aa6' }}>
-                    {option.subtitle}
-                  </Text>
-                </View>
-
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1.5,
-                    borderColor: selected ? '#4d79ff' : isDark ? '#41506d' : '#c8d5e7',
-                    backgroundColor: selected ? '#4d79ff' : 'transparent',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {selected ? <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '700' }}>✓</Text> : null}
-                </View>
-              </Pressable>
-            );
-          })}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: textColor }}>{title}</Text>
+          <Text style={{ marginTop: 3, fontSize: 10.5, color: captionColor }}>{subtitle}</Text>
         </View>
-      </CardView>
-    </View>
+
+        <View
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            borderWidth: 1.5,
+            borderColor: selected ? theme.colors.accent : theme.colors.caption,
+            backgroundColor: selected ? theme.colors.accent : theme.colors.transparent,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {selected ? <Text style={{ color: theme.colors.invert.text, fontSize: 11, fontWeight: '700' }}>✓</Text> : null}
+        </View>
+      </Pressable>
+    </CardView>
   );
 }
 
