@@ -1,5 +1,6 @@
 export const fontFamily = {
-  text: 'PlusJakartaSans_400Regular',
+  regular: 'PlusJakartaSans_400Regular',
+  light: 'PlusJakartaSans_400Regular',
   number: 'SpaceGrotesk_400Regular',
 };
 
@@ -14,9 +15,9 @@ export const fontSize = {
 };
 
 export const fontWeight = {
-  regular: 400,
-  medium: 500,
-  bold: 700,
+  regular: '400',
+  medium: '500',
+  bold: '700',
 };
 
 export const lineHeight = {
