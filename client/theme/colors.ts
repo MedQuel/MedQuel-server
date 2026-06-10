@@ -26,7 +26,7 @@ export const darkColors: typeof lightColors = {
   surface: '#111F38',
   border: '#1A2D4A',
   textPrimary: '#E8EFFE',
-  textSecondary: '#7A9ACC',
+  textSecondary: '#6881ad',
   textMuted: '#3D5A80',
   textInverse: '#0A1628',
   accent: '#3B7BF8',
