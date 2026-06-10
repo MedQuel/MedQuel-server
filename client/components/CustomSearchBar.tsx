@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Icon } from 'react-native-boxes';
+import { useTheme } from "../theme/ThemeContext";
 
-export type searchBarProps = {
+export type SearchBarProps = {
     value: string;
     onChangeText: (text: string) => void;
     placeholder?: string;
@@ -14,14 +15,22 @@ export function CustomSearchBar({
     onChangeText,
     placeholder,
     iconName,
-}: searchBarProps) {
+}: SearchBarProps) {
+
+    const { theme } = useTheme(); 
+    const{isDark} = theme;
+    
+
     return (
-        <View style={styles.container}>
+        <View style={[
+            styles.container,
+            { backgroundColor:isDark? theme.color.border:theme.color.background } 
+        ]}>
             {iconName && (
                 <Icon
                     name={iconName}
                     size={15}
-                    color="#999"
+                    color={theme.color.textMuted}
                     style={styles.icon}
                 />
             )}
@@ -30,8 +39,11 @@ export function CustomSearchBar({
                 value={value}
                 onChangeText={onChangeText}
                 placeholder={placeholder}
-                placeholderTextColor="#999"
-                style={styles.input}
+                placeholderTextColor={theme.color.textMuted}
+                style={[
+                    styles.input,
+                    { color: isDark?theme.color.textPrimary:theme.color.textPrimary } 
+                ]}
             />
         </View>
     );
@@ -41,7 +53,6 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F5F6FA',
         borderRadius: 12,
         paddingHorizontal: 12,
         paddingVertical: 10,
@@ -58,6 +69,5 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 13,
-        color: '#000',
     },
 });

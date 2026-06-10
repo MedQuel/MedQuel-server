@@ -1,37 +1,43 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../theme/ThemeContext';
+
 
 export type LevelBadgesProps = {
     level: number;
 };
+
 export function UserLevelChip(props: LevelBadgesProps) {
+    const { theme } = useTheme(); 
+    const {isDark} = theme;
+    
+   
+
     return (
         <View style={{
-            
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: '#0F1E4D',
-            borderRadius: 50,
-            paddingHorizontal: 18,
-            paddingVertical: 10,
-            
+            backgroundColor: isDark?theme.color.surface:'#dfdff7', 
+            borderRadius: theme.borderRadius.lg*2,
+            paddingHorizontal: theme.space.lg,
+            paddingVertical: theme.space.sm,
             borderWidth: 3,
-            borderColor: '#1E3ABA',
+           borderColor: theme.color.accent,      
             alignSelf: 'flex-start',
-        }}><Ionicons name="star" size={24} color="gold" />
+        }}>
+            <Ionicons name="star" size={theme.space.lg} color={theme.color.warning} />
             <Text style={{
-                fontSize: 20,
-                marginRight: 8
-
-            }} ></Text>
+                fontSize: theme.fontSize.lg,
+                marginRight: theme.space.sm,
+            }} />
             <Text style={{
-                color: '#3b82fc', fontSize: 24,
-                fontWeight: '700',
-            }}>Lv {props.level}</Text>
+                color: theme.color.accent,         
+                fontSize: theme.fontSize.xl,
+                fontWeight: 'bold',
+            }}>
+                {theme.i18n.t('Lv')}  {props.level}
+            </Text>
         </View>
-    )
+    );
 }
-
-
-
