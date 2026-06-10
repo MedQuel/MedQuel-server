@@ -2,7 +2,26 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function PremiumContestCard() {
+type PremiumContestCardProps = {
+  category: string;
+  difficulty: string;
+  title: string;
+  rewardPoints: number;
+  questionCount: number;
+  durationMinutes: number;
+  participants: number;
+  buttonLabel: string;
+};
+export default function PremiumContestCard({
+  category,
+  difficulty,
+  title,
+  rewardPoints,
+  questionCount,
+  durationMinutes,
+  participants,
+  buttonLabel,
+}: PremiumContestCardProps) {
   return (
     <View
       style={{
@@ -54,7 +73,6 @@ export default function PremiumContestCard() {
               PRO
             </Text>
           </View>
-
           <Text
             style={{
               color: '#34C759',
@@ -62,7 +80,7 @@ export default function PremiumContestCard() {
               fontWeight: '600',
             }}
           >
-            Radiology
+            {category}
           </Text>
           <View
             style={{
@@ -79,10 +97,11 @@ export default function PremiumContestCard() {
                 fontWeight: '600',
               }}
             >
-              Hard
+              {difficulty}
             </Text>
           </View>
         </View>
+
         <Text
           style={{
             color: '#25C9FF',
@@ -90,7 +109,7 @@ export default function PremiumContestCard() {
             fontWeight: '700',
           }}
         >
-          ⚡ +500
+          ⚡ +{rewardPoints}
         </Text>
       </View>
       <Text
@@ -101,8 +120,9 @@ export default function PremiumContestCard() {
           marginBottom: 16,
         }}
       >
-        Radiology Sprint
+        {title}
       </Text>
+
       <View
         style={{
           flexDirection: 'row',
@@ -133,7 +153,7 @@ export default function PremiumContestCard() {
               marginLeft: 6,
             }}
           >
-            80 Qs
+            {questionCount} Qs
           </Text>
         </View>
         <View
@@ -159,7 +179,7 @@ export default function PremiumContestCard() {
               marginLeft: 6,
             }}
           >
-            90m
+            {durationMinutes}m
           </Text>
         </View>
         <View
@@ -185,11 +205,10 @@ export default function PremiumContestCard() {
               marginLeft: 6,
             }}
           >
-            1,205
+            {participants.toLocaleString()}
           </Text>
         </View>
       </View>
-
       <TouchableOpacity
         activeOpacity={0.9}
         style={{
@@ -214,7 +233,7 @@ export default function PremiumContestCard() {
             marginHorizontal: 8,
           }}
         >
-          Unlock & Start
+          {buttonLabel}
         </Text>
 
         <Ionicons
