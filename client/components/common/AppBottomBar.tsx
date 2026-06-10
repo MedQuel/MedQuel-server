@@ -174,14 +174,12 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
         {tab.icon(iconColor, ICON_SIZE)}
 
         <Animated.Text
-          numberofLines={1}
+          numberOfLines={1}
           style={{
             color: labelColor,
             fontSize: theme.fontSize.xs,
-            fontFamily: theme.fontFamily.text,
-            fontWeight: isSelected
-              ? theme.fontWeight.bold
-              : theme.fontWeight.medium,
+            fontWeight: isSelected ? 'bold' : 'normal',
+            fontFamily: isSelected ? theme.fontFamily.regular : theme.fontFamily.light,
             letterSpacing: 0.1,
           }}
         >
