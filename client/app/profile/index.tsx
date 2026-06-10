@@ -1,10 +1,18 @@
-import React from 'react';
 import { View, Text } from 'react-native';
 
-export default function ProfileScreen() {
+import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+
+
+export default function ChatScreen() {
+  const { theme } = useTheme();
+  useBottomBar(true, 'profile');
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Profile Screen!</Text>
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.text }}>
+        Profile Screen!
+      </Text>
     </View>
   );
 }

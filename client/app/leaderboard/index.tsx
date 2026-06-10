@@ -1,10 +1,18 @@
-import React from 'react';
 import { View, Text } from 'react-native';
 
-export default function LeaderboardScreen() {
+import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+
+
+export default function ChatScreen() {
+  const { theme } = useTheme();
+  useBottomBar(true, 'leaderboard');
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Leaderboard Screen!</Text>
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.text }}>
+        Leaderboard Screen!
+      </Text>
     </View>
   );
 }
