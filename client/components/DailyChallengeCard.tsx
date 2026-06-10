@@ -64,7 +64,7 @@ export function DailyChallengeCard({
           fontWeight: 'bold',
           letterSpacing:theme.space.sm - 5,
         }}>
-          {theme.i18n.t('DailyChallenge')}
+          {(theme.i18n.t('components.DailyChallenge') || 'Daily Challenge')}
         </Text>
       </View>
 
@@ -124,7 +124,7 @@ export function DailyChallengeCard({
               fontSize: theme.fontSize.sm,            
               fontWeight: 'regular',    
             }}>
-              {hoursLeft}{theme.i18n.t('hoursLeft')}
+              {hoursLeft} {(theme.i18n.t('common.hoursLeft') || 'h left')}
             </Text>
           </View>
 
@@ -166,7 +166,7 @@ export function DailyChallengeCard({
             fontWeight: 'bold',       
             letterSpacing: 0.2,
           }}>
-             {theme.i18n.t('Start')} →
+             {(theme.i18n.t('common.start') || 'Start')} →
           </Text>
         </TouchableOpacity>
       </View>
