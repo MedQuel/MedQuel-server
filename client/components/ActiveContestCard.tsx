@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface ActiveContestData {
   difficulty: string;
@@ -13,26 +14,62 @@ export interface ActiveContestData {
 }
 
 export default function ActiveContestsSection({ activeContests }: { activeContests: ActiveContestData[] }) {
-  const difficultyColors: Record<string, { bg: string; color: string }> = {
-    Hard: { bg: '#ffe4e6', color: '#be123c' },
-    Medium: { bg: '#ffedd5', color: '#c2410c' },
-    Easy: { bg: '#dcfce7', color: '#15803d' },
+  const { theme } = useTheme();
+  const { color, space, fontSize, fontWeight, borderRadius, lineHeight, fontFamily, i18n, isDark } = theme;
+
+  const onSurface = isDark ? '#FFFFFF' : '#0F172A';
+  const onSurfaceMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(15,23,42,0.55)';
+
+  const difficultyStyle = (difficulty: string): { bg: string; textColor: string } => {
+    if (difficulty === i18n.t('components.FeatureContestCard.difficulty_hard'))
+      return { bg: color.error + '22', textColor: color.error };
+    if (difficulty === i18n.t('components.FeatureContestCard.difficulty_medium'))
+      return { bg: color.warning + '22', textColor: color.warning };
+    return { bg: color.success + '22', textColor: color.success };
   };
 
   return (
-    <View style={{ marginVertical: 12 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 10 }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a' }}>Active Contests</Text>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#3b82f6' }}>View All</Text>
+    <View
+      style={{
+        backgroundColor: color.surface,
+        borderRadius: borderRadius.xl,
+        padding: space.md,
+        marginHorizontal: space.md,
+        marginVertical: space.sm,
+        borderWidth: 1,
+        borderColor: color.border,
+        gap: space.sm,
+      }}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text
+          style={{
+            fontSize: fontSize.md,
+            fontWeight: fontWeight.bold.toString() as any,
+            color: onSurface,
+            fontFamily: fontFamily.text,
+          }}
+        >
+          {i18n.t('components.ActiveContestsSection.title')}
+        </Text>
+        <Text
+          style={{
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.medium.toString() as any,
+            color: color.accent,
+          }}
+        >
+          {i18n.t('components.ActiveContestsSection.view_all')}
+        </Text>
       </View>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        contentContainerStyle={{ gap: space.sm }}
       >
         {activeContests?.map(({ difficulty, isLive, title, subject, participantsCount, epReward, onPress }, index) => {
-          const diff = difficultyColors[difficulty] ?? { bg: '#f1f5f9', color: '#475569' };
+          const diff = difficultyStyle(difficulty);
 
           return (
             <TouchableOpacity
@@ -40,40 +77,115 @@ export default function ActiveContestsSection({ activeContests }: { activeContes
               onPress={onPress}
               activeOpacity={0.85}
               style={{
-                backgroundColor: '#ffffff',
-                borderRadius: 16,
-                padding: 14,
-                boxShadow: '0px 1px 4px rgba(0, 0, 0, 0.06)',
-                gap: 8,
-              }}
+                backgroundColor: color.card,
+                borderRadius: borderRadius.lg,
+                padding: space.sm,
+                borderWidth: 1,
+                borderColor: color.border,
+                gap: space.xs,
+                boxShadow: isDark
+                  ? '0px 2px 8px rgba(0,0,0,0.35)'
+                  : '0px 1px 4px rgba(0,0,0,0.06)',
+              } as any}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <View style={{ backgroundColor: diff.bg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: diff.color }}>{difficulty}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                <View
+                  style={{
+                    backgroundColor: diff.bg,
+                    paddingHorizontal: space.xs,
+                    paddingVertical: 3,
+                    borderRadius: borderRadius.full,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: fontSize.xs,
+                      fontWeight: fontWeight.medium.toString() as any,
+                      color: diff.textColor,
+                    }}
+                  >
+                    {difficulty}
+                  </Text>
                 </View>
 
                 {isLive && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff0f0', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 }}>
-                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444' }} />
-                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#ef4444' }}>LIVE</Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: color.error + '18',
+                      paddingHorizontal: space.xs,
+                      paddingVertical: 3,
+                      borderRadius: borderRadius.full,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 6,
+                        borderRadius: borderRadius.full,
+                        aspectRatio: 1,
+                        backgroundColor: color.error,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: fontSize.xs,
+                        fontWeight: fontWeight.medium.toString() as any,
+                        color: color.error,
+                      }}
+                    >
+                      {i18n.t('components.FeatureContestCard.live')}
+                    </Text>
                   </View>
                 )}
               </View>
 
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#0f172a', letterSpacing: -0.2 }}>
+              <Text
+                style={{
+                  fontSize: fontSize.sm,
+                  fontWeight: fontWeight.bold.toString() as any,
+                  color: onSurface,
+                  lineHeight: fontSize.sm * lineHeight.tight,
+                  fontFamily: fontFamily.text,
+                }}
+                numberOfLines={2}
+              >
                 {title}
               </Text>
 
-              <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '500', marginTop: -4 }}>
+              <Text
+                style={{
+                  fontSize: fontSize.xs,
+                  color: onSurfaceMuted,
+                  fontWeight: fontWeight.medium.toString() as any,
+                }}
+              >
                 {subject}
               </Text>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <FontAwesome5 name="users" size={11} color="#94a3b8" />
-                  <Text style={{ fontSize: 12, color: '#94a3b8', fontWeight: '500' }}>{participantsCount}</Text>
+                  <FontAwesome5 name="users" size={fontSize.xs - 2} color={onSurfaceMuted} />
+                  <Text
+                    style={{
+                      fontSize: fontSize.xs,
+                      color: onSurfaceMuted,
+                      fontWeight: fontWeight.medium.toString() as any,
+                    }}
+                  >
+                    {participantsCount.toLocaleString()}
+                  </Text>
                 </View>
-                <Text style={{ fontSize: 13, fontWeight: '700', color: '#3b82f6' }}>+{epReward}</Text>
+                <Text
+                  style={{
+                    fontSize: fontSize.sm,
+                    fontWeight: fontWeight.bold.toString() as any,
+                    color: color.accent,
+                  }}
+                >
+                  {epReward}
+                </Text>
               </View>
             </TouchableOpacity>
           );

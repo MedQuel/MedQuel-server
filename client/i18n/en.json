@@ -1,0 +1,110 @@
+{
+  "common": {
+    "app_name": "MedQuel",
+    "brand_name": "MedQuel",
+    "you": "You",
+    "loading": "Loading...",
+    "free": "Free",
+    "premium": "Premium",
+    "continue": "Continue",
+    "done": "Done",
+    "close": "Close",
+    "clear": "Clear",
+    "select": "Select",
+    "retry": "Retry",
+    "save": "Save",
+    "error": "Error"
+  },
+  "subjects": {
+    "surgery": "Surgery",
+    "anatomy": "Anatomy",
+    "pathology": "Pathology",
+    "physiology": "Physiology",
+    "biochemistry": "Biochemistry",
+    "pharmacology": "Pharmacology"
+  },
+  "splash": {
+    "login": "Log In"
+  },
+  "home": {
+    "title": "Home"
+  },
+  "components": {
+    "TestCard": {
+      "title": "Test Card",
+      "subtitle": "This is a test card component."
+    },
+    "OnboardingRolePicker": {
+      "mbbs": {
+        "title": "MBBS Student",
+        "subtitle": "Undergraduate medical program"
+      },
+      "postgraduate": {
+        "title": "Postgraduate",
+        "subtitle": "MD/MS/Residency preparation"
+      },
+      "doctor": {
+        "title": "Practicing Doctor",
+        "subtitle": "Continuing medical education"
+      },
+      "nursing": {
+        "title": "Nursing / Allied",
+        "subtitle": "Nursing education & licensing"
+      }
+    },
+    "PerformanceTrendCard": {
+      "title": "Performance Trend",
+      "subtitle": "7-day accuracy",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "LeaderboardPodiumContainer": {
+      "first_place": "First Place",
+      "second_place": "Second Place",
+      "third_place": "Third Place",
+      "points_suffix": "points",
+      "default": {
+        "first_name": "tusharbaghel",
+        "second_name": "Dr. Ravi P.",
+        "third_name": "Dr. Amir K."
+      }
+    },
+    "FeatureContestCard": {
+      "live": "LIVE",
+      "competing": "competing",
+      "ep_reward": "EP Reward",
+      "ends_in": "Ends in",
+      "join_now": "Join Now",
+      "difficulty_easy": "Easy",
+      "difficulty_medium": "Medium",
+      "difficulty_hard": "Hard"
+    },
+    "ContestCard": {
+      "ep_reward": "EP Reward",
+      "questions_count": "{{count}} Qs",
+      "start_contest": "Start Contest ›"
+    },
+    "ActiveContestsSection": {
+      "title": "Active Contests",
+      "view_all": "View All"
+    },
+    "FeatureHighlightsCard": {
+      "title": "What awaits you",
+      "earn_ep": "Earn EP",
+      "win_contests": "Win contests",
+      "build_streaks": "Build streaks",
+      "climb_ranks": "Climb ranks"
+    },
+    "TabContainer": {
+      "global": "Global",
+      "friends": "Friends"
+    }
+  }
+}

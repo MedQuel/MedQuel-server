@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useTheme } from '../theme/ThemeContext';
 
 export default function TabContainer() {
   const [activeTab, setActiveTab] = useState<'global' | 'friends'>('global');
+
+  const { theme } = useTheme();
+  const { color, space, fontSize, fontWeight, borderRadius, fontFamily, i18n, isDark } = theme;
+
+  const inactiveText = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(15,23,42,0.45)';
+  const inactiveDot = isDark ? 'rgba(255,255,255,0.25)' : color.border;
 
   return (
     <View
@@ -10,10 +17,10 @@ export default function TabContainer() {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#f4f7fc',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        gap: 12,
+        backgroundColor: color.background,
+        paddingVertical: space.sm,
+        paddingHorizontal: space.md,
+        gap: space.sm,
       }}
     >
       <TouchableOpacity
@@ -24,30 +31,31 @@ export default function TabContainer() {
           alignItems: 'center',
           justifyContent: 'center',
           flex: 1,
-          borderRadius: 24,
-          backgroundColor: '#ffffff',
+          borderRadius: borderRadius.md,
+          backgroundColor: color.card,
           borderWidth: activeTab === 'global' ? 2 : 1,
-          borderColor: activeTab === 'global' ? '#3b82f6' : '#e2e8f0',
-          paddingVertical: 12,
-          gap: 8,
+          borderColor: activeTab === 'global' ? color.accent : color.border,
+          paddingVertical: space.sm,
+          gap: space.xs,
         }}
       >
         <View
           style={{
             width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: activeTab === 'global' ? '#3b82f6' : '#94a3b8',
+            aspectRatio: 1,
+            borderRadius: borderRadius.full,
+            backgroundColor: activeTab === 'global' ? color.accent : inactiveDot,
           }}
         />
         <Text
           style={{
-            fontSize: 15,
-            fontWeight: activeTab === 'global' ? '700' : '500',
-            color: activeTab === 'global' ? '#3b82f6' : '#475569',
+            fontSize: fontSize.md,
+            fontWeight: activeTab === 'global' ? fontWeight.bold.toString() as any : fontWeight.medium.toString() as any,
+            color: activeTab === 'global' ? color.accent : inactiveText,
+            fontFamily: fontFamily.text,
           }}
         >
-          Global
+          {i18n.t('components.TabContainer.global')}
         </Text>
       </TouchableOpacity>
 
@@ -59,30 +67,31 @@ export default function TabContainer() {
           alignItems: 'center',
           justifyContent: 'center',
           flex: 1,
-          borderRadius: 24,
-          backgroundColor: '#ffffff',
+          borderRadius: borderRadius.md,
+          backgroundColor: color.card,
           borderWidth: activeTab === 'friends' ? 2 : 1,
-          borderColor: activeTab === 'friends' ? '#3b82f6' : '#e2e8f0',
-          paddingVertical: 12,
-          gap: 8,
+          borderColor: activeTab === 'friends' ? color.accent : color.border,
+          paddingVertical: space.sm,
+          gap: space.xs,
         }}
       >
         <View
           style={{
             width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: activeTab === 'friends' ? '#3b82f6' : '#94a3b8',
+            aspectRatio: 1,
+            borderRadius: borderRadius.full,
+            backgroundColor: activeTab === 'friends' ? color.accent : inactiveDot,
           }}
         />
         <Text
           style={{
-            fontSize: 15,
-            fontWeight: activeTab === 'friends' ? '700' : '500',
-            color: activeTab === 'friends' ? '#3b82f6' : '#475569',
+            fontSize: fontSize.md,
+            fontWeight: activeTab === 'friends' ? fontWeight.bold.toString() as any : fontWeight.medium.toString() as any,
+            color: activeTab === 'friends' ? color.accent : inactiveText,
+            fontFamily: fontFamily.text,
           }}
         >
-          Friends
+          {i18n.t('components.TabContainer.friends')}
         </Text>
       </TouchableOpacity>
     </View>

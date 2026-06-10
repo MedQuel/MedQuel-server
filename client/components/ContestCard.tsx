@@ -1,99 +1,214 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { useTheme } from '../theme/ThemeContext';
 
 export interface ContestData {
   category: string;
   difficulty: string;
   title: string;
   timeLeft: string;
-  questionsCount: number | string;
+  questionsCount: number;
   duration: string;
-  participantsCount: number | string;
-  epReward: number | string;
+  participantsCount: number;
+  epReward: number;
   onStartPress: () => void;
 }
 
-function Badge({ label, bg, color }: { label: string; bg: string; color: string }) {
-  return (
-    <View style={{ backgroundColor: bg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 }}>
-      <Text style={{ color, fontSize: 12, fontWeight: '600' }}>{label}</Text>
-    </View>
-  );
-}
+export default function ContestCard({
+  category,
+  difficulty,
+  title,
+  timeLeft,
+  questionsCount,
+  duration,
+  participantsCount,
+  epReward,
+  onStartPress,
+}: ContestData) {
+  const { theme } = useTheme();
+  const { color, space, fontSize, fontWeight, borderRadius, lineHeight, fontFamily, i18n, isDark } = theme;
 
-function InfoPill({ icon, value }: { icon: React.ReactNode; value: string | number }) {
-  return (
-    <View style={{
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 5,
-      backgroundColor: 'rgba(219, 234, 254, 0.7)',
-      borderRadius: 10,
-      paddingVertical: 8,
-      paddingHorizontal: 6,
-    }}>
-      {icon}
-      <Text style={{ fontSize: 12, fontWeight: '600', color: '#475569' }}>{value}</Text>
-    </View>
-  );
-}
+  const onSurface = color.text;
+  const onSurfaceMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)';
+  const pillBg = isDark ? 'rgba(255,255,255,0.08)' : color.accent + '18';
+  const pillText = isDark ? 'rgba(255,255,255,0.75)' : color.info;
+  const pillIcon = isDark ? 'rgba(255,255,255,0.6)' : color.info;
 
-export default function ContestCard({ category, difficulty, title, timeLeft, questionsCount, duration, participantsCount, epReward, onStartPress }: ContestData) {
   return (
-    <View style={{
-      backgroundColor: '#eef2ff',
-      borderRadius: 20,
-      padding: 18,
-      marginHorizontal: 16,
-      marginVertical: 10,
-      gap: 12,
-    }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Badge label={category} bg="#ffe4e6" color="#be123c" />
-          <Badge label={difficulty} bg="#ffedd5" color="#c2410c" />
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-            <MaterialCommunityIcons name="lightning-bolt" size={16} color="#3b82f6" />
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#3b82f6' }}>{epReward}</Text>
+    <View
+      style={{
+        backgroundColor: color.surface,
+        borderRadius: borderRadius.xl,
+        padding: space.md,
+        marginHorizontal: space.md,
+        marginVertical: space.sm,
+        gap: space.xs,
+        borderWidth: 1,
+        borderColor: color.border,
+        boxShadow: isDark
+          ? '0px 4px 20px rgba(0,0,0,0.4)'
+          : '0px 2px 12px rgba(0,0,0,0.08)',
+      } as any}
+    >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: space.xs, flexShrink: 1, flexWrap: 'wrap' }}>
+          <View
+            style={{
+              backgroundColor: color.error + '33',
+              paddingHorizontal: space.xs,
+              paddingVertical: 3,
+              borderRadius: borderRadius.full,
+              alignSelf: 'flex-start',
+            }}
+          >
+            <Text style={{ color: color.error, fontSize: fontSize.xs, fontWeight: fontWeight.bold.toString() as any }}>
+              {category}
+            </Text>
           </View>
-          <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>EP Reward</Text>
+
+          <View
+            style={{
+              backgroundColor: color.warning + '33',
+              paddingHorizontal: space.xs,
+              paddingVertical: 3,
+              borderRadius: borderRadius.full,
+              alignSelf: 'flex-start',
+            }}
+          >
+            <Text style={{ color: color.warning, fontSize: fontSize.xs, fontWeight: fontWeight.bold.toString() as any }}>
+              {difficulty}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ alignItems: 'flex-end', marginLeft: space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            <MaterialCommunityIcons name="lightning-bolt" size={fontSize.md} color={color.info} />
+            <Text
+              style={{
+                fontSize: fontSize.lg,
+                fontWeight: fontWeight.bold.toString() as any,
+                color: color.info,
+                lineHeight: fontSize.lg * lineHeight.tight,
+              }}
+            >
+              +{epReward}
+            </Text>
+          </View>
+          <Text style={{ fontSize: fontSize.xs, color: onSurfaceMuted }}>
+            {i18n.t('components.ContestCard.ep_reward')}
+          </Text>
         </View>
       </View>
 
-      <Text style={{ fontSize: 17, fontWeight: '800', color: '#0f172a', letterSpacing: -0.3 }}>
+      <Text
+        style={{
+          fontSize: fontSize.md,
+          fontWeight: fontWeight.bold.toString() as any,
+          color: onSurface,
+          lineHeight: fontSize.md * lineHeight.normal,
+          fontFamily: fontFamily.text,
+          flexShrink: 1,
+        }}
+        numberOfLines={2}
+      >
         {title}
       </Text>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: -4 }}>
-        <Ionicons name="time-outline" size={14} color="#f97316" />
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#f97316' }}>{timeLeft}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+        <Ionicons name="time-outline" size={fontSize.sm} color={color.warning} />
+        <Text
+          style={{
+            fontSize: fontSize.sm,
+            fontWeight: fontWeight.medium.toString() as any,
+            color: color.warning,
+          }}
+        >
+          {timeLeft}
+        </Text>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <InfoPill icon={<MaterialCommunityIcons name="file-document-outline" size={14} color="#64748b" />} value={`${questionsCount} Qs`} />
-        <InfoPill icon={<Ionicons name="time-outline" size={14} color="#64748b" />} value={duration} />
-        <InfoPill icon={<FontAwesome5 name="users" size={12} color="#64748b" />} value={String(participantsCount)} />
+      <View style={{ flexDirection: 'row', gap: space.xs }}>
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            backgroundColor: pillBg,
+            borderRadius: borderRadius.md,
+            paddingVertical: space.xs,
+            paddingHorizontal: space.xs,
+          }}
+        >
+          <MaterialCommunityIcons name="file-document-outline" size={fontSize.sm} color={pillIcon} />
+          <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.medium.toString() as any, color: pillText }}>
+            {i18n.t('components.ContestCard.questions_count', { count: questionsCount })}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            backgroundColor: pillBg,
+            borderRadius: borderRadius.md,
+            paddingVertical: space.xs,
+            paddingHorizontal: space.xs,
+          }}
+        >
+          <Ionicons name="time-outline" size={fontSize.sm} color={pillIcon} />
+          <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.medium.toString() as any, color: pillText }}>
+            {duration}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            backgroundColor: pillBg,
+            borderRadius: borderRadius.md,
+            paddingVertical: space.xs,
+            paddingHorizontal: space.xs,
+          }}
+        >
+          <FontAwesome5 name="users" size={fontSize.xs} color={pillIcon} />
+          <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.medium.toString() as any, color: pillText }}>
+            {participantsCount.toLocaleString()}
+          </Text>
+        </View>
       </View>
 
       <TouchableOpacity
         onPress={onStartPress}
         activeOpacity={0.85}
         style={{
-          backgroundColor: '#3b6ef8',
-          borderRadius: 14,
-          paddingVertical: 14,
+          backgroundColor: color.accent,
+          borderRadius: borderRadius.lg,
+          paddingVertical: space.sm,
           alignItems: 'center',
           justifyContent: 'center',
-          marginTop: 2,
         }}
       >
-        <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '700', letterSpacing: 0.2 }}>
-          Start Contest  ›
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontSize: fontSize.md,
+            fontWeight: fontWeight.bold.toString() as any,
+            letterSpacing: 0.3,
+            fontFamily: fontFamily.text,
+          }}
+        >
+          {i18n.t('components.ContestCard.start_contest')}
         </Text>
       </TouchableOpacity>
     </View>
