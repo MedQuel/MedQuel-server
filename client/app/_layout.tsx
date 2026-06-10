@@ -12,6 +12,7 @@ import { LayoutProvider } from '../common/context/LayoutContext';
 export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular: require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
+    PlusJakartaSans_200Light: require('../assets/fonts/PlusJakartaSans-Light.ttf'),
     SpaceGrotesk_400Regular: require('../assets/fonts/SpaceGrotesk-Regular.ttf'),
   });
   if (!fontsLoaded) return null;
