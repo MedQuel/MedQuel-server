@@ -85,17 +85,16 @@ export function AppBottomBar() {
           flexDirection: 'row',
           alignItems: 'flex-start',
           justifyContent: 'space-around',
-          backgroundColor: theme.color.card,
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: theme.color.border,
+          paddingHorizontal: 0,
           paddingTop: theme.space.sm,
           paddingBottom: safeBottom > 0 ? safeBottom : theme.space.sm,
-          paddingHorizontal: 0,
-          elevation: 12, // Shadow above the bar
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: theme.isDark ? 0.3 : 0.06,
-          shadowRadius: 8,
+          backgroundColor: theme.color.card,
+          elevation: 12,
+          boxShadow: theme.isDark
+            ? '0px -2px 8px rgba(0, 0, 0, 0.3)'
+            : '0px -2px 8px rgba(0, 0, 0, 0.06)',
         }}
       >
         {TABS.map((tab) => (
@@ -119,9 +118,9 @@ interface TabItemProps {
 }
 
 function TabItem({ tab, isSelected, onPress }: TabItemProps) {
-  const { theme } = useTheme();
   const { setBottomBarSelectedId } = useLayoutContext();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const { theme } = useTheme();
 
   const handlePress = useCallback(() => {
     if (Platform.OS !== 'web') {
@@ -157,17 +156,17 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
       style={
         {
           flex: 1,
+          outlineWidth: 0,
           alignItems: 'center',
           justifyContent: 'flex-start',
-          outlineWidth: 0,
         } as ViewStyle
       }
     >
       <Animated.View
         style={{
+          gap: theme.space.xs * 0.75,
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 3,
           transform: [{ scale: scaleAnim }],
         }}
       >
@@ -178,7 +177,7 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
           style={{
             color: labelColor,
             fontSize: theme.fontSize.xs,
-            fontWeight: isSelected ? 'bold' : 'normal',
+            fontWeight: isSelected ? theme.fontWeight.bold : theme.fontWeight.regular,
             fontFamily: isSelected ? theme.fontFamily.regular : theme.fontFamily.light,
             letterSpacing: 0.1,
           }}
@@ -190,8 +189,8 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
           style={{
             width: 20,
             height: 3,
-            borderRadius: 2,
-            marginTop: 1,
+            marginTop: theme.space.xs * 0.25,
+            borderRadius: theme.borderRadius.sm * 0.5,
             backgroundColor: isSelected ? theme.color.accent : 'transparent',
           }}
         />
