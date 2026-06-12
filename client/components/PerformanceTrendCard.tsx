@@ -1,18 +1,15 @@
 import React from 'react';
 import { Text, View, ViewStyle } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { useTheme } from '../theme/ThemeContext';
 
-export type PerformanceTrendCardProps = {
-  data?: number[];
-  accuracy?: number;
-} & ViewStyle;
+export type PerformanceTrendCardProps = { accuracy?: number; data?: number[] } & ViewStyle;
 
-const defaultData = [35, 52, 28, 68, 46, 82, 78];
+const defaultData = [42, 58, 36, 72, 52, 88, 84];
 
-export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...style }: PerformanceTrendCardProps) {
+export function PerformanceTrendCard({ accuracy = 87, data = defaultData, ...style }: PerformanceTrendCardProps) {
   const { theme } = useTheme();
-
-  const maxValue = Math.max(...data, 1);
 
   const weekDays = [
     theme.i18n.t('components.PerformanceTrendCard.days.mon'),
@@ -24,34 +21,33 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
     theme.i18n.t('components.PerformanceTrendCard.days.sun'),
   ];
 
+  const maxValue = Math.max(...data);
+
   return (
     <View
-      style={[
-        {
-          backgroundColor: theme.color.card,
-          borderRadius: theme.borderRadius.xl,
-          borderWidth: 1,
-          borderColor: theme.color.border,
-          padding: theme.space.lg,
-          overflow: 'hidden',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.10)',
-        },
-        style,
-      ]}
+      style={{
+        backgroundColor: theme.color.card,
+        borderRadius: theme.borderRadius.xl,
+        borderWidth: 1,
+        borderColor: theme.color.border,
+        padding: theme.space.lg,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOpacity: theme.isDark ? 0.2 : 0.05,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 6,
+        ...style,
+      }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <View>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1 }}>
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: 18,
-              fontWeight: '700',
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.regular,
             }}
           >
             {theme.i18n.t('components.PerformanceTrendCard.title')}
@@ -59,9 +55,10 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
 
           <Text
             style={{
-              color: theme.color.textSecondary,
-              fontSize: 13,
               marginTop: 4,
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
             }}
           >
             {theme.i18n.t('components.PerformanceTrendCard.subtitle')}
@@ -70,29 +67,23 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
 
         <View
           style={{
-            backgroundColor: theme.color.success + '20',
-            borderRadius: theme.borderRadius.lg,
-            paddingHorizontal: 14,
-            paddingVertical: 10,
             flexDirection: 'row',
             alignItems: 'center',
+            backgroundColor: theme.isDark ? 'rgba(16,185,129,0.16)' : 'rgba(16,185,129,0.10)',
+            paddingHorizontal: theme.space.md,
+            paddingVertical: theme.space.sm,
+            borderRadius: theme.borderRadius.lg,
           }}
         >
-          <Text
-            style={{
-              color: theme.color.success,
-              fontSize: 18,
-              marginRight: 6,
-            }}
-          >
-            ↗
-          </Text>
+          <MaterialCommunityIcons name="trending-up" size={16} color="#16A34A" />
 
           <Text
             style={{
-              color: theme.color.success,
-              fontSize: 14,
-              fontWeight: '700',
+              marginLeft: 4,
+              color: '#16A34A',
+              fontSize: theme.fontSize.md,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.number,
             }}
           >
             {accuracy}%
@@ -103,7 +94,7 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
       <View
         style={{
           marginTop: theme.space.xl,
-          height: 170,
+          height: 230,
           flexDirection: 'row',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
@@ -111,41 +102,47 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
       >
         {data.map((value, index) => {
           const isLatest = index === data.length - 1;
-          const barHeight = Math.max((value / maxValue) * 115, 40);
+          const barHeight = Math.max((value / maxValue) * 120, 40);
 
           return (
             <View
-              key={index}
+              key={`${index}-${value}`}
               style={{
                 flex: 1,
                 alignItems: 'center',
+                justifyContent: 'flex-end',
               }}
             >
               <View
                 style={{
                   alignSelf: 'stretch',
-                  marginHorizontal: 5,
+                  marginHorizontal: 6,
                   height: barHeight,
                   borderRadius: theme.borderRadius.sm,
                   backgroundColor: isLatest
                     ? theme.color.accent
                     : theme.isDark
-                      ? 'rgba(59,123,248,0.28)'
-                      : 'rgba(37,99,235,0.18)',
-
-                  ...(isLatest &&
-                    theme.isDark && {
-                      boxShadow: `0 0 14px ${theme.color.accent}`,
-                    }),
+                    ? 'rgba(59,123,248,0.32)'
+                    : 'rgba(37,99,235,0.18)',
+                  ...(isLatest
+                    ? {
+                        shadowColor: theme.color.accent,
+                        shadowOpacity: 0.45,
+                        shadowRadius: 12,
+                        shadowOffset: { width: 0, height: 0 },
+                        elevation: 10,
+                      }
+                    : {}),
                 }}
               />
 
               <Text
                 style={{
-                  marginTop: 12,
+                  marginTop: theme.space.md,
                   color: isLatest ? theme.color.accent : theme.color.textSecondary,
-                  fontSize: 12,
-                  fontWeight: isLatest ? '700' : '500',
+                  fontSize: theme.fontSize.sm,
+                  fontWeight: isLatest ? theme.fontWeight.bold : theme.fontWeight.medium,
+                  fontFamily: theme.fontFamily.regular,
                 }}
               >
                 {weekDays[index]}
@@ -157,5 +154,3 @@ export function PerformanceTrendCard({ data = defaultData, accuracy = 87, ...sty
     </View>
   );
 }
-
-export default PerformanceTrendCard;
