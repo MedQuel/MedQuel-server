@@ -38,7 +38,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
               activeOpacity={0.75}
               onPress={() => {}}
               style={{
-                minWidth: '40%',
+                minWidth: '35%',
                 gap: theme.space.xs,
                 padding: theme.space.md,
                 borderWidth: 1.5,
@@ -70,7 +70,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                     style={{
                       color: diffColor.textColor,
                       fontSize: theme.fontSize.sm,
-                      fontWeight: theme.fontWeight.bold.toString() as any,
+                      fontWeight: theme.fontWeight.bold,
                       fontFamily: theme.fontFamily.regular,
                     }}
                   >
@@ -102,7 +102,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                       style={{
                         color: theme.color.error,
                         fontSize: theme.fontSize.sm,
-                        fontWeight: theme.fontWeight.bold.toString() as any,
+                        fontWeight: theme.fontWeight.bold,
                         fontFamily: theme.fontFamily.regular,
                       }}
                     >
@@ -116,7 +116,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                 style={{
                   color: theme.color.textPrimary,
                   fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.bold.toString() as any,
+                  fontWeight: theme.fontWeight.bold,
                   fontFamily: theme.fontFamily.regular,
                 }}
                 numberOfLines={2}
@@ -155,9 +155,9 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                 </View>
                 <Text
                   style={{
-                    color: theme.color.info,
+                    color: theme.isDark ? theme.color.info :theme.color.accent,
                     fontSize: theme.fontSize.md,
-                    fontWeight: theme.fontWeight.bold.toString() as any,
+                    fontWeight: theme.fontWeight.bold,
                     fontFamily: theme.fontFamily.number,
                   }}
                 >
