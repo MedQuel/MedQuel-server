@@ -52,18 +52,14 @@ export function TabContainer<T extends string>({ tabs, value, onChange }: TabCon
                 width: theme.space.sm * 1.3,
                 height: theme.space.sm * 1.3,
                 borderRadius: theme.borderRadius.full,
-                backgroundColor: isActive
-                  ? theme.color.accent
-                  : theme.color.textMuted,
+                backgroundColor: isActive ? theme.color.accent : theme.color.textMuted,
               }}
             />
             <Text
               style={{
                 color: isActive ? theme.color.accent : theme.color.textMuted,
                 fontSize: theme.fontSize.md,
-                fontWeight: isActive
-                  ? (theme.fontWeight.bold.toString() as any)
-                  : (theme.fontWeight.medium.toString() as any),
+                fontWeight: isActive ? theme.fontWeight.bold : theme.fontWeight.medium,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
