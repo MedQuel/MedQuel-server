@@ -10,7 +10,7 @@ export default function ChatScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.text }}>
+      <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.regular }}>
         Contests Screen!
       </Text>
     </View>
