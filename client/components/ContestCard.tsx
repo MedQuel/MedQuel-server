@@ -31,8 +31,7 @@ export function ContestCard(props: ContestCardProps) {
     const minutes = Number(props.timeLeft);
 
     if (!Number.isFinite(minutes)) return props.timeLeft;
-    if (minutes > 60)
-      return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes / 60) })}`;
+    if (minutes > 60) return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes / 60) })}`;
 
     return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
   })();
@@ -67,8 +66,8 @@ export function ContestCard(props: ContestCardProps) {
               style={{
                 color: theme.color.accent,
                 fontSize: theme.fontSize.xs,
-                fontWeight: theme.fontWeight.bold.toString() as any,
-                fontFamily: theme.fontFamily.light,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
               }}
             >
               {props.subject}
@@ -80,16 +79,15 @@ export function ContestCard(props: ContestCardProps) {
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm,
               borderRadius: theme.borderRadius.sm * 1.25,
-              backgroundColor:
-                difficultyColor(props.difficulty).textColor + '18',
+              backgroundColor: difficultyColor(props.difficulty).textColor + '18',
             }}
           >
             <Text
               style={{
                 color: difficultyColor(props.difficulty).textColor,
                 fontSize: theme.fontSize.xs,
-                fontWeight: theme.fontWeight.bold.toString() as any,
-                fontFamily: theme.fontFamily.light,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
               }}
             >
               {theme.i18n.t(`common.${props.difficulty}`)}
@@ -98,12 +96,12 @@ export function ContestCard(props: ContestCardProps) {
         </View>
 
         <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
-          <Feather name='zap' size={theme.fontSize.lg} color={theme.color.info} />
+          <Feather name='zap' size={theme.fontSize.lg} color={theme.isDark ? theme.color.info : theme.color.accent} />
           <Text
             style={{
-              color: theme.color.info,
+              color: theme.isDark ? theme.color.info : theme.color.accent,
               fontSize: theme.fontSize.xl,
-              fontWeight: theme.fontWeight.bold.toString() as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -114,8 +112,8 @@ export function ContestCard(props: ContestCardProps) {
 
       <View
         style={{
-          flexDirection: 'row',
           gap: theme.space.sm,
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
@@ -126,7 +124,7 @@ export function ContestCard(props: ContestCardProps) {
               flexShrink: 1,
               color: theme.color.textPrimary,
               fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold.toString() as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.regular,
             }}
             numberOfLines={2}
@@ -139,7 +137,7 @@ export function ContestCard(props: ContestCardProps) {
               style={{
                 color: theme.color.warning,
                 fontSize: theme.fontSize.sm,
-                fontWeight: 'light',
+                fontWeight: theme.fontWeight.medium,
                 fontFamily: theme.fontFamily.light,
               }}
             >
@@ -156,9 +154,9 @@ export function ContestCard(props: ContestCardProps) {
       <View
         style={{
           gap: theme.space.sm,
-          marginVertical: theme.space.xs,
           flexDirection: 'row',
           justifyContent: 'space-evenly',
+          marginVertical: theme.space.xs,
         }}
       >
         <View
@@ -179,7 +177,7 @@ export function ContestCard(props: ContestCardProps) {
             style={{
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.sm * 1.1,
-              fontWeight: theme.fontWeight.medium.toString() as any,
+              fontWeight: theme.fontWeight.medium,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -205,7 +203,7 @@ export function ContestCard(props: ContestCardProps) {
             style={{
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.sm * 1.1,
-              fontWeight: theme.fontWeight.medium.toString() as any,
+              fontWeight: theme.fontWeight.medium,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -231,7 +229,7 @@ export function ContestCard(props: ContestCardProps) {
             style={{
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.sm * 1.1,
-              fontWeight: theme.fontWeight.medium.toString() as any,
+              fontWeight: theme.fontWeight.medium,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -256,15 +254,15 @@ export function ContestCard(props: ContestCardProps) {
         <Text
           style={{
             letterSpacing: 0.3,
-            color: theme.color.textPrimary,
+            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
             fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.bold.toString() as any,
+            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.regular,
           }}
         >
           {theme.i18n.t('common.start_contest')}
         </Text>
-        <Feather name='chevron-right' size={theme.fontSize.lg} color={theme.color.textPrimary} />
+        <Feather name='chevron-right' size={theme.fontSize.lg} color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse} />
       </TouchableOpacity>
     </View>
   );
