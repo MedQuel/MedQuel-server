@@ -13,26 +13,104 @@
     "select": "Select",
     "retry": "Retry",
     "save": "Save",
-    "error": "Error"
+    "error": "Error",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "live": "LIVE",
+    "start_contest": "Start Contest"
   },
-  "subjects": {
-    "surgery": "Surgery",
-    "anatomy": "Anatomy",
-    "pathology": "Pathology",
-    "physiology": "Physiology",
-    "biochemistry": "Biochemistry",
-    "pharmacology": "Pharmacology"
-  },
+
   "splash": {
     "login": "Log In"
   },
+
   "home": {
     "title": "Home"
   },
+
+  "leaderboard": {},
+
+  "contests": {
+    "ep_reward": "EP Reward",
+    "questions": "Qs",
+    "time_left": "left",
+    "minute": "{{mins}}m",
+    "hour": "{{hrs}}h"
+  },
+
+  "chat": {},
+
+  "profile": {},
+
   "components": {
-    "test_card": {
+    "TestCard": {
       "title": "Test Card",
       "subtitle": "This is a test card component."
+    },
+    "FeatureHighlightsCard": {
+      "title": "What awaits you",
+      "ep": "Earn EP",
+      "contests": "Win Contests",
+      "streaks": "Build Streaks",
+      "ranks": "Climb Ranks"
+    },
+    "TabContainer": {
+      "global": "Global",
+      "friends": "Friends"
+    },
+
+    "OnboardingRolePicker": {
+      "mbbs": {
+        "title": "MBBS Student",
+        "subtitle": "Undergraduate medical program"
+      },
+      "postgraduate": {
+        "title": "Postgraduate",
+        "subtitle": "MD/MS/Residency preparation"
+      },
+      "doctor": {
+        "title": "Practicing Doctor",
+        "subtitle": "Continuing medical education"
+      },
+      "nursing": {
+        "title": "Nursing / Allied",
+        "subtitle": "Nursing education & licensing"
+      }
+    },
+    "PerformanceTrendCard": {
+      "title": "Performance Trend",
+      "subtitle": "7-day accuracy",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "LeaderboardPodiumContainer": {
+      "first_place": "First Place",
+      "second_place": "Second Place",
+      "third_place": "Third Place",
+      "points_suffix": "points",
+      "default": {
+        "first_name": "tusharbaghel",
+        "second_name": "Dr. Ravi P.",
+        "third_name": "Dr. Amir K."
+      }
+    },
+    "FeatureContestCard": {
+      "live": "LIVE",
+      "competing": "competing",
+      "ep_reward": "EP Reward",
+      "ends_in": "Ends in",
+      "join_now": "Join Now",
+      "difficulty_easy": "Easy",
+      "difficulty_medium": "Medium",
+      "difficulty_hard": "Hard"
     }
   }
 }

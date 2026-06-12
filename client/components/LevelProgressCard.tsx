@@ -28,7 +28,9 @@ export function LevelProgressCard({
     <View style={{ padding: theme.space.lg }}>
       <View
         style={{
-          backgroundColor: isDark ? theme.color.surface : "#f0f0fe",
+          backgroundColor: isDark
+            ? theme.color.surface
+            : theme.color.background,
           borderRadius: theme.borderRadius.lg,
           paddingVertical: theme.space.sm,
           paddingHorizontal: theme.space.lg,
@@ -49,9 +51,9 @@ export function LevelProgressCard({
         >
           <Text
             style={{
-              fontSize: theme.fontSize.xs,
-              fontWeight: "bold",
-              color: isDark ? theme.color.textSecondary : "#4d4b4b",
+              fontSize: theme.fontSize.sm,
+              fontWeight: "medium",
+              color: isDark ? theme.color.textSecondary : theme.color.textMuted,
             }}
           >
             {theme.i18n.t("common.level") || "Lv"} {currentLevel} →{" "}
@@ -72,7 +74,7 @@ export function LevelProgressCard({
         <View
           style={{
             height: 6,
-            backgroundColor: isDark ? theme.color.border : "#cdcde1",
+            backgroundColor: isDark ? theme.color.border : theme.color.border,
             borderRadius: theme.borderRadius.full,
             overflow: "hidden",
             marginBottom: theme.space.xs,
@@ -82,7 +84,7 @@ export function LevelProgressCard({
             style={{
               height: "100%",
               width: `${progress * 100}%`,
-              backgroundColor: isDark ? theme.color.info : "#4949e6",
+              backgroundColor: isDark ? theme.color.info : theme.color.accent,
               borderRadius: theme.borderRadius.full,
             }}
           />

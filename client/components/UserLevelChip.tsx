@@ -16,7 +16,7 @@ export function UserLevelChip(props: LevelBadgesProps) {
       style={{
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: isDark ? theme.color.surface : "#dfdff7",
+        backgroundColor: isDark ? theme.color.surface : theme.color.surface,
         borderRadius: theme.borderRadius.lg * 2,
         paddingHorizontal: theme.space.lg,
         paddingVertical: theme.space.sm,
