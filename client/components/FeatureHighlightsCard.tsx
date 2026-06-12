@@ -68,9 +68,9 @@ export function FeatureHighlightsCard() {
         style={{
           color: theme.color.textPrimary,
           marginBottom: theme.space.md,
-          fontWeight: 'bold',
           fontSize: theme.fontSize.lg,
-          fontFamily: theme.fontFamily.text,
+          fontWeight: theme.fontWeight.bold,
+          fontFamily: theme.fontFamily.regular,
         }}
       >
         {theme.i18n.t('components.FeatureHighlightsCard.title')}
@@ -98,7 +98,7 @@ export function FeatureHighlightsCard() {
               style={{
                 textAlign: 'center',
                 fontSize: theme.fontSize.xs,
-                color: theme.color.textMuted,
+                color: theme.color.textSecondary,
               }}
             >
               {feature.label}
