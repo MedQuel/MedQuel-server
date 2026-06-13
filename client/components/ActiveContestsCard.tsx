@@ -147,9 +147,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                   <Feather name='users' size={theme.space.sm * 1.5} color={theme.color.textMuted} />
                   <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.light }}>
                     {contest.participantsCount >= 1000
-                      ? (contest.participantsCount / 1000)
-                          .toFixed(1)
-                          .replace(/\.0$/, '') + 'K'
+                      ? (contest.participantsCount / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
                       : contest.participantsCount.toString()}
                   </Text>
                 </View>
