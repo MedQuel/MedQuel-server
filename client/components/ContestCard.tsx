@@ -19,9 +19,7 @@ type ContestCardProps = {
 export function ContestCard(props: ContestCardProps) {
   const { theme } = useTheme();
 
-  const difficultyColor = (
-    difficulty: 'hard' | 'medium' | 'easy'
-  ): { textColor: string } => {
+  const difficultyColor = ( difficulty: 'hard' | 'medium' | 'easy' ): { textColor: string } => {
     if (difficulty === 'hard') return { textColor: theme.color.error };
     else if (difficulty === 'medium') return { textColor: theme.color.warning };
     else return { textColor: theme.color.success };
@@ -46,10 +44,10 @@ export function ContestCard(props: ContestCardProps) {
         borderWidth: 1.5,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.card,
         boxShadow: theme.isDark
           ? '0px 4px 20px rgba(0,0,0,0.4)'
           : '0px 2px 12px rgba(0,0,0,0.08)',
-        backgroundColor: theme.color.card,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -96,7 +94,11 @@ export function ContestCard(props: ContestCardProps) {
         </View>
 
         <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
-          <Feather name='zap' size={theme.fontSize.lg} color={theme.isDark ? theme.color.info : theme.color.accent} />
+          <Feather
+            name='zap'
+            size={theme.fontSize.lg}
+            color={theme.isDark ? theme.color.info : theme.color.accent}
+          />
           <Text
             style={{
               color: theme.isDark ? theme.color.info : theme.color.accent,
