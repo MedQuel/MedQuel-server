@@ -1,103 +1,123 @@
-import React from 'react';
-import { Text, View, ViewStyle } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-export type PodiumUser = { id: string; name: string; score: number; initials: string };
 
-export type LeaderboardPodiumContainerProps = { users?: PodiumUser[] } & ViewStyle;
+type User = {
+  id: string;
+  name: string;
+  score: number;
+};
+type LeaderboardPodiumContainerProps = {
+  users: User[];
+};
 
-const defaultUsers: PodiumUser[] = [
-  { id: 'second', name: 'Dr. Ravi P.', score: 3847, initials: 'RP' },
-  { id: 'first', name: 'tusharbaghel', score: 5252, initials: 'TU' },
-  { id: 'third', name: 'Dr. Amir K.', score: 3411, initials: 'AK' },
-];
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(' ')
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase();
+}
 
-const rankStyles = (theme: ReturnType<typeof useTheme>['theme']) => [
-  { rank: 2, scoreColor: '#7D92B9', borderColor: '#8FA2C9', podiumColor: theme.isDark ? '#10254D' : '#E7EDF8' },
-  { rank: 1, scoreColor: theme.color.warning, borderColor: theme.color.warning, podiumColor: theme.isDark ? '#2B2B31' : '#ECE8E1' },
-  { rank: 3, scoreColor: '#C47A2C', borderColor: '#CD7F32', podiumColor: theme.isDark ? '#10254D' : '#E7EDF8' },
-];
-
-const initialsBg = (index: number, theme: ReturnType<typeof useTheme>['theme']) => [
-  theme.color.premium,
-  theme.color.accent,
-  '#EF6B6B',
-][index];
-
-export function LeaderboardPodiumContainer({ users = defaultUsers, ...style }: LeaderboardPodiumContainerProps) {
+export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainerProps) {
   const { theme } = useTheme();
-  const podiumUsers = [users[0], users[1], users[2]];
-  const ranks = rankStyles(theme);
+
+  const topThree = [...users].sort((a, b) => b.score - a.score).slice(0, 3);
+  const podium = [
+    { rank: 2, user: topThree[1] },
+    { rank: 1, user: topThree[0] },
+    { rank: 3, user: topThree[2] },
+  ].filter((item) => item.user);
+
+  const rankStyles = {
+    1: {
+      color: theme.color.warning,
+      avatarSize: theme.space.xxl * 1.5,
+      podiumHeight: theme.space.xxl * 2,
+    },
+    2: {
+      color: '#94A3B8',
+      avatarSize: theme.space.xxl * 1.25,
+      podiumHeight: theme.space.xxl * 1.5,
+    },
+    3: {
+      color: '#CD7F32',
+      avatarSize: theme.space.xxl * 1.2,
+      podiumHeight: theme.space.xxl,
+    },
+  } as const;
 
   return (
-    <View
+    <LinearGradient
+      colors={
+        theme.isDark ? ['#102753', '#0e1d3d', '#070e1d'] : ['#dfeafc', '#e0e8f5', '#eef0f7']
+      }
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={{
-        backgroundColor: theme.isDark ? '#041634' : theme.color.card,
-        borderWidth: 1,
-        borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.xl,
-        padding: theme.space.xl,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: theme.isDark ? 0.25 : 0.08,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 8,
-        ...style,
+        paddingTop: theme.space.md,
+        paddingHorizontal: theme.space.xl,
+        borderWidth: 2,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.xl * 2,
+        boxShadow: theme.isDark
+          ? '0px 10px 24px rgba(0,0,0,0.35)'
+          : '0px 8px 20px rgba(15,23,42,0.06)',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', minHeight: 360 }}>
-        {podiumUsers.map((user, index) => {
-          const rank = ranks[index];
-          const isWinner = rank.rank === 1;
-          const podiumHeight = rank.rank === 1 ? 190 : rank.rank === 2 ? 145 : 130;
-          const avatarSize = isWinner ? 102 : 84;
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }}>
+        {podium.map((item) => {
+          const user = item.user;
+          const rank = item.rank;
+          const isWinner = rank === 1;
+          const style = rankStyles[rank as keyof typeof rankStyles];
 
           return (
             <View
               key={user.id}
-              style={{
-                flex: isWinner ? 1.15 : 1,
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-              }}
+              style={{ flex: isWinner ? 1.25 : 1.1, alignItems: 'center', justifyContent: 'flex-end' }}
             >
               <View style={{ alignItems: 'center', marginBottom: theme.space.sm }}>
-                {isWinner ? <MaterialCommunityIcons name="crown" size={32} color={theme.color.warning} style={{ marginBottom: 12 }} /> : null}
+                {isWinner && (
+                  <MaterialCommunityIcons
+                    name='crown'
+                    size={theme.space.lg}
+                    color={theme.color.warning}
+                  />
+                )}
 
                 <View style={{ position: 'relative' }}>
                   <View
                     style={{
-                      width: avatarSize,
-                      height: avatarSize,
-                      borderRadius: theme.borderRadius.full,
-                      backgroundColor: initialsBg(index, theme),
-                      borderWidth: isWinner ? 4 : 3,
-                      borderColor: rank.borderColor,
+                      width: style.avatarSize,
+                      height: style.avatarSize,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      ...(isWinner
-                        ? {
-                            shadowColor: theme.color.warning,
-                            shadowOpacity: 0.45,
-                            shadowRadius: 16,
-                            shadowOffset: { width: 0, height: 0 },
-                            elevation: 14,
-                          }
-                        : {}),
+                      marginVertical: theme.space.xs,
+                      borderWidth: 2.5,
+                      borderRadius: theme.borderRadius.full,
+                      borderColor: style.color,
+                      backgroundColor: style.color + '88',
+                      boxShadow: isWinner
+                        ? `0px 0px 14px ${theme.color.warning}99`
+                        : undefined,
                     }}
                   >
                     <Text
                       style={{
-                        color: theme.color.textInverse,
+                        color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                         fontSize: isWinner ? theme.fontSize.xl : theme.fontSize.lg,
                         fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.number,
+                        fontFamily: theme.fontFamily.regular,
                       }}
                     >
-                      {user.initials}
+                      {getInitials(user.name)}
                     </Text>
                   </View>
 
@@ -105,86 +125,89 @@ export function LeaderboardPodiumContainer({ users = defaultUsers, ...style }: L
                     style={{
                       position: 'absolute',
                       right: -4,
-                      bottom: 2,
-                      width: 34,
-                      height: 34,
-                      borderRadius: theme.borderRadius.full,
-                      backgroundColor: rank.borderColor,
+                      bottom: 6,
+                      width: theme.space.md * 1.25,
+                      height: theme.space.md * 1.25,
                       alignItems: 'center',
                       justifyContent: 'center',
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: style.color,
                     }}
                   >
                     <Text
                       style={{
-                        color: theme.color.textInverse,
-                        fontSize: theme.fontSize.md,
+                        color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                        fontSize: theme.fontSize.xs,
                         fontWeight: theme.fontWeight.bold,
                         fontFamily: theme.fontFamily.number,
                       }}
                     >
-                      {rank.rank}
+                      {rank}
                     </Text>
                   </View>
                 </View>
 
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    marginTop: theme.space.md,
-                    color: theme.color.textPrimary,
-                    fontSize: isWinner ? theme.fontSize.xl : theme.fontSize.lg,
-                    fontWeight: theme.fontWeight.bold,
-                    fontFamily: theme.fontFamily.regular,
-                    textAlign: 'center',
-                    paddingHorizontal: 6,
-                  }}
-                >
-                  {user.name}
-                </Text>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                  <MaterialCommunityIcons name="lightning-bolt" size={16} color={theme.color.warning} />
+                <View
+                  style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start' }}>
                   <Text
+                    numberOfLines={1}
                     style={{
-                      marginLeft: 3,
-                      color: rank.scoreColor,
-                      fontSize: theme.fontSize.md,
+                      color: theme.color.textPrimary,
+                      textAlign: 'center',
+                      fontSize: theme.fontSize.sm * 1.15,
                       fontWeight: theme.fontWeight.bold,
-                      fontFamily: theme.fontFamily.number,
                     }}
                   >
-                    {user.score.toLocaleString()}
+                    {user.name}
                   </Text>
+
+                  <View
+                    style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+                    <Feather
+                      name='zap'
+                      size={theme.space.sm * 1.5}
+                      color={style.color}
+                    />
+                    <Text
+                      style={{
+                        color: style.color,
+                        fontSize: theme.fontSize.xs,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.number,
+                      }}
+                    >
+                      {user.score.toLocaleString()}
+                    </Text>
+                  </View>
                 </View>
               </View>
 
               <View
                 style={{
-                  alignSelf: 'stretch',
-                  height: podiumHeight,
-                  marginHorizontal: 4,
-                  backgroundColor: rank.podiumColor,
-                  borderTopLeftRadius: theme.borderRadius.lg,
-                  borderTopRightRadius: theme.borderRadius.lg,
+                  width: '92%',
+                  height: style.podiumHeight,
                   alignItems: 'center',
                   justifyContent: 'center',
+                  borderTopLeftRadius: theme.borderRadius.lg,
+                  borderTopRightRadius: theme.borderRadius.lg,
+                  backgroundColor: style.color + '22',
                 }}
               >
                 <Text
                   style={{
-                    color: isWinner ? theme.color.warning : theme.color.textMuted,
-                    fontSize: isWinner ? 42 : 28,
+                    color: style.color,
+                    fontSize: isWinner ? theme.fontSize.xxxl : theme.fontSize.xxl,
                     fontWeight: theme.fontWeight.bold,
                     fontFamily: theme.fontFamily.number,
                   }}
                 >
-                  {rank.rank}
+                  {rank}
                 </Text>
               </View>
             </View>
           );
         })}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
