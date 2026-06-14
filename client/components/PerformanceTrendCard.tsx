@@ -1,16 +1,57 @@
-import React from 'react';
-import { Text, View, ViewStyle } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-export type PerformanceTrendCardProps = { accuracy?: number; data?: number[] } & ViewStyle;
 
-const defaultData = [42, 58, 36, 72, 52, 88, 84];
+type Accuracy = {
+  mon?: number;
+  tue?: number;
+  wed?: number;
+  thu?: number;
+  fri?: number;
+  sat?: number;
+  sun?: number;
+};
+type PerformanceTrendCardProps = {
+  accuracy: Accuracy;
+};
 
-export function PerformanceTrendCard({ accuracy = 87, data = defaultData, ...style }: PerformanceTrendCardProps) {
+const calculateTrend = (accuracy: Accuracy): number => {
+  const values = Object.values(accuracy);
+  if (values.length < 2) return 0;
+
+  let slope = 0;
+  let x_mean = 0;
+  let y_mean = 0;
+  let x_diff_squared = 0;
+  let xy_diff_product = 0;
+
+  values.forEach((value, index) => {
+    x_mean += index + 1;
+    y_mean += value;
+  });
+  x_mean /= values.length;
+  y_mean /= values.length;
+
+  values.forEach((value, i) => {
+    let x_diff = i + 1 - x_mean;
+    let y_diff = value;
+
+    xy_diff_product += x_diff * y_diff;
+    x_diff_squared += x_diff * x_diff;
+  });
+  slope = xy_diff_product / x_diff_squared;
+
+  return (slope / y_mean) * 100; // Return percentage change per day
+};
+
+
+export function PerformanceTrendCard({ accuracy }: PerformanceTrendCardProps) {
   const { theme } = useTheme();
 
+  const maxValue = Math.max(...Object.values(accuracy));
+  const trend = calculateTrend(accuracy);
   const weekDays = [
     theme.i18n.t('components.PerformanceTrendCard.days.mon'),
     theme.i18n.t('components.PerformanceTrendCard.days.tue'),
@@ -21,44 +62,39 @@ export function PerformanceTrendCard({ accuracy = 87, data = defaultData, ...sty
     theme.i18n.t('components.PerformanceTrendCard.days.sun'),
   ];
 
-  const maxValue = Math.max(...data);
-
   return (
     <View
       style={{
-        backgroundColor: theme.color.card,
-        borderRadius: theme.borderRadius.xl,
-        borderWidth: 1,
+        gap: theme.space.md,
+        flexDirection: 'column',
+        padding: theme.space.md,
+        borderWidth: 1.5,
         borderColor: theme.color.border,
-        padding: theme.space.lg,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: theme.isDark ? 0.2 : 0.05,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 6,
-        ...style,
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.card,
+        boxShadow: theme.isDark
+          ? '0 6px 14px rgba(0,0,0,0.2)'
+          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View style={{ flex: 1 }}>
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1, gap: theme.space.xs }}>
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.xl,
+              fontSize: theme.fontSize.lg,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.regular,
             }}
           >
             {theme.i18n.t('components.PerformanceTrendCard.title')}
           </Text>
-
           <Text
             style={{
-              marginTop: 4,
-              color: theme.color.textSecondary,
+              color: theme.color.textMuted,
               fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
+              fontFamily: theme.fontFamily.light,
             }}
           >
             {theme.i18n.t('components.PerformanceTrendCard.subtitle')}
@@ -67,85 +103,86 @@ export function PerformanceTrendCard({ accuracy = 87, data = defaultData, ...sty
 
         <View
           style={{
+            gap: theme.space.xs * 1.5,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: theme.isDark ? 'rgba(16,185,129,0.16)' : 'rgba(16,185,129,0.10)',
-            paddingHorizontal: theme.space.md,
-            paddingVertical: theme.space.sm,
-            borderRadius: theme.borderRadius.lg,
+            justifyContent: 'center',
+            paddingVertical: theme.space.xs * 1.5,
+            paddingHorizontal: theme.space.md * 0.75,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor:
+              trend >= 0
+                ? theme.color.success + '22'
+                : theme.color.error + '22',
           }}
         >
-          <MaterialCommunityIcons name="trending-up" size={16} color="#16A34A" />
-
+          <Feather
+            name={trend >= 0 ? 'trending-up' : 'trending-down'}
+            size={16}
+            color={trend >= 0 ? theme.color.success : theme.color.error}
+          />
           <Text
             style={{
-              marginLeft: 4,
-              color: '#16A34A',
-              fontSize: theme.fontSize.md,
+              color: trend >= 0 ? theme.color.success : theme.color.error,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
             }}
           >
-            {accuracy}%
+            {trend.toFixed(2)}%
           </Text>
         </View>
       </View>
 
       <View
         style={{
-          marginTop: theme.space.xl,
-          height: 230,
+          gap: theme.space.md * 0.8,
           flexDirection: 'row',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
         }}
       >
-        {data.map((value, index) => {
-          const isLatest = index === data.length - 1;
+        {Object.entries(accuracy).map(([day, value]) => {
+          const isLatest = day === Object.keys(accuracy)[Object.keys(accuracy).length - 1];
           const barHeight = Math.max((value / maxValue) * 120, 40);
 
           return (
             <View
-              key={`${index}-${value}`}
+              key={day}
               style={{
                 flex: 1,
+                gap: theme.space.sm,
                 alignItems: 'center',
                 justifyContent: 'flex-end',
               }}
             >
               <View
                 style={{
-                  alignSelf: 'stretch',
-                  marginHorizontal: 6,
                   height: barHeight,
+                  alignSelf: 'stretch',
                   borderRadius: theme.borderRadius.sm,
-                  backgroundColor: isLatest
-                    ? theme.color.accent
-                    : theme.isDark
-                    ? 'rgba(59,123,248,0.32)'
-                    : 'rgba(37,99,235,0.18)',
-                  ...(isLatest
-                    ? {
-                        shadowColor: theme.color.accent,
-                        shadowOpacity: 0.45,
-                        shadowRadius: 12,
-                        shadowOffset: { width: 0, height: 0 },
-                        elevation: 10,
-                      }
-                    : {}),
+                  backgroundColor: isLatest ? theme.color.accent + 'AA' : theme.color.textMuted + 'AA',
+                  boxShadow: isLatest ? `0 0 12px ${theme.color.accent}45` : `0 0 12px ${theme.color.textMuted}45`,
                 }}
               />
 
               <Text
                 style={{
-                  marginTop: theme.space.md,
-                  color: isLatest ? theme.color.accent : theme.color.textSecondary,
-                  fontSize: theme.fontSize.sm,
+                  color: isLatest ? theme.color.accent + 'AA' : theme.color.textSecondary,
+                  fontSize: theme.fontSize.xs * 1.05,
                   fontWeight: isLatest ? theme.fontWeight.bold : theme.fontWeight.medium,
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {weekDays[index]}
+                {
+                  weekDays[
+                    day === 'mon' ? 0
+                      : day === 'tue' ? 1
+                        : day === 'wed' ? 2
+                          : day === 'thu' ? 3
+                            : day === 'fri' ? 4
+                              : day === 'sat' ? 5 : 6
+                  ]
+                }
               </Text>
             </View>
           );
