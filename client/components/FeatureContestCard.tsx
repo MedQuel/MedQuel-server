@@ -1,220 +1,245 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-type Countdown = { hours: string; minutes: string; seconds: string };
 
-type Props = {
+type FeatureContestCardProps = {
   title: string;
   participants: number;
   reward: number;
-  questions?: number;
-  duration?: string;
-  difficulty?: string;
-  countdown?: Countdown;
+  questions: number;
+  duration: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  endsAt: string | Date;
   onPress?: () => void;
 };
 
-const defaultCountdown: Countdown = { hours: '01', minutes: '23', seconds: '45' };
+function getRemainingTime(target: Date) {
+  const diff = Math.max(0, target.getTime() - Date.now());
 
-const resolveDifficulty = (theme: ReturnType<typeof useTheme>['theme'], difficulty: string) => {
-  const key = `common.${difficulty.trim().toLowerCase()}`;
-  const translated = theme.i18n.t(key);
-  return translated === key ? difficulty : translated;
-};
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
 
-export function FeatureContestCard({
-  title,
-  participants,
-  reward,
-  questions = 100,
-  duration = '120 min',
-  difficulty = 'Hard',
-  countdown = defaultCountdown,
-  onPress,
-}: Props) {
+  return {
+    hours: String(hours).padStart(2, '0'),
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+  };
+}
+
+
+export function FeatureContestCard(props: FeatureContestCardProps) {
+  const endDate = useMemo(() => new Date(props.endsAt), [props.endsAt]);
+  const [remaining, setRemaining] = useState(getRemainingTime(endDate));
+
   const { theme } = useTheme();
-  const difficultyLabel = resolveDifficulty(theme, difficulty);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRemaining(getRemainingTime(endDate));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [endDate]);
+
 
   return (
-    <View
+    <LinearGradient
+      colors={
+        theme.isDark
+          ? ['#121333', '#0b1041', '#0A1E66']
+          : ['#7e71e2', '#4f44c7', '#2253e4']
+      }
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={{
         overflow: 'hidden',
-        borderRadius: theme.borderRadius.xl + 4,
-        borderWidth: 1,
-        borderColor: theme.isDark ? 'rgba(90,110,255,0.28)' : 'rgba(108,76,246,0.16)',
-        backgroundColor: theme.isDark ? '#16184D' : '#6C4CF6',
-        shadowColor: theme.isDark ? '#4F6BFF' : '#6C4CF6',
-        shadowOpacity: 0.22,
-        shadowRadius: 28,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 10,
+        borderWidth: 1.5,
+        borderColor: theme.isDark ? theme.color.border : 'rgba(255,255,255,0.10)',
+        borderRadius: theme.borderRadius.xl,
+        boxShadow: theme.isDark
+          ? '0px 12px 30px rgba(0,0,0,0.30)'
+          : '0px 12px 24px rgba(0,0,0,0.12)',
       }}
     >
       <View
         style={{
           position: 'absolute',
-          left: -140,
-          bottom: -160,
-          height: 340,
-          aspectRatio: 1,
-          borderRadius: 999,
-          backgroundColor: theme.isDark ? 'rgba(124,58,237,0.42)' : 'rgba(124,58,237,0.58)',
+          top: -90,
+          right: -60,
+          width: 180,
+          height: 180,
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: 'rgba(255,255,255,0.05)',
         }}
       />
-
       <View
         style={{
           position: 'absolute',
-          right: -140,
-          top: -120,
-          height: 500,
-          aspectRatio: 1,
-          borderRadius: 999,
-          backgroundColor: theme.isDark ? 'rgba(59,123,248,0.32)' : 'rgba(59,123,248,0.52)',
+          top: -40,
+          right: 40,
+          width: 100,
+          height: 100,
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: 'rgba(255,255,255,0.04)',
         }}
       />
-
       <View
         style={{
           position: 'absolute',
-          right: -70,
-          top: -35,
-          height: 170,
-          aspectRatio: 1,
-          borderRadius: 999,
-          backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.18)',
+          bottom: -100,
+          left: -70,
+          width: 220,
+          height: 220,
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: 'rgba(128,0,255,0.08)',
         }}
       />
 
-      <View style={{ padding: theme.space.lg }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: theme.space.md }}>
+      <View style={{ flexDirection: 'column', paddingVertical: theme.space.md, paddingHorizontal: theme.space.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+            <View
+              style={{
+                gap: theme.space.xs,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: theme.space.xs,
+                paddingHorizontal: theme.space.sm,
+                borderRadius: theme.borderRadius.md,
+                backgroundColor: theme.color.error + '22',
+              }}
+            >
               <View
                 style={{
-                  backgroundColor: 'rgba(130,25,65,0.95)',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 10,
-                  marginRight: 12,
+                  width: theme.space.sm * 0.75,
+                  height: theme.space.sm * 0.75,
+                  borderRadius: theme.borderRadius.full,
+                  backgroundColor: theme.color.error,
                 }}
-              >
-                <Text
-                  style={{
-                    color: '#FF5A5A',
-                    fontSize: theme.fontSize.sm,
-                    fontWeight: theme.fontWeight.bold,
-                    fontFamily: theme.fontFamily.number,
-                  }}
-                >
-                  ● {theme.i18n.t('components.FeatureContestCard.live')}
-                </Text>
-              </View>
-
+              />
               <Text
                 style={{
-                  color: 'rgba(255,255,255,0.75)',
-                  fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.medium,
+                  color: theme.color.error,
+                  fontSize: theme.fontSize.xs,
+                  fontWeight: theme.fontWeight.bold,
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {participants.toLocaleString()} {theme.i18n.t('components.FeatureContestCard.competing')}
+                {theme.i18n.t('common.live')}
               </Text>
             </View>
 
             <Text
               style={{
-                fontSize: theme.fontSize.xxl,
-                fontWeight: theme.fontWeight.bold,
-                lineHeight: 32,
-                color: '#FFFFFF',
-                fontFamily: theme.fontFamily.number,
-              }}
-            >
-              {title}
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 10,
-                fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.medium,
-                color: 'rgba(255,255,255,0.72)',
-                fontFamily: theme.fontFamily.light,
-              }}
-            >
-              {questions} {theme.i18n.t('contests.questions')} · {duration} · {difficultyLabel}
-            </Text>
-          </View>
-
-          <View style={{ alignItems: 'flex-end', marginLeft: theme.space.md }}>
-            <Text
-              style={{
-                fontSize: theme.fontSize.xxxl,
-                fontWeight: theme.fontWeight.bold,
-                color: theme.color.warning,
-                fontFamily: theme.fontFamily.number,
-              }}
-            >
-              +{reward}
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 4,
-                color: 'rgba(255,255,255,0.60)',
+                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                 fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.light,
+                fontFamily: theme.fontFamily.regular,
               }}
             >
-              {theme.i18n.t('components.FeatureContestCard.ep_reward')}
+              {props.participants.toLocaleString()}{' '}
+              {theme.i18n.t('components.FeatureContestCard.competing')}
             </Text>
           </View>
+
+          <Text
+            style={{
+              color: theme.color.warning,
+              fontSize: theme.fontSize.xxl,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.number,
+            }}
+          >
+            +{props.reward}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ gap: theme.space.xs, flexDirection: 'column', justifyContent: 'space-between' }}>
+            <Text
+              style={{
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                fontSize: theme.fontSize.xl,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {props.title}
+            </Text>
+            <Text
+              style={{
+                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
+                fontSize: theme.fontSize.md,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {props.questions}{' '}
+              {theme.i18n.t('components.FeatureContestCard.questions')} ·{' '}
+              {props.duration}{' '}
+              {theme.i18n.t('components.FeatureContestCard.min')} ·{' '}
+              {theme.i18n.t(`common.${props.difficulty}`)}
+            </Text>
+          </View>
+
+          <Text
+            style={{
+              color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
+              marginBottom: theme.space.md,
+            }}
+          >
+            {theme.i18n.t('components.FeatureContestCard.ep_reward')}
+          </Text>
         </View>
 
         <View
           style={{
-            marginTop: theme.space.xl,
+            gap: theme.space.sm,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'space-between',
+            marginTop: theme.space.md,
           }}
         >
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="time-outline" size={22} color="rgba(255,255,255,0.72)" />
-
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+              <Feather
+                name='clock'
+                size={theme.space.md}
+                color={theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77'}
+              />
               <Text
                 style={{
-                  marginLeft: 8,
+                  color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                   fontSize: theme.fontSize.md,
-                  color: 'rgba(255,255,255,0.72)',
-                  fontFamily: theme.fontFamily.light,
+                  fontFamily: theme.fontFamily.regular,
                 }}
               >
                 {theme.i18n.t('components.FeatureContestCard.ends_in')}
               </Text>
+            </View>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 16 }}>
-                {[countdown.hours, countdown.minutes, countdown.seconds].map((value, index) => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {[remaining.hours, remaining.minutes, remaining.seconds].map(
+                (value, index) => (
                   <React.Fragment key={index}>
                     <View
                       style={{
-                        paddingHorizontal: 16,
-                        paddingVertical: 12,
-                        borderRadius: 12,
-                        backgroundColor: 'rgba(255,255,255,0.12)',
-                        borderWidth: 1,
-                        borderColor: 'rgba(255,255,255,0.08)',
+                        alignItems: 'center',
+                        padding: theme.space.sm,
+                        borderRadius: theme.borderRadius.md,
+                        backgroundColor: theme.isDark ? theme.color.textMuted + '77' : theme.color.textMuted + '55',
                       }}
                     >
                       <Text
                         style={{
-                          color: '#FFFFFF',
+                          color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                           fontSize: theme.fontSize.lg,
                           fontWeight: theme.fontWeight.bold,
                           fontFamily: theme.fontFamily.number,
@@ -227,42 +252,37 @@ export function FeatureContestCard({
                     {index < 2 && (
                       <Text
                         style={{
-                          marginHorizontal: 8,
-                          fontSize: theme.fontSize.xxl,
+                          color: theme.color.textMuted,
+                          fontSize: theme.fontSize.xl,
                           fontWeight: theme.fontWeight.bold,
-                          color: 'rgba(255,255,255,0.55)',
                           fontFamily: theme.fontFamily.number,
+                          marginHorizontal: theme.space.xs,
                         }}
                       >
                         :
                       </Text>
                     )}
                   </React.Fragment>
-                ))}
-              </View>
+                )
+              )}
             </View>
           </View>
 
           <Pressable
-            onPress={onPress}
+            onPress={props.onPress}
             style={{
-              backgroundColor: '#FFFFFF',
-              paddingHorizontal: 32,
-              paddingVertical: 16,
-              borderRadius: 20,
-              marginLeft: theme.space.md,
-              shadowColor: '#FFFFFF',
-              shadowOpacity: 0.08,
-              shadowRadius: 10,
-              shadowOffset: { width: 0, height: 4 },
-              elevation: 2,
+              paddingHorizontal: theme.space.md,
+              paddingVertical: theme.space.sm * 1.25,
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+              boxShadow: '0px 4px 10px rgba(255,255,255,0.12)',
             }}
           >
             <Text
               style={{
+                color: '#6D28D9',
                 fontSize: theme.fontSize.md,
                 fontWeight: theme.fontWeight.bold,
-                color: theme.color.premium,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
@@ -271,6 +291,6 @@ export function FeatureContestCard({
           </Pressable>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
