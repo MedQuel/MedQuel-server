@@ -44,10 +44,6 @@
   "profile": {},
 
   "components": {
-    "TestCard": {
-      "title": "Test Card",
-      "subtitle": "This is a test card component."
-    },
     "FeatureHighlightsCard": {
       "title": "What awaits you",
       "ep": "Earn EP",
@@ -59,7 +55,6 @@
       "global": "Global",
       "friends": "Friends"
     },
-
     "OnboardingRolePicker": {
       "mbbs": {
         "title": "MBBS Student",
@@ -91,26 +86,13 @@
         "sun": "Sun"
       }
     },
-    "LeaderboardPodiumContainer": {
-      "first_place": "First Place",
-      "second_place": "Second Place",
-      "third_place": "Third Place",
-      "points_suffix": "points",
-      "default": {
-        "first_name": "tusharbaghel",
-        "second_name": "Dr. Ravi P.",
-        "third_name": "Dr. Amir K."
-      }
-    },
     "FeatureContestCard": {
-      "live": "LIVE",
       "competing": "competing",
+      "questions": "Qs",
+      "min": "min",
       "ep_reward": "EP Reward",
       "ends_in": "Ends in",
-      "join_now": "Join Now",
-      "difficulty_easy": "Easy",
-      "difficulty_medium": "Medium",
-      "difficulty_hard": "Hard"
+      "join_now": "Join Now"
     }
   }
 }
