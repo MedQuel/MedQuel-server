@@ -1,98 +1,126 @@
-import React from 'react';
 import { View, Text } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeContext';
 
+
 type CurrentUserLeaderboardRankCardProps = {
-  rank: number;
   name: string;
+  rank: number;
   points: number;
   weeklyGrowth: number;
 };
 
-export default function CurrentUserLeaderboardRankCard({
-  rank,
-  name,
-  points,
-  weeklyGrowth,
-}: CurrentUserLeaderboardRankCardProps) {
+export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowth }: CurrentUserLeaderboardRankCardProps) {
+  const avatarInitial = name.trim().charAt(0).toUpperCase();
   const { theme } = useTheme();
-  const avatarInitial = name.trim().charAt(0).toUpperCase() || '?';
-  const youLabel = theme.i18n.t('common.you');
-  const thisWeekLabel = theme.i18n.t('components.CurrentUserLeaderboardRankCard.this_week');
 
   return (
     <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F4F7FF',
-        borderWidth: 1,
-        borderColor: '#DCE7FF',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
+        justifyContent: 'space-between',
+        paddingVertical: theme.space.sm * 1.5,
+        paddingHorizontal: theme.space.md,
+        borderWidth: 1.5,
+        borderColor: theme.isDark ? theme.color.accent + '44' : theme.color.textMuted + '55',
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.surface,
       }}
     >
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: '600',
-          color: '#7B8794',
-          marginRight: 12,
-        }}
-      >
-        #{rank}
-      </Text>
-      <View
-        style={{
-          backgroundColor: '#5865F2',
-          width: 32,
-          height: 32,
-          borderRadius: 16,
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginRight: 10,
-        }}
-      >
-        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
-          {avatarInitial}
-        </Text>
-      </View>
-      <View style={{ flex: 1 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <Text
           style={{
-            fontSize: 14,
-            fontWeight: '600',
-            color: '#4F7CFF',
-            marginBottom: 2,
+            color: theme.color.accent,
+            fontSize: theme.fontSize.md,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.number,
           }}
         >
-          {youLabel} · {name}
+          #{rank}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ color: '#22C55E', fontSize: 9, marginRight: 2 }}>
-            ↗
-          </Text>
-          <Text style={{ color: '#22C55E', fontSize: 11, fontWeight: '500' }}>
-            ↑ {weeklyGrowth} {thisWeekLabel}
-          </Text>
+
+        <View
+          style={{
+            gap: theme.space.sm * 1.25,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginLeft: theme.space.md,
+          }}
+        >
+          <LinearGradient
+            colors={[`${theme.color.accent}`, `${theme.color.accent}90`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: theme.space.xl * 1.25,
+              height: theme.space.xl * 1.25,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: theme.borderRadius.full,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                fontSize: theme.fontSize.md,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {avatarInitial}
+            </Text>
+          </LinearGradient>
+
+          <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', justifyContent: 'flex-start' }}>
+            <Text
+              style={{
+                color: theme.color.accent,
+                fontSize: theme.fontSize.md,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {theme.i18n.t('common.you')} · {name}
+            </Text>
+            <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+              {weeklyGrowth >= 0 ? (
+                <Feather name='trending-up' size={theme.space.sm * 1.5} color={theme.color.success} />
+              ) : (
+                <Feather name='trending-down' size={theme.space.sm * 1.5} color={theme.color.error} />
+              )}
+
+              <Text
+                style={{
+                  color: weeklyGrowth >= 0 ? theme.color.success : theme.color.error,
+                  fontSize: theme.fontSize.xs * 1.1,
+                  fontFamily: theme.fontFamily.light,
+                }}
+              >
+                {Math.abs(weeklyGrowth)} {theme.i18n.t('common.this_week')}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
+
+      <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', alignItems: 'flex-end' }}>
         <Text
           style={{
-            color: '#4F7CFF',
-            fontSize: 14,
-            fontWeight: '700',
+            color: theme.color.accent,
+            fontSize: theme.fontSize.md,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.number,
           }}
         >
           {points.toLocaleString()}
         </Text>
-        <Text style={{ fontSize: 9, color: '#B0BAC9', marginTop: 1 }}>
-          {theme.i18n.t('components.LeaderboardRankCard.ep')}
+        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs * 1.1, fontFamily: theme.fontFamily.light }}>
+          {theme.i18n.t('common.ep')}
         </Text>
       </View>
     </View>
   );
-} 
+}
