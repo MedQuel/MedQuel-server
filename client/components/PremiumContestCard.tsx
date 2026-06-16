@@ -1,246 +1,317 @@
-import React from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+
+import { useTheme } from '../theme/ThemeContext';
 
 type PremiumContestCardProps = {
-  category: string;
-  difficulty: string;
   title: string;
-  rewardPoints: number;
-  questionCount: number;
-  durationMinutes: number;
-  participants: number;
-  buttonLabel: string;
+  subject: string;
+  difficulty: 'hard' | 'medium' | 'easy';
+  epReward: number;
+  timeLeft?: string;
+  questionsCount: number;
+  duration: string;
+  participantsCount: number;
+  onPress?: () => void;
 };
-export default function PremiumContestCard({
-  category,
-  difficulty,
-  title,
-  rewardPoints,
-  questionCount,
-  durationMinutes,
-  participants,
-  buttonLabel,
-}: PremiumContestCardProps) {
+
+export function PremiumContestCard(props: PremiumContestCardProps) {
+  const { theme } = useTheme();
+
+  const difficultyColor = (
+    difficulty: 'hard' | 'medium' | 'easy'
+  ): { textColor: string } => {
+    if (difficulty === 'hard') return { textColor: theme.color.error };
+    else if (difficulty === 'medium') return { textColor: theme.color.warning };
+    else return { textColor: theme.color.success };
+  };
+
+  const formattedTimeLeft = (() => {
+    const minutes = Number(props.timeLeft);
+
+    if (!Number.isFinite(minutes)) return props.timeLeft;
+    if (minutes > 60)
+      return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes / 60) })}`;
+
+    return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
+  })();
+
+
   return (
     <View
       style={{
-        backgroundColor: '#081A3A',
-        borderRadius: 18,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#14396D',
+        gap: theme.space.sm,
+        flexDirection: 'column',
+        padding: theme.space.md,
+        borderWidth: 1.5,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.card,
+        boxShadow: theme.isDark ? '0px 4px 20px rgba(0,0,0,0.4)' : '0px 2px 12px rgba(0,0,0,0.08)',
       }}
     >
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 14,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
           <View
             style={{
+              gap: theme.space.xs,
               flexDirection: 'row',
               alignItems: 'center',
-              backgroundColor: '#1D2C5E',
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 8,
+              paddingVertical: theme.space.xs * 0.75,
+              paddingHorizontal: theme.space.sm,
+              borderWidth: 1.5,
+              borderRadius: theme.borderRadius.sm * 1.5,
+              borderColor: theme.color.premium + '33',
+              backgroundColor: theme.color.premium + '22',
             }}
           >
-            <Ionicons
-              name="medical-outline"
-              size={12}
-              color="#B8C7FF"
-            />
+            <MaterialCommunityIcons name='crown-outline' size={theme.fontSize.sm} color={theme.color.premium} />
             <Text
               style={{
-                color: '#B8C7FF',
-                marginLeft: 4,
-                fontSize: 11,
-                fontWeight: '600',
+                color: theme.color.premium,
+                fontSize: theme.fontSize.xs,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
               }}
             >
-              PRO
+              {theme.i18n.t('common.pro')}
             </Text>
           </View>
-          <Text
-            style={{
-              color: '#34C759',
-              fontSize: 12,
-              fontWeight: '600',
-            }}
-          >
-            {category}
-          </Text>
+
           <View
             style={{
-              backgroundColor: '#3A1520',
-              paddingHorizontal: 8,
-              paddingVertical: 3,
-              borderRadius: 8,
+              paddingVertical: theme.space.xs,
+              paddingHorizontal: theme.space.sm * 1.25,
+              borderRadius: theme.borderRadius.sm * 1.25,
+              backgroundColor: theme.color.accent + '18',
             }}
           >
             <Text
               style={{
-                color: '#FF5A5F',
-                fontSize: 11,
-                fontWeight: '600',
+                color: theme.color.accent,
+                fontSize: theme.fontSize.xs,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
               }}
             >
-              {difficulty}
+              {props.subject}
+            </Text>
+          </View>
+
+          <View
+            style={{
+              paddingVertical: theme.space.xs,
+              paddingHorizontal: theme.space.sm,
+              borderRadius: theme.borderRadius.sm * 1.25,
+              backgroundColor:
+                difficultyColor(props.difficulty).textColor + '18',
+            }}
+          >
+            <Text
+              style={{
+                color: difficultyColor(props.difficulty).textColor,
+                fontSize: theme.fontSize.xs,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {theme.i18n.t(`common.${props.difficulty}`)}
             </Text>
           </View>
         </View>
 
-        <Text
-          style={{
-            color: '#25C9FF',
-            fontSize: 24,
-            fontWeight: '700',
-          }}
-        >
-          ⚡ +{rewardPoints}
-        </Text>
+        <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+          <Feather name='zap' size={theme.fontSize.lg} color={theme.isDark ? theme.color.info : theme.color.accent} />
+          <Text
+            style={{
+              color: theme.isDark ? theme.color.info : theme.color.accent,
+              fontSize: theme.fontSize.xl,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.number,
+            }}
+          >
+            +{props.epReward}
+          </Text>
+        </View>
       </View>
-      <Text
-        style={{
-          color: '#FFFFFF',
-          fontSize: 24,
-          fontWeight: '700',
-          marginBottom: 16,
-        }}
-      >
-        {title}
-      </Text>
 
       <View
         style={{
+          gap: theme.space.sm,
           flexDirection: 'row',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: 18,
+        }}
+      >
+        <View style={{ gap: theme.space.sm, flexDirection: 'column', justifyContent: 'flex-start' }}>
+          <Text
+            style={{
+              flexShrink: 1,
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.regular,
+            }}
+            numberOfLines={2}
+          >
+            {props.title}
+          </Text>
+
+          {props.timeLeft && (
+            <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+              <Feather name='clock' size={theme.fontSize.sm} color={theme.color.warning} />
+              <Text
+                style={{
+                  color: theme.color.warning,
+                  fontSize: theme.fontSize.sm,
+                  fontWeight: theme.fontWeight.medium,
+                  fontFamily: theme.fontFamily.light,
+                }}
+              >
+                {formattedTimeLeft} {theme.i18n.t('contests.time_left')}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs * 1.25, fontFamily: theme.fontFamily.regular }}>
+          {theme.i18n.t('contests.ep_reward')}
+        </Text>
+      </View>
+
+      <View
+        style={{
+          gap: theme.space.sm,
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          marginVertical: theme.space.xs,
         }}
       >
         <View
           style={{
             flex: 1,
-            backgroundColor: '#10244A',
-            paddingVertical: 10,
-            borderRadius: 10,
-            marginRight: 6,
+            gap: theme.space.xs * 1.25,
             flexDirection: 'row',
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'flex-start',
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.sm,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor: theme.color.surface,
+          }}
+        >
+          <Feather name='file-text' size={theme.space.md * 0.9} color={theme.color.textMuted} />
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm * 1.1,
+              fontWeight: theme.fontWeight.medium,
+              fontFamily: theme.fontFamily.number,
+            }}
+          >
+            {props.questionsCount} {theme.i18n.t('contests.questions')}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            gap: theme.space.xs * 1.25,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.sm,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor: theme.color.surface,
+          }}
+        >
+          <Feather name='clock' size={theme.space.md * 0.9} color={theme.color.textMuted} />
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm * 1.1,
+              fontWeight: theme.fontWeight.medium,
+              fontFamily: theme.fontFamily.number,
+            }}
+          >
+            {theme.i18n.t('contests.minute', { mins: props.duration })}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            gap: theme.space.xs * 1.25,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.sm,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor: theme.color.surface,
+          }}
+        >
+          <Feather name='users' size={theme.space.md * 0.9} color={theme.color.textMuted} />
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm * 1.1,
+              fontWeight: theme.fontWeight.medium,
+              fontFamily: theme.fontFamily.number,
+            }}
+          >
+            {props.participantsCount.toLocaleString()}
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        onPress={props.onPress}
+        activeOpacity={0.85}
+        style={{ overflow: 'hidden', borderRadius: theme.borderRadius.lg }}
+      >
+        <LinearGradient
+          colors={
+            theme.isDark
+              ? ['#744fca', '#612fb8', '#451691']
+              : ['#8d72dd', '#7951d6', '#5924af']
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            gap: theme.space.xs,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: theme.space.md * 0.8,
+            borderRadius: theme.borderRadius.lg,
           }}
         >
           <MaterialCommunityIcons
-            name="file-document-outline"
-            size={16}
-            color="#8396BF"
+            name='crown-outline'
+            size={theme.fontSize.xxl}
+            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
           />
           <Text
             style={{
-              color: '#8396BF',
-              marginLeft: 6,
+              letterSpacing: 0.3,
+              color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+              fontSize: theme.fontSize.md * 1.05,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.regular,
             }}
           >
-            {questionCount} Qs
+            {theme.i18n.t('common.unlock_and_start')}
           </Text>
-        </View>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: '#10244A',
-            paddingVertical: 10,
-            borderRadius: 10,
-            marginHorizontal: 3,
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Ionicons
-            name="time-outline"
-            size={16}
-            color="#8396BF"
-          />
-          <Text
-            style={{
-              color: '#8396BF',
-              marginLeft: 6,
-            }}
-          >
-            {durationMinutes}m
-          </Text>
-        </View>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: '#10244A',
-            paddingVertical: 10,
-            borderRadius: 10,
-            marginLeft: 6,
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Ionicons
-            name="people-outline"
-            size={16}
-            color="#8396BF"
-          />
-          <Text
-            style={{
-              color: '#8396BF',
-              marginLeft: 6,
-            }}
-          >
-            {participants.toLocaleString()}
-          </Text>
-        </View>
-      </View>
-      <TouchableOpacity
-        activeOpacity={0.9}
-        style={{
-          borderRadius: 14,
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexDirection: 'row',
-          backgroundColor: '#7C3AED',
-          paddingVertical: 16,
-        }}
-      >
-        <MaterialCommunityIcons
-          name="crown-outline"
-          size={18}
-          color="#FFF"
-        />
-        <Text
-          style={{
-            color: '#FFF',
-            fontSize: 18,
-            fontWeight: '700',
-            marginHorizontal: 8,
-          }}
-        >
-          {buttonLabel}
-        </Text>
 
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color="#FFF"
-        />
+          <Feather
+            name='chevron-right'
+            size={theme.fontSize.lg}
+            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+          />
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
