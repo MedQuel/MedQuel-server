@@ -1,101 +1,123 @@
-import React from 'react';
 import { View, Text } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Feather, Octicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export default function StatsOverviewCard() {
+import { useTheme } from '../theme/ThemeContext';
+
+
+type StatsOverviewCardProps = {
+  rank: number;
+  accuracy: number;
+  quizzesTaken: number;
+  earnedPoints: number;
+};
+
+export function StatsOverviewCard({ rank, accuracy, quizzesTaken, earnedPoints }: StatsOverviewCardProps) {
+  const { theme } = useTheme();
+
+  const earnedPointsFormatted = earnedPoints >= 1000
+    ? (earnedPoints / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+    : earnedPoints.toString();
+
   const stats = [
     {
-      icon: 'star-outline',
-      value: '#127',
-      label: 'Rank',
-      color: '#F59E0B',
+      id: 'rank',
+      label: theme.i18n.t('common.rank'),
+      value: `#${rank}`,
+      color: theme.color.warning,
+      icon: (
+        <Feather
+          name='star'
+          size={theme.space.md}
+          color={theme.color.warning}
+        />
+      ),
     },
     {
-      icon: 'pulse-outline',
-      value: '87%',
-      label: 'Accuracy',
-      color: '#22C55E',
+      id: 'accuracy',
+      label: theme.i18n.t('common.accuracy'),
+      value: `${accuracy}%`,
+      color: theme.color.success,
+      icon: (
+        <Octicons
+          name='pulse'
+          size={theme.space.md}
+          color={theme.color.success}
+        />
+      ),
     },
     {
-      icon: 'bulb-outline',
-      value: '246',
-      label: 'Quizzes',
-      color: '#4F7CFF',
+      id: 'quizzes',
+      label: theme.i18n.t('common.quizzes'),
+      value: `${quizzesTaken}`,
+      color: theme.color.accent,
+      icon: (
+        <MaterialCommunityIcons
+          name='brain'
+          size={theme.space.md}
+          color={theme.color.accent}
+        />
+      ),
     },
     {
-      icon: 'flash-outline',
-      value: '2.8K',
-      label: 'EP Points',
-      color: '#4F7CFF',
+      id: 'points',
+      label: theme.i18n.t('common.ep_points'),
+      value: `${earnedPointsFormatted}`,
+      color: theme.isDark ? theme.color.info : theme.color.accent,
+      icon: (
+        <Feather
+          name='zap'
+          size={theme.space.md}
+          color={theme.isDark ? theme.color.info : theme.color.accent}
+        />
+      ),
     },
   ];
+
+
   return (
-    <View
-      style={{
-        paddingHorizontal: 8,
-        paddingTop: 8,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: '600',
-          color: '#1F2937',
-          marginBottom: 10,
-        }}
-      >
-        Stats Overview
-      </Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-        }}
-      >
-        {stats.map((item, index) => (
-          <View
-            key={index}
+    <View style={{ gap: theme.space.sm * 1.5, flexDirection: 'row' }}>
+      {stats.map((stat) => (
+        <View
+          key={stat.id}
+          style={{
+            flex: 1,
+            gap: theme.space.xs * 0.5,
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: theme.space.md,
+            paddingHorizontal: theme.space.xs,
+            borderWidth: 1.5,
+            borderRadius: theme.borderRadius.xl,
+            borderColor: theme.color.border,
+            backgroundColor: theme.color.card,
+            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
+          }}
+        >
+          <View>{stat.icon}</View>
+          <Text
             style={{
-              flex: 1,
-              marginHorizontal: 6,
-              borderWidth: 1,
-              borderColor: '#D9E4FF',
-              borderRadius: 14,
-              backgroundColor: '#F8FAFF',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 16,
+              color: stat.color,
+              textAlign: 'center',
+              fontSize: theme.fontSize.lg * 1.1,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.number,
             }}
           >
-            <Ionicons
-              name={item.icon as any}
-              size={15}
-              color={item.color}
-            />
-            <Text
-              style={{
-                fontSize: 15,
-                fontWeight: '700',
-                marginTop: 4,
-                lineHeight: 18,
-                color: item.color,
-              }}
-            >
-              {item.value}
-            </Text>
-            <Text
-              style={{
-                marginTop: 2,
-                fontSize: 11,
-                color: '#94A3B8',
-                lineHeight: 13,
-              }}
-            >
-              {item.label}
-            </Text>
-          </View>
-        ))}
-      </View>
+            {stat.value}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              textAlign: 'center',
+              fontSize: theme.fontSize.xs,
+              fontFamily: theme.fontFamily.light,
+            }}
+          >
+            {stat.label}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
