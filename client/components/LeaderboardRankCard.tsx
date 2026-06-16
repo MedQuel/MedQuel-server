@@ -1,111 +1,127 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeContext';
 
+
 type LeaderboardRankCardProps = {
   rank: number;
-  initials: string;
   name: string;
   specialty: string;
   points: number;
-  color: string;
 };
-export default function LeaderboardRankCard({
+
+export function LeaderboardRankCard({
   rank,
-  initials,
   name,
   specialty,
   points,
-  color,
 }: LeaderboardRankCardProps) {
   const { theme } = useTheme();
+
+  const getInitials = (userName: string) => {
+    return userName
+      .trim()
+      .split(' ')
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.rank}>#{rank}</Text>
-      <LinearGradient
-        colors={[`${color}40`, `${color}10`]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[
-          styles.avatar,
-          {
-            borderColor: color,
-          },
-        ]}
-      >
-        <Text style={[styles.avatarText, { color }]}>{initials}</Text>
-      </LinearGradient>
-      <View style={styles.info}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.specialty}>{specialty}</Text>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: theme.space.sm * 1.5,
+        paddingHorizontal: theme.space.md,
+        borderWidth: 1.5,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.card,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text
+          style={{
+            color: theme.color.textMuted,
+            fontSize: theme.fontSize.md,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.number,
+          }}
+        >
+          #{rank}
+        </Text>
+
+        <View
+          style={{
+            gap: theme.space.sm * 1.25,
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginLeft: theme.space.sm * 1.5,
+          }}
+        >
+          <LinearGradient
+            colors={[`${theme.color.accent}40`, `${theme.color.accent}10`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: theme.space.xl * 1.25,
+              height: theme.space.xl * 1.25,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 2,
+              borderColor: theme.color.accent + '88',
+              borderRadius: theme.borderRadius.full,
+            }}
+          >
+            <Text
+              style={{
+                color: theme.color.accent,
+                fontSize: theme.fontSize.md,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {getInitials(name)}
+            </Text>
+          </LinearGradient>
+
+          <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', justifyContent: 'flex-start' }}>
+            <Text
+              style={{
+                color: theme.color.textPrimary,
+                fontSize: theme.fontSize.md,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {name}
+            </Text>
+            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs * 1.1, fontFamily: theme.fontFamily.light }}>
+              {specialty}
+            </Text>
+          </View>
+        </View>
       </View>
-      <View style={styles.pointsContainer}>
-        <Text style={styles.points}>
+
+      <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', alignItems: 'flex-end' }}>
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontSize: theme.fontSize.md,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.number,
+          }}
+        >
           {points.toLocaleString()}
         </Text>
-        <Text style={styles.ep}>{theme.i18n.t('components.LeaderboardRankCard.ep')}</Text>
+        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs * 1.1, fontFamily: theme.fontFamily.light }}>
+          {theme.i18n.t('common.ep')}
+        </Text>
       </View>
     </View>
   );
 }
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D9E5FF',
-    borderRadius: 16,
-    padding: 14,
-    marginVertical: 6,
-    width: '100%',
-    maxWidth: 420,
-  },
-  rank: {
-    width: 35,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#7A7A7A',
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  specialty: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  pointsContainer: {
-    alignItems: 'flex-end',
-  },
-  points: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  ep: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-});
