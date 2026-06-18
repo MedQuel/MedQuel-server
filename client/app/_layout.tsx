@@ -13,6 +13,7 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular: require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
     PlusJakartaSans_200Light: require('../assets/fonts/PlusJakartaSans-Light.ttf'),
+    PlusJakartaSans_700Bold: require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
     SpaceGrotesk_400Regular: require('../assets/fonts/SpaceGrotesk-Regular.ttf'),
   });
   if (!fontsLoaded) return null;
