@@ -1,6 +1,7 @@
 export const fontFamily = {
   regular: 'PlusJakartaSans_400Regular',
-  light: 'PlusJakartaSans_400Regular',
+  light: 'PlusJakartaSans_200Light',
+  bold: 'PlusJakartaSans_700Bold',
   number: 'SpaceGrotesk_400Regular',
 };
 
