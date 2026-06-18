@@ -2,23 +2,37 @@
   "common": {
     "app_name": "MedQuel",
     "brand_name": "MedQuel",
-    "you": "You",
     "loading": "Loading...",
+    "you": "You",
+    "lv": "Lv",
+    "level": "Level",
     "free": "Free",
+    "pro": "PRO",
     "premium": "Premium",
     "continue": "Continue",
     "done": "Done",
     "close": "Close",
     "clear": "Clear",
+    "live": "LIVE",
     "select": "Select",
-    "retry": "Retry",
     "save": "Save",
+    "retry": "Retry",
     "error": "Error",
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard",
-    "live": "LIVE",
-    "start_contest": "Start Contest"
+    "rank": "Rank",
+    "start": "Start",
+    "start_contest": "Start Contest",
+    "quizzes": "Quizzes",
+    "questions": "questions",
+    "accuracy": "Accuracy",
+    "ep": "EP",
+    "ep_points": "EP Points",
+    "min": "min",
+    "hour": "hour",
+    "this_week": "this week",
+    "unlock_and_start": "Unlock & Start"
   },
 
   "splash": {
@@ -26,12 +40,15 @@
   },
 
   "home": {
-    "title": "Home"
+    "title": "Home",
+    "daily_challenge": "Daily Challenge",
+    "ep_to_next_level": "{{remainingEP}} EP to next level"
   },
 
   "leaderboard": {},
 
   "contests": {
+    "search_contests": "Search contests...",
     "ep_reward": "EP Reward",
     "questions": "Qs",
     "time_left": "left",
