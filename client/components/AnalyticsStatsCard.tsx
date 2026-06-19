@@ -17,6 +17,7 @@ type StatItem = {
   label: string;
   value: string;
   color: string;
+  valueColor: string;
   background: string;
   border: string;
   shadowColor: string;
@@ -45,6 +46,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
       label: theme.i18n.t('components.AnalyticsStatsCard.accuracy'),
       value: `${accuracy}%`,
       color: theme.color.accent,
+      valueColor: theme.color.textPrimary,
       background: theme.color.card,
       border: theme.color.border,
       shadowColor: theme.color.accent,
@@ -54,8 +56,9 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
       label: theme.i18n.t('components.AnalyticsStatsCard.streak'),
       value: String(streak),
       color: theme.color.error,
-      background: withAlpha(theme.color.success, theme.isDark ? 0.08 : 0.03),
-      border: withAlpha(theme.color.success, theme.isDark ? 0.22 : 0.16),
+      valueColor: theme.color.success,
+      background: withAlpha(theme.color.success, theme.isDark ? 0.09 : 0.12),
+      border: withAlpha(theme.color.success, theme.isDark ? 0.24 : 0.30),
       shadowColor: theme.color.success,
     },
     {
@@ -63,6 +66,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
       label: theme.i18n.t('components.AnalyticsStatsCard.questions'),
       value: String(questions),
       color: theme.color.success,
+      valueColor: theme.color.textPrimary,
       background: theme.color.card,
       border: theme.color.border,
       shadowColor: theme.color.success,
@@ -99,7 +103,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
           <Text
             style={{
               marginTop: theme.space.sm,
-              color: theme.color.textPrimary,
+              color: item.valueColor,
               fontSize: theme.fontSize.xxl,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
