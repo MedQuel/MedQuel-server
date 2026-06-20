@@ -35,7 +35,9 @@ yarn-error.*
 nginx-dev.conf
 
 # local env files
+.env
 .env*.local
+config/serviceAccountKey.json
 
 # typescript
 *.tsbuildinfo
@@ -47,4 +49,3 @@ modules/test.txt
 .playwright-mcp/
 *.log
 .firebase/**
-.env
