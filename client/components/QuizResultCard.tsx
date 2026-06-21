@@ -7,27 +7,21 @@ import { useTheme } from '../theme/ThemeContext';
 
 type QuizResultCardProps = {
   scorePercent: number;
-  size?: number;
-  strokeWidth?: number;
-  passThreshold?: number;
 };
+
+const SIZE = 160;
+const STROKE_WIDTH = 10;
 
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
 
-export function QuizResultCard({
-  scorePercent,
-  size = 160,
-  strokeWidth = 10,
-  passThreshold = 40,
-}: QuizResultCardProps) {
+export function QuizResultCard({ scorePercent }: QuizResultCardProps) {
   const { theme } = useTheme();
 
   const clamped = Math.max(0, Math.min(100, scorePercent));
-  const passed = clamped >= passThreshold;
 
-  const radius = (size - strokeWidth) / 2;
+  const radius = (SIZE - STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
 
   const [animatedPercent, setAnimatedPercent] = useState(0);
@@ -56,38 +50,38 @@ export function QuizResultCard({
   }, [clamped]);
 
   const strokeDashoffset = circumference - (animatedPercent / 100) * circumference;
-  const progressColor = passed ? theme.color.success : theme.color.error;
-  const trackColor = theme.color.border;
+  const progressColor = theme.isDark ? theme.color.info : '#FFFFFF';
+  const trackColor = theme.isDark ? theme.color.surface : 'rgba(255,255,255,0.25)';
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+    <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
         <Circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={SIZE / 2}
+          cy={SIZE / 2}
           r={radius}
           stroke={trackColor}
-          strokeWidth={strokeWidth}
+          strokeWidth={STROKE_WIDTH}
           fill="transparent"
         />
         <Circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={SIZE / 2}
+          cy={SIZE / 2}
           r={radius}
           stroke={progressColor}
-          strokeWidth={strokeWidth}
+          strokeWidth={STROKE_WIDTH}
           fill="transparent"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
         />
       </Svg>
 
       <View style={{ alignItems: 'center' }}>
         <Text
           style={{
-            color: progressColor,
+            color: '#FFFFFF',
             fontSize: theme.fontSize.xxxl,
             fontWeight: theme.fontWeight.bold as any,
             fontFamily: theme.fontFamily.number,
@@ -97,7 +91,7 @@ export function QuizResultCard({
         </Text>
         <Text
           style={{
-            color: theme.color.textSecondary,
+            color: theme.isDark ? theme.color.textSecondary : 'rgba(255,255,255,0.75)',
             fontSize: theme.fontSize.sm,
             fontFamily: theme.fontFamily.light,
           }}
