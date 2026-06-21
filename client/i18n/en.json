@@ -109,58 +109,33 @@
       "min": "min",
       "ep_reward": "EP Reward",
       "ends_in": "Ends in",
-      "join_now": "Join Now"
+      "join_now": "Join Now",
+      "difficulty_easy": "Easy",
+      "difficulty_medium": "Medium",
+      "difficulty_hard": "Hard"
     },
-    "AchievementProgressCard": {
-      "progress": "PROGRESS",
-      "badges": "badges",
-      "gold": "Gold",
-      "silver": "Silver",
-      "bronze": "Bronze",
-      "ep_reward": "EP Reward"
+    "ContestDetailCard": {
+      "by": "by ",
+      "qs": "Qs",
+      "min": "min",
+      "ep": "EP",
+      "pass_percent": "pass",
+      "start_contest": "Start Contest"
     },
-    "ActivityHeatmapCard": {
-      "title": "Activity Heatmap",
-      "less": "Less",
-      "more": "More"
+    "ContestDifficultyCard": {
+      "label": "Difficulty",
+      "veryEasy": "Very Easy",
+      "easy": "Easy",
+      "intermediate": "Intermediate",
+      "hard": "Hard",
+      "expert": "Expert"
     },
-    "AnalyticsKeyStatItems": {
-      "title": "Key Statistics",
-      "total_correct": "Total Correct",
-      "avg_score": "Avg Score",
-      "best_subject": "Best Subject",
-      "study_hours": "Study Hours",
-      "longest_streak": "Longest Streak",
-      "weak_subject": "Weak Subject"
+    "QuizProgressBar": {
+      "question": "Question"
     },
-    "AnalyticsStatsCard": {
-      "accuracy": "Accuracy",
-      "streak": "Streak",
-      "questions": "Questions"
-    },
-    "AttemptHistoryCard": {
-      "questions": "Qs",
-      "correct": "Correct",
-      "time": "Time",
-      "result": "Result",
-      "passed": "Passed",
-      "failed": "Failed"
-    },
-    "BadgeProgressCard": {
-      "title": "In Progress"
-    },
-    "EarnedBadgeCard": {
-      "title": "Earned Badges",
-      "view_all": "View All",
-      "summary": "{{count}} earned · {{newCount}} new",
-      "new": "New",
-      "earned": "Earned",
-      "rarity": {
-        "legendary": "Legendary",
-        "epic": "Epic",
-        "rare": "Rare",
-        "common": "Common"
-      }
+    "QuizResultCard": {
+      "score": "Score",
+      "earned": "Earned"
     }
   }
 }
