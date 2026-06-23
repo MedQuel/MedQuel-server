@@ -1,0 +1,27 @@
+.git
+.gitignore
+.gitmodules
+.gcloudignore
+
+# Monorepo siblings: never upload these to Cloud Build
+client/
+
+# Backend build artifacts / secrets
+node_modules/
+dist/
+.env
+config/serviceAccountKey.json
+*.md
+npm-debug.log
+.vscode/
+.github/
+
+# Firebase CLI artifacts, irrelevant to gcloud run deploy.
+firebase.json
+firestore.rules
+firestore.indexes.json
+firebase-debug.log
+.firebase/
+
+# Throwaway dev tool, not part of the deployed backend
+get-token-script/
