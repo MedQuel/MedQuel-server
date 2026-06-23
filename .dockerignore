@@ -1,0 +1,22 @@
+node_modules
+dist
+.env
+config/serviceAccountKey.json
+.git
+.gitignore
+*.md
+npm-debug.log
+
+# Monorepo
+# This Dockerfile only builds the backend.
+client/
+
+# Firebase CLI artifacts - not needed inside the Docker build.
+firebase.json
+firestore.rules
+firestore.indexes.json
+firebase-debug.log
+.firebase/
+
+# Throwaway dev tool, not part of the deployed backend
+get-token-script/
