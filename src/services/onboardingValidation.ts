@@ -10,6 +10,7 @@ export const VALID_TARGET_EXAMS = [
   'PLAB',
   'MRCP',
   'FMGE',
+  'Clinical Mastery',
 ] as const;
 export type TargetExam = (typeof VALID_TARGET_EXAMS)[number];
 
@@ -18,7 +19,6 @@ export const VALID_STUDY_LEVELS = [
   'Postgraduate',
   'Practitioner',
   'Nursing / Allied',
-  'Clinical Mastery',
 ] as const;
 export type StudyLevel = (typeof VALID_STUDY_LEVELS)[number];
 
@@ -27,7 +27,6 @@ const DESCRIBES_YOU_TO_STUDY_LEVEL: Record<string, StudyLevel> = {
   Postgraduate: 'Postgraduate',
   'Practicing Doctor': 'Practitioner',
   'Nursing / Allied': 'Nursing / Allied',
-  'Clinical Mastery': 'Clinical Mastery',
 };
 const VALID_YEAR_OPTIONS = [
   'Year 1',
