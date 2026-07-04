@@ -6,7 +6,7 @@ import {
   assertNotAlreadyOnboarded,
   type CompleteOnboardingInput,
 } from '../../services/onboardingValidation.js';
-import type { GraphQLContext } from '../../index.js';
+import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 
 
@@ -64,9 +64,7 @@ export async function completeOnboardingResolver(
   db: Firestore
 ): Promise<{ uid: string; displayName: string; targetExam: string }> {
   // Auth check — must have a valid, decoded Firebase token.
-  if (!context.user) {
-    throw new AuthenticationError();
-  }
+  if (!context.user) throw new AuthenticationError();
 
   const uid = context.user.uid;
   const email = context.user.email ?? '';
