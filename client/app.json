@@ -1,22 +1,19 @@
 {
   "expo": {
     "scheme": "medquel",
-    "name": "medquel-client",
+    "name": "MedQuel - Gamified Medical Learning Quiz App",
     "slug": "medquel",
     "platforms": ["android", "web"],
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icons/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/icons/android-icon-foreground.png",
+        "backgroundImage": "./assets/icons/android-icon-background.png",
+        "monochromeImage": "./assets/icons/android-icon-monochrome.png",
+        "backgroundColor": "#1D6FE0"
       },
       "predictiveBackGestureEnabled": false
     },
