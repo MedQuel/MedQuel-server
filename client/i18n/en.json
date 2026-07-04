@@ -36,8 +36,20 @@
   },
 
   "splash": {
-    "login": "Log In"
+    "brandPrefix": "Med",
+    "brandSuffix": "Quel",
+    "tagline": "Level up · Learn · Compete",
+    "pillPractice": "MCQ Practice",
+    "pillContests": "Contests",
+    "pillLeaderboards": "Leaderboards",
+    "statStudents": "Students",
+    "statQuestions": "Questions",
+    "statRating": "Rating"
   },
+
+  "auth": {},
+
+  "onboarding": {},
 
   "home": {
     "title": "Home",
