@@ -49,3 +49,6 @@ modules/test.txt
 .playwright-mcp/
 *.log
 .firebase/**
+
+# dev tools
+get-token-script/
