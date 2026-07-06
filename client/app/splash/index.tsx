@@ -2,8 +2,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Zap } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Defs, Pattern, Line, Rect } from 'react-native-svg';
 import { View, Text, Image, Dimensions, Animated, Easing } from 'react-native';
+import Svg, { Defs, Pattern, Line, Rect, RadialGradient, Stop, Circle } from 'react-native-svg';
 
 import { useTheme } from '../../theme/ThemeContext';
 import { useAppContext } from '../../common/context/AppContext';
@@ -11,6 +11,9 @@ import { useBottomBar } from '../../common/context/useBottomBar';
 
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const GLOW_COLOR = '#2563EB';
+const GLOW_SIZE = 520;
+const GLOW_CENTER_Y = SCREEN_H*0.3 + 170;
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -49,7 +52,7 @@ export default function SplashScreen() {
     } else if (authStatus === 'needsOnboarding') {
       router.replace('/onboarding');
     } else {
-      router.replace('/auth/login'); // 'unauthenticated'
+      router.replace('/auth');
     }
   }, [authStatus, router]);
 
@@ -61,6 +64,26 @@ export default function SplashScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <Svg
+        width={GLOW_SIZE}
+        height={GLOW_SIZE}
+        pointerEvents='none'
+        style={{
+          position: 'absolute',
+          top: GLOW_CENTER_Y - GLOW_SIZE/2,
+          left: SCREEN_W/2 - GLOW_SIZE/2,
+        }}
+      >
+        <Defs>
+          <RadialGradient id='glow' cx='50%' cy='50%' r='50%'>
+            <Stop offset='0%' stopColor={GLOW_COLOR} stopOpacity={0.32} />
+            <Stop offset='60%' stopColor={GLOW_COLOR} stopOpacity={0.12} />
+            <Stop offset='100%' stopColor={GLOW_COLOR} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={GLOW_SIZE/2} cy={GLOW_SIZE/2} r={GLOW_SIZE/2} fill='url(#glow)' />
+      </Svg>
+
       <Svg
         width={SCREEN_W}
         height={SCREEN_H}
@@ -105,7 +128,7 @@ export default function SplashScreen() {
         style={{
           position: 'absolute',
           top: SCREEN_H * 0.3,
-          left: SCREEN_W / 2 - 170,
+          left: SCREEN_W/2 - 170,
           width: 340,
           height: 340,
           borderWidth: 1.25,
@@ -119,7 +142,7 @@ export default function SplashScreen() {
         style={{
           position: 'absolute',
           top: SCREEN_H * 0.3 + 45,
-          left: SCREEN_W / 2 - 125,
+          left: SCREEN_W/2 - 125,
           width: 250,
           height: 250,
           borderWidth: 1.15,
@@ -257,7 +280,7 @@ export default function SplashScreen() {
           {[
             { value: '25K+', label: theme.i18n.t('splash.statStudents') },
             { value: '10K+', label: theme.i18n.t('splash.statQuestions') },
-            { value: '4.9★', label: theme.i18n.t('splash.statRating') },
+            { value: '4.8★', label: theme.i18n.t('splash.statRating') },
           ].map((stat) => (
             <View key={stat.label} style={{ flex: 1, alignItems: 'center' }}>
               <Text
