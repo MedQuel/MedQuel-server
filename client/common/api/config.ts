@@ -36,6 +36,11 @@ export const config = {
   mockDelayMs: envNumber(process.env.EXPO_PUBLIC_MOCK_DELAY_MS, 450),
   logMockFallbacks: isDev,
 
+  google: {
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '',
+  },
+
   firebase: {
     apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
     authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
