@@ -47,7 +47,34 @@
     "statRating": "Rating"
   },
 
-  "auth": {},
+  "auth": {
+    "fields": {
+      "email": "Email",
+      "password": "Password"
+    },
+    "login": {
+      "welcomeBack": "Welcome Back, Doctor",
+      "title": "Sign In",
+      "subtitle": "Continue your learning journey",
+      "forgot": "Forgot?",
+      "rememberMe": "Remember me for 30 days",
+      "submit": "Sign In",
+      "or": "OR",
+      "google": "Continue with Google",
+      "newHere": "New here?",
+      "createAccount": "Create Account ⟶"
+    },
+    "signup": {},
+    "forgotPassword": {
+      "back": "Back",
+      "title": "Forgot Password?",
+      "subtitle": "Enter the email linked to your account and we'll send you a reset link.",
+      "submit": "Send Reset Link",
+      "sentTitle": "Check your inbox",
+      "sentBody": "If an account exists for that email, we've sent a link to reset your password.",
+      "backToSignIn": "← Back to Sign In"
+    }
+  },
 
   "onboarding": {},
 
