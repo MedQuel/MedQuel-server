@@ -1,30 +1,35 @@
-# Stage 1: Build
+# Builder: compile TypeScript -> dist/
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY tsconfig.json ./
-
+COPY package.json package-lock.json ./
 RUN npm ci
 
+COPY tsconfig.json ./
 COPY src ./src
 
 RUN npm run build
 
 
-# Stage 2: Production runtime
+# Runner: prod deps + Nginx sidecar
 FROM node:20-alpine AS runner
+
+RUN apk add --no-cache nginx bash
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 
-EXPOSE 4000
+RUN chmod +x /docker-entrypoint.sh
 
-CMD ["node", "dist/index.js"]
+EXPOSE 8080
+
+CMD ["/docker-entrypoint.sh"]
