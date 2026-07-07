@@ -45,9 +45,9 @@ import type {
 
 
 const IMPLEMENTED_OPERATIONS = {
-  'user.getMe': false, // ships when the `me` resolver lands
+  'user.getMe': true,
   'user.completeOnboarding': true,
-  'user.updateProfile': false,
+  'user.updateProfile': true,
   'user.updateNotifPrefs': false,
   'user.updateQuizPrefs': false,
   'home.getHomeData': false,
