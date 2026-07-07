@@ -1,5 +1,9 @@
-import { Timestamp } from 'firebase-admin/firestore';
+import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+import {
+  type UpdateProfileInput,
+  validateUpdateProfileInput,
+} from '../../services/profileValidation.js';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
 
@@ -52,4 +56,32 @@ export async function meResolver( _parent: unknown, _args: unknown, context: Gra
   }
 
   return mapUserDoc(uid, doc.data()!);
+}
+
+export async function updateProfileResolver(
+  _parent: unknown,
+  args: { input: UpdateProfileInput },
+  context: GraphQLContext
+) {
+  if (!context.user) throw new AuthenticationError();
+
+  const uid = context.user.uid;
+  const userRef = context.db.collection('users').doc(uid);
+  const doc = await userRef.get();
+
+  if (!doc.exists) throw new NotOnboardedError();
+
+  const validated = validateUpdateProfileInput(args.input);
+
+  if (Object.keys(validated).length === 0) {
+    return mapUserDoc(uid, doc.data()!);
+  }
+
+  await userRef.update({
+    ...validated,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  const updatedDoc = await userRef.get();
+  return mapUserDoc(uid, updatedDoc.data()!);
 }
