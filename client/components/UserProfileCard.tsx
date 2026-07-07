@@ -23,10 +23,10 @@ export function UserProfileCard({
     <View
       style={{
         backgroundColor: isDark
-          ? theme.color.background
+          ? theme.color.card
           : theme.color.surface,
         paddingHorizontal: theme.space.sm - 2,
-        paddingVertical: theme.space.sm + 3,
+        paddingVertical: theme.space.sm +2,
         borderRadius: theme.borderRadius.lg + 2,
         flexDirection: "row",
         alignItems: "center",
@@ -70,6 +70,7 @@ export function UserProfileCard({
         <View
           style={{
             marginLeft: theme.space.md,
+            gap:theme.space.xs-2
           }}
         >
           <Text
@@ -135,16 +136,16 @@ export function UserProfileCard({
         <View
           style={{
             backgroundColor: isDark
-              ? theme.color.card
+              ? theme.color.premium +22
               : "#cfbaf3",
             borderRadius: theme.borderRadius.md,
-            paddingHorizontal: 6,
-            paddingVertical: 4,
+            paddingHorizontal: theme.space.md-5,
+            paddingVertical: theme.space.xs,
           }}
         >
           <MaterialCommunityIcons
             name="crown-outline"
-            size={18}
+            size={theme.space.md}
             color={theme.color.premium + "FF"}
           />
         </View>
