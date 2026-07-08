@@ -32,7 +32,6 @@ export function ContestCard(props: ContestCardProps) {
 
     if (!Number.isFinite(minutes)) return props.timeLeft;
     if (minutes > 60) return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes/60) })}`;
-    if (minutes === 0) return theme.i18n.t('contests.now');
 
     return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
   })();
