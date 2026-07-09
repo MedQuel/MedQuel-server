@@ -51,7 +51,9 @@
   "auth": {
     "fields": {
       "email": "Email",
-      "password": "Password"
+      "fullName": "Full Name",
+      "password": "Password",
+      "confirmPassword": "Confirm Password"
     },
     "login": {
       "welcomeBack": "Welcome Back, Doctor",
@@ -65,7 +67,18 @@
       "newHere": "New here?",
       "createAccount": "Create Account ⟶"
     },
-    "signup": {},
+    "signup": {
+      "subtitleBrand": "Join 25,000+ medical learners",
+      "title": "Create Account",
+      "subtitle": "Start your gamified learning journey",
+      "createAccount": "Create Account",
+      "termsPrefix": "I agree to the",
+      "termsOfService": "Terms of Service",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign In"
+    },
     "forgotPassword": {
       "back": "Back",
       "title": "Forgot Password?",
@@ -74,6 +87,14 @@
       "sentTitle": "Check your inbox",
       "sentBody": "If an account exists for that email, we've sent a link to reset your password.",
       "backToSignIn": "← Back to Sign In"
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "body": "We've sent a verification link to",
+      "checkVerified": "I've Verified, Check Now",
+      "resend": "Resend Email",
+      "resendIn": "Resend in",
+      "useDifferentEmail": "Use a different email"
     }
   },
 
