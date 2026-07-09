@@ -1,31 +1,34 @@
-import { View, Text, ScrollView } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "../../theme/ThemeContext";
-import { useBottomBar } from "../../common/context/useBottomBar";
-import { ProfileScreen } from "../../components/ProfileScreen";
-import { ProfileScreenBoxes } from "../../components/ProfileScreenBoxes";
-import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
-import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
-import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
+import { View, Text, ScrollView } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+import { useTheme } from '../../theme/ThemeContext';
+import { ProfileScreenHeader } from './profileScreenHeader';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import { PremiumUpsellCard } from '../../components/PremiumUpsellCard';
+import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
+import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
+import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard';
+
 
 export default function ChatScreen() {
   const { theme } = useTheme();
-  const level = '12';
-  useBottomBar(true, "profile");
+  useBottomBar(true, 'profile');
 
+  const level = '12';
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme.color.background }}
-    showsVerticalScrollIndicator={false}
-     contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}>
-      
-      <ProfileScreen />
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.color.background }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}
+    >
+      <ProfileScreenHeader />
 
       <View
         style={{
-          alignItems: "center",
-          marginTop: theme.space.xxl - 4,
           gap: theme.space.xs,
+          alignItems: 'center',
+          marginTop: theme.space.xxl - 4,
         }}
       >
         <Text
@@ -39,17 +42,17 @@ export default function ChatScreen() {
           {theme.i18n.t('components.ProfileCard.name')}
         </Text>
 
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <View
             style={{
-              backgroundColor: theme.color.card,
-              paddingHorizontal: theme.space.md,
+              alignItems: 'center',
+              justifyContent: 'center',
               paddingVertical: theme.space.xs - 7,
-              alignItems: "center",
+              paddingHorizontal: theme.space.md,
               borderWidth: 1,
               borderColor: theme.color.border,
-              justifyContent: "center",
               borderRadius: theme.borderRadius.md,
+              backgroundColor: theme.color.card,
             }}
           >
             <Text
@@ -65,83 +68,53 @@ export default function ChatScreen() {
 
           <View
             style={{
-              backgroundColor: theme.color.warning + "22",
-              paddingHorizontal: theme.space.sm + 1,
-              paddingVertical: theme.space.xs - 2,
-              borderWidth: 0.5,
-              borderColor: theme.color.warning + "22",
-              borderRadius: theme.borderRadius.md,
-              flexDirection: "row",
-              alignItems: "center",
               gap: 3,
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingVertical: theme.space.xs - 2,
+              paddingHorizontal: theme.space.sm + 1,
+              borderWidth: 0.5,
+              borderColor: theme.color.warning + '22',
+              borderRadius: theme.borderRadius.md,
+              backgroundColor: theme.color.warning + '22',
             }}
           >
             <Text style={{ fontSize: theme.space.sm }}>
               <MaterialCommunityIcons
-              name='star'
-              size={theme.space.md-5}
-              color={theme.color.warning}>
-                
-              </MaterialCommunityIcons>
+                name='star'
+                size={theme.space.md - 5}
+                color={theme.color.warning}
+              />
             </Text>
-            <Text
-              style={{
-                color: theme.color.warning,
-                fontSize: theme.fontSize.xs,
-              }}
-            >
-             {theme.i18n.t('components.ProfileCard.level', { level: level }) }12
+            <Text style={{ color: theme.color.warning, fontSize: theme.fontSize.xs }}>
+              {theme.i18n.t('components.ProfileCard.level', { level: level })}12
             </Text>
           </View>
         </View>
 
-        {/* Location & EP */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: theme.space.md,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: theme.space.sm - 2,
-            }}
-          >
+        <View style={{ gap: theme.space.md, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ gap: theme.space.sm - 2, flexDirection: 'row', alignItems: 'center' }}>
             <MaterialCommunityIcons
-              name="map-marker-outline"
+              name='map-marker-outline'
               size={theme.space.md - 2}
               color={theme.color.textMuted}
             />
-            <Text
-              style={{
-                color: theme.color.textMuted,
-                fontSize: theme.fontSize.xs,
-              }}
-            >
+            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
               {theme.i18n.t('components.ProfileCard.location')}
             </Text>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
+          <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
             <MaterialCommunityIcons
-              name="lightning-bolt-outline"
+              name='lightning-bolt-outline'
               size={theme.space.md - 2}
               color={theme.color.info}
             />
             <Text
               style={{
                 color: theme.color.info,
-                fontWeight: theme.fontWeight.bold,
                 fontSize: theme.fontSize.xs - 1.5,
+                fontWeight: theme.fontWeight.bold,
               }}
             >
               2,847 EP
@@ -149,36 +122,20 @@ export default function ChatScreen() {
           </View>
         </View>
       </View>
-      <View
-        style={{
-          marginTop: -10,
-          paddingHorizontal: theme.space.xs,
-        }}
-      >
-        <ProfileScreenBoxes />
+
+      <View style={{ marginTop: -theme.space.sm, paddingHorizontal: theme.space.xs }}>
+        <ProfileScreenStatsCard />
       </View>
-      <View
-        style={{
-          paddingHorizontal: theme.space.sm + 4,
-          marginTop: theme.space.sm + 2,
-        }}
-      >
-        <PremiumUpsellCard></PremiumUpsellCard>
+
+      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
+        <PremiumUpsellCard />
       </View>
-      <View
-        style={{
-          paddingHorizontal: theme.space.sm + 4,
-          marginTop: theme.space.sm + 2,
-        }}
-      >
-        <SubjectPerformanceCard></SubjectPerformanceCard>
+
+      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
+        <SubjectPerformanceCard />
       </View>
-      <View
-        style={{
-          paddingHorizontal: theme.space.sm + 4,
-          marginTop: theme.space.sm + 2,
-        }}
-      >
+
+      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
         <AttemptHistoryItemCard />
       </View>
     </ScrollView>
