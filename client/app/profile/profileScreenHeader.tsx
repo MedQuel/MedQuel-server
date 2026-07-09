@@ -19,7 +19,7 @@ export function ProfileScreenHeader() {
       />
 
       <TouchableOpacity
-        onPress={() => router.push('./settings/SettingPage')}
+        onPress={() => router.push('/profile/settingsScreen')}
         style={{
           position: 'absolute',
           top: theme.space.md,
