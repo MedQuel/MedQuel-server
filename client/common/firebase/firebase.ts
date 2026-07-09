@@ -3,14 +3,16 @@
 
 import {
   getAuth,
+  updateProfile,
   initializeAuth,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithCredential,
   type User as FirebaseUser,
 } from 'firebase/auth';
 import { Platform } from 'react-native';
@@ -54,13 +56,23 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return credential.user;
 }
 
-export async function signUpWithEmail(email: string, password: string): Promise<FirebaseUser> {
+export async function signUpWithEmail(email: string, password: string, displayName: string): Promise<FirebaseUser> {
   const credential = await createUserWithEmailAndPassword(auth, email, password);
+  await updateProfile(credential.user, { displayName });
+
   return credential.user;
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email);
+}
+export async function sendVerificationEmail(): Promise<void> {
+  if (!auth.currentUser) throw new Error('No signed-in user to verify.');
+  // TODO: same ActionCodeSettings question as sendPasswordReset above —
+  // once we have the confirmed domain/Android config, this should send a
+  // deep link into /auth/action instead of Firebase's default confirmation
+  // page, so tapping the email link opens the app directly.
+  await sendEmailVerification(auth.currentUser);
 }
 
 // -----> Google <-----
