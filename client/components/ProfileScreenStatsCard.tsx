@@ -1,26 +1,26 @@
-import React from "react";
-import { View, Text } from "react-native";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { View, Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { useTheme } from '../theme/ThemeContext';
 
+
 const stats = [
-  { label: "Level",    value: "12",   color: "#F59E0B", icon: "star" },
-  { label: "Rank",     value: "#127", color: "#3B82F6", icon: "trending-up"},
-  { label: "Streak",   value: "24",   color: "#EF4444", icon: "fire" },
-  { label: "Accuracy", value: "87%",  color: "#22C55E", icon: "bullseye" },
+  { label: 'Level', value: '12', color: '#F59E0B', icon: 'star' },
+  { label: 'Rank', value: '#127', color: '#3B82F6', icon: 'trending-up' },
+  { label: 'Streak', value: '24', color: '#EF4444', icon: 'fire' },
+  { label: 'Accuracy', value: '87%', color: '#22C55E', icon: 'bullseye' },
 ];
 
 export function ProfileScreenBoxes() {
   const { theme } = useTheme();
-  const {isDark} = theme
 
   return (
     <View
       style={{
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingHorizontal: theme.space.md,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         marginTop: theme.space.lg,
+        paddingHorizontal: theme.space.md,
       }}
     >
       {stats.map((item, index) => (
@@ -28,43 +28,38 @@ export function ProfileScreenBoxes() {
           key={index}
           style={{
             flex: 1,
-            backgroundColor:isDark? theme.color.card:theme.color.card,
-            borderRadius: theme.borderRadius.lg,
+            alignItems: 'center',
             paddingVertical: theme.space.sm + 2,
-            alignItems: "center",
             marginHorizontal: theme.space.xs,
-            borderWidth: 1,
+            borderWidth: 1.5,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.isDark ? theme.color.card : theme.color.card,
           }}
         >
-         
-          
-            <MaterialCommunityIcons
-              name={item.icon}
-              size={theme.space.md-3}
-              color={item.color}
-            />
-          
+          <MaterialCommunityIcons
+            name={item.icon as any}
+            size={theme.space.md - 3}
+            color={item.color}
+          />
 
-          {/* Value */}
           <Text
             style={{
+              color: item.color,
               fontSize: theme.fontSize.sm,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.bold,
-              color: item.color,
             }}
           >
             {item.value}
           </Text>
 
-          {/* Label */}
           <Text
             style={{
-              fontSize: theme.fontSize.xs-2,
               color: theme.color.textMuted,
+              fontSize: theme.fontSize.xs - 2,
               fontFamily: theme.fontFamily.regular,
-              marginTop: 2
+              marginTop: theme.space.xs * 0.5,
             }}
           >
             {item.label}
