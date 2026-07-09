@@ -11,7 +11,7 @@ const stats = [
   { label: 'Accuracy', value: '87%', color: '#22C55E', icon: 'bullseye' },
 ];
 
-export function ProfileScreenBoxes() {
+export function ProfileScreenStatsCard() {
   const { theme } = useTheme();
 
   return (
