@@ -13,6 +13,8 @@ export default function AuthLayout() {
       router.replace('/home');
     } else if (authStatus === 'needsOnboarding') {
       router.replace('/onboarding');
+    } else if (authStatus === 'needsEmailVerification') {
+      router.replace('/auth/verifyEmail');
     }
   }, [authStatus, router]);
 
