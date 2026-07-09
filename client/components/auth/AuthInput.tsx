@@ -15,6 +15,7 @@ interface AuthInputProps {
   rightElement?: ReactNode;
   rightLabel?: { text: string; onPress: () => void };
   error?: boolean;
+  success?: boolean;
   keyboardType?: 'default' | 'email-address';
   autoCapitalize?: 'none' | 'sentences' | 'words';
 }
@@ -29,10 +30,15 @@ export function AuthInput({
   rightElement,
   rightLabel,
   error,
+  success,
   keyboardType = 'default',
   autoCapitalize = 'none',
 }: AuthInputProps) {
   const { theme } = useTheme();
+
+  const borderColor = error
+    ? theme.color.error
+    : success ? theme.color.success : theme.color.border;
 
   return (
     <View style={{ marginBottom: theme.space.md }}>
@@ -68,8 +74,8 @@ export function AuthInput({
           flexDirection: 'row',
           alignItems: 'center',
           borderWidth: 1.5,
+          borderColor,
           borderRadius: theme.borderRadius.md,
-          borderColor: error ? theme.color.error : theme.color.border,
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.surface,
         }}
