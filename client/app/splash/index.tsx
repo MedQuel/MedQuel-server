@@ -287,7 +287,8 @@ export default function SplashScreen() {
                 style={{
                   color: theme.color.textPrimary,
                   fontSize: theme.fontSize.lg,
-                  fontFamily: theme.fontFamily.bold,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.number,
                 }}
               >
                 {stat.value}
@@ -295,7 +296,7 @@ export default function SplashScreen() {
               <Text
                 style={{
                   color: theme.color.textMuted,
-                  fontSize: theme.fontSize.xs,
+                  fontSize: theme.fontSize.xs * 1.2,
                   fontFamily: theme.fontFamily.regular,
                   marginTop: theme.space.xs * 0.5,
                 }}
