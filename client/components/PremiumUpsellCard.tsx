@@ -22,7 +22,7 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
             ? theme.color.background 
             : theme.color.background,
           borderRadius: theme.borderRadius.lg,
-          paddingVertical: theme.space.sm + 4,
+          paddingVertical: theme.space.sm + 3,
           paddingHorizontal: theme.space.lg,
           gap: theme.space.sm,
           shadowColor: theme.color.premium,

@@ -23,10 +23,11 @@ function getScoreColor(score: number, theme: any): string {
 
 function getScoreBg(score: number, theme: any): string {
   const { isDark } = theme;
-  if (score >= 80) return isDark ? theme.color.background : theme.color.border;
-  if (score >= 70) return isDark ? theme.color.background : theme.color.border;
-  return isDark ? theme.color.background : theme.color.border;
-}
+  if (score >= 80) return  theme.color.success + '22' ;
+  if (score >= 70) return  theme.color.warning + '22';
+  return  theme.color.error + '22' 
+  ;
+};
 
 function AttemptCard({ item }: { item: Attempt }) {
   const { theme } = useTheme();
@@ -140,7 +141,7 @@ export function AttemptHistoryItemCard() {
   const { isDark } = theme;
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <View>
       <View
         style={{
           backgroundColor: isDark
@@ -177,6 +178,6 @@ export function AttemptHistoryItemCard() {
           </View>
         ))}
       </View>
-    </ScrollView>
+    </View>
   );
 }
