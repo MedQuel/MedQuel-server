@@ -1,25 +1,25 @@
-import React from "react";
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { View, ScrollView, Text, Switch, TouchableOpacity } from "react-native";
-import ToggleSwitch from "toggle-switch-react-native";
-import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
+// import ToggleSwitch from "toggle-switch-react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, ScrollView, Text, TouchableOpacity } from "react-native";
+
 import { useTheme } from "../../theme/ThemeContext";
 import { UserProfileCard } from "../../components/UserProfileCard";
+import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
 
-export default function SettingPage() {
-  const { theme, toggleTheme } = useTheme();
-  const { isDark } = theme;
+export default function SettingsScreen() {
+  const [rankEnabled, setRankEnabled] = useState(true);
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(true);
-  const [rankEnabled, setRankEnabled] = useState(true);
+  const [contestEnabled, setContestEnabled] = useState(true);
   const [achievementEnabled, setAchievementEnabled] = useState(false);
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(true);
-  const [darkThemeEnabled, setDarkThemeEnabled] = useState(isDark);
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(false);
-  const [contestEnabled, setContestEnabled] = useState(true);
+
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
+  const { isDark } = theme;
 
   return (
     <ScrollView
@@ -454,7 +454,7 @@ export default function SettingPage() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
                 }}
               >
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   isOn={pushEnabled}
                   onColor="#3B82F6"
                   offColor={
@@ -462,7 +462,7 @@ export default function SettingPage() {
                   }
                   size="medium"
                   onToggle={setPushEnabled}
-                />
+                /> */}
               </View>
             </TouchableOpacity>
 
@@ -521,7 +521,7 @@ export default function SettingPage() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
                 }}
               >
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   isOn={emailEnabled}
                   onToggle={setEmailEnabled}
                   onColor="#3B82F6"
@@ -529,7 +529,7 @@ export default function SettingPage() {
                     isDark ? theme.color.border : theme.color.textMuted + 55
                   }
                   size="medium"
-                />
+                /> */}
               </View>
             </TouchableOpacity>
 
@@ -590,7 +590,7 @@ export default function SettingPage() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   isOn={rankEnabled}
                   onToggle={setRankEnabled}
                   onColor="#3B82F6"
@@ -604,7 +604,7 @@ export default function SettingPage() {
                   thumbOffStyle={{
                     backgroundColor: "#FFFFFF",
                   }}
-                />
+                /> */}
               </View>
             </TouchableOpacity>
 
@@ -665,7 +665,7 @@ export default function SettingPage() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   isOn={achievementEnabled}
                   onToggle={setAchievementEnabled}
                   onColor="#3B82F6"
@@ -683,7 +683,7 @@ export default function SettingPage() {
                       ? theme.color.textPrimary
                       : theme.color.surface,
                   }}
-                />
+                /> */}
               </View>
             </TouchableOpacity>
 
@@ -742,7 +742,7 @@ export default function SettingPage() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   isOn={contestEnabled}
                   onToggle={setContestEnabled}
                   onColor="#3B82F6"
@@ -760,7 +760,7 @@ export default function SettingPage() {
                       ? theme.color.textPrimary
                       : theme.color.surface,
                   }}
-                />
+                /> */}
               </View>
             </TouchableOpacity>
           </View>
@@ -900,7 +900,7 @@ export default function SettingPage() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  <ToggleSwitch
+                  {/* <ToggleSwitch
                     isOn={timerSoundEnabled}
                     onToggle={setTimerSoundEnabled}
                     onColor={theme.color.accent}
@@ -918,7 +918,7 @@ export default function SettingPage() {
                         ? theme.color.textPrimary
                         : theme.color.surface,
                     }}
-                  />
+                  /> */}
                 </View>
               </TouchableOpacity>
               <View
@@ -967,7 +967,7 @@ export default function SettingPage() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  <ToggleSwitch
+                  {/* <ToggleSwitch
                     isOn={autoSubmitEnabled}
                     onToggle={setAutoSubmitEnabled}
                     onColor={theme.color.accent}
@@ -985,7 +985,7 @@ export default function SettingPage() {
                         ? theme.color.textPrimary
                         : theme.color.surface,
                     }}
-                  />
+                  /> */}
                 </View>
               </TouchableOpacity>
             </View>
@@ -1074,7 +1074,7 @@ export default function SettingPage() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  <ToggleSwitch
+                  {/* <ToggleSwitch
                     isOn={isDark}
                     onToggle={toggleTheme}
                     onColor={theme.color.accent}
@@ -1092,7 +1092,7 @@ export default function SettingPage() {
                         ? theme.color.textPrimary
                         : theme.color.surface,
                     }}
-                  />
+                  /> */}
                 </View>
               </TouchableOpacity>
               <View
