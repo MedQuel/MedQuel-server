@@ -34,14 +34,14 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
             key={role}
             onPress={() => onChange?.(role)}
             style={{
-              gap: theme.space.md,
+              gap: theme.space.sm * 1.75,
               flexDirection: 'row',
               alignItems: 'center',
-              paddingVertical: theme.space.sm * 1.5,
-              paddingHorizontal: theme.space.md,
-              marginBottom: theme.space.sm * 1.25,
-              borderWidth: 2,
-              borderRadius: theme.borderRadius.xl,
+              paddingVertical: theme.space.sm * 1.3,
+              paddingHorizontal: theme.space.sm * 1.75,
+              marginBottom: theme.space.sm * 1.1,
+              borderWidth: 1.75,
+              borderRadius: theme.borderRadius.lg,
               borderColor: selected ? theme.color.accent : theme.color.border,
               backgroundColor: theme.color.card,
             }}
@@ -50,14 +50,14 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: theme.space.md,
-                borderRadius: theme.borderRadius.xl,
+                padding: theme.space.sm * 1.5,
+                borderRadius: theme.borderRadius.lg,
                 backgroundColor: theme.color.surface,
               }}
             >
               <RoleIcon
                 role={role}
-                size={theme.space.lg}
+                size={theme.space.md * 1.5}
                 color={selected ? theme.color.accent : theme.color.textSecondary}
               />
             </View>
@@ -66,9 +66,9 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
               <Text
                 style={{
                   color: selected ? theme.color.accent : theme.color.textPrimary,
-                  fontSize: theme.fontSize.md,
+                  fontSize: theme.fontSize.sm * 1.1,
                   fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.regular
                 }}
               >
                 {theme.i18n.t(`components.OnboardingRolePicker.${role.replace(/\s*\/\s*|\s+/g, '_')}.title`)}
@@ -76,9 +76,9 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
               <Text
                 style={{
                   color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.sm,
+                  fontSize: theme.fontSize.xs * 1.1,
                   fontWeight: theme.fontWeight.regular,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.regular
                 }}
               >
                 {theme.i18n.t(`components.OnboardingRolePicker.${role.replace(/\s*\/\s*|\s+/g, '_')}.subtitle`)}
@@ -88,17 +88,17 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
             {selected && (
               <View
                 style={{
-                  height: theme.space.lg,
-                  width: theme.space.lg,
+                  height: theme.space.md * 1.3,
+                  width: theme.space.md * 1.3,
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: theme.borderRadius.full,
-                  backgroundColor: theme.color.accent,
+                  backgroundColor: theme.color.accent
                 }}
               >
                 <Feather
                   name='check'
-                  size={theme.space.md * 0.9}
+                  size={theme.space.sm * 1.5}
                   color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
                 />
               </View>
