@@ -7,16 +7,11 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  Users,
-  Heart,
-  GraduationCap,
-  Pill,
-  Brain,
-} from 'lucide-react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import ChatHeader from './chatheader';
+
 type Subject = 'cardiology' | 'usmle' | 'pharma' | 'anatomy';
 type DiscussionRoom = {
   id: string;
@@ -76,44 +71,35 @@ export const DUMMY_ROOMS: DiscussionRoom[] = [
     isTrending: false,
   },
 ];
-
 type SubjectColorKey = 'error' | 'accent' | 'success' | 'premium';
-
 export const subjectColorKeys: Record<Subject, SubjectColorKey> = {
   cardiology: 'error',
   usmle: 'accent',
   pharma: 'success',
   anatomy: 'premium',
 };
-
 export const SubjectIcon = ({ id, color, size }: { id: Subject; color: string; size: number }) => {
-  const props = { size, color, strokeWidth: 2 };
   switch (id) {
-    case 'cardiology': return <Heart {...props} />;
-    case 'usmle':      return <GraduationCap {...props} />;
-    case 'pharma':      return <Pill {...props} />;
-    case 'anatomy':     return <Brain {...props} />;
+    case 'cardiology': return <Ionicons name="heart-outline" size={size} color={color} />;
+    case 'usmle':      return <Ionicons name="school" size={size} color={color} />;
+    case 'pharma':      return <MaterialCommunityIcons name="pill" size={size} color={color} />;
+    case 'anatomy':     return <MaterialCommunityIcons name="brain" size={size} color={color} />;
     default:            return null;
   }
 };
-
 export default function DiscussionRoomsScreen() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'chat');
-
   const [searchVisible, setSearchVisible] = useState(false);
   const [search, setSearch] = useState('');
-
   const subjectColorMap: Record<SubjectColorKey, string> = {
     error: theme.color.error,
     accent: theme.color.accent,
     success: theme.color.success,
     premium: theme.color.premium,
   };
-
   const rooms = DUMMY_ROOMS;
-
   const filteredRooms = rooms.filter((r) =>
     r.name.toLowerCase().includes(search.toLowerCase()),
   );
@@ -187,7 +173,7 @@ export default function DiscussionRoomsScreen() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: theme.space.xs * 0.5 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Users size={theme.fontSize.xs} color={theme.color.textSecondary} strokeWidth={2} />
+              <Ionicons name="people-outline" size={theme.fontSize.xs} color={theme.color.textSecondary} />
               <Text style={{ marginLeft: theme.space.xs * 0.5, color: theme.color.textSecondary, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>
                 {item.membersCount}
               </Text>
