@@ -1,14 +1,13 @@
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, Pressable } from 'react-native';
-import { Zap, Trophy, Flame, BarChart2 } from 'lucide-react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 import type { YearOfStudy } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { useOnboarding, ROLE_HAS_YEAR } from '../../common/context/OnboardingContext';
 
-import { AuthCard } from '../../components/auth/AuthCard';
 import { OnboardingRolePicker } from '../../components/OnboardingRolePicker';
+import { FeatureHighlightsCard } from '../../components/FeaturesHighlightCard';
 import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
@@ -21,12 +20,6 @@ const YEAR_OPTIONS: YearOfStudy[] = [
   'Final Year',
   'Intern',
 ];
-const PERKS = [
-  { icon: Zap, key: 'earnEp', color: 'info' },
-  { icon: Trophy, key: 'winContests', color: 'warning' },
-  { icon: Flame, key: 'buildStreaks', color: 'error' },
-  { icon: BarChart2, key: 'climbRanks', color: 'success' },
-] as const;
 
 export default function OnboardingProfileScreen() {
   const { draft, setRole, setYearOfStudy } = useOnboarding();
@@ -41,139 +34,110 @@ export default function OnboardingProfileScreen() {
     <ScrollView
       contentContainerStyle={{
         flexGrow: 1,
-        justifyContent: 'center',
         padding: theme.space.lg,
+        paddingTop: theme.space.xl,
         backgroundColor: theme.color.background,
       }}
     >
-      <AuthCard>
-        <OnboardingStepper currentStep={2} />
+      <OnboardingStepper currentStep={2} />
 
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.xxl * 0.9,
-            fontFamily: theme.fontFamily.bold,
-          }}
-        >
-          {theme.i18n.t('onboarding.profile.title')}
-        </Text>
-        <Text
-          style={{
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm * 1.05,
-            fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.xs,
-            marginBottom: theme.space.lg,
-          }}
-        >
-          {theme.i18n.t('onboarding.profile.subtitle')}
-        </Text>
+      <Text
+        style={{
+          color: theme.color.textPrimary,
+          fontSize: theme.fontSize.xxl,
+          fontFamily: theme.fontFamily.bold,
+        }}
+      >
+        {theme.i18n.t('onboarding.profile.title')}
+      </Text>
+      <Text
+        style={{
+          color: theme.color.textSecondary,
+          fontSize: theme.fontSize.sm * 1.1,
+          fontFamily: theme.fontFamily.regular,
+          marginTop: theme.space.xs,
+          marginBottom: theme.space.lg,
+        }}
+      >
+        {theme.i18n.t('onboarding.profile.subtitle')}
+      </Text>
 
-        <OnboardingRolePicker
-          value={draft.role ?? 'MBBS Student'}
-          onChange={setRole}
-        />
+      <OnboardingRolePicker
+        value={draft.role ?? 'MBBS Student'}
+        onChange={setRole}
+      />
 
-        {showYearPicker && (
-          <View style={{ marginTop: theme.space.sm, marginBottom: theme.space.lg }}>
-            <Text
-              style={{
-                color: theme.color.textPrimary,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.bold,
-                marginBottom: theme.space.sm,
-              }}
-            >
-              {theme.i18n.t('onboarding.profile.selectYear')}
-            </Text>
-
-            <View style={{ flexWrap: 'wrap', gap: theme.space.sm, flexDirection: 'row' }}>
-              {YEAR_OPTIONS.map((year) => {
-                const selected = draft.yearOfStudy === year;
-                return (
-                  <Pressable
-                    key={year}
-                    onPress={() => setYearOfStudy(year)}
-                    style={{
-                      paddingVertical: theme.space.sm * 0.75,
-                      paddingHorizontal: theme.space.md,
-                      borderWidth: 1.5,
-                      borderRadius: theme.borderRadius.lg,
-                      borderColor: selected ? theme.color.accent : theme.color.border,
-                      backgroundColor: selected ? theme.color.accent : theme.color.card,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: selected ? theme.color.textInverse : theme.color.textSecondary,
-                        fontSize: theme.fontSize.sm,
-                        fontFamily: theme.fontFamily.bold,
-                      }}
-                    >
-                      {year}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        )}
-
+      {showYearPicker && (
         <View
           style={{
+            gap: theme.space.sm,
             padding: theme.space.md,
-            marginBottom: theme.space.md,
+            marginTop: theme.space.sm * 0.75,
+            marginBottom: theme.space.sm,
+            borderWidth: 1.5,
+            borderColor: theme.color.border,
             borderRadius: theme.borderRadius.xl,
-            backgroundColor: theme.color.surface,
+            backgroundColor: theme.color.card,
           }}
         >
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.sm,
+              fontSize: theme.fontSize.md,
               fontFamily: theme.fontFamily.bold,
               marginBottom: theme.space.sm,
             }}
           >
-            {theme.i18n.t('onboarding.profile.whatAwaits')}
+            {theme.i18n.t('onboarding.profile.selectYear')}
           </Text>
 
           <View style={{ flexWrap: 'wrap', gap: theme.space.sm, flexDirection: 'row' }}>
-            {PERKS.map(({ icon: Icon, key, color }) => (
-              <View
-                key={key}
-                style={{
-                  flexBasis: '47%',
-                  alignItems: 'center',
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.lg,
-                  backgroundColor: theme.color.card,
-                }}
-              >
-                <Icon size={theme.space.lg} color={theme.color[color as keyof typeof theme.color]} />
-                <Text
+            {YEAR_OPTIONS.map((year) => {
+              const selected = draft.yearOfStudy === year;
+              return (
+                <Pressable
+                  key={year}
+                  onPress={() => setYearOfStudy(year)}
                   style={{
-                    color: theme.color.textSecondary,
-                    fontSize: theme.fontSize.xs,
-                    fontFamily: theme.fontFamily.regular,
-                    marginTop: theme.space.xs,
+                    paddingVertical: theme.space.sm * 0.65,
+                    paddingHorizontal: theme.space.md * 0.9,
+                    borderWidth: 1.5,
+                    borderRadius: theme.borderRadius.md,
+                    borderColor: selected ? theme.color.accent : theme.color.border,
+                    backgroundColor: selected ? theme.color.accent : theme.color.surface,
                   }}
                 >
-                  {theme.i18n.t(`onboarding.profile.perks.${key}`)}
-                </Text>
-              </View>
-            ))}
+                  <Text
+                    style={{
+                      color: selected
+                        ? theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+                        : theme.color.textSecondary,
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    {year}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </View>
+      )}
 
-        <OnboardingFooter
-          continueLabel={theme.i18n.t('onboarding.continue')}
-          disabled={!canContinue}
-          onBack={() => router.back()}
-          onContinue={() => router.push('/onboarding/goals')}
-        />
-      </AuthCard>
+      <View style={{ marginTop: theme.space.sm * 0.75 }}>
+        <FeatureHighlightsCard />
+      </View>
+
+      <View style={{ flex: 1 }} />
+
+      <OnboardingFooter
+        continueLabel={theme.i18n.t('onboarding.continue')}
+        currentStep={2}
+        disabled={!canContinue}
+        onBack={() => router.back()}
+        onContinue={() => router.push('/onboarding/goals')}
+      />
     </ScrollView>
   );
 }
