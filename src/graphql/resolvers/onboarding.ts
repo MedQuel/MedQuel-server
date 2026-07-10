@@ -10,12 +10,7 @@ import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 
 
-// Shape of the users/{uid}.
-function buildUserDocument(
-  uid: string,
-  email: string,
-  data: ReturnType<typeof validateOnboardingInput>
-) {
+function buildUserDocument(uid: string, email: string, data: ReturnType<typeof validateOnboardingInput>) {
   return {
     uid,
     displayName: data.displayName,
@@ -40,17 +35,8 @@ function buildUserDocument(
     badges: [] as string[],
     badgeProgress: {},
     notifTokens: [] as string[],
-    notifPrefs: {
-      pushEnabled: true,
-      emailDigest: true,
-      rankAlerts: true,
-      contestReminders: true,
-    },
-    quizPrefs: {
-      defaultDifficulty: 'medium',
-      timerSound: true,
-      autoSubmit: false,
-    },
+    notifPrefs: { pushEnabled: true, emailDigest: true, rankAlerts: true, contestReminders: true },
+    quizPrefs: { defaultDifficulty: 'medium', timerSound: true, autoSubmit: false },
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
@@ -62,28 +48,26 @@ export async function completeOnboardingResolver(
   args: { input: CompleteOnboardingInput },
   context: GraphQLContext,
   db: Firestore
-): Promise<{ uid: string; displayName: string; targetExam: string }> {
-  // Auth check — must have a valid, decoded Firebase token.
+) {
   if (!context.user) throw new AuthenticationError();
 
   const uid = context.user.uid;
   const email = context.user.email ?? '';
 
-  // Validate + normalize the raw input from the client.
   const validated = validateOnboardingInput(args.input);
 
-  // Prevent re-onboarding an existing user.
   const userRef = db.collection('users').doc(uid);
   const existingDoc = await userRef.get();
   assertNotAlreadyOnboarded(existingDoc);
 
-  // Write the full user document.
   const userDoc = buildUserDocument(uid, email, validated);
   await userRef.set(userDoc);
 
   return {
-    uid,
     displayName: userDoc.displayName,
+    describesYou: args.input.describesYou,
+    yearOfStudy: userDoc.yearOfStudy,
     targetExam: userDoc.targetExam,
+    institution: userDoc.institution,
   };
 }
