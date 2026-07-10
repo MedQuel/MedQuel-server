@@ -80,7 +80,7 @@ export function SubjectPerformanceCard({
 
         return (
           <View
-            key={item.name}
+            key={`${item.name}-${item.score}-${index}`}
             style={{
               paddingBottom:
                 index === subjects.length - 1
