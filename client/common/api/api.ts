@@ -1,6 +1,5 @@
-// Domain-organized API calls. Every function here either talks to the real
-// GraphQL backend or falls back to mock data — screens never need to know
-// which one they got.
+// Domain-organized API calls. Every function here either talks to the real GraphQL
+// backend or falls back to mock data - screens never need to know which one they got.
 
 import { config } from './config';
 import { gql, graphqlRequest } from './http';
@@ -18,6 +17,7 @@ import * as Mock from '../constants/mockData';
 import type {
   User,
   CompleteOnboardingInput,
+  CompleteOnboardingResult,
   UpdateProfileInput,
   NotifPrefs,
   QuizPrefs,
@@ -173,15 +173,14 @@ const ME_QUERY = gql`
 const COMPLETE_ONBOARDING_MUTATION = gql`
   mutation CompleteOnboarding($input: CompleteOnboardingInput!) {
     completeOnboarding(input: $input) {
-      uid
       displayName
-      studyLevel
+      describesYou
       yearOfStudy
       targetExam
       institution
     }
   }
-`; // see src/index.ts line 34 to match onboarding input
+`;
 const UPDATE_PROFILE_MUTATION = gql`
   mutation UpdateProfile($input: UpdateProfileInput!) {
     updateProfile(input: $input) {
@@ -234,11 +233,17 @@ export const userApi = {
       async () =>
         (
           await graphqlRequest<
-            { completeOnboarding: User },
+            { completeOnboarding: CompleteOnboardingResult },
             { input: CompleteOnboardingInput }
           >(COMPLETE_ONBOARDING_MUTATION, { input })
         ).completeOnboarding,
-      () => ({ ...Mock.MOCK_USER, ...input })
+      () => ({
+        displayName: input.displayName,
+        describesYou: input.describesYou,
+        yearOfStudy: input.yearOfStudy ?? null,
+        targetExam: input.targetExam,
+        institution: input.institution ?? null,
+      })
     ),
 
   updateProfile: (input: UpdateProfileInput) =>
