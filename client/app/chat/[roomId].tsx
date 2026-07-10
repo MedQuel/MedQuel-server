@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { DUMMY_ROOMS, subjectColorKeys, SubjectIcon } from './index';
-
 type ChatMessage = {
   id: string;
   text: string;
@@ -23,7 +22,6 @@ type ChatMessage = {
   timestamp: string;
   isMe: boolean;
 };
-// TODO: replace with Firebase auth.currentUser.uid when integrating
 const DUMMY_MESSAGES: ChatMessage[] = [
   {
     id: 'm1',
@@ -51,7 +49,6 @@ const DUMMY_MESSAGES: ChatMessage[] = [
   },
 ];
 const AVATAR_COLORS = ['error', 'accent', 'success', 'premium', 'warning'] as const;
-
 export default function DiscussionChatViewScreen() {
   const { theme } = useTheme();
   const router = useRouter();
