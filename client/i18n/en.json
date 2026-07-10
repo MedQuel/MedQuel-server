@@ -98,7 +98,38 @@
     }
   },
 
-  "onboarding": {},
+  "onboarding": {
+    "back": "Back",
+    "continue": "Continue",
+    "step": "Step {{currentStep}} of {{totalSteps}}",
+
+    "welcome": {
+      "title": "Welcome to MedQuel",
+      "subtitle": "Let's set up your profile in a few quick steps",
+      "nameLabel": "What should we call you?"
+    },
+    "profile": {
+      "title": "What best describes you?",
+      "subtitle": "We'll personalize your experience accordingly",
+      "selectYear": "Select your year"
+    },
+    "goals": {
+      "title": "What's your goal?",
+      "subtitle": "This helps us tailor questions and study plans to your goal",
+      "institutionLabel": "Institution (optional)",
+      "institutionPlaceholder": "e.g. AIIMS Delhi"
+    },
+    "ready": {
+      "title": "You're all set",
+      "subtitle": "Review your details before we create your profile",
+      "name": "Name",
+      "role": "Role",
+      "year": "Year",
+      "goal": "Goal",
+      "institution": "Institution",
+      "submit": "Start Learning"
+    }
+  },
 
   "home": {
     "title": "Home",
@@ -134,19 +165,19 @@
       "friends": "Friends"
     },
     "OnboardingRolePicker": {
-      "mbbs": {
+      "MBBS_Student": {
         "title": "MBBS Student",
         "subtitle": "Undergraduate medical program"
       },
-      "postgraduate": {
+      "Postgraduate": {
         "title": "Postgraduate",
         "subtitle": "MD/MS/Residency preparation"
       },
-      "doctor": {
+      "Practicing_Doctor": {
         "title": "Practicing Doctor",
         "subtitle": "Continuing medical education"
       },
-      "nursing": {
+      "Nursing_Allied": {
         "title": "Nursing / Allied",
         "subtitle": "Nursing education & licensing"
       }
