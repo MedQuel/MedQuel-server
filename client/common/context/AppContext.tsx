@@ -72,8 +72,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         : new ApiError('UNKNOWN', 'Failed to load profile');
 
       if (apiErr instanceof NotOnboardedError) {
-        // Expected state for a brand-new signup,
-        // clear any stale cached profile from a previous account and route to onboarding.
         setUser(null);
         await persistUser(null);
         setAuthStatus('needsOnboarding');
@@ -137,10 +135,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setUserLoading(true);
       setUserError(null);
       try {
-        const me = await api.user.completeOnboarding(input);
-        setUser(me);
-        setAuthStatus('authenticated');
-        await persistUser(me);
+        await api.user.completeOnboarding(input);
+        await fetchUser();
       } catch (err) {
         const apiErr = err instanceof ApiError
           ? err
@@ -151,7 +147,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setUserLoading(false);
       }
     },
-    [persistUser]
+    [fetchUser]
   );
 
   const logout = useCallback(async () => { await firebaseSignOut() }, []);
