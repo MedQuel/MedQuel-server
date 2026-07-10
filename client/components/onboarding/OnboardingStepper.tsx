@@ -15,6 +15,7 @@ export function OnboardingStepper({ currentStep }: { currentStep: number }) {
         const stepNum = i + 1;
         const isDone = stepNum < currentStep;
         const isActive = stepNum === currentStep;
+        const isLast = i === STEPS.length-1;
 
         return (
           <View
@@ -22,27 +23,33 @@ export function OnboardingStepper({ currentStep }: { currentStep: number }) {
             style={{
               flexDirection: 'row',
               alignItems: 'center',
-              flex: i < STEPS.length-1 ? 1 : undefined,
+              flex: isLast ? undefined : 1
             }}
           >
             <View
               style={{
-                width: theme.space.lg,
-                height: theme.space.lg,
+                width: theme.space.md * 1.3,
+                height: theme.space.md * 1.3,
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: theme.borderRadius.full,
                 backgroundColor: isDone || isActive ? theme.color.accent : theme.color.surface,
+                boxShadow: isActive ? `0 0 5px 5px ${theme.color.accent}22` : undefined,
               }}
             >
               {isDone ? (
-                <Check size={theme.space.sm} color={theme.color.textInverse} />
+                <Check
+                  size={theme.space.md * 0.8}
+                  color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+                />
               ) : (
                 <Text
                   style={{
-                    color: isActive ? theme.color.textInverse : theme.color.textMuted,
-                    fontSize: theme.fontSize.xs,
-                    fontFamily: theme.fontFamily.bold,
+                    color: isActive
+                      ? theme.isDark ? theme.color.textPrimary :  theme.color.textInverse
+                      : theme.color.textMuted,
+                    fontSize: theme.fontSize.xs * 1.05,
+                    fontFamily: theme.fontFamily.number,
                   }}
                 >
                   {stepNum}
@@ -51,23 +58,26 @@ export function OnboardingStepper({ currentStep }: { currentStep: number }) {
             </View>
 
             <Text
+              numberOfLines={1}
               style={{
-                color: isActive ? theme.color.textPrimary : theme.color.textMuted,
-                fontSize: theme.fontSize.xs,
+                color: isActive ? theme.color.accent : theme.color.textMuted,
+                fontSize: theme.fontSize.xs * 1.05,
+                fontWeight: theme.fontWeight.bold,
                 fontFamily: isActive ? theme.fontFamily.bold : theme.fontFamily.regular,
                 marginLeft: theme.space.xs,
+                marginRight: isLast ? 0 : theme.space.xs,
               }}
             >
               {label}
             </Text>
 
-            {i < STEPS.length-1 && (
+            {!isLast && (
               <View
                 style={{
                   flex: 1,
-                  height: 1,
-                  marginHorizontal: theme.space.xs,
-                  backgroundColor: theme.color.border,
+                  height: theme.space.xs * 0.5,
+                  borderRadius: theme.borderRadius.full,
+                  backgroundColor: isDone ? theme.color.accent : theme.color.border,
                 }}
               />
             )}
