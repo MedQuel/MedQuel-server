@@ -131,6 +131,13 @@
     }
   },
 
+  "notFound": {
+    "title": "Page not Found",
+    "subtitle": "This link may be outdated or the screen may have moved.",
+    "primaryAction": "Take me back",
+    "secondaryAction": "Go back"
+  },
+
   "home": {
     "title": "Home",
     "daily_challenge": "Daily Challenge",
