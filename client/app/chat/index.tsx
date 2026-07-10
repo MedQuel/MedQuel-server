@@ -206,7 +206,6 @@ export default function DiscussionRoomsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <ChatHeader
         theme={theme}
-        toggleTheme={toggleTheme}
         searchVisible={searchVisible}
         setSearchVisible={setSearchVisible}
         search={search}
