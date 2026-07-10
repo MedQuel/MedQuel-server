@@ -11,44 +11,28 @@ export function FeatureHighlightsCard() {
       id: 1,
       label: theme.i18n.t('components.FeatureHighlightsCard.ep'),
       icon: (
-        <Feather
-          name='zap'
-          size={theme.space.md + 4}
-          color={theme.color.info}
-        />
+        <Feather name='zap' size={theme.space.md + 4} color={theme.color.info} />
       ),
     },
     {
       id: 2,
       label: theme.i18n.t('components.FeatureHighlightsCard.contests'),
       icon: (
-        <Ionicons
-          name='trophy-outline'
-          size={theme.space.md + 4}
-          color={theme.color.warning}
-        />
+        <Ionicons name='trophy-outline' size={theme.space.md + 4} color={theme.color.warning} />
       ),
     },
     {
       id: 3,
       label: theme.i18n.t('components.FeatureHighlightsCard.streaks'),
       icon: (
-        <SimpleLineIcons
-          name='fire'
-          size={theme.space.md + 4}
-          color={theme.color.error}
-        />
+        <SimpleLineIcons name='fire' size={theme.space.md + 4} color={theme.color.error} />
       ),
     },
     {
       id: 4,
       label: theme.i18n.t('components.FeatureHighlightsCard.ranks'),
       icon: (
-        <Feather
-          name='bar-chart-2'
-          size={theme.space.md + 4}
-          color={theme.color.success}
-        />
+        <Feather name='bar-chart-2' size={theme.space.md + 4} color={theme.color.success} />
       ),
     },
   ];
@@ -58,19 +42,18 @@ export function FeatureHighlightsCard() {
     <View
       style={{
         padding: theme.space.md,
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
+        borderRadius: theme.borderRadius.xl,
       }}
     >
       <Text
         style={{
           color: theme.color.textPrimary,
+          fontSize: theme.fontSize.md,
+          fontFamily: theme.fontFamily.bold,
           marginBottom: theme.space.md,
-          fontSize: theme.fontSize.lg,
-          fontWeight: theme.fontWeight.bold,
-          fontFamily: theme.fontFamily.regular,
         }}
       >
         {theme.i18n.t('components.FeatureHighlightsCard.title')}
