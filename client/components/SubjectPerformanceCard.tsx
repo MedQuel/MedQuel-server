@@ -39,8 +39,8 @@ export function SubjectPerformanceCard({
     <View
       style={{
         backgroundColor: isDark
-          ? theme.color.background
-          : theme.color.surface,
+          ? theme.color.background 
+          : theme.color.card,
         paddingHorizontal: theme.space.sm,
         paddingVertical: theme.space.md -2,
         borderRadius: theme.borderRadius.lg + 2,

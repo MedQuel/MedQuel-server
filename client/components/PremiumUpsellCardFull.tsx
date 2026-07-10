@@ -10,9 +10,10 @@ export function PremiumUpsellCardFull ()  {
   return (
     <View
       style={{
-        backgroundColor: isDark?theme.color.background:theme.color.surface,
+        backgroundColor: theme.color.card,
         borderRadius: theme.borderRadius.lg + 3,
-        padding: theme.space.sm + 1,
+        paddingVertical:theme.space.xs +2,
+        paddingHorizontal:theme.space.md,
         borderWidth: 1,
         borderColor:theme.color.border,
       }}
@@ -33,8 +34,8 @@ export function PremiumUpsellCardFull ()  {
         >
           <MaterialCommunityIcons
           name="crown-outline"
-          size={theme.space.md + 7 }
-          color={theme.color.premium + "FF"}
+          size={theme.space.md + 5 }
+          color={theme.color.premium}
         />
         </Text>
 

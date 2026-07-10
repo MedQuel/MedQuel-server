@@ -28,7 +28,7 @@ const DESCRIBES_YOU_TO_STUDY_LEVEL: Record<string, StudyLevel> = {
   'Practicing Doctor': 'Practitioner',
   'Nursing / Allied': 'Nursing / Allied',
 };
-const VALID_YEAR_OPTIONS = [
+export const VALID_YEAR_OPTIONS = [
   'Year 1',
   'Year 2',
   'Year 3',

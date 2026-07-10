@@ -40,7 +40,7 @@ async function startServer(): Promise<void> {
   await new Promise<void>((resolve) =>
     httpServer.listen({ port: PORT }, resolve)
   );
-  console.log(`MedQuel API ready at http://localhost:${PORT}/graphql`);
+  console.log(`MedQuel API (internal) ready at http://localhost:${PORT}/graphql & public entry is Nginx on 8080.`);
 }
 
 startServer().catch((err) => {

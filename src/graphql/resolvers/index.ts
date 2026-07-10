@@ -1,6 +1,6 @@
-import { meResolver } from './user.js';
 import type { GraphQLContext } from '../context.js';
 import { completeOnboardingResolver } from './onboarding.js';
+import { meResolver, updateProfileResolver } from './user.js';
 
 
 export const resolvers = {
@@ -14,5 +14,6 @@ export const resolvers = {
       args: Parameters<typeof completeOnboardingResolver>[1],
       context: GraphQLContext
     ) => completeOnboardingResolver(parent, args, context, context.db),
+    updateProfile: updateProfileResolver,
   },
 };

@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
@@ -13,6 +13,8 @@ type ContestCardProps = {
   questionsCount: number;
   duration: string;
   participantsCount: number;
+  isPro?: boolean;
+  isLive?: boolean;
   onStartPress: () => void;
 };
 
@@ -29,7 +31,7 @@ export function ContestCard(props: ContestCardProps) {
     const minutes = Number(props.timeLeft);
 
     if (!Number.isFinite(minutes)) return props.timeLeft;
-    if (minutes > 60) return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes / 60) })}`;
+    if (minutes > 60) return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes/60) })}`;
 
     return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
   })();
@@ -42,16 +44,66 @@ export function ContestCard(props: ContestCardProps) {
         flexDirection: 'column',
         padding: theme.space.md,
         borderWidth: 1.5,
-        borderColor: theme.color.border,
+        borderColor: props.isPro ? theme.color.premium + '55' : theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark
-          ? '0px 4px 20px rgba(0,0,0,0.4)'
-          : '0px 2px 12px rgba(0,0,0,0.08)',
+        boxShadow: theme.isDark ? '0px 4px 20px rgba(0,0,0,0.4)' : '0px 2px 12px rgba(0,0,0,0.08)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+          {props.isPro && (
+            <View
+              style={{
+                gap: theme.space.xs,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: theme.space.xs,
+                paddingHorizontal: theme.space.sm,
+                borderRadius: theme.borderRadius.sm * 1.25,
+                backgroundColor: theme.color.premium + '18',
+              }}
+            >
+              <MaterialCommunityIcons name='crown-outline' size={theme.fontSize.xs + 2} color={theme.color.premium} />
+              <Text
+                style={{
+                  color: theme.color.premium,
+                  fontSize: theme.fontSize.xs,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('common.pro')}
+              </Text>
+            </View>
+          )}
+
+          {props.isLive && (
+            <View
+              style={{
+                gap: theme.space.xs,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: theme.space.xs,
+                paddingHorizontal: theme.space.sm,
+                borderRadius: theme.borderRadius.sm * 1.25,
+                backgroundColor: theme.color.error + '18',
+              }}
+            >
+              <Feather name='radio' size={theme.fontSize.xs + 2} color={theme.color.error} />
+              <Text
+                style={{
+                  color: theme.color.error,
+                  fontSize: theme.fontSize.xs,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('common.live')}
+              </Text>
+            </View>
+          )}
+
           <View
             style={{
               paddingVertical: theme.space.xs,
@@ -133,6 +185,7 @@ export function ContestCard(props: ContestCardProps) {
           >
             {props.title}
           </Text>
+
           <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
             <Feather name='clock' size={theme.fontSize.sm} color={theme.color.warning} />
             <Text
@@ -250,9 +303,16 @@ export function ContestCard(props: ContestCardProps) {
           justifyContent: 'center',
           paddingVertical: theme.space.md * 0.9,
           borderRadius: theme.borderRadius.lg,
-          backgroundColor: theme.color.accent,
+          backgroundColor: props.isPro ? theme.color.premium : theme.color.accent,
         }}
       >
+        {props.isPro && (
+          <MaterialCommunityIcons
+            name='crown-outline'
+            size={theme.fontSize.md}
+            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+          />
+        )}
         <Text
           style={{
             letterSpacing: 0.3,
@@ -262,9 +322,16 @@ export function ContestCard(props: ContestCardProps) {
             fontFamily: theme.fontFamily.regular,
           }}
         >
-          {theme.i18n.t('common.start_contest')}
+          {props.isPro ? theme.i18n.t('common.unlock_and_start') : theme.i18n.t('common.start_contest')}
         </Text>
-        <Feather name='chevron-right' size={theme.fontSize.lg} color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse} />
+
+        {!props.isPro && (
+          <Feather
+            name='chevron-right'
+            size={theme.fontSize.lg}
+            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+          />
+        )}
       </TouchableOpacity>
     </View>
   );

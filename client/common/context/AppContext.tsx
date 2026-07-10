@@ -11,6 +11,7 @@ const USER_CACHE_KEY = 'medquel:lastKnownUser';
 
 export type AuthStatus =
   | 'checking'
+  | 'needsEmailVerification'
   | 'authenticated'
   | 'needsOnboarding'
   | 'unauthenticated';
@@ -22,6 +23,7 @@ export interface AppContextValue {
   userLoading: boolean;
   userError: ApiError | null;
   refreshUser: () => Promise<void>;
+  recheckEmailVerification: () => Promise<boolean>;
   completeOnboarding: (
     input: Parameters<typeof api.user.completeOnboarding>[0]
   ) => Promise<void>;
@@ -34,6 +36,7 @@ const DEFAULT_CONTEXT: AppContextValue = {
   userLoading: false,
   userError: null,
   refreshUser: async () => {},
+  recheckEmailVerification: async () => false,
   completeOnboarding: async () => {},
   logout: async () => {},
 };
@@ -99,6 +102,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = subscribeToAuthChanges((firebaseUser) => {
       if (firebaseUser) {
+        if (!firebaseUser.emailVerified) {
+          setAuthStatus('needsEmailVerification');
+          setUser(null);
+          setUserError(null);
+          persistUser(null);
+          return;
+        }
         fetchUser();
       } else {
         setAuthStatus('unauthenticated');
@@ -110,6 +120,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     return unsubscribe;
   }, [fetchUser, persistUser]);
+
+  const recheckEmailVerification = useCallback(async (): Promise<boolean> => {
+    if (!auth.currentUser) return false;
+    await auth.currentUser.reload();
+    
+    if (auth.currentUser.emailVerified) {
+      await fetchUser();
+      return true;
+    }
+    return false;
+  }, [fetchUser]);
 
   const completeOnboardingFn = useCallback(
     async (input: Parameters<typeof api.user.completeOnboarding>[0]) => {
@@ -145,6 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userLoading,
       userError,
       refreshUser: fetchUser,
+      recheckEmailVerification,
       completeOnboarding: completeOnboardingFn,
       logout,
     }),
@@ -155,6 +177,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userLoading,
       userError,
       fetchUser,
+      recheckEmailVerification,
       completeOnboardingFn,
       logout,
     ]
