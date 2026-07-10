@@ -1,4 +1,3 @@
-/* eslint-disable no-bitwise */
 import React from 'react';
 import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 
@@ -17,8 +16,11 @@ type BadgeItem = AchievementDefinition & EarnedAchievement & { order: number };
 const rgba = (hex: string, alpha: number) => {
   const normalized = hex.replace('#', '');
   const full = normalized.length === 3 ? normalized.split('').map(ch => ch + ch).join('') : normalized.slice(0, 6);
-  const value = Number.parseInt(full, 16);
-  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+  const red = Number.parseInt(full.slice(0, 2), 16);
+  const green = Number.parseInt(full.slice(2, 4), 16);
+  const blue = Number.parseInt(full.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
 const resolveText = (value: string, fallback: string, key: string) => {
@@ -44,9 +46,9 @@ const parseEarnedAt = (value?: string) => {
   const match = text.match(/^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|month|months|y|yr|yrs|year|years)\s*ago$/);
   if (match) {
     const n = Number(match[1]);
-    const unit = match[2];
+    const unit = match[2] ?? '';
     const delta =
-      unit.startsWith('m') && !unit.startsWith('mo') ? 60 * 1000 :
+      unit?.startsWith('m') && !unit.startsWith('mo') ? 60 * 1000 :
       unit.startsWith('h') ? 60 * 60 * 1000 :
       unit.startsWith('w') ? week :
       unit.startsWith('mo') ? month :
@@ -62,14 +64,16 @@ const parseEarnedAt = (value?: string) => {
 
 export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) {
   const { theme } = useTheme();
-  const [rowWidths, setRowWidths] = React.useState<number[]>([]);
+  const [cardWidth, setCardWidth] = React.useState<number>(0);
 
 
   const sectionTitle = resolveText(theme.i18n.t('components.EarnedBadgeCard.title'), title ?? 'Earned Badges', 'components.EarnedBadgeCard.title');
   const viewAllText = resolveText(theme.i18n.t('components.EarnedBadgeCard.view_all'), 'View All', 'components.EarnedBadgeCard.view_all');
   const emptyText = resolveText(theme.i18n.t('components.EarnedBadgeCard.empty'), 'You have not earned any badge yet', 'components.EarnedBadgeCard.empty');
 
-  const items = achievements
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+
+  const items = safeAchievements
     .map((item, order): BadgeItem | null => {
       const achievement = achievementCatalog[item.id];
       return achievement ? { ...achievement, ...item, order } : null;
@@ -83,22 +87,17 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
 
   const rows = [items.slice(0, 3), items.slice(3, 6)].filter(row => row.length);
 
-  const tileSizeFor = (rowIndex: number, count: number) => {
-    const rowWidth = rowWidths[rowIndex];
-    if (!rowWidth) return 72;
+  const tileSize = cardWidth
+    ? clamp(
+        Math.floor(((cardWidth - theme.space.sm * 2) / 3) * 0.34),
+        54,
+        72,
+      )
+    : 72;
 
-    const slotWidth = (rowWidth - theme.space.sm * (count - 1)) / count;
-    return clamp(Math.floor(slotWidth * 0.34), 54, 86);
-  };
-
-  const onRowLayout = (rowIndex: number) => (event: LayoutChangeEvent) => {
+  const onCardLayout = (event: LayoutChangeEvent) => {
     const nextWidth = Math.round(event.nativeEvent.layout.width);
-    setRowWidths(prev => {
-      if (prev[rowIndex] === nextWidth) return prev;
-      const next = [...prev];
-      next[rowIndex] = nextWidth;
-      return next;
-    });
+    setCardWidth(prev => (prev === nextWidth ? prev : nextWidth));
   };
 
   return (
@@ -142,6 +141,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
       </View>
 
       <View
+        onLayout={onCardLayout}
         style={{
           borderRadius: theme.borderRadius.xl,
           borderWidth: 1.5,
@@ -154,7 +154,6 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
           rows.map((row, rowIndex) => (
             <View
               key={`earned-row-${rowIndex}`}
-              onLayout={onRowLayout(rowIndex)}
               style={{
                 flexDirection: 'row',
                 gap: theme.space.sm,
@@ -162,8 +161,6 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
               }}
             >
               {row.map(item => {
-                const tileSize = tileSizeFor(rowIndex, row.length);
-
                 return (
                   <View
                     key={item.id}
