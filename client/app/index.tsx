@@ -1,6 +1,5 @@
-import React from 'react';
-import HomeScreen from './home';
+import SplashScreen from './splash';
 
 export default function MainLayout() {
-  return <HomeScreen />;
+  return <SplashScreen />;
 }
