@@ -1,5 +1,3 @@
-/* eslint-disable no-bitwise */
-import React from 'react';
 import { View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
@@ -22,14 +20,11 @@ const rgba = (hex: string, alpha: number) => {
       ? normalized.split('').map(ch => ch + ch).join('')
       : normalized.slice(0, 6);
 
-  const value = Number.parseInt(full, 16);
+  const red = Number.parseInt(full.slice(0, 2), 16);
+  const green = Number.parseInt(full.slice(2, 4), 16);
+  const blue = Number.parseInt(full.slice(4, 6), 16);
 
-  return `rgba(
-    ${(value >> 16) & 255},
-    ${(value >> 8) & 255},
-    ${value & 255},
-    ${alpha}
-  )`;
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
 export function AchievementIcon({
