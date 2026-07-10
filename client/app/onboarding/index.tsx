@@ -1,13 +1,11 @@
 import { useRouter } from 'expo-router';
 import { User } from 'lucide-react-native';
-import { ScrollView, KeyboardAvoidingView, Platform, Text } from 'react-native';
+import { Text, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { AuthInput } from '../../components/auth/AuthInput';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { useOnboarding } from '../../common/context/OnboardingContext';
-
-import { AuthCard } from '../../components/auth/AuthCard';
-import { AuthInput } from '../../components/auth/AuthInput';
 import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
@@ -29,50 +27,51 @@ export default function OnboardingWelcomeScreen() {
         keyboardShouldPersistTaps='handled'
         contentContainerStyle={{
           flexGrow: 1,
-          justifyContent: 'center',
           padding: theme.space.lg,
+          paddingTop: theme.space.xl,
         }}
       >
-        <AuthCard>
-          <OnboardingStepper currentStep={1} />
+        <OnboardingStepper currentStep={1} />
 
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.xxl,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            {theme.i18n.t('onboarding.welcome.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textSecondary,
-              fontSize: theme.fontSize.sm * 1.05,
-              fontFamily: theme.fontFamily.regular,
-              marginTop: theme.space.xs * 1.25,
-              marginBottom: theme.space.lg,
-            }}
-          >
-            {theme.i18n.t('onboarding.welcome.subtitle')}
-          </Text>
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontSize: theme.fontSize.xxl,
+            fontFamily: theme.fontFamily.bold,
+          }}
+        >
+          {theme.i18n.t('onboarding.welcome.title')}
+        </Text>
+        <Text
+          style={{
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.sm * 1.1,
+            fontFamily: theme.fontFamily.regular,
+            marginTop: theme.space.xs,
+            marginBottom: theme.space.xl,
+          }}
+        >
+          {theme.i18n.t('onboarding.welcome.subtitle')}
+        </Text>
 
-          <AuthInput
-            label={theme.i18n.t('onboarding.welcome.nameLabel')}
-            icon={User}
-            value={draft.displayName}
-            onChangeText={setDisplayName}
-            placeholder='Dr. John Doe'
-            autoCapitalize='words'
-            error={draft.displayName.length > 0 && !canContinue}
-          />
+        <AuthInput
+          label={theme.i18n.t('onboarding.welcome.nameLabel')}
+          icon={User}
+          value={draft.displayName}
+          onChangeText={setDisplayName}
+          placeholder='Dr. John Doe'
+          autoCapitalize='words'
+          error={draft.displayName.length > 0 && !canContinue}
+        />
 
-          <OnboardingFooter
-            continueLabel={theme.i18n.t('onboarding.continue')}
-            disabled={!canContinue}
-            onContinue={() => router.push('/onboarding/profile')}
-          />
-        </AuthCard>
+        <View style={{ flex: 1 }} />
+
+        <OnboardingFooter
+          continueLabel={theme.i18n.t('onboarding.continue')}
+          currentStep={1}
+          disabled={!canContinue}
+          onContinue={() => router.push('/onboarding/profile')}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
