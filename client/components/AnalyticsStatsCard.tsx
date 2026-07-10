@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utilities/withAlpha';
 
 type StatKey = 'accuracy' | 'streak' | 'questions';
 
@@ -27,14 +28,6 @@ const icons: Record<StatKey, (size: number, color: string) => React.ReactNode> =
   accuracy: (size, color) => <Feather name="target" size={size} color={color} />,
   streak: (size, color) => <MaterialCommunityIcons name="fire" size={size} color={color} />,
   questions: (size, color) => <Feather name="check-square" size={size} color={color} />,
-};
-
-const withAlpha = (hex: string, alpha: number) => {
-  const clean = hex.replace('#', '');
-  const full = clean.length === 3 ? clean.split('').map(ch => ch + ch).join('') : clean.slice(0, 6);
-  const int = Number.parseInt(full, 16);
-  // eslint-disable-next-line no-bitwise
-  return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
 };
 
 export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
