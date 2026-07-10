@@ -40,9 +40,11 @@ export const userTypeDefs = `#graphql
     institution: String
   }
   type OnboardingResult {
-    uid: String!
     displayName: String!
+    describesYou: String!
+    yearOfStudy: String
     targetExam: String!
+    institution: String
   }
 
   extend type Query {
