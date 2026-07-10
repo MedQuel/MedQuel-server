@@ -18,6 +18,11 @@ export type YearOfStudy =
   | 'Year 4'
   | 'Final Year'
   | 'Intern';
+export type DescribesYou =
+  | 'MBBS Student'
+  | 'Postgraduate'
+  | 'Practicing Doctor'
+  | 'Nursing / Allied';
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -66,10 +71,17 @@ export interface User {
 
 export interface CompleteOnboardingInput {
   displayName: string;
-  studyLevel: StudyLevel;
+  describesYou: DescribesYou;
   yearOfStudy?: YearOfStudy;
   targetExam: TargetExam;
   institution?: string;
+}
+export interface CompleteOnboardingResult {
+  displayName: string;
+  describesYou: DescribesYou;
+  yearOfStudy?: YearOfStudy | null;
+  targetExam: TargetExam;
+  institution?: string | null;
 }
 export interface UpdateProfileInput {
   displayName?: string;
