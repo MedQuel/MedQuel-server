@@ -2,20 +2,22 @@ import { Pressable, Text, View } from 'react-native';
 import { Feather, SimpleLineIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import type { DescribesYou } from '../common/types/types'
 
 
-export type RoleId = 'mbbs' | 'postgraduate' | 'doctor' | 'nursing';
-const ROLE_IDS: RoleId[] = ['mbbs', 'postgraduate', 'doctor', 'nursing'];
+export type RoleId = DescribesYou;
+const ROLE_IDS: RoleId[] = ['MBBS Student', 'Postgraduate', 'Practicing Doctor', 'Nursing / Allied'];
+
 type OnboardingRolePickerProps = {
   value: RoleId;
   onChange: (value: RoleId) => void;
 };
 
 function RoleIcon({ role, size, color }: { role: RoleId; size: number; color: string; }) {
-  if (role === 'mbbs') return <SimpleLineIcons name='graduation' size={size} color={color} />;
-  else if (role === 'postgraduate') return <Feather name='book-open' size={size} color={color} />;
-  else if (role === 'doctor') return <MaterialCommunityIcons name='stethoscope' size={size} color={color} />;
-  else if (role === 'nursing') return <Feather name='users' size={size} color={color} />;
+  if (role === 'MBBS Student') return <SimpleLineIcons name='graduation' size={size} color={color} />;
+  else if (role === 'Postgraduate') return <Feather name='book-open' size={size} color={color} />;
+  else if (role === 'Practicing Doctor') return <MaterialCommunityIcons name='stethoscope' size={size} color={color} />;
+  else if (role === 'Nursing / Allied') return <Feather name='users' size={size} color={color} />;
 }
 
 
@@ -69,7 +71,7 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {theme.i18n.t(`components.OnboardingRolePicker.${role}.title`)}
+                {theme.i18n.t(`components.OnboardingRolePicker.${role.replace(/\s*\/\s*|\s+/g, '_')}.title`)}
               </Text>
               <Text
                 style={{
@@ -79,7 +81,7 @@ export function OnboardingRolePicker({ value, onChange }: OnboardingRolePickerPr
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {theme.i18n.t(`components.OnboardingRolePicker.${role}.subtitle`)}
+                {theme.i18n.t(`components.OnboardingRolePicker.${role.replace(/\s*\/\s*|\s+/g, '_')}.subtitle`)}
               </Text>
             </View>
 
