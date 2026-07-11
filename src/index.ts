@@ -1,3 +1,4 @@
+import cors from 'cors';
 import http from 'http';
 import express from 'express';
 import { ApolloServer } from '@apollo/server';
@@ -11,25 +12,30 @@ import type { GraphQLContext } from './graphql/context.js';
 
 import 'dotenv/config';
 
+
 const PORT = process.env.PORT || 4000;
+const ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 
 async function startServer(): Promise<void> {
   const app = express();
   const httpServer = http.createServer(app);
 
+  app.use(cors({
+    origin: process.env.NODE_ENV === 'production' ? ALLOWED_ORIGINS : true,
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }))
+
   app.get('/health', (req, res) => res.status(200).send('ok'));
 
-  const server = new ApolloServer<GraphQLContext>({
-    typeDefs,
-    resolvers,
-  });
+  const server = new ApolloServer<GraphQLContext>({ typeDefs, resolvers });
   await server.start();
 
   app.use(
     '/graphql',
     express.json(),
     expressMiddleware(server, {
-      // We verify the Firebase ID token here and attach the decoded user to context.
       context: async ({ req }): Promise<GraphQLContext> => {
         const user = await verifyAuthToken(req, auth);
         return { auth, db, req, user };
