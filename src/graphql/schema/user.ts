@@ -11,11 +11,13 @@ export const userTypeDefs = `#graphql
     yearOfStudy: String
     institution: String
     isPremium: Boolean!
+    subscriptionId: String
     xpPoints: Int!
     epPoints: Int!
     currentLevel: Int!
     currentStreak: Int!
     longestStreak: Int!
+    lastActiveDate: String!
     totalQuestions: Int!
     totalCorrect: Int!
     studyHours: Float!
@@ -48,7 +50,6 @@ export const userTypeDefs = `#graphql
   }
 
   extend type Query {
-    "Current signed-in user's full profile. Throws NOT_ONBOARDED if the Firestore doc doesn't exist yet."
     me: User!
   }
   extend type Mutation {
