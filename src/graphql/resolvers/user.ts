@@ -1,21 +1,15 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
-import {
-  type UpdateProfileInput,
-  validateUpdateProfileInput,
-} from '../../services/profileValidation.js';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
+import { type UpdateProfileInput, validateUpdateProfileInput } from '../../services/profileValidation.js';
 
 
 function toISOString(value: unknown): string {
-  if (value instanceof Timestamp) {
-    return value.toDate().toISOString();
-  }
+  if (value instanceof Timestamp) return value.toDate().toISOString();
   return new Date().toISOString();
 }
 
-// Maps a raw users/{uid} Firestore doc to the GraphQL User shape.
 export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
   return {
     uid,
@@ -28,11 +22,13 @@ export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
     yearOfStudy: data.yearOfStudy ?? null,
     institution: data.institution ?? null,
     isPremium: data.isPremium ?? false,
+    subscriptionId: data.subscriptionId ?? null,
     xpPoints: data.xpPoints ?? 0,
     epPoints: data.epPoints ?? 0,
     currentLevel: data.currentLevel ?? 1,
     currentStreak: data.currentStreak ?? 0,
     longestStreak: data.longestStreak ?? 0,
+    lastActiveDate: toISOString(data.lastActiveDate),
     totalQuestions: data.totalQuestions ?? 0,
     totalCorrect: data.totalCorrect ?? 0,
     studyHours: data.studyHours ?? 0,
@@ -43,45 +39,29 @@ export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
 }
 
 
-export async function meResolver( _parent: unknown, _args: unknown, context: GraphQLContext ) {
+export async function meResolver(_parent: unknown, _args: unknown, context: GraphQLContext) {
   if (!context.user) throw new AuthenticationError();
 
   const uid = context.user.uid;
   const doc = await context.db.collection('users').doc(uid).get();
-
-  if (!doc.exists) {
-    // Valid Firebase token, but no Firestore profile
-    // - the frontend's needsOnboarding AuthStatus routes on exactly this signal.
-    throw new NotOnboardedError();
-  }
+  if (!doc.exists) throw new NotOnboardedError();
 
   return mapUserDoc(uid, doc.data()!);
 }
 
-export async function updateProfileResolver(
-  _parent: unknown,
-  args: { input: UpdateProfileInput },
-  context: GraphQLContext
-) {
+export async function updateProfileResolver(_parent: unknown, args: { input: UpdateProfileInput }, context: GraphQLContext) {
   if (!context.user) throw new AuthenticationError();
 
   const uid = context.user.uid;
   const userRef = context.db.collection('users').doc(uid);
   const doc = await userRef.get();
-
   if (!doc.exists) throw new NotOnboardedError();
 
   const validated = validateUpdateProfileInput(args.input);
+  if (Object.keys(validated).length === 0) return mapUserDoc(uid, doc.data()!);
 
-  if (Object.keys(validated).length === 0) {
-    return mapUserDoc(uid, doc.data()!);
-  }
-
-  await userRef.update({
-    ...validated,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
+  await userRef.update({ ...validated, updatedAt: FieldValue.serverTimestamp() });
   const updatedDoc = await userRef.get();
+
   return mapUserDoc(uid, updatedDoc.data()!);
 }
