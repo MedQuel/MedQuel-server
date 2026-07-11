@@ -15,6 +15,8 @@ export default function AuthLayout() {
       router.replace('/onboarding');
     } else if (authStatus === 'needsEmailVerification') {
       router.replace('/auth/verifyEmail');
+    } else if (authStatus === 'unauthenticated') {
+      router.replace('/auth');
     }
   }, [authStatus, router]);
 
