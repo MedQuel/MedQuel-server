@@ -13,14 +13,13 @@ import {
   isUnshippedFeature,
   normalizeError,
 } from './api.errors';
-import * as Mock from '../constants/mockData';
 import type {
   User,
+  QuizPrefs,
+  NotifPrefs,
   CompleteOnboardingInput,
   CompleteOnboardingResult,
   UpdateProfileInput,
-  NotifPrefs,
-  QuizPrefs,
   StartQuizSessionInput,
   StartQuizSessionResult,
   SubmitQuizSessionInput,
@@ -42,6 +41,7 @@ import type {
   VerifyPaymentInput,
   Subscription,
 } from '../types/types';
+import * as Mock from '../constants/mockData';
 
 
 const IMPLEMENTED_OPERATIONS = {
@@ -71,8 +71,6 @@ const IMPLEMENTED_OPERATIONS = {
 } as const;
 type OperationLabel = keyof typeof IMPLEMENTED_OPERATIONS;
 
-// Dev-mode warn-once-per-session
-// Decision: warn once per endpoint per app session, dev-only, silent in production.
 const warnedThisSession = new Set<string>();
 function warnFallbackOnce(label: string, reason: string): void {
   if (!config.logMockFallbacks) return;
@@ -81,7 +79,6 @@ function warnFallbackOnce(label: string, reason: string): void {
   console.warn(`[api] ${label} → serving mock data (${reason})`);
 }
 
-// Shared fallback wrapper
 async function withMockFallback<T>(
   label: OperationLabel,
   real: () => Promise<T>,
@@ -103,8 +100,6 @@ async function withMockFallback<T>(
   } catch (err) {
     const apiErr = normalizeError(err);
 
-    // Never silently mock auth/authorization/validation/conflict problems,
-    // these are real states the app needs to react to.
     if (
       apiErr instanceof AuthenticationError ||
       apiErr instanceof AuthorizationError ||
@@ -153,18 +148,6 @@ const ME_QUERY = gql`
       totalCorrect
       studyHours
       badges
-      badgeProgress
-      notifPrefs {
-        pushEnabled
-        emailDigest
-        rankAlerts
-        contestReminders
-      }
-      quizPrefs {
-        defaultDifficulty
-        timerSound
-        autoSubmit
-      }
       createdAt
       updatedAt
     }
