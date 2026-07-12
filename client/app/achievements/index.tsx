@@ -6,9 +6,9 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
-import { LockedBadgeCard } from '../../components/LockedBadgeCard';
 import { BadgeProgressCard } from '../../components/BadgeProgressCard';
 import type { EarnedAchievement } from '../../common/constants/achievements';
+import { LockedBadgeCard } from '../../components/achievements/LockedBadgeCard';
 import { AchievementProgressCard } from '../../components/AchievementProgressCard';
 
 
