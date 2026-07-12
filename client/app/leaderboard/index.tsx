@@ -1,25 +1,23 @@
+import { Feather } from '@expo/vector-icons';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '../../common/context/useBottomBar';
-
 import { TabContainer } from '../../components/TabContainer';
-import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
+import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
 
-type LeaderboardTimeFilter = 'weekly' | 'monthly' | 'alltime';
-type LeaderboardScope = 'global' | 'friends';
 
+type LeaderboardScope = 'global' | 'friends';
+type LeaderboardTimeFilter = 'weekly' | 'monthly' | 'alltime';
 type LeaderboardPodiumUser = {
   id: string;
   name: string;
   initials: string;
   score: number;
 };
-
 type LeaderboardRankRow = {
   id: string;
   rank: number;
@@ -28,7 +26,6 @@ type LeaderboardRankRow = {
   specialty: string;
   points: number;
 };
-
 type CurrentUserLeaderboardRow = {
   rank: number;
   initials: string;
@@ -38,18 +35,19 @@ type CurrentUserLeaderboardRow = {
   trend: number;
   trendLabel: string;
 };
-
 type LeaderboardSnapshot = {
   podiumUsers: LeaderboardPodiumUser[];
   currentUser: CurrentUserLeaderboardRow;
   rankings: LeaderboardRankRow[];
   playersCount: number;
 };
-
 type LeaderboardMock = {
   timeTabs: readonly { id: LeaderboardTimeFilter; label: string }[];
   scopeTabs: readonly { id: LeaderboardScope; label: string }[];
-  snapshots: Record<LeaderboardTimeFilter, Record<LeaderboardScope, LeaderboardSnapshot>>;
+  snapshots: Record<
+    LeaderboardTimeFilter,
+    Record<LeaderboardScope, LeaderboardSnapshot>
+  >;
 };
 
 const createRankings = (rows: LeaderboardRankRow[]) => rows;
@@ -58,7 +56,7 @@ const createSnapshot = (
   podiumUsers: LeaderboardPodiumUser[],
   currentUser: CurrentUserLeaderboardRow,
   rankings: LeaderboardRankRow[],
-  playersCount: number,
+  playersCount: number
 ): LeaderboardSnapshot => ({
   podiumUsers,
   currentUser,
@@ -87,7 +85,7 @@ const leaderboardMock: LeaderboardMock = {
         {
           rank: 5,
           initials: 'M',
-          name: 'You • Mohsin Ansari',
+          name: 'Dr. John Doe',
           specialty: 'Surgery',
           points: 3201,
           trend: 12,
@@ -100,7 +98,7 @@ const leaderboardMock: LeaderboardMock = {
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 2654 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 2341 },
         ]),
-        2341,
+        2341
       ),
       friends: createSnapshot(
         [
@@ -111,7 +109,7 @@ const leaderboardMock: LeaderboardMock = {
         {
           rank: 3,
           initials: 'M',
-          name: 'You • Mohsin Ansari',
+          name: 'Dr. John Doe',
           specialty: 'Surgery',
           points: 3201,
           trend: 9,
@@ -119,12 +117,12 @@ const leaderboardMock: LeaderboardMock = {
         },
         createRankings([
           { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 3456 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 3201 },
+          { id: '5', rank: 5, initials: 'MA', name: 'Ayush Kumar', specialty: 'Surgery', points: 3201 },
           { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 3012 },
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 2710 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 2465 },
         ]),
-        1840,
+        1840
       ),
     },
     monthly: {
@@ -150,7 +148,7 @@ const leaderboardMock: LeaderboardMock = {
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 7975 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 7741 },
         ]),
-        9821,
+        9821
       ),
       friends: createSnapshot(
         [
@@ -174,7 +172,7 @@ const leaderboardMock: LeaderboardMock = {
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 7440 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 7115 },
         ]),
-        7120,
+        7120
       ),
     },
     alltime: {
@@ -200,7 +198,7 @@ const leaderboardMock: LeaderboardMock = {
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 30254 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 29411 },
         ]),
-        39241,
+        39241
       ),
       friends: createSnapshot(
         [
@@ -224,30 +222,30 @@ const leaderboardMock: LeaderboardMock = {
           { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 27365 },
           { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 26408 },
         ]),
-        29874,
+        29874
       ),
     },
   },
 };
 
-export default function LeaderboardScreen() {
-  const { theme } = useTheme();
-  useBottomBar(true, 'leaderboard');
 
+export default function LeaderboardScreen() {
   const [timeFilter, setTimeFilter] = useState<LeaderboardTimeFilter>('weekly');
   const [scopeFilter, setScopeFilter] = useState<LeaderboardScope>('global');
   const [refreshing, setRefreshing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const spin = useRef(new Animated.Value(0)).current;
+  const { theme } = useTheme();
+  useBottomBar(true, 'leaderboard');
 
+  const spin = useRef(new Animated.Value(0)).current;
   const rotate = useMemo(
     () =>
       spin.interpolate({
         inputRange: [0, 1],
         outputRange: ['0deg', '360deg'],
       }),
-    [spin],
+    [spin]
   );
 
   const refreshLeaderboard = useCallback(() => {
@@ -262,7 +260,7 @@ export default function LeaderboardScreen() {
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start(() => {
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
       setRefreshing(false);
     });
   }, [refreshing, spin]);
@@ -274,21 +272,22 @@ export default function LeaderboardScreen() {
 
   const activeSnapshot = leaderboardMock.snapshots[timeFilter][scopeFilter];
 
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: theme.space.md,
           paddingTop: theme.space.md,
           paddingBottom: theme.space.xxl * 2.5,
+          paddingHorizontal: theme.space.md,
         }}
       >
         <View
           style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'flex-start',
+            justifyContent: 'space-between',
             marginBottom: theme.space.md,
           }}
         >
@@ -307,7 +306,7 @@ export default function LeaderboardScreen() {
 
             <Text
               style={{
-                marginTop: 2,
+                marginTop: theme.space.xs / 2,
                 color: theme.color.textSecondary,
                 fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
@@ -323,36 +322,39 @@ export default function LeaderboardScreen() {
             style={({ pressed }) => ({
               width: 40,
               height: 40,
-              borderRadius: theme.borderRadius.lg,
               alignItems: 'center',
               justifyContent: 'center',
               borderWidth: 1,
               borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.lg,
               backgroundColor: theme.color.card,
               opacity: pressed ? 0.88 : 1,
-              shadowColor: theme.color.accent,
-              shadowOpacity: theme.isDark ? 0.16 : 0.08,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 2 },
               elevation: 2,
+              boxShadow: theme.isDark
+                ? `0px 2px 8px ${theme.color.accent}29`
+                : `0px 2px 8px, ${theme.color.accent}14`,
             })}
           >
             <Animated.View style={{ transform: [{ rotate }] }}>
-              <Feather name="refresh-cw" size={17} color={theme.color.accent} />
+              <Feather
+                name='refresh-cw'
+                size={theme.space.md}
+                color={theme.color.accent}
+              />
             </Animated.View>
           </Pressable>
         </View>
 
         <View
           style={{
-            flexDirection: 'row',
-            gap: theme.space.xs,
-            marginBottom: theme.space.sm,
-            alignSelf: 'flex-start',
             width: '100%',
+            gap: theme.space.xs,
+            flexDirection: 'row',
+            alignSelf: 'flex-start',
+            marginBottom: theme.space.sm,
           }}
         >
-          {leaderboardMock.timeTabs.map(tab => {
+          {leaderboardMock.timeTabs.map((tab) => {
             const active = timeFilter === tab.id;
 
             return (
@@ -362,20 +364,19 @@ export default function LeaderboardScreen() {
                 style={({ pressed }) => ({
                   minWidth: 88,
                   minHeight: 30,
-                  borderRadius: 999,
-                  borderWidth: active ? 0 : 1,
-                  borderColor: active ? theme.color.accent : theme.color.border,
-                  backgroundColor: active ? theme.color.accent : theme.color.card,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  paddingHorizontal: theme.space.md,
                   paddingVertical: theme.space.xs,
+                  paddingHorizontal: theme.space.md,
+                  borderWidth: active ? 0 : 1,
+                  borderRadius: theme.borderRadius.full,
+                  borderColor: active ? theme.color.accent : theme.color.border,
+                  backgroundColor: active ? theme.color.accent : theme.color.card,
                   opacity: pressed ? 0.9 : 1,
-                  shadowColor: active ? theme.color.accent : 'transparent',
-                  shadowOpacity: active ? (theme.isDark ? 0.18 : 0.08) : 0,
-                  shadowRadius: active ? 8 : 0,
-                  shadowOffset: active ? { width: 0, height: 2 } : { width: 0, height: 0 },
                   elevation: active ? 2 : 0,
+                  boxShadow: active
+                    ? `0px 2px 8px ${theme.color.accent}29`
+                    : `0px 0px 0px, ${theme.color.accent}14`,
                 })}
               >
                 <Text
@@ -394,19 +395,16 @@ export default function LeaderboardScreen() {
         </View>
 
         <View style={{ height: theme.space.md }} />
-
         <TabContainer
           tabs={leaderboardMock.scopeTabs}
           value={scopeFilter}
-          onChange={value => switchScope(value as LeaderboardScope)}
+          onChange={(value) => switchScope(value as LeaderboardScope)}
         />
 
         <View style={{ height: theme.space.md }} />
-
         <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
 
         <View style={{ height: theme.space.md }} />
-
         <CurrentUserLeaderboardRankCard
           name={activeSnapshot.currentUser.name.replace('You • ', '')}
           rank={activeSnapshot.currentUser.rank}
@@ -415,12 +413,11 @@ export default function LeaderboardScreen() {
         />
 
         <View style={{ height: theme.space.lg }} />
-
         <View
           style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
+            justifyContent: 'space-between',
             marginBottom: theme.space.lg,
           }}
         >
@@ -447,7 +444,7 @@ export default function LeaderboardScreen() {
         </View>
 
         <View key={`${timeFilter}-${scopeFilter}-${refreshKey}`}>
-          {activeSnapshot.rankings.map(item => (
+          {activeSnapshot.rankings.map((item) => (
             <View key={item.id} style={{ marginBottom: theme.space.sm }}>
               <LeaderboardRankCard
                 rank={item.rank}
