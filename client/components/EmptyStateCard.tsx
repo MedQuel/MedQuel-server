@@ -2,8 +2,8 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { useTheme } from '../../theme/ThemeContext';
-import { withAlpha } from '../../common/utils/withAlpha';
+import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 
 
 type Props = {
