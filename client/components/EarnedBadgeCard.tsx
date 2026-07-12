@@ -2,8 +2,9 @@ import React from 'react';
 import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
+import { AchievementIcon } from './achievements/AchievementIcon';
 import { AchievementDefinition, EarnedAchievement, achievementCatalog } from '../common/constants/achievements';
-import { AchievementIcon } from './common/AchievementIcon';
+
 
 type Props = {
   achievements: EarnedAchievement[];
@@ -44,6 +45,7 @@ const parseEarnedAt = (value?: string) => {
   if (text === 'yesterday') return now - day;
 
   const match = text.match(/^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|month|months|y|yr|yrs|year|years)\s*ago$/);
+
   if (match) {
     const n = Number(match[1]);
     const unit = match[2] ?? '';
@@ -61,6 +63,7 @@ const parseEarnedAt = (value?: string) => {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? -1 : parsed;
 };
+
 
 export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) {
   const { theme } = useTheme();
@@ -88,11 +91,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
   const rows = [items.slice(0, 3), items.slice(3, 6)].filter(row => row.length);
 
   const tileSize = cardWidth
-    ? clamp(
-        Math.floor(((cardWidth - theme.space.sm * 2) / 3) * 0.34),
-        54,
-        72,
-      )
+    ? clamp(Math.floor(((cardWidth - theme.space.sm * 2) / 3) * 0.34), 54, 72)
     : 72;
 
   const onCardLayout = (event: LayoutChangeEvent) => {
@@ -118,10 +117,10 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
           onPress={onViewAllPress}
           disabled={!onViewAllPress}
           style={({ pressed }) => ({
+            paddingVertical: theme.space.xs * 1.25,
             paddingHorizontal: theme.space.md,
-            paddingVertical: 6,
-            borderRadius: theme.borderRadius.full,
             borderWidth: 1,
+            borderRadius: theme.borderRadius.full,
             borderColor: rgba(theme.color.accent, theme.isDark ? 0.28 : 0.18),
             backgroundColor: rgba(theme.color.accent, theme.isDark ? 0.10 : 0.06),
             opacity: pressed ? 0.85 : 1,
@@ -143,11 +142,11 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
       <View
         onLayout={onCardLayout}
         style={{
-          borderRadius: theme.borderRadius.xl,
+          padding: theme.space.md,
           borderWidth: 1.5,
+          borderRadius: theme.borderRadius.xl,
           borderColor: rgba(theme.color.accent, theme.isDark ? 0.20 : 0.12),
           backgroundColor: theme.color.card,
-          padding: theme.space.md,
         }}
       >
         {items.length ? (
@@ -155,8 +154,8 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
             <View
               key={`earned-row-${rowIndex}`}
               style={{
-                flexDirection: 'row',
                 gap: theme.space.sm,
+                flexDirection: 'row',
                 marginTop: rowIndex ? theme.space.md : 0,
               }}
             >
@@ -181,8 +180,8 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
                         position: 'absolute',
                         top: -10,
                         right: -10,
-                        paddingHorizontal: 8,
-                        paddingVertical: 3,
+                        paddingVertical: theme.space.xs * 0.75,
+                        paddingHorizontal: theme.space.sm,
                         borderRadius: theme.borderRadius.full,
                         backgroundColor: theme.color.error,
                        }}
@@ -190,7 +189,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
                       <Text
                         style={{
                           color: theme.color.textInverse,
-                          fontSize: 10,
+                          fontSize: theme.fontSize.xs,
                           fontWeight: theme.fontWeight.bold,
                           fontFamily: theme.fontFamily.number,
                         }}
@@ -204,19 +203,17 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
                     <Text
                       numberOfLines={2}
                       style={{
-                        marginTop: theme.space.md + 2,
                         textAlign: 'center',
                         color: theme.color.textPrimary,
                         fontSize: theme.fontSize.sm,
+                        lineHeight: theme.fontSize.lg,
                         fontWeight: theme.fontWeight.bold,
                         fontFamily: theme.fontFamily.bold,
-                        lineHeight: 17,
+                        marginTop: theme.space.md + 2,
                       }}
                     >
                       {item.title}
                     </Text>
-
-                    
                   </View>
                 );
               })}
