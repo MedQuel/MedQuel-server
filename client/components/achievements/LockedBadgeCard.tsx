@@ -2,8 +2,9 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../common/utilities/withAlpha';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../common/utils/withAlpha';
+
 
 type Props = {
   title: string;
@@ -11,11 +12,7 @@ type Props = {
   accent?: string;
 };
 
-export function LockedBadgeCard({
-  title,
-  icon,
-  accent,
-}: Props) {
+export function LockedBadgeCard({ title, icon, accent }: Props) {
   const { theme } = useTheme();
 
   const resolvedAccent = accent ?? theme.color.accent;
@@ -24,19 +21,14 @@ export function LockedBadgeCard({
     <View
       style={{
         flex: 1,
-
         minHeight: 104,
-
         alignItems: 'center',
         justifyContent: 'center',
-
-        paddingHorizontal: theme.space.md,
         paddingVertical: theme.space.md,
-
+        paddingHorizontal: theme.space.md,
         borderWidth: 1,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
-
         backgroundColor: theme.color.card,
       }}
     >
@@ -44,43 +36,29 @@ export function LockedBadgeCard({
         style={{
           width: 52,
           height: 52,
-
           alignItems: 'center',
           justifyContent: 'center',
-
           marginBottom: theme.space.md,
-
-          borderRadius: theme.borderRadius.full,
-
           borderWidth: 1,
-          borderColor: withAlpha(
-            resolvedAccent,
-            theme.isDark ? 0.24 : 0.14
-          ),
-
+          borderRadius: theme.borderRadius.full,
+          borderColor: withAlpha(resolvedAccent, theme.isDark ? 0.24 : 0.14),
           backgroundColor: withAlpha(
             resolvedAccent,
             theme.isDark ? 0.12 : 0.08
           ),
         }}
       >
-        <Feather
-          name={icon}
-          size={22}
-          color={resolvedAccent}
-        />
+        <Feather name={icon} size={22} color={resolvedAccent} />
       </View>
 
       <Text
         numberOfLines={2}
         style={{
-          color: theme.color.textSecondary,
-
           textAlign: 'center',
-
-          fontFamily: theme.fontFamily.regular,
+          color: theme.color.textSecondary,
           fontSize: theme.fontSize.sm,
           fontWeight: theme.fontWeight.bold,
+          fontFamily: theme.fontFamily.regular,
         }}
       >
         {title}
