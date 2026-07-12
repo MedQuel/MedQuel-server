@@ -1,11 +1,8 @@
 import { View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import {
-  achievementIcons,
-  AchievementIconKey,
-  AchievementVariant,
-} from '../../common/constants/achievements';
+import { achievementIcons, AchievementIconKey, AchievementVariant } from '../../common/constants/achievements';
+
 
 type Props = {
   iconKey: AchievementIconKey;
@@ -15,9 +12,8 @@ type Props = {
 
 const rgba = (hex: string, alpha: number) => {
   const normalized = hex.replace('#', '');
-  const full =
-    normalized.length === 3
-      ? normalized.split('').map(ch => ch + ch).join('')
+  const full = normalized.length === 3
+      ? normalized.split('').map((ch) => ch + ch).join('')
       : normalized.slice(0, 6);
 
   const red = Number.parseInt(full.slice(0, 2), 16);
@@ -27,11 +23,7 @@ const rgba = (hex: string, alpha: number) => {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
-export function AchievementIcon({
-  iconKey,
-  variant,
-  size = 72,
-}: Props) {
+export function AchievementIcon({ iconKey, variant, size = 72 }: Props) {
   const { theme } = useTheme();
 
   const Icon = achievementIcons[iconKey] ?? achievementIcons.award;
@@ -46,7 +38,6 @@ export function AchievementIcon({
 
   const mainDiamond = size * 0.98;
   const innerDiamond = size * 0.72;
-
   const iconSize = Math.round(size * 0.48);
 
   return (
@@ -63,16 +54,10 @@ export function AchievementIcon({
           position: 'absolute',
           width: mainDiamond,
           height: mainDiamond,
-          borderRadius: theme.borderRadius.md,
-          backgroundColor: rgba(
-            color,
-            theme.isDark ? 0.14 : 0.08,
-          ),
           borderWidth: 1.5,
-          borderColor: rgba(
-            color,
-            theme.isDark ? 0.28 : 0.18,
-          ),
+          borderRadius: theme.borderRadius.md,
+          borderColor: rgba(color, theme.isDark ? 0.28 : 0.18),
+          backgroundColor: rgba(color, theme.isDark ? 0.14 : 0.08),
           transform: [{ rotate: '45deg' }],
         }}
       />
@@ -82,31 +67,16 @@ export function AchievementIcon({
           position: 'absolute',
           width: innerDiamond,
           height: innerDiamond,
-          borderRadius: theme.borderRadius.sm,
-          backgroundColor: rgba(
-            color,
-            theme.isDark ? 0.12 : 0.06,
-          ),
           borderWidth: 1,
-          borderColor: rgba(
-            color,
-            theme.isDark ? 0.22 : 0.14,
-          ),
+          borderRadius: theme.borderRadius.sm,
+          borderColor: rgba(color, theme.isDark ? 0.22 : 0.14),
+          backgroundColor: rgba(color, theme.isDark ? 0.12 : 0.06),
           transform: [{ rotate: '45deg' }],
         }}
       />
 
-      <View
-        style={{
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Icon
-          size={iconSize}
-          color={color}
-          strokeWidth={2.25}
-        />
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={iconSize} color={color} strokeWidth={2.25} />
       </View>
     </View>
   );
