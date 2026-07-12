@@ -3,16 +3,15 @@ import { Text, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../common/utilities/withAlpha';
+import { withAlpha } from '../common/utils/withAlpha';
+
 
 type StatKey = 'accuracy' | 'streak' | 'questions';
-
 type Props = {
   accuracy: number;
   streak: number;
   questions: number;
 };
-
 type StatItem = {
   key: StatKey;
   label: string;
@@ -29,6 +28,7 @@ const icons: Record<StatKey, (size: number, color: string) => React.ReactNode> =
   streak: (size, color) => <MaterialCommunityIcons name="fire" size={size} color={color} />,
   questions: (size, color) => <Feather name="check-square" size={size} color={color} />,
 };
+
 
 export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
   const { theme } = useTheme();
@@ -66,6 +66,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
     },
   ];
 
+
   return (
     <View style={{ flexDirection: 'row', gap: theme.space.sm }}>
       {stats.map(item => (
@@ -76,17 +77,14 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
             minHeight: 112,
             alignItems: 'center',
             justifyContent: 'center',
-            paddingHorizontal: theme.space.sm,
             paddingVertical: theme.space.md,
-            borderRadius: theme.borderRadius.xl,
+            paddingHorizontal: theme.space.sm,
             borderWidth: 1.5,
             borderColor: item.border,
-            backgroundColor: item.background,
-            shadowColor: item.shadowColor,
-            shadowOpacity: theme.isDark ? 0.12 : 0.05,
-            shadowRadius: 14,
-            shadowOffset: { width: 0, height: 6 },
+            borderRadius: theme.borderRadius.xl,
             elevation: 4,
+            boxShadow: `0px 6px 14px ${withAlpha(item.shadowColor, theme.isDark ? 0.12 : 0.05)}`,
+            backgroundColor: item.background,
           }}
         >
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -95,11 +93,11 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
 
           <Text
             style={{
-              marginTop: theme.space.sm,
               color: item.valueColor,
               fontSize: theme.fontSize.xxl,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
+              marginTop: theme.space.sm,
             }}
           >
             {item.value}
@@ -107,7 +105,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
 
           <Text
             style={{
-              marginTop: 2,
+              marginTop: theme.space.xs * 0.5,
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.xs,
               fontFamily: theme.fontFamily.regular,
