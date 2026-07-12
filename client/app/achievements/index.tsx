@@ -84,7 +84,7 @@ const achievementsMock = {
 
 export default function AchievementsScreen() {
   const { theme } = useTheme();
-  useBottomBar(true, 'home');
+  useBottomBar(true, 'profile');
 
   const progressData = achievementsMock.progress;
   const earnedBadges = achievementsMock.earnedBadges;
