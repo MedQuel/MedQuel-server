@@ -6,9 +6,9 @@ import { useTheme } from '../../theme/ThemeContext';
 
 function withOpacity(hex: string, opacity: number) {
   const bigint = parseInt(hex.replace('#', ''), 16);
-  const r = (bigint >> 16) & 255;
-  const g = (bigint >> 8) & 255;
-  const b = bigint & 255;
+  const r = Math.floor(bigint / 65536) % 256;
+  const g = Math.floor(bigint / 256) % 256;
+  const b = bigint % 256;
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
@@ -253,7 +253,7 @@ export default function NotificationsScreen() {
 
   return (
     <ScrollView
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 70 }}
       showsVerticalScrollIndicator={false}
     >
