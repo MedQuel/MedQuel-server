@@ -1,36 +1,22 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
-export function HomeHeader({
-  name,
-  streak,
-  level,
-  initial,
-}: {
-  name: string;
-  streak: number;
-  level: number;
-  initial: string;
-}) {
+
+export function HomeHeader({ name, streak, level, initial }: { name: string, streak: number, level: number, initial: string }) {
   const { theme } = useTheme();
 
   return (
     <View
       style={{
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: theme.space.md,
-        paddingVertical: theme.space.md,
+        justifyContent: 'space-between',
         paddingBottom: theme.space.sm,
+        paddingVertical: theme.space.md,
+        paddingHorizontal: theme.space.md,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -41,23 +27,44 @@ export function HomeHeader({
           style={{
             width: theme.space.xxl,
             height: theme.space.xxl,
-            borderRadius: theme.borderRadius.full,
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: theme.borderRadius.full,
           }}
         >
-          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontFamily: theme.fontFamily.bold }}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
             {initial}
           </Text>
         </LinearGradient>
 
         <View style={{ marginLeft: theme.space.sm }}>
-          <Text numberOfLines={1} style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontFamily: theme.fontFamily.bold }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
             {name}
           </Text>
+
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.space.xs * 0.5 }}>
-           <Ionicons name="flame" size={theme.fontSize.md} color="#FF6723" />
-            <Text style={{ marginLeft: theme.space.xs * 0.5, color: theme.color.warning, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+            <Ionicons name='flame' size={theme.fontSize.md} color='#FF6723' />
+            <Text
+              style={{
+                color: theme.color.warning,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+                marginLeft: theme.space.xs * 0.5,
+              }}
+            >
               {`${streak} ${theme.i18n.t('Day Streak')}`}
             </Text>
           </View>
@@ -70,17 +77,17 @@ export function HomeHeader({
           style={{
             width: theme.space.xl + theme.space.xs,
             height: theme.space.xl + theme.space.xs,
-            borderRadius: theme.borderRadius.lg,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: theme.space.sm,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.card,
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginRight: theme.space.sm,
           }}
         >
           <Ionicons
-            name="notifications-outline"
+            name='notifications-outline'
             size={theme.fontSize.md}
             color={theme.color.textSecondary}
           />
@@ -91,10 +98,10 @@ export function HomeHeader({
               right: -(theme.space.xs * 0.5),
               width: theme.space.sm,
               height: theme.space.sm,
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.color.error,
               borderWidth: StyleSheet.hairlineWidth,
               borderColor: theme.color.background,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.error,
             }}
           />
         </TouchableOpacity>
@@ -103,25 +110,25 @@ export function HomeHeader({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            paddingHorizontal: theme.space.sm,
             paddingVertical: theme.space.xs,
-            borderRadius: theme.borderRadius.full,
+            paddingHorizontal: theme.space.sm,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.full,
             backgroundColor: theme.color.surface,
           }}
         >
           <Ionicons
-            name="star"
+            name='star'
             size={theme.fontSize.sm}
             color={theme.color.warning}
           />
           <Text
             style={{
-              marginLeft: theme.space.xs,
               color: theme.color.accent,
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.bold,
+              marginLeft: theme.space.xs,
             }}
           >
             {`${theme.i18n.t('Lv')} ${level}`}
