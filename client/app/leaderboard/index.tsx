@@ -279,7 +279,7 @@ export default function LeaderboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: theme.space.md,
-          paddingBottom: theme.space.xxl * 2.5,
+          paddingBottom: theme.space.xl,
           paddingHorizontal: theme.space.md,
         }}
       >
