@@ -1,11 +1,10 @@
+
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-
 import { useTheme } from '../../theme/ThemeContext';
-
-
-export function HomeHeader({ name, streak, level, initial }: { name: string, streak: number, level: number, initial: string }) {
+import { UserLevelChip } from '../../components/UserLevelChip';
+export function HomeHeader({ name, streak, level, initial, onNotificationsPress }: { name: string, streak: number, level: number, initial: string, onNotificationsPress?: () => void }) {
   const { theme } = useTheme();
 
   return (
@@ -74,6 +73,7 @@ export function HomeHeader({ name, streak, level, initial }: { name: string, str
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity
           activeOpacity={0.8}
+          onPress={onNotificationsPress}
           style={{
             width: theme.space.xl + theme.space.xs,
             height: theme.space.xl + theme.space.xs,
@@ -106,34 +106,7 @@ export function HomeHeader({ name, streak, level, initial }: { name: string, str
           />
         </TouchableOpacity>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: theme.space.xs,
-            paddingHorizontal: theme.space.sm,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.surface,
-          }}
-        >
-          <Ionicons
-            name='star'
-            size={theme.fontSize.sm}
-            color={theme.color.warning}
-          />
-          <Text
-            style={{
-              color: theme.color.accent,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.bold,
-              marginLeft: theme.space.xs,
-            }}
-          >
-            {`${theme.i18n.t('Lv')} ${level}`}
-          </Text>
-        </View>
+        <UserLevelChip level={level} size='sm' />
       </View>
     </View>
   );
