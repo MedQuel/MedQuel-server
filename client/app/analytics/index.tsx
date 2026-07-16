@@ -260,7 +260,7 @@ export default function AnalyticsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: theme.space.sm,
-          paddingBottom: theme.space.xxl * 2.5,
+          paddingBottom: theme.space.xl,
           paddingHorizontal: theme.space.md,
         }}
       >
