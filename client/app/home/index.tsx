@@ -1,5 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-
+import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
@@ -9,28 +10,32 @@ import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
 import { subjectCatalog, SubjectIcon, SubjectId } from '../../common/constants/subject';
-
-
 type PracticeSubject = { id: SubjectId, label: string };
-
 function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[], onPress?: (id: SubjectId) => void }) {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
 
-  const defaultSubjects: PracticeSubject[] = [
-    { id: 'anatomy', label: theme.i18n.t('Anatomy') },
-    { id: 'physiology', label: theme.i18n.t('Physiology') },
-    { id: 'pathology', label: theme.i18n.t('Pathology') },
-    { id: 'pharmacology', label: theme.i18n.t('Pharma') },
-    { id: 'surgery', label: theme.i18n.t('Surgery') },
-    { id: 'microbiology', label: theme.i18n.t('Micro') },
-  ];
+  const randomSubjects: PracticeSubject[] = useMemo(() => {
+    const allIds = Object.keys(subjectCatalog) as SubjectId[];
+    const shuffled: SubjectId[] = [...allIds];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const current = shuffled[i];
+      const next = shuffled[j];
+      if (current !== undefined && next !== undefined) {
+        [shuffled[i], shuffled[j]] = [next, current];
+      }
+    }
+    return shuffled.slice(0, 6).map((id) => ({
+      id,
+      label: theme.i18n.t(subjectCatalog[id].title),
+    }));
+  }, []);
 
   const iconSize = Math.min(width * 0.13, 58);
   const iconSizeValue = iconSize * 0.42;
-  const finalSubjects = subjects ?? defaultSubjects;
-
-  const getIconSizeValue = (subjectId: SubjectId) => subjectId === 'anatomy' ? iconSizeValue*1.35 : iconSizeValue;
+  const finalSubjects = subjects ?? randomSubjects;
+  const getIconSizeValue = (subjectId: SubjectId) => subjectId === 'anatomy' ? iconSizeValue * 1.35 : iconSizeValue;
 
   return (
     <View
@@ -44,7 +49,6 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
       {finalSubjects.map((subject) => {
         const definition = subjectCatalog[subject.id];
         const iconColor = theme.color[definition?.variant ?? 'accent'];
-
         return (
           <TouchableOpacity
             key={subject.id}
@@ -75,7 +79,6 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
                 size={getIconSizeValue(subject.id)}
               />
             </View>
-
             <Text
               numberOfLines={1}
               style={{
@@ -93,16 +96,19 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
     </View>
   );
 }
-
-
 export default function HomeScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
   useBottomBar(true, 'home');
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <HomeHeader initial='M' name='Dr. Mohan.' streak={24} level={12} />
-
+      <HomeHeader
+        initial='M'
+        name='Dr. Mohan.'
+        streak={24}
+        level={12}
+        onNotificationsPress={() => router.push('/notifications')}
+      />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -119,14 +125,12 @@ export default function HomeScreen() {
           nextLevelEP={3500}
           remainingEP={653}
         />
-
         <StatsOverviewCard
           rank={5}
           accuracy={87}
           quizzesTaken={42}
           earnedPoints={3240}
         />
-
         <DailyChallengeCard
           title='Anatomy Essentials'
           questions={30}
@@ -136,7 +140,6 @@ export default function HomeScreen() {
           epReward={150}
           onStart={() => {}}
         />
-
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text
@@ -149,8 +152,7 @@ export default function HomeScreen() {
             >
               {theme.i18n.t('Active Contests')}
             </Text>
-
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => router.push('/contests')}>
               <Text
                 style={{
                   color: theme.color.accent,
@@ -162,7 +164,6 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
           <View>
             <ActiveContestsCard
               contests={[
@@ -178,7 +179,6 @@ export default function HomeScreen() {
             />
           </View>
         </View>
-
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text
@@ -191,8 +191,7 @@ export default function HomeScreen() {
             >
               {theme.i18n.t('Practice by Subject')}
             </Text>
-
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => router.push('/home/practice-subjects')}>
               <Text
                 style={{
                   color: theme.color.accent,
@@ -204,10 +203,8 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
           <PracticeBySubject onPress={(subjectId) => { console.log('Selected Subject:', subjectId) }} />
         </View>
-
         <PerformanceTrendCard
           accuracy={{
             mon: 72,
