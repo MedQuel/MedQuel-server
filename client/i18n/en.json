@@ -144,7 +144,73 @@
     "ep_to_next_level": "{{remainingEP}} EP to next level"
   },
 
-  "leaderboard": {},
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Compete & climb the ranks",
+    "rankings": "Rankings",
+    "players_count": "{{count}} players",
+    "tabs": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "alltime": "All Time"
+    }
+  },
+
+  "achievements": {
+    "title": "Achievements",
+    "subtitle": "Collect badges & earn EP rewards",
+    "locked": "Locked",
+    "empty_states": {
+      "no_progress": {
+        "title": "No progress yet",
+        "description": "Your achievement summary will appear here once data is available."
+      },
+      "no_badges": {
+        "title": "No badges earned yet",
+        "description": "Complete contests and study goals to unlock badges."
+      },
+      "in_progress": {
+        "title": "No in-progress badges",
+        "description": "Start a streak or contest to track badge progress."
+      },
+      "no_locked": {
+        "title": "No locked badges",
+        "description": "Locked badge placeholders will appear here."
+      }
+    }
+  },
+
+  "screens": {
+    "Analytics": {
+      "title": "Analytics",
+      "subtitle": "Track your learning progress"
+    }
+  },
+
+  "analytics": {
+    "empty_states": {
+      "subject": {
+        "title": "No subject performance yet",
+        "description": "Add subject-wise results to see the chart here."
+      },
+      "overview": {
+        "title": "No analytics data yet",
+        "description": "Start completing quizzes to see your overview here."
+      },
+      "key_stats": {
+        "title": "No key statistics yet",
+        "description": "Your performance summary will appear after a few attempts."
+      },
+      "activity": {
+        "title": "No activity yet",
+        "description": "Your learning activity heatmap will show up here."
+      },
+      "attempts": {
+        "title": "No attempts yet",
+        "description": "Once you start taking quizzes, your history will appear here."
+      }
+    }
+  },
 
   "contests": {
     "search_contests": "Search contests...",
