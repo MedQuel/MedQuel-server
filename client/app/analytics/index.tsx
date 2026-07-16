@@ -129,12 +129,12 @@ const tText = (value: string, fallback: string, key: string) => {
 };
 
 function SubjectEmptyState() {
-  useTheme();
+  const { theme } = useTheme();
 
   return (
     <EmptyStateCard
-      title='No subject performance yet'
-      description='Add subject-wise results to see the chart here.'
+      title={theme.i18n.t('analytics.empty_states.subject.title')}
+      description={theme.i18n.t('analytics.empty_states.subject.description')}
       icon='book-open'
     />
   );
@@ -273,8 +273,8 @@ export default function AnalyticsScreen() {
             />
           ) : (
             <EmptyStateCard
-              title='No analytics data yet'
-              description='Start completing quizzes to see your overview here.'
+              title={theme.i18n.t('analytics.empty_states.overview.title')}
+              description={theme.i18n.t('analytics.empty_states.overview.description')}
               icon='bar-chart-2'
             />
           )}
@@ -290,8 +290,8 @@ export default function AnalyticsScreen() {
             />
           ) : (
             <EmptyStateCard
-              title='No key statistics yet'
-              description='Your performance summary will appear after a few attempts.'
+              title={theme.i18n.t('analytics.empty_states.key_stats.title')}
+              description={theme.i18n.t('analytics.empty_states.key_stats.description')}
               icon='grid'
             />
           )}
@@ -331,8 +331,8 @@ export default function AnalyticsScreen() {
             </View>
           ) : (
             <EmptyStateCard
-              title='No activity yet'
-              description='Your learning activity heatmap will show up here.'
+              title={theme.i18n.t('analytics.empty_states.activity.title')}
+              description={theme.i18n.t('analytics.empty_states.activity.description')}
               icon='calendar'
             />
           )}
@@ -341,8 +341,8 @@ export default function AnalyticsScreen() {
             <AttemptHistoryCard attempts={analyticsMock.attempts} />
           ) : (
             <EmptyStateCard
-              title='No attempts yet'
-              description='Once you start taking quizzes, your history will appear here.'
+              title={theme.i18n.t('analytics.empty_states.attempts.title')}
+              description={theme.i18n.t('analytics.empty_states.attempts.description')}
               icon='file-text'
             />
           )}
