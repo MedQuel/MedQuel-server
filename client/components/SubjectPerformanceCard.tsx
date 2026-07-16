@@ -38,12 +38,10 @@ export function SubjectPerformanceCard({
   return (
     <View
       style={{
-        backgroundColor: isDark
-          ? theme.color.background 
-          : theme.color.card,
-        paddingHorizontal: theme.space.sm,
-        paddingVertical: theme.space.md -2,
-        borderRadius: theme.borderRadius.lg + 2,
+        backgroundColor: theme.color.card,
+        paddingHorizontal: theme.space.sm + 2,
+        paddingVertical: theme.space.md,
+        borderRadius: theme.borderRadius.lg + 4,
         borderWidth: 1,
         borderColor: theme.color.border,
       }}
@@ -53,21 +51,21 @@ export function SubjectPerformanceCard({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          paddingBottom: theme.space.sm,
+          paddingBottom: theme.space.sm + 2,
         }}
       >
         <MaterialCommunityIcons
           name="pulse"
-          size={18}
+          size={20}
           color={theme.color.accent}
         />
 
         <Text
           style={{
-            fontSize: theme.fontSize.sm,
+            fontSize: theme.fontSize.sm + 2,
             fontWeight: theme.fontWeight.bold,
             color: theme.color.textPrimary,
-            paddingLeft: 6,
+            paddingLeft: 8,
           }}
         >
           {title}
@@ -85,7 +83,7 @@ export function SubjectPerformanceCard({
               paddingBottom:
                 index === subjects.length - 1
                   ? 0
-                  : theme.space.xs,
+                  : theme.space.xs + 2,
             }}
           >
             {/* Label Row */}
@@ -94,12 +92,12 @@ export function SubjectPerformanceCard({
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                paddingBottom: 4,
+                paddingBottom: 6,
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs,
+                  fontSize: theme.fontSize.xs + 2,
                   color: theme.color.textSecondary,
                   fontWeight: theme.fontWeight.medium,
                 }}
@@ -109,14 +107,14 @@ export function SubjectPerformanceCard({
 
               <View
                 style={{
-                  paddingHorizontal: theme.space.xs,
-                  paddingVertical: 1,
+                  paddingHorizontal: theme.space.xs + 2,
+                  paddingVertical: 3,
                   borderRadius: theme.borderRadius.full,
                 }}
               >
                 <Text
                   style={{
-                    fontSize: theme.fontSize.xs,
+                    fontSize: theme.fontSize.xs + 2,
                     fontWeight: theme.fontWeight.bold,
                     color: scoreColor,
                   }}
@@ -129,7 +127,7 @@ export function SubjectPerformanceCard({
             {/* Progress Bar */}
             <View
               style={{
-                height: theme.space.xs + 1,
+                height: theme.space.xs + 3,
                 backgroundColor: isDark?theme.color.card:theme.color.border,
                 borderRadius: theme.borderRadius.full,
                 overflow: "hidden",

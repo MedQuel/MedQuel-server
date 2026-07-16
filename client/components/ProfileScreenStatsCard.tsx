@@ -15,12 +15,12 @@ export function ProfileScreenStatsCard() {
   const { theme } = useTheme();
 
   return (
-    <View
+   <View
       style={{
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginTop: theme.space.lg,
-        paddingHorizontal: theme.space.md,
+        paddingHorizontal: theme.space.md + 6,
       }}
     >
       {stats.map((item, index) => (
@@ -29,7 +29,7 @@ export function ProfileScreenStatsCard() {
           style={{
             flex: 1,
             alignItems: 'center',
-            paddingVertical: theme.space.sm + 2,
+            paddingVertical: theme.space.sm + 8,
             marginHorizontal: theme.space.xs,
             borderWidth: 1.5,
             borderColor: theme.color.border,
@@ -39,16 +39,17 @@ export function ProfileScreenStatsCard() {
         >
           <MaterialCommunityIcons
             name={item.icon as any}
-            size={theme.space.md - 3}
+            size={theme.space.md + 6}
             color={item.color}
           />
 
           <Text
             style={{
               color: item.color,
-              fontSize: theme.fontSize.sm,
+              fontSize: theme.fontSize.md + 1,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.bold,
+              marginTop: theme.space.xs * 0.5,
             }}
           >
             {item.value}
@@ -57,7 +58,7 @@ export function ProfileScreenStatsCard() {
           <Text
             style={{
               color: theme.color.textMuted,
-              fontSize: theme.fontSize.xs - 2,
+              fontSize: theme.fontSize.xs + 1,
               fontFamily: theme.fontFamily.regular,
               marginTop: theme.space.xs * 0.5,
             }}
