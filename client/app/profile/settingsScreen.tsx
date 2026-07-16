@@ -3,23 +3,23 @@ import { useRouter } from "expo-router";
 // import ToggleSwitch from "toggle-switch-react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, ScrollView, Text, TouchableOpacity } from "react-native";
-
+import { ToggleSwitch } from "../..//components/ToggleSwitch";
 import { useTheme } from "../../theme/ThemeContext";
 import { UserProfileCard } from "../../components/UserProfileCard";
 import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
 
 export default function SettingsScreen() {
-  const [rankEnabled, setRankEnabled] = useState(true);
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [contestEnabled, setContestEnabled] = useState(true);
+  const [rankEnabled, setRankEnabled] = useState(false);
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [contestEnabled, setContestEnabled] = useState(false);
   const [achievementEnabled, setAchievementEnabled] = useState(false);
-  const [timerSoundEnabled, setTimerSoundEnabled] = useState(true);
+  const [timerSoundEnabled, setTimerSoundEnabled] = useState(false);
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(false);
 
-  const { theme, toggleTheme } = useTheme();
+  const { theme , toggleTheme } = useTheme();
   const router = useRouter();
   const { isDark } = theme;
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   return (
     <ScrollView
@@ -454,15 +454,16 @@ export default function SettingsScreen() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
                 }}
               >
-                {/* <ToggleSwitch
+                <ToggleSwitch
                   isOn={pushEnabled}
                   onColor="#3B82F6"
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + 55
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
                   }
                   size="medium"
                   onToggle={setPushEnabled}
-                /> */}
+                ></ToggleSwitch>
+               
               </View>
             </TouchableOpacity>
 
@@ -521,15 +522,16 @@ export default function SettingsScreen() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
                 }}
               >
-                {/* <ToggleSwitch
+                <ToggleSwitch
                   isOn={emailEnabled}
-                  onToggle={setEmailEnabled}
                   onColor="#3B82F6"
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + 55
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
                   }
                   size="medium"
-                /> */}
+                  onToggle={setEmailEnabled}
+                ></ToggleSwitch>
+                
               </View>
             </TouchableOpacity>
 
@@ -590,21 +592,16 @@ export default function SettingsScreen() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                {/* <ToggleSwitch
+                <ToggleSwitch
                   isOn={rankEnabled}
-                  onToggle={setRankEnabled}
                   onColor="#3B82F6"
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + 55
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
                   }
                   size="medium"
-                  thumbOnStyle={{
-                    backgroundColor: "#FFFFFF",
-                  }}
-                  thumbOffStyle={{
-                    backgroundColor: "#FFFFFF",
-                  }}
-                /> */}
+                  onToggle={setRankEnabled}
+                ></ToggleSwitch>
+               
               </View>
             </TouchableOpacity>
 
@@ -665,25 +662,16 @@ export default function SettingsScreen() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                {/* <ToggleSwitch
+                <ToggleSwitch
                   isOn={achievementEnabled}
-                  onToggle={setAchievementEnabled}
                   onColor="#3B82F6"
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + 55
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
                   }
                   size="medium"
-                  thumbOnStyle={{
-                    backgroundColor: isDark
-                      ? theme.color.textPrimary
-                      : theme.color.surface,
-                  }}
-                  thumbOffStyle={{
-                    backgroundColor: isDark
-                      ? theme.color.textPrimary
-                      : theme.color.surface,
-                  }}
-                /> */}
+                  onToggle={setAchievementEnabled}
+                ></ToggleSwitch>
+               
               </View>
             </TouchableOpacity>
 
@@ -742,25 +730,16 @@ export default function SettingsScreen() {
                   transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                 }}
               >
-                {/* <ToggleSwitch
+                <ToggleSwitch
                   isOn={contestEnabled}
-                  onToggle={setContestEnabled}
                   onColor="#3B82F6"
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + 55
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
                   }
                   size="medium"
-                  thumbOnStyle={{
-                    backgroundColor: isDark
-                      ? theme.color.textPrimary
-                      : theme.color.surface,
-                  }}
-                  thumbOffStyle={{
-                    backgroundColor: isDark
-                      ? theme.color.textPrimary
-                      : theme.color.surface,
-                  }}
-                /> */}
+                  onToggle={setContestEnabled}
+                ></ToggleSwitch>
+               
               </View>
             </TouchableOpacity>
           </View>
@@ -900,25 +879,16 @@ export default function SettingsScreen() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  {/* <ToggleSwitch
-                    isOn={timerSoundEnabled}
-                    onToggle={setTimerSoundEnabled}
-                    onColor={theme.color.accent}
-                    offColor={
-                      isDark ? theme.color.border : theme.color.textMuted + 55
-                    }
-                    size="medium"
-                    thumbOnStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                    thumbOffStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                  /> */}
+                  <ToggleSwitch
+                  isOn={timerSoundEnabled}
+                  onColor="#3B82F6"
+                  offColor={
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                  }
+                  size="medium"
+                  onToggle={setTimerSoundEnabled}
+                ></ToggleSwitch>
+                  
                 </View>
               </TouchableOpacity>
               <View
@@ -967,25 +937,16 @@ export default function SettingsScreen() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  {/* <ToggleSwitch
-                    isOn={autoSubmitEnabled}
-                    onToggle={setAutoSubmitEnabled}
-                    onColor={theme.color.accent}
-                    offColor={
-                      isDark ? theme.color.border : theme.color.textMuted + 55
-                    }
-                    size="medium"
-                    thumbOnStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                    thumbOffStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                  /> */}
+                  <ToggleSwitch
+                  isOn={autoSubmitEnabled}
+                  onColor="#3B82F6"
+                  offColor={
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                  }
+                  size="medium"
+                  onToggle={setAutoSubmitEnabled}
+                ></ToggleSwitch>
+                  
                 </View>
               </TouchableOpacity>
             </View>
@@ -1074,25 +1035,16 @@ export default function SettingsScreen() {
                     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
                   }}
                 >
-                  {/* <ToggleSwitch
-                    isOn={isDark}
-                    onToggle={toggleTheme}
-                    onColor={theme.color.accent}
-                    offColor={
-                      isDark ? theme.color.border : theme.color.textMuted + 55
-                    }
-                    size="medium"
-                    thumbOnStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                    thumbOffStyle={{
-                      backgroundColor: isDark
-                        ? theme.color.textPrimary
-                        : theme.color.surface,
-                    }}
-                  /> */}
+                  <ToggleSwitch
+                  isOn={isDark}
+                  onColor="#3B82F6"
+                  offColor={
+                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                  }
+                  size="medium"
+                  onToggle={toggleTheme}
+                ></ToggleSwitch>
+                  
                 </View>
               </TouchableOpacity>
               <View

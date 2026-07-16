@@ -15,15 +15,15 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
     <View
       style={[
         {
-          gap: theme.space.sm,
+          gap: theme.space.sm + 2,
           flexDirection: 'row',
           alignItems: 'center',
-          paddingVertical: theme.space.sm + 3,
-          paddingHorizontal: theme.space.lg,
-          borderWidth: theme.space.xs - 2,
+          paddingVertical: theme.space.sm + 5,
+          paddingHorizontal: theme.space.lg + 2,
+          borderWidth: 1.5,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.lg,
-          backgroundColor: theme.isDark ? theme.color.background : theme.color.background,
+          backgroundColor: theme.color.card,
           boxShadow: `0 2px 8px ${theme.color.premium}1F`,
           elevation: 3,
         },
@@ -31,17 +31,17 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
     >
       <View
         style={{
-          width: theme.space.md + 20,
-          height: theme.space.md + 15,
+          width: theme.space.md + 22,
+          height: theme.space.md + 17,
           alignItems: 'center',
           justifyContent: 'center',
-          borderRadius: theme.borderRadius.sm + 2,
+          borderRadius: theme.borderRadius.sm + 4,
           backgroundColor: theme.isDark ? theme.color.border + 'AA' : '#ece3f9',
         }}
       >
         <MaterialCommunityIcons
           name='crown-outline'
-          size={theme.space.md + 2}
+          size={theme.space.md + 4}
           color={theme.color.premium + 'FF'}
         />
       </View>
@@ -51,7 +51,7 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
           style={{
             letterSpacing: 0.1,
             color: theme.color.premium + 'FF',
-            fontSize: theme.fontSize.sm - 1,
+            fontSize: theme.fontSize.sm + 1,
             fontWeight: theme.fontWeight.bold,
           }}
         >
@@ -61,7 +61,7 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
         <Text
           style={{
             color: theme.color.textSecondary,
-            fontSize: theme.fontSize.xs,
+            fontSize: theme.fontSize.xs + 2,
             fontWeight: theme.fontWeight.regular,
           }}
         >
@@ -74,9 +74,9 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
         activeOpacity={0.85}
         disabled={!onPress}
         style={{
-          paddingVertical: theme.space.xs + 2,
-          paddingHorizontal: theme.space.sm + 2,
-          borderRadius: theme.borderRadius.sm + 4,
+          paddingVertical: theme.space.xs + 4,
+          paddingHorizontal: theme.space.sm + 4,
+          borderRadius: theme.borderRadius.sm + 6,
           backgroundColor: theme.color.premium + 'AF',
         }}
       >
@@ -84,7 +84,7 @@ export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
           style={{
             letterSpacing: 0.2,
             color: theme.isDark ? theme.color.textPrimary + 'FF' : theme.color.textInverse,
-            fontSize: theme.fontSize.xs,
+            fontSize: theme.fontSize.xs + 2,
             fontWeight: theme.fontWeight.bold,
           }}
         >

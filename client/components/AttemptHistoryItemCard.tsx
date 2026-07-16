@@ -1,5 +1,4 @@
-import React from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
 
 type Attempt = {
@@ -22,7 +21,7 @@ function getScoreColor(score: number, theme: any): string {
 }
 
 function getScoreBg(score: number, theme: any): string {
-  const { isDark } = theme;
+  
   if (score >= 80) return  theme.color.success + '22' ;
   if (score >= 70) return  theme.color.warning + '22';
   return  theme.color.error + '22' 
@@ -34,29 +33,29 @@ function AttemptCard({ item }: { item: Attempt }) {
 
   const color = getScoreColor(item.score, theme);
   const bg = getScoreBg(item.score, theme);
-  const { isDark } = theme;
+  // const { isDark } = theme;
 
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: isDark ? theme.color.card : theme.color.background,
-        borderRadius: theme.borderRadius.md + 2,
+        backgroundColor: theme.color.card,
+        borderRadius: theme.borderRadius.md + 4,
         borderWidth: 1,
         borderColor: theme.color.border,
-        padding: theme.space.xs + 2,
+        padding: theme.space.xs + 4,
         elevation: 1,
       }}
     >
       {/* Score Badge */}
       <View
         style={{
-          paddingHorizontal:theme.space.sm,
+          paddingHorizontal: theme.space.sm + 2,
           borderWidth:1,
           borderColor:theme.color.border,
-          height: theme.space.xl + 8,
-          borderRadius: theme.borderRadius.md + 2,
+          height: theme.space.xl + 10,
+          borderRadius: theme.borderRadius.md + 4,
           backgroundColor: bg,
           justifyContent: "center",
           alignItems: "center",
@@ -64,11 +63,11 @@ function AttemptCard({ item }: { item: Attempt }) {
       >
         <Text
           style={{
-            fontSize: theme.fontSize.sm + 0.5,
+            fontSize: theme.fontSize.sm + 2.5,
             fontWeight: theme.fontWeight.bold,
             color: color,
             textAlign: "center", 
-            lineHeight: theme.fontSize.sm + 0.5, 
+            lineHeight: theme.fontSize.sm + 2.5, 
             includeFontPadding: false, 
           }}
         >
@@ -80,12 +79,12 @@ function AttemptCard({ item }: { item: Attempt }) {
       <View
         style={{
           flex: 1,
-          paddingLeft: theme.space.sm,
+          paddingLeft: theme.space.sm + 2,
         }}
       >
         <Text
           style={{
-            fontSize: theme.fontSize.sm - 1,
+            fontSize: theme.fontSize.sm + 1,
             fontWeight: theme.fontWeight.medium,
             color: theme.color.textPrimary,
           }}
@@ -95,9 +94,9 @@ function AttemptCard({ item }: { item: Attempt }) {
 
         <Text
           style={{
-            fontSize: theme.fontSize.xs - 1,
+            fontSize: theme.fontSize.xs + 1,
             color: theme.color.textSecondary,
-            marginTop: 1,
+            marginTop: 3,
           }}
         >
           {item.time}
@@ -113,19 +112,19 @@ function AttemptCard({ item }: { item: Attempt }) {
       >
         <View
           style={{
-            width: 1,
-            height: 18,
+            width: 3,
+            height: 20,
             backgroundColor: theme.color.textMuted,
           }}
         />
 
         <Text
           style={{
-            fontSize: theme.fontSize.sm,
+            fontSize: theme.fontSize.sm + 2,
             fontWeight: theme.fontWeight.bold,
             color: color,
-            paddingLeft: theme.space.sm,
-            minWidth: theme.space.lg,
+            paddingLeft: theme.space.sm + 2,
+            minWidth: theme.space.lg + 2,
             textAlign: "right",
           }}
         >
@@ -145,21 +144,21 @@ export function AttemptHistoryItemCard() {
       <View
         style={{
           backgroundColor: isDark
-            ? theme.color.background + "AA"
+            ? theme.color.card + "AA"
             : theme.color.card,
-          borderRadius: theme.borderRadius.lg+2,
+          borderRadius: theme.borderRadius.lg + 4,
           borderWidth: 1,
 
           borderColor: theme.color.border,
-          padding: theme.space.md ,
+          padding: theme.space.md + 2,
         }}
       >
         <Text
           style={{
-            fontSize: theme.fontSize.sm,
+            fontSize: theme.fontSize.sm + 2,
             fontWeight: theme.fontWeight.bold,
             color: theme.color.textPrimary,
-            paddingBottom: theme.space.sm +1,
+            paddingBottom: theme.space.sm + 3,
           }}
         >
           Recent Attempts
@@ -170,7 +169,7 @@ export function AttemptHistoryItemCard() {
             key={item.id}
             style={
               index < attempts.length - 1
-                ? { paddingBottom: theme.space.xs }
+                ? { paddingBottom: theme.space.xs + 2 }
                 : undefined
             }
           >
