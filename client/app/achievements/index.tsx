@@ -164,7 +164,7 @@ export default function AchievementsScreen() {
                   marginBottom: theme.space.xs,
                 }}
               >
-                {achievementsMock.header.title}
+                {theme.i18n.t('achievements.title')}
               </Text>
 
               <Text
@@ -174,7 +174,7 @@ export default function AchievementsScreen() {
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {achievementsMock.header.subtitle}
+                {theme.i18n.t('achievements.subtitle')}
               </Text>
             </View>
           </View>
@@ -194,8 +194,8 @@ export default function AchievementsScreen() {
             <AchievementProgressCard {...progressData} />
           ) : (
             <EmptyStateCard
-              title='No progress yet'
-              description='Your achievement summary will appear here once data is available.'
+              title={theme.i18n.t('achievements.empty_states.no_progress.title')}
+              description={theme.i18n.t('achievements.empty_states.no_progress.description')}
               icon='bar-chart-2'
             />
           )}
@@ -204,8 +204,8 @@ export default function AchievementsScreen() {
             <EarnedBadgeCard achievements={earnedBadges} />
           ) : (
             <EmptyStateCard
-              title='No badges earned yet'
-              description='Complete contests and study goals to unlock badges.'
+              title={theme.i18n.t('achievements.empty_states.no_badges.title')}
+              description={theme.i18n.t('achievements.empty_states.no_badges.description')}
               icon='award'
             />
           )}
@@ -214,8 +214,8 @@ export default function AchievementsScreen() {
             <BadgeProgressCard items={badgeProgressItems} />
           ) : (
             <EmptyStateCard
-              title='No in-progress badges'
-              description='Start a streak or contest to track badge progress.'
+              title={theme.i18n.t('achievements.empty_states.in_progress.title')}
+              description={theme.i18n.t('achievements.empty_states.in_progress.description')}
               icon='activity'
             />
           )}
@@ -230,7 +230,7 @@ export default function AchievementsScreen() {
                 marginBottom: theme.space.sm,
               }}
             >
-              Locked
+              {theme.i18n.t('achievements.locked')}
             </Text>
 
             {lockedBadgeRows.length > 0 ? (
@@ -251,8 +251,8 @@ export default function AchievementsScreen() {
               </View>
             ) : (
               <EmptyStateCard
-                title='No locked badges'
-                description='Locked badge placeholders will appear here.'
+                title={theme.i18n.t('achievements.empty_states.no_locked.title')}
+                description={theme.i18n.t('achievements.empty_states.no_locked.description')}
                 icon='lock'
               />
             )}
