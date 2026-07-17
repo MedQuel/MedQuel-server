@@ -1,8 +1,10 @@
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '@/common/context/useBottomBar';
 import { ContestDetailCard } from '../../components/ContestDetailCard';
 import { ContestDifficultyCard } from '../../components/ContestDifficultyCard';
 
@@ -80,8 +82,10 @@ function StatItem({ value, label, color }: StatItemProps) {
 
 export default function PreQuizScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const data = preQuizMockData;
   const router = useRouter();
+  useBottomBar(false);
 
   const ruleColor = (color: typeof data.rules[0]['color']): string => {
     if (color === 'success')  return theme.color.success;
@@ -143,7 +147,7 @@ export default function PreQuizScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md }}
+        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 160 }}
         showsVerticalScrollIndicator={false}
       >
         <ContestDetailCard
@@ -341,7 +345,6 @@ export default function PreQuizScreen() {
           </View>
         </View>
 
-        <View style={{ height: theme.space.xxl * 2 }} />
       </ScrollView>
 
       <View
@@ -351,6 +354,7 @@ export default function PreQuizScreen() {
           left: 0,
           right: 0,
           padding: theme.space.md,
+          paddingBottom: theme.space.md + insets.bottom,
           gap: theme.space.sm,
           backgroundColor: theme.color.background,
           borderTopWidth: 1,
@@ -358,7 +362,7 @@ export default function PreQuizScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.push('/contests/QuizScreen')}
+          onPress={() => router.push('/contests/quizScreen')}
           activeOpacity={0.85}
           style={{
             flexDirection: 'row',
@@ -385,7 +389,7 @@ export default function PreQuizScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push({ pathname: '/contests/QuizScreen', params: { practice: '1' } })}
+          onPress={() => router.push({ pathname: '/contests/quizScreen', params: { practice: '1' } })}
           activeOpacity={0.85}
           style={{
             alignItems: 'center',

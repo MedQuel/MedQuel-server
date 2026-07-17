@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '@/common/context/useBottomBar';
 import { QuizResultCard } from '../../components/QuizResultCard';
 import { AchievementBadgeCard } from '../../components/AchievementBadgeCard';
 import { TopicPerfomanceCard } from '../../components/TopicPerfomanceCard';
@@ -202,6 +204,8 @@ function getQuizResult(raw: RawQuizSubmission): QuizResultData {
 
 export default function PostQuizScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  useBottomBar(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const [showReview, setShowReview] = useState(false);
@@ -234,7 +238,7 @@ export default function PostQuizScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 145 }} showsVerticalScrollIndicator={false}>
 
         <View
           style={{
@@ -350,7 +354,7 @@ export default function PostQuizScreen() {
       <View
         style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          padding: theme.space.md, gap: theme.space.sm,
+          padding: theme.space.md, paddingBottom: theme.space.md + insets.bottom, gap: theme.space.sm,
           backgroundColor: theme.color.background,
           borderTopWidth: 1, borderTopColor: theme.color.border,
         }}
