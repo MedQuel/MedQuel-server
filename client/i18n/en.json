@@ -2,10 +2,10 @@
   "common": {
     "app_name": "MedQuel",
     "brand_name": "MedQuel",
-    "loading": "Loading...",
     "you": "You",
     "lv": "Lv",
     "level": "Level",
+    "loading": "Loading...",
     "free": "Free",
     "pro": "PRO",
     "premium": "Premium",
@@ -13,14 +13,14 @@
     "done": "Done",
     "close": "Close",
     "clear": "Clear",
-    "live": "LIVE",
     "select": "Select",
-    "save": "Save",
     "retry": "Retry",
+    "save": "Save",
     "error": "Error",
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard",
+    "live": "LIVE",
     "rank": "Rank",
     "start": "Start",
     "start_contest": "Start Contest",
@@ -36,7 +36,16 @@
     "unlock_and_start": "Unlock & Start"
   },
 
+  "nav": {
+    "home": "Home",
+    "leaderboard": "Leaderboard",
+    "contests": "Contests",
+    "chat": "Chat",
+    "profile": "Profile"
+  },
+
   "splash": {
+    "login": "Log In",
     "brandPrefix": "Med",
     "brandSuffix": "Quel",
     "tagline": "Level up · Learn · Compete",
@@ -211,12 +220,42 @@
   },
 
   "contests": {
+    "title": "Contests",
+    "subtitle": "Test your knowledge, earn EP",
+    "search_placeholder": "Search contests...",
     "search_contests": "Search contests...",
+    "all_contests": "All Contests",
+    "available_suffix": "available",
+    "no_results": "No contests match your search",
     "ep_reward": "EP Reward",
     "questions": "Qs",
     "time_left": "left",
     "minute": "{{mins}}m",
-    "hour": "{{hrs}}h"
+    "hour": "{{hrs}}h",
+
+    "filters": {
+      "all": "All",
+      "premium": "Premium",
+      "anatomy": "Anatomy",
+      "biochemistry": "Biochemistry",
+      "physiology": "Physiology",
+      "microbiology": "Microbiology",
+      "pharmacology": "Pharmacology",
+      "forensic_medicine": "Forensic Medicine",
+      "pathology": "Pathology",
+      "ophthalmology": "Ophthalmology",
+      "ent": "ENT",
+      "community_medicine": "Community Medicine",
+      "medicine": "Medicine",
+      "surgery": "Surgery",
+      "pediatrics": "Pediatrics",
+      "gynaecology_obstetrics": "Gynaecology & Obstetrics",
+      "orthopedics": "Orthopedics",
+      "dermatology": "Dermatology",
+      "psychiatry": "Psychiatry",
+      "anesthesia": "Anesthesia",
+      "radiology": "Radiology"
+    }
   },
 
   "chat": {},
@@ -224,6 +263,10 @@
   "profile": {},
 
   "components": {
+    "TestCard": {
+      "title": "Test Card",
+      "subtitle": "This is a test card component."
+    },
     "FeatureHighlightsCard": {
       "title": "What awaits you",
       "ep": "Earn EP",
@@ -236,6 +279,22 @@
       "friends": "Friends"
     },
     "OnboardingRolePicker": {
+      "mbbs": {
+        "title": "MBBS Student",
+        "subtitle": "Undergraduate medical program"
+      },
+      "postgraduate": {
+        "title": "Postgraduate",
+        "subtitle": "MD/MS/Residency preparation"
+      },
+      "doctor": {
+        "title": "Practicing Doctor",
+        "subtitle": "Continuing medical education"
+      },
+      "nursing": {
+        "title": "Nursing / Allied",
+        "subtitle": "Nursing education & licensing"
+      },
       "MBBS_Student": {
         "title": "MBBS Student",
         "subtitle": "Undergraduate medical program"
@@ -266,13 +325,28 @@
         "sun": "Sun"
       }
     },
+    "LeaderboardPodiumContainer": {
+      "first_place": "First Place",
+      "second_place": "Second Place",
+      "third_place": "Third Place",
+      "points_suffix": "points",
+      "default": {
+        "first_name": "tusharbaghel",
+        "second_name": "Dr. Ravi P.",
+        "third_name": "Dr. Amir K."
+      }
+    },
     "FeatureContestCard": {
+      "live": "LIVE",
       "competing": "competing",
       "questions": "Qs",
       "min": "min",
       "ep_reward": "EP Reward",
       "ends_in": "Ends in",
-      "join_now": "Join Now"
+      "join_now": "Join Now",
+      "difficulty_easy": "Easy",
+      "difficulty_medium": "Medium",
+      "difficulty_hard": "Hard"
     },
     "AchievementProgressCard": {
       "progress": "PROGRESS",
@@ -347,6 +421,22 @@
     "QuizResultCard": {
       "score": "Score",
       "earned": "Earned"
+    },
+    "PostQuizScreen": {
+      "quiz_complete": "Quiz Complete!",
+      "ep_earned": "EP Earned",
+      "practice_mode": "Practice Mode",
+      "correct": "Correct",
+      "wrong": "Wrong",
+      "time": "Time",
+      "rank": "Rank",
+      "skipped": "Skipped",
+      "needs_improvement": "Needs Improvement",
+      "review_answers": "Review Answers",
+      "retry": "Retry",
+      "share": "Share",
+      "back": "Back",
+      "your_answer": "Your answer"
     }
   }
 }

@@ -4,6 +4,8 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '@/common/context/useBottomBar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QuizProgressBar } from '../../components/QuizProgressBar';
 import { QuestionCard } from '../../components/QuestionCard';
 
@@ -147,6 +149,8 @@ function formatTime(seconds: number): string {
 
 export default function QuizScreen() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  useBottomBar(false);
   const router = useRouter();
   const params = useLocalSearchParams();
   const isPractice = params.practice === '1';
@@ -166,8 +170,8 @@ export default function QuizScreen() {
   );
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentQuestion: QuizQuestion = quiz.questions[currentIndex];
-  const currentAnswer = answers[currentQuestion.id];
+  const currentQuestion: QuizQuestion = quiz.questions[currentIndex]!;
+  const currentAnswer = answers[currentQuestion.id]!;
 
   useEffect(() => {
     if (activeModal !== null) return;
@@ -187,7 +191,7 @@ export default function QuizScreen() {
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: { ...prev[questionId], ...patch },
+      [questionId]: { ...prev[questionId]!, ...patch },
     }));
   };
 
@@ -216,7 +220,7 @@ export default function QuizScreen() {
     const skipped = Object.values(answers).filter(a => a.selectedLabel === null).length;
 
     router.push({
-      pathname: '/contests/PostQuizScreen',
+      pathname: '/contests/postQuizScreen',
       params: {
         quizId:   quiz.id,
         title:    quiz.title,
@@ -244,7 +248,7 @@ export default function QuizScreen() {
   const flaggedQuestions    = quiz.questions.filter(q => answers[q.id]?.isFlagged);
 
   const getQuestionStatus = (qId: string) => {
-    const a = answers[qId];
+    const a = answers[qId]!;
     if (a.isFlagged)            return { icon: 'flag'     as const, color: theme.color.error   };
     if (a.isBookmarked)         return { icon: 'bookmark' as const, color: theme.color.accent  };
     if (a.selectedLabel !== null) return { icon: 'check'    as const, color: theme.color.success };
@@ -306,7 +310,7 @@ export default function QuizScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
       >
         <QuestionCard
@@ -414,6 +418,7 @@ export default function QuizScreen() {
           flexDirection: 'row',
           gap: theme.space.sm,
           padding: theme.space.md,
+          paddingBottom: theme.space.md + insets.bottom,
           backgroundColor: theme.color.background,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
