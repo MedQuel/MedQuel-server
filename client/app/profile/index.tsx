@@ -11,10 +11,10 @@ import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard'
 
 
 export default function ChatScreen() {
+  const level = '12';
+
   const { theme } = useTheme();
   useBottomBar(true, 'profile');
-
-  const level = '12';
 
   return (
     <ScrollView
@@ -24,13 +24,7 @@ export default function ChatScreen() {
     >
       <ProfileScreenHeader />
 
-      <View
-        style={{
-          gap: theme.space.xs + 2,
-          alignItems: 'center',
-          marginTop: theme.space.xxl - 2,
-        }}
-      >
+      <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl - 2 }}>
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -86,7 +80,12 @@ export default function ChatScreen() {
                 color={theme.color.warning}
               />
             </Text>
-            <Text style={{ color: theme.color.warning, fontSize: theme.fontSize.xs + 2 }}>
+            <Text
+              style={{
+                color: theme.color.warning,
+                fontSize: theme.fontSize.xs + 2,
+              }}
+            >
               {theme.i18n.t('components.ProfileCard.level', { level: level })}12
             </Text>
           </View>
@@ -99,7 +98,12 @@ export default function ChatScreen() {
               size={theme.space.md}
               color={theme.color.textMuted}
             />
-            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs + 2 }}>
+            <Text
+              style={{
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.xs + 2,
+              }}
+            >
               {theme.i18n.t('components.ProfileCard.location')}
             </Text>
           </View>
@@ -123,19 +127,19 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      <View style={{ marginTop: -theme.space.sm, paddingHorizontal: theme.space.xs + 2 }}>
+      <View style={{ marginTop: -theme.space.sm, paddingHorizontal: theme.space.xs * 1.5 }}>
         <ProfileScreenStatsCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 4, paddingHorizontal: theme.space.sm + 6 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <PremiumUpsellCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 4, paddingHorizontal: theme.space.sm + 6 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <SubjectPerformanceCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 4, paddingHorizontal: theme.space.sm + 6 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <AttemptHistoryItemCard />
       </View>
     </ScrollView>
