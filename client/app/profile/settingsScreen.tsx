@@ -1,62 +1,59 @@
-import { useState } from "react";
-import { useRouter } from "expo-router";
-// import ToggleSwitch from "toggle-switch-react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { View, ScrollView, Text, TouchableOpacity } from "react-native";
-import { ToggleSwitch } from "../..//components/ToggleSwitch";
-import { useTheme } from "../../theme/ThemeContext";
-import { UserProfileCard } from "../../components/UserProfileCard";
-import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
+
+import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import { UserProfileCard } from '../../components/UserProfileCard';
+import { ToggleSwitch } from '../../components/common/ToggleSwitch';
+import { PremiumUpsellCardFull } from '../../components/PremiumUpsellCardFull';
+
 
 export default function SettingsScreen() {
   const [rankEnabled, setRankEnabled] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [contestEnabled, setContestEnabled] = useState(false);
   const [achievementEnabled, setAchievementEnabled] = useState(false);
   const [timerSoundEnabled, setTimerSoundEnabled] = useState(false);
   const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(false);
 
-  const { theme , toggleTheme } = useTheme();
+  useBottomBar(false);
   const router = useRouter();
-  const { isDark } = theme;
-  const [pushEnabled, setPushEnabled] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: isDark
-          ? theme.color.background
-          : theme.color.background,
-      }}
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}
       showsVerticalScrollIndicator={false}
+      style={{ flex: 1, backgroundColor: theme.color.background }}
     >
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: theme.space.xs * 1.5,
           paddingHorizontal: theme.space.sm,
-          paddingVertical: theme.space.xs + 2,
         }}
       >
         <TouchableOpacity
-          onPress={() => router.push("../profile")}
+          onPress={() => router.push('../profile')}
           style={{
-            backgroundColor: isDark
-              ? theme.color.card
-              : theme.color.card + "FF",
-            borderRadius: theme.borderRadius.lg - 3,
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: theme.space.xs + 3,
             borderWidth: 1,
             borderColor: theme.color.border,
-            padding: theme.space.xs + 3,
-            justifyContent: "center",
-            alignItems: "center",
+            borderRadius: theme.borderRadius.lg - 3,
+            backgroundColor: theme.isDark
+              ? theme.color.card
+              : theme.color.card + 'FF',
             aspectRatio: 1,
           }}
         >
           <Ionicons
-            name="chevron-back"
+            name='chevron-back'
             size={theme.space.md}
             color={theme.color.textSecondary}
           />
@@ -65,25 +62,25 @@ export default function SettingsScreen() {
         <View style={{ flex: 1, paddingLeft: theme.space.md }}>
           <Text
             style={{
-              textTransform: "capitalize",
+              letterSpacing: 0.3,
+              textTransform: 'capitalize',
               color: theme.color.textPrimary,
               fontSize: theme.fontSize.lg,
               fontWeight: theme.fontWeight.bold,
-              letterSpacing: 0.3,
             }}
           >
-            {theme.i18n.t("common.settings")}
+            {theme.i18n.t('common.settings')}
           </Text>
           <Text
             style={{
+              letterSpacing: 0.1,
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.xs,
               fontWeight: theme.fontWeight.regular,
-              paddingTop: 2,
-              letterSpacing: 0.1,
+              paddingTop: theme.space.xs * 0.5,
             }}
           >
-            {theme.i18n.t("common.account_preferences")}
+            {theme.i18n.t('common.account_preferences')}
           </Text>
         </View>
       </View>
@@ -97,24 +94,23 @@ export default function SettingsScreen() {
         <UserProfileCard
           lv={23}
           day={5}
-          icoName="J"
-          name="Jatinveer singh chauhan"
-          email="jatinveerchauhan@gmail.com"
-        ></UserProfileCard>
+          icoName='J'
+          name='Jatinveer singh chauhan'
+          email='jatinveerchauhan@gmail.com'
+        />
       </View>
+
       <Text
         style={{
-          marginTop: theme.space.sm + 14,
-          paddingHorizontal: theme.space.sm + 4,
           color: theme.color.textMuted,
           fontSize: theme.fontSize.sm - 2,
           fontWeight: theme.fontWeight.medium,
+          marginTop: theme.space.sm + 14,
+          paddingHorizontal: theme.space.sm + 4,
         }}
       >
-        {theme.i18n.t("common.account")}
+        {theme.i18n.t('common.account')}
       </Text>
-
-      {/* Account component start  */}
 
       <View
         style={{
@@ -123,48 +119,53 @@ export default function SettingsScreen() {
       >
         <View
           style={{
-            backgroundColor: isDark
+            justifyContent: 'center',
+            padding: theme.space.sm,
+            backgroundColor: theme.isDark
               ? theme.color.background
               : theme.color.background,
-            justifyContent: "center",
-            padding: theme.space.sm,
           }}
         >
           <View
             style={{
-              backgroundColor: isDark ? theme.color.card : theme.color.card,
-              borderRadius: theme.borderRadius.lg,
+              overflow: 'hidden',
+              paddingVertical: theme.space.sm,
               borderWidth: 1,
               borderColor: theme.color.border,
-              overflow: "hidden",
-              paddingVertical: theme.space.sm,
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.isDark
+                ? theme.color.card
+                : theme.color.card,
             }}
           >
             {/* Email */}
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingVertical: theme.space.xs,
+                paddingHorizontal: theme.space.sm,
               }}
             >
               <View
                 style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   padding: theme.space.xs + 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
                 }}
               >
                 <MaterialCommunityIcons
-                  name="email-outline"
+                  name='email-outline'
                   size={theme.space.md - 1}
-                  color="#5B9CF6"
+                  color='#5B9CF6'
                 />
               </View>
+
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
@@ -173,21 +174,22 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("common.email_address")}
+                  {theme.i18n.t('common.email_address')}
                 </Text>
                 <Text
                   style={{
                     color: theme.color.textMuted,
                     fontSize: theme.fontSize.xs - 1,
-                    paddingTop: 3,
-                    paddingBottom: 3,
+                    paddingTop: theme.space.xs * 0.75,
+                    paddingBottom: theme.space.xs * 0.75,
                   }}
                 >
                   dr.Jatinveer@example.com
                 </Text>
               </View>
+
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -201,28 +203,31 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingVertical: theme.space.sm,
+                paddingHorizontal: theme.space.sm,
               }}
             >
               <View
                 style={{
-                  paddingHorizontal: theme.space.sm - 2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   paddingVertical: theme.space.sm - 2,
+                  paddingHorizontal: theme.space.sm - 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
                 }}
               >
                 <MaterialCommunityIcons
-                  name="lock-outline"
+                  name='lock-outline'
                   size={theme.space.md}
-                  color="#5B9CF6"
+                  color='#5B9CF6'
                 />
               </View>
+
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
@@ -231,22 +236,23 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("profile.change_password")}
+                  {theme.i18n.t('profile.change_password')}
                 </Text>
                 <Text
                   style={{
                     color: theme.color.textMuted,
-                    fontSize: theme.fontSize.xs - 1,
-                    paddingTop: 2,
+                    fontSize: theme.fontSize.xs * 0.75,
+                    paddingTop: theme.space.xs * 0.5,
                   }}
                 >
                   Last changed 30 days ago
                 </Text>
               </View>
+
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
-                color="#4A5568"
+                color='#4A5568'
               />
             </TouchableOpacity>
 
@@ -259,8 +265,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.xs + 2,
               }}
@@ -270,29 +276,29 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
-                    ? "#2A1F0A" + 90
+                  backgroundColor: theme.isDark
+                    ? '#2A1F0A' + 90
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="school-outline"
+                  name='school-outline'
                   size={theme.space.md}
-                  color="#F6A020"
+                  color='#F6A020'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("profile.target_exam")}
+                  {theme.i18n.t('profile.target_exam')}
                 </Text>
                 <Text
                   style={{
@@ -305,7 +311,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -319,8 +325,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm,
               }}
@@ -330,29 +336,29 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
-                    ? "#0A2A14" + 90
+                  backgroundColor: theme.isDark
+                    ? '#0A2A14' + 90
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="book-open-outline"
+                  name='book-open-outline'
                   size={theme.space.md}
-                  color="#22C55E"
+                  color='#22C55E'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("common.study_level")}
+                  {theme.i18n.t('common.study_level')}
                 </Text>
                 <Text
                   style={{
@@ -366,7 +372,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -386,20 +392,22 @@ export default function SettingsScreen() {
         </Text>
         <View
           style={{
-            backgroundColor: isDark
+            backgroundColor: theme.isDark
               ? theme.color.background
               : theme.color.background,
-            justifyContent: "center",
+            justifyContent: 'center',
             padding: theme.space.sm,
           }}
         >
           <View
             style={{
-              backgroundColor: isDark ? theme.color.card : theme.color.card,
+              backgroundColor: theme.isDark
+                ? theme.color.card
+                : theme.color.card,
               borderRadius: theme.borderRadius.lg,
               borderWidth: 1,
               borderColor: theme.color.border,
-              overflow: "hidden",
+              overflow: 'hidden',
               paddingVertical: theme.space.sm,
             }}
           >
@@ -407,8 +415,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.xs,
               }}
@@ -417,15 +425,17 @@ export default function SettingsScreen() {
                 style={{
                   padding: theme.space.xs + 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="bell-outline"
+                  name='bell-outline'
                   size={theme.space.md - 1}
-                  color="#5B9CF6"
+                  color='#5B9CF6'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
@@ -436,7 +446,7 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.push_notifications")}
+                  {theme.i18n.t('settings.push_notifications')}
                 </Text>
                 <Text
                   style={{
@@ -446,7 +456,7 @@ export default function SettingsScreen() {
                     paddingBottom: 3,
                   }}
                 >
-                  {theme.i18n.t("settings.daily_reminders")}
+                  {theme.i18n.t('settings.daily_reminders')}
                 </Text>
               </View>
               <View
@@ -456,14 +466,15 @@ export default function SettingsScreen() {
               >
                 <ToggleSwitch
                   isOn={pushEnabled}
-                  onColor="#3B82F6"
+                  onColor='#3B82F6'
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                    theme.isDark
+                      ? theme.color.border
+                      : theme.color.textMuted + '55'
                   }
-                  size="medium"
+                  size='medium'
                   onToggle={setPushEnabled}
-                ></ToggleSwitch>
-               
+                />
               </View>
             </TouchableOpacity>
 
@@ -475,8 +486,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm,
               }}
@@ -486,15 +497,17 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm - 2,
                   paddingVertical: theme.space.sm - 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="email-outline"
+                  name='email-outline'
                   size={theme.space.md}
-                  color="#5B9CF6"
+                  color='#5B9CF6'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
@@ -505,7 +518,7 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.email_digest")}
+                  {theme.i18n.t('settings.email_digest')}
                 </Text>
                 <Text
                   style={{
@@ -514,7 +527,7 @@ export default function SettingsScreen() {
                     paddingTop: 2,
                   }}
                 >
-                  {theme.i18n.t("settings.weekly_performance_summary")}
+                  {theme.i18n.t('settings.weekly_performance_summary')}
                 </Text>
               </View>
               <View
@@ -524,14 +537,15 @@ export default function SettingsScreen() {
               >
                 <ToggleSwitch
                   isOn={emailEnabled}
-                  onColor="#3B82F6"
+                  onColor='#3B82F6'
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                    theme.isDark
+                      ? theme.color.border
+                      : theme.color.textMuted + '55'
                   }
-                  size="medium"
+                  size='medium'
                   onToggle={setEmailEnabled}
-                ></ToggleSwitch>
-                
+                />
               </View>
             </TouchableOpacity>
 
@@ -543,8 +557,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.xs + 2,
               }}
@@ -554,17 +568,17 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
-                    ? "#2A1F0A" + 90
+                  backgroundColor: theme.isDark
+                    ? '#2A1F0A' + 90
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="chart-bar"
+                  name='chart-bar'
                   size={theme.space.md}
-                  color="#F6A020"
+                  color='#F6A020'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
@@ -575,7 +589,7 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.rank_change_alerts")}
+                  {theme.i18n.t('settings.rank_change_alerts')}
                 </Text>
                 <Text
                   style={{
@@ -584,7 +598,7 @@ export default function SettingsScreen() {
                     paddingTop: 2,
                   }}
                 >
-                  {theme.i18n.t("settings.notify_on_leaderboard_moves")}
+                  {theme.i18n.t('settings.notify_on_leaderboard_moves')}
                 </Text>
               </View>
               <View
@@ -594,14 +608,15 @@ export default function SettingsScreen() {
               >
                 <ToggleSwitch
                   isOn={rankEnabled}
-                  onColor="#3B82F6"
+                  onColor='#3B82F6'
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                    theme.isDark
+                      ? theme.color.border
+                      : theme.color.textMuted + '55'
                   }
-                  size="medium"
+                  size='medium'
                   onToggle={setRankEnabled}
-                ></ToggleSwitch>
-               
+                />
               </View>
             </TouchableOpacity>
 
@@ -613,8 +628,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm,
               }}
@@ -624,17 +639,17 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
-                    ? "#0A2A14" + 90
+                  backgroundColor: theme.isDark
+                    ? '#0A2A14' + 90
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="medal-outline"
+                  name='medal-outline'
                   size={theme.space.md}
-                  color="#22C55E"
+                  color='#22C55E'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
@@ -645,7 +660,7 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.achievement_alerts")}
+                  {theme.i18n.t('settings.achievement_alerts')}
                 </Text>
                 <Text
                   style={{
@@ -664,14 +679,15 @@ export default function SettingsScreen() {
               >
                 <ToggleSwitch
                   isOn={achievementEnabled}
-                  onColor="#3B82F6"
+                  onColor='#3B82F6'
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                    theme.isDark
+                      ? theme.color.border
+                      : theme.color.textMuted + '55'
                   }
-                  size="medium"
+                  size='medium'
                   onToggle={setAchievementEnabled}
-                ></ToggleSwitch>
-               
+                />
               </View>
             </TouchableOpacity>
 
@@ -683,8 +699,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm,
               }}
@@ -694,13 +710,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#2A0A0A" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#2A0A0A'
+                    : theme.color.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="trophy-outline"
+                  name='trophy-outline'
                   size={theme.space.md}
                   color={theme.color.error}
                 />
@@ -713,7 +731,7 @@ export default function SettingsScreen() {
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.contest_reminders")}
+                  {theme.i18n.t('settings.contest_reminders')}
                 </Text>
                 <Text
                   style={{
@@ -722,7 +740,7 @@ export default function SettingsScreen() {
                     paddingTop: 3,
                   }}
                 >
-                  {theme.i18n.t("settings.upcoming_contest_alerts")}
+                  {theme.i18n.t('settings.upcoming_contest_alerts')}
                 </Text>
               </View>
               <View
@@ -732,21 +750,22 @@ export default function SettingsScreen() {
               >
                 <ToggleSwitch
                   isOn={contestEnabled}
-                  onColor="#3B82F6"
+                  onColor='#3B82F6'
                   offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
+                    theme.isDark
+                      ? theme.color.border
+                      : theme.color.textMuted + '55'
                   }
-                  size="medium"
+                  size='medium'
                   onToggle={setContestEnabled}
-                ></ToggleSwitch>
-               
+                />
               </View>
             </TouchableOpacity>
           </View>
         </View>
         <Text
           style={{
-            textTransform: "capitalize",
+            textTransform: 'capitalize',
             color: theme.color.textMuted,
             fontSize: theme.fontSize.xs,
             fontWeight: theme.fontWeight.medium,
@@ -754,7 +773,7 @@ export default function SettingsScreen() {
             paddingVertical: theme.space.sm - 2,
           }}
         >
-          {theme.i18n.t("settings.quiz_preferences")}
+          {theme.i18n.t('settings.quiz_preferences')}
         </Text>
         <View
           style={{
@@ -763,25 +782,27 @@ export default function SettingsScreen() {
         >
           <View
             style={{
-              justifyContent: "center",
+              justifyContent: 'center',
               padding: theme.space.sm,
             }}
           >
             <View
               style={{
-                backgroundColor: isDark ? theme.color.card : theme.color.card,
+                backgroundColor: theme.isDark
+                  ? theme.color.card
+                  : theme.color.card,
                 borderRadius: theme.borderRadius.lg,
                 borderWidth: 1,
                 borderColor: theme.color.border,
-                overflow: "hidden",
+                overflow: 'hidden',
                 paddingVertical: theme.space.sm,
               }}
             >
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.xs,
                 }}
@@ -790,15 +811,15 @@ export default function SettingsScreen() {
                   style={{
                     padding: theme.space.xs + 2,
                     borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: isDark
+                    backgroundColor: theme.isDark
                       ? theme.color.warning + 22
                       : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <MaterialCommunityIcons
-                    name="tune-vertical"
+                    name='tune-vertical'
                     size={theme.space.md - 1}
                     color={theme.color.warning}
                   />
@@ -811,22 +832,22 @@ export default function SettingsScreen() {
                       fontWeight: theme.fontWeight.medium,
                     }}
                   >
-                    {theme.i18n.t("settings.default_difficulty")}
+                    {theme.i18n.t('settings.default_difficulty')}
                   </Text>
                   <Text
                     style={{
-                      textTransform: "capitalize",
+                      textTransform: 'capitalize',
                       color: theme.color.textMuted,
                       fontSize: theme.fontSize.xs - 1,
                       paddingTop: 3,
                       paddingBottom: 3,
                     }}
                   >
-                    {theme.i18n.t("settings.intermediate")}
+                    {theme.i18n.t('settings.intermediate')}
                   </Text>
                 </View>
                 <MaterialCommunityIcons
-                  name="chevron-right"
+                  name='chevron-right'
                   size={theme.space.md}
                   color={theme.color.textMuted}
                 />
@@ -838,8 +859,8 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm + 3,
                 }}
@@ -849,15 +870,15 @@ export default function SettingsScreen() {
                     paddingHorizontal: theme.space.sm - 2,
                     paddingVertical: theme.space.sm - 2,
                     borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: isDark
+                    backgroundColor: theme.isDark
                       ? theme.color.accent + 22
                       : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <MaterialCommunityIcons
-                    name="volume-high"
+                    name='volume-high'
                     size={theme.space.md}
                     color={theme.color.accent}
                   />
@@ -865,13 +886,13 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                   <Text
                     style={{
-                      textTransform: "capitalize",
+                      textTransform: 'capitalize',
                       color: theme.color.textPrimary,
                       fontSize: theme.fontSize.xs + 1,
                       fontWeight: theme.fontWeight.medium,
                     }}
                   >
-                    {theme.i18n.t("settings.timer_sounds")}
+                    {theme.i18n.t('settings.timer_sounds')}
                   </Text>
                 </View>
                 <View
@@ -880,15 +901,16 @@ export default function SettingsScreen() {
                   }}
                 >
                   <ToggleSwitch
-                  isOn={timerSoundEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setTimerSoundEnabled}
-                ></ToggleSwitch>
-                  
+                    isOn={timerSoundEnabled}
+                    onColor='#3B82F6'
+                    offColor={
+                      theme.isDark
+                        ? theme.color.border
+                        : theme.color.textMuted + '55'
+                    }
+                    size='medium'
+                    onToggle={setTimerSoundEnabled}
+                  />
                 </View>
               </TouchableOpacity>
               <View
@@ -897,8 +919,8 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm - 1,
                 }}
@@ -908,15 +930,15 @@ export default function SettingsScreen() {
                     paddingHorizontal: theme.space.sm - 2,
                     paddingVertical: theme.space.sm - 2,
                     borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: isDark
+                    backgroundColor: theme.isDark
                       ? theme.color.error + 21
                       : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <MaterialCommunityIcons
-                    name="clock-outline"
+                    name='clock-outline'
                     size={theme.space.md}
                     color={theme.color.error}
                   />
@@ -938,15 +960,16 @@ export default function SettingsScreen() {
                   }}
                 >
                   <ToggleSwitch
-                  isOn={autoSubmitEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setAutoSubmitEnabled}
-                ></ToggleSwitch>
-                  
+                    isOn={autoSubmitEnabled}
+                    onColor='#3B82F6'
+                    offColor={
+                      theme.isDark
+                        ? theme.color.border
+                        : theme.color.textMuted + '55'
+                    }
+                    size='medium'
+                    onToggle={setAutoSubmitEnabled}
+                  />
                 </View>
               </TouchableOpacity>
             </View>
@@ -966,24 +989,26 @@ export default function SettingsScreen() {
         <View style={{ paddingHorizontal: theme.space.xs - 5 }}>
           <View
             style={{
-              justifyContent: "center",
+              justifyContent: 'center',
               padding: theme.space.sm,
             }}
           >
             <View
               style={{
-                backgroundColor: isDark ? theme.color.card : theme.color.card,
+                backgroundColor: theme.isDark
+                  ? theme.color.card
+                  : theme.color.card,
                 borderRadius: theme.borderRadius.lg,
                 borderWidth: 1,
                 borderColor: theme.color.border,
-                overflow: "hidden",
+                overflow: 'hidden',
               }}
             >
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm + 3,
                 }}
@@ -993,15 +1018,15 @@ export default function SettingsScreen() {
                     paddingHorizontal: theme.space.sm - 2,
                     paddingVertical: theme.space.sm - 2,
                     borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: isDark
+                    backgroundColor: theme.isDark
                       ? theme.color.accent + 22
                       : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <Ionicons
-                    name="moon-outline"
+                    name='moon-outline'
                     size={theme.space.md - 1}
                     color={theme.color.accent}
                   />
@@ -1012,10 +1037,10 @@ export default function SettingsScreen() {
                       color: theme.color.textPrimary,
                       fontSize: theme.fontSize.xs + 1,
                       fontWeight: theme.fontWeight.medium,
-                      textTransform: "capitalize",
+                      textTransform: 'capitalize',
                     }}
                   >
-                    {theme.i18n.t("settings.dark_mode")}
+                    {theme.i18n.t('settings.dark_mode')}
                   </Text>
                   <Text
                     style={{
@@ -1025,9 +1050,9 @@ export default function SettingsScreen() {
                       paddingBottom: 3,
                     }}
                   >
-                    {isDark
-                      ? theme.i18n.t("settings.dark_theme_active")
-                      : theme.i18n.t("settings.dark_theme_off")}
+                    {theme.isDark
+                      ? theme.i18n.t('settings.dark_theme_active')
+                      : theme.i18n.t('settings.dark_theme_off')}
                   </Text>
                 </View>
                 <View
@@ -1036,15 +1061,16 @@ export default function SettingsScreen() {
                   }}
                 >
                   <ToggleSwitch
-                  isOn={isDark}
-                  onColor="#3B82F6"
-                  offColor={
-                    isDark ? theme.color.border : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={toggleTheme}
-                ></ToggleSwitch>
-                  
+                    isOn={theme.isDark}
+                    onColor='#3B82F6'
+                    offColor={
+                      theme.isDark
+                        ? theme.color.border
+                        : theme.color.textMuted + '55'
+                    }
+                    size='medium'
+                    onToggle={toggleTheme}
+                  />
                 </View>
               </TouchableOpacity>
               <View
@@ -1053,8 +1079,8 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 activeOpacity={0.7}
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.xs,
                 }}
@@ -1063,15 +1089,15 @@ export default function SettingsScreen() {
                   style={{
                     padding: theme.space.xs + 2,
                     borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: isDark
+                    backgroundColor: theme.isDark
                       ? theme.color.success + 22
                       : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <MaterialCommunityIcons
-                    name="web"
+                    name='web'
                     size={theme.space.md - 1}
                     color={theme.color.success}
                   />
@@ -1079,13 +1105,13 @@ export default function SettingsScreen() {
                 <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                   <Text
                     style={{
-                      textTransform: "capitalize",
+                      textTransform: 'capitalize',
                       color: theme.color.textPrimary,
                       fontSize: theme.fontSize.xs + 0.5,
                       fontWeight: theme.fontWeight.medium,
                     }}
                   >
-                    {theme.i18n.t("settings.language")}
+                    {theme.i18n.t('settings.language')}
                   </Text>
                   <Text
                     style={{
@@ -1099,7 +1125,7 @@ export default function SettingsScreen() {
                   </Text>
                 </View>
                 <MaterialCommunityIcons
-                  name="chevron-right"
+                  name='chevron-right'
                   size={theme.space.md}
                   color={theme.color.textMuted}
                 />
@@ -1113,7 +1139,7 @@ export default function SettingsScreen() {
             marginTop: theme.space.sm,
           }}
         >
-          <PremiumUpsellCardFull></PremiumUpsellCardFull>
+          <PremiumUpsellCardFull />
         </View>
         <Text
           style={{
@@ -1129,28 +1155,30 @@ export default function SettingsScreen() {
 
         <View
           style={{
-            backgroundColor: isDark
+            backgroundColor: theme.isDark
               ? theme.color.background
               : theme.color.background,
-            justifyContent: "center",
+            justifyContent: 'center',
             padding: theme.space.sm,
           }}
         >
           <View
             style={{
-              backgroundColor: isDark ? theme.color.card : theme.color.card,
+              backgroundColor: theme.isDark
+                ? theme.color.card
+                : theme.color.card,
               borderRadius: theme.borderRadius.lg,
               borderWidth: 1,
               borderColor: theme.color.border,
-              overflow: "hidden",
+              overflow: 'hidden',
               paddingVertical: theme.space.sm,
             }}
           >
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm,
               }}
@@ -1159,31 +1187,33 @@ export default function SettingsScreen() {
                 style={{
                   padding: theme.space.xs + 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="help-circle-outline"
+                  name='help-circle-outline'
                   size={theme.space.md - 1}
-                  color="#5B9CF6"
+                  color='#5B9CF6'
                 />
               </View>
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.help_center")}
+                  {theme.i18n.t('settings.help_center')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -1196,8 +1226,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm + 1,
               }}
@@ -1207,13 +1237,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm - 2,
                   paddingVertical: theme.space.sm - 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark ? "#1A2744" : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  backgroundColor: theme.isDark
+                    ? '#1A2744'
+                    : theme.color.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="message-outline"
+                  name='message-outline'
                   size={theme.space.md}
                   color={theme.color.accent}
                 />
@@ -1221,19 +1253,19 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.contact_support")}
+                  {theme.i18n.t('settings.contact_support')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
-                color="#4A5568"
+                color='#4A5568'
               />
             </TouchableOpacity>
 
@@ -1244,8 +1276,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm + 2,
               }}
@@ -1255,15 +1287,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm - 1,
                   borderRadius: theme.borderRadius.md,
-                  backgroundColor: isDark
+                  backgroundColor: theme.isDark
                     ? theme.color.warning + 22
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="star-outline"
+                  name='star-outline'
                   size={theme.space.md}
                   color={theme.color.warning}
                 />
@@ -1271,17 +1303,17 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.rate_medquel")}
+                  {theme.i18n.t('settings.rate_medquel')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -1294,8 +1326,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm - 3,
               }}
@@ -1305,15 +1337,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
+                  backgroundColor: theme.isDark
                     ? theme.color.surface
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="file-document-outline"
+                  name='file-document-outline'
                   size={theme.space.md}
                   color={theme.color.textMuted}
                 />
@@ -1321,17 +1353,17 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.textPrimary,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.privacy_policy")}
+                  {theme.i18n.t('settings.privacy_policy')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -1340,28 +1372,30 @@ export default function SettingsScreen() {
         </View>
         <View
           style={{
-            backgroundColor: isDark
+            backgroundColor: theme.isDark
               ? theme.color.background
               : theme.color.background,
-            justifyContent: "center",
+            justifyContent: 'center',
             padding: theme.space.sm,
           }}
         >
           <View
             style={{
-              backgroundColor: isDark ? theme.color.card : theme.color.card,
+              backgroundColor: theme.isDark
+                ? theme.color.card
+                : theme.color.card,
               borderRadius: theme.borderRadius.lg,
               borderWidth: 1,
               borderColor: theme.color.border,
-              overflow: "hidden",
+              overflow: 'hidden',
               paddingVertical: theme.space.sm,
             }}
           >
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm - 2,
               }}
@@ -1371,15 +1405,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.sm - 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
+                  backgroundColor: theme.isDark
                     ? theme.color.error + 22
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="logout"
+                  name='logout'
                   size={theme.space.md}
                   color={theme.color.error}
                 />
@@ -1387,17 +1421,17 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.error,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.sign_out")}
+                  {theme.i18n.t('settings.sign_out')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
@@ -1408,8 +1442,8 @@ export default function SettingsScreen() {
             <TouchableOpacity
               activeOpacity={0.7}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingHorizontal: theme.space.sm,
                 paddingVertical: theme.space.sm - 3,
               }}
@@ -1419,15 +1453,15 @@ export default function SettingsScreen() {
                   paddingHorizontal: theme.space.sm - 1,
                   paddingVertical: theme.space.sm - 2,
                   borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: isDark
+                  backgroundColor: theme.isDark
                     ? theme.color.error + 22
                     : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons
-                  name="trash-can-outline"
+                  name='trash-can-outline'
                   size={theme.space.md}
                   color={theme.color.error}
                 />
@@ -1435,17 +1469,17 @@ export default function SettingsScreen() {
               <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
                 <Text
                   style={{
-                    textTransform: "capitalize",
+                    textTransform: 'capitalize',
                     color: theme.color.error,
                     fontSize: theme.fontSize.xs + 1,
                     fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {theme.i18n.t("settings.delete_account")}
+                  {theme.i18n.t('settings.delete_account')}
                 </Text>
               </View>
               <MaterialCommunityIcons
-                name="chevron-right"
+                name='chevron-right'
                 size={theme.space.md}
                 color={theme.color.textMuted}
               />
