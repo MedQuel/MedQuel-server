@@ -24,13 +24,13 @@ export function ProfileScreenHeader() {
           position: 'absolute',
           top: theme.space.md + 4,
           right: theme.space.md + 4,
-          paddingHorizontal: theme.space.sm + 4,
-          paddingVertical: theme.space.sm + 4,
-          borderRadius: theme.borderRadius.lg + 2, // square-ish box, full nahi
-          justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: theme.color.textMuted + 90,
+          justifyContent: 'center',
+          paddingVertical: theme.space.sm + 4,
+          paddingHorizontal: theme.space.sm + 4,
           borderWidth: 1,
+          borderRadius: theme.borderRadius.lg + 2,
+          backgroundColor: theme.color.textMuted + 90,
           borderColor: theme.color.border,
           elevation: 3,
         }}
@@ -44,27 +44,27 @@ export function ProfileScreenHeader() {
 
       <View
         style={{
-          width: theme.space.xxl + 40,
-          height: theme.space.xxl + 40,
-          borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.color.premium + 'FF',
           position: 'absolute',
           bottom: -36,
+          width: theme.space.xxl + 40,
+          height: theme.space.xxl + 40,
           alignSelf: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
           borderWidth: 4,
           borderColor: theme.color.border,
-          justifyContent: 'center',
-          alignItems: 'center',
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: theme.color.premium + 'FF',
         }}
       >
         <Text
           style={{
-            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-            fontSize: theme.fontSize.xxl + 6,
-            fontWeight: theme.fontWeight.bold,
             lineHeight: 66,
             textAlign: 'center',
             includeFontPadding: false,
+            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+            fontSize: theme.fontSize.xxl + 6,
+            fontWeight: theme.fontWeight.bold,
           }}
         >
           J
@@ -77,12 +77,12 @@ export function ProfileScreenHeader() {
             right: 0,
             height: theme.space.lg,
             width: theme.space.lg,
-            borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.accent,
+            alignItems: 'center',
+            justifyContent: 'center',
             borderWidth: 2,
             borderColor: theme.color.border,
-            justifyContent: 'center',
-            alignItems: 'center',
+            borderRadius: theme.borderRadius.full,
+            backgroundColor: theme.color.accent,
           }}
         >
           <MaterialCommunityIcons
