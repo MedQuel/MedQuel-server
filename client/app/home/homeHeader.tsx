@@ -1,10 +1,18 @@
-
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+
 import { useTheme } from '../../theme/ThemeContext';
 import { UserLevelChip } from '../../components/UserLevelChip';
-export function HomeHeader({ name, streak, level, initial, onNotificationsPress }: { name: string, streak: number, level: number, initial: string, onNotificationsPress?: () => void }) {
+
+
+export function HomeHeader({ name, streak, level, initial, onNotificationsPress }: {
+  name: string;
+  streak: number;
+  level: number;
+  initial: string;
+  onNotificationsPress?: () => void;
+}) {
   const { theme } = useTheme();
 
   return (
