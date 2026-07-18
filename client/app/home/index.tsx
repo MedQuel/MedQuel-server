@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
+import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
@@ -10,7 +11,10 @@ import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
 import { subjectCatalog, SubjectIcon, SubjectId } from '../../common/constants/subject';
+
+
 type PracticeSubject = { id: SubjectId, label: string };
+
 function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[], onPress?: (id: SubjectId) => void }) {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
@@ -18,19 +22,17 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
   const randomSubjects: PracticeSubject[] = useMemo(() => {
     const allIds = Object.keys(subjectCatalog) as SubjectId[];
     const shuffled: SubjectId[] = [...allIds];
+
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const current = shuffled[i];
       const next = shuffled[j];
-      if (current !== undefined && next !== undefined) {
-        [shuffled[i], shuffled[j]] = [next, current];
-      }
+
+      if (current !== undefined && next !== undefined) [shuffled[i], shuffled[j]] = [next, current];
     }
-    return shuffled.slice(0, 6).map((id) => ({
-      id,
-      label: theme.i18n.t(subjectCatalog[id].title),
-    }));
-  }, []);
+
+    return shuffled.slice(0, 6).map((id) => ({ id, label: theme.i18n.t(subjectCatalog[id].title) }));
+  }, [theme.i18n]);
 
   const iconSize = Math.min(width * 0.13, 58);
   const iconSizeValue = iconSize * 0.42;
@@ -49,6 +51,7 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
       {finalSubjects.map((subject) => {
         const definition = subjectCatalog[subject.id];
         const iconColor = theme.color[definition?.variant ?? 'accent'];
+
         return (
           <TouchableOpacity
             key={subject.id}
@@ -73,12 +76,9 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
                 backgroundColor: `${iconColor}12`,
               }}
             >
-              <SubjectIcon
-                id={subject.id}
-                color={iconColor}
-                size={getIconSizeValue(subject.id)}
-              />
+              <SubjectIcon id={subject.id} color={iconColor} size={getIconSizeValue(subject.id)} />
             </View>
+
             <Text
               numberOfLines={1}
               style={{
@@ -96,10 +96,13 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
     </View>
   );
 }
+
+
 export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'home');
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <HomeHeader
@@ -109,6 +112,7 @@ export default function HomeScreen() {
         level={12}
         onNotificationsPress={() => router.push('/notifications')}
       />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -140,6 +144,7 @@ export default function HomeScreen() {
           epReward={150}
           onStart={() => {}}
         />
+
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text
@@ -152,6 +157,7 @@ export default function HomeScreen() {
             >
               {theme.i18n.t('Active Contests')}
             </Text>
+
             <TouchableOpacity onPress={() => router.push('/contests')}>
               <Text
                 style={{
@@ -164,6 +170,7 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
           <View>
             <ActiveContestsCard
               contests={[
@@ -179,6 +186,7 @@ export default function HomeScreen() {
             />
           </View>
         </View>
+
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text
@@ -191,7 +199,8 @@ export default function HomeScreen() {
             >
               {theme.i18n.t('Practice by Subject')}
             </Text>
-            <TouchableOpacity onPress={() => router.push('/home/practice-subjects')}>
+
+            <TouchableOpacity onPress={() => router.push('/home/practiceBySubject')}>
               <Text
                 style={{
                   color: theme.color.accent,
@@ -203,8 +212,10 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
           <PracticeBySubject onPress={(subjectId) => { console.log('Selected Subject:', subjectId) }} />
         </View>
+
         <PerformanceTrendCard
           accuracy={{
             mon: 72,
