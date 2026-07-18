@@ -1,8 +1,10 @@
-import  { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { Animated, Pressable } from 'react-native';
 
-type Size = "small" | "medium" | "large";
+import { useTheme } from '../../theme/ThemeContext';
 
+
+type Size = 'small' | 'medium' | 'large';
 type ToggleSwitchProps = {
   isOn: boolean;
   onColor: string;
@@ -22,10 +24,11 @@ export function ToggleSwitch({
   isOn,
   onColor,
   offColor,
-  size = "medium",
+  size = 'medium',
   onToggle,
   disabled = false,
 }: ToggleSwitchProps) {
+  const { theme } = useTheme();
   const { width, height, thumb } = SIZES[size];
   const anim = useRef(new Animated.Value(isOn ? 1 : 0)).current;
 
@@ -35,17 +38,17 @@ export function ToggleSwitch({
       duration: 200,
       useNativeDriver: false,
     }).start();
-  }, [isOn]);
+  }, [anim, isOn]);
 
+  const translateX = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, width-thumb-2],
+  });
   const backgroundColor = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [offColor, onColor],
   });
 
-  const translateX = anim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [2, width - thumb - 2],
-  });
 
   return (
     <Pressable disabled={disabled} onPress={() => onToggle(!isOn)}>
@@ -53,10 +56,10 @@ export function ToggleSwitch({
         style={{
           width,
           height,
+          justifyContent: 'center',
+          paddingHorizontal: theme.space.xs * 0.5,
           borderRadius: height / 2,
           backgroundColor,
-          justifyContent: "center",
-          paddingHorizontal: 2,
           opacity: disabled ? 0.5 : 1,
         }}
       >
@@ -65,7 +68,7 @@ export function ToggleSwitch({
             width: thumb,
             height: thumb,
             borderRadius: thumb / 2,
-            backgroundColor: "#fff",
+            backgroundColor: '#fff',
             transform: [{ translateX }],
           }}
         />
