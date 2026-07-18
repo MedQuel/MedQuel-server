@@ -3,31 +3,24 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-
-type UpgradeBannerProps = {
-  onPress?: () => void;
-};
-
-export function PremiumUpsellCard({ onPress }: UpgradeBannerProps) {
+export function PremiumUpsellCard({ onPress }: { onPress?: () => void }) {
   const { theme } = useTheme();
 
   return (
     <View
-      style={[
-        {
-          gap: theme.space.sm + 2,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingVertical: theme.space.sm + 5,
-          paddingHorizontal: theme.space.lg + 2,
-          borderWidth: 1.5,
-          borderColor: theme.color.border,
-          borderRadius: theme.borderRadius.lg,
-          backgroundColor: theme.color.card,
-          boxShadow: `0 2px 8px ${theme.color.premium}1F`,
-          elevation: 3,
-        },
-      ]}
+      style={{
+        gap: theme.space.sm + 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: theme.space.sm + 5,
+        paddingHorizontal: theme.space.lg + 2,
+        borderWidth: 1.5,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.lg,
+        backgroundColor: theme.color.card,
+        boxShadow: `0 2px 8px ${theme.color.premium}1F`,
+        elevation: 3,
+      }}
     >
       <View
         style={{
