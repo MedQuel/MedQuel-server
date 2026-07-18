@@ -1,104 +1,88 @@
-import { View, Text } from "react-native";
-import { useTheme } from "../theme/ThemeContext";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+import { useTheme } from '../theme/ThemeContext';
+
 
 type SubjectItem = {
   name: string;
   score: number;
 };
-
 type PerformanceBySubjectProps = {
   title?: string;
   subjects?: SubjectItem[];
 };
 
-const defaultSubjects: SubjectItem[] = [
-  { name: "Anatomy", score: 90 },
-  { name: "Pharmacology", score: 81 },
-  { name: "Pathology", score: 74 },
-  { name: "Microbiology", score: 68 },
-  { name: "Surgery", score: 55 },
+const defaultSubjects: SubjectItem[] = [ // Remove this deffaultSubjects array
+  { name: 'Anatomy', score: 90 },
+  { name: 'Pharmacology', score: 81 },
+  { name: 'Pathology', score: 74 },
+  { name: 'Microbiology', score: 68 },
+  { name: 'Surgery', score: 55 },
 ];
 
 function getScoreColor(score: number, theme: any): string {
-  if (score >= 90) return theme.color.success + "FF";
-  if (score > 80 && score <90)return  theme.color.accent;
-  if (score >= 70 && score <80) return theme.color.warning + "AA";
-  if(score < 70 && score >60) return theme.color.premium
+  if (score >= 90) return theme.color.success + 'FF';
+  if (score > 80 && score < 90) return theme.color.accent;
+  if (score >= 70 && score < 80) return theme.color.warning + 'AA';
+  if (score < 70 && score > 60) return theme.color.premium;
   return theme.color.error;
 }
 
-export function SubjectPerformanceCard({
-  title = "Performance by Subject",
-  subjects = defaultSubjects,
-}: PerformanceBySubjectProps) {
+
+export function SubjectPerformanceCard({ title = 'Performance by Subject', subjects = defaultSubjects }: PerformanceBySubjectProps) {
   const { theme } = useTheme();
-  const { isDark } = theme;
 
   return (
     <View
       style={{
-        backgroundColor: theme.color.card,
-        paddingHorizontal: theme.space.sm + 2,
         paddingVertical: theme.space.md,
-        borderRadius: theme.borderRadius.lg + 4,
+        paddingHorizontal: theme.space.sm + 2,
         borderWidth: 1,
         borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.lg + 4,
+        backgroundColor: theme.color.card,
       }}
     >
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingBottom: theme.space.sm + 2,
-        }}
-      >
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingBottom: theme.space.sm + 2 }}>
         <MaterialCommunityIcons
-          name="pulse"
-          size={20}
+          name='pulse'
+          size={theme.space.md * 1.25}
           color={theme.color.accent}
         />
 
         <Text
           style={{
+            color: theme.color.textPrimary,
             fontSize: theme.fontSize.sm + 2,
             fontWeight: theme.fontWeight.bold,
-            color: theme.color.textPrimary,
-            paddingLeft: 8,
+            paddingLeft: theme.space.sm,
           }}
         >
           {title}
         </Text>
       </View>
 
-      {/* Subject Rows */}
       {subjects.map((item, index) => {
         const scoreColor = getScoreColor(item.score, theme);
 
         return (
           <View
             key={`${item.name}-${item.score}-${index}`}
-            style={{
-              paddingBottom:
-                index === subjects.length - 1
-                  ? 0
-                  : theme.space.xs + 2,
-            }}
+            style={{ paddingBottom: index === subjects.length-1 ? 0 : theme.space.xs * 1.5 }}
           >
-            {/* Label Row */}
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingBottom: 6,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: theme.space.sm,
               }}
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs + 2,
                   color: theme.color.textSecondary,
+                  fontSize: theme.fontSize.xs + 2,
                   fontWeight: theme.fontWeight.medium,
                 }}
               >
@@ -107,16 +91,16 @@ export function SubjectPerformanceCard({
 
               <View
                 style={{
+                  paddingVertical: theme.space.xs,
                   paddingHorizontal: theme.space.xs + 2,
-                  paddingVertical: 3,
                   borderRadius: theme.borderRadius.full,
                 }}
               >
                 <Text
                   style={{
+                    color: scoreColor,
                     fontSize: theme.fontSize.xs + 2,
                     fontWeight: theme.fontWeight.bold,
-                    color: scoreColor,
                   }}
                 >
                   {item.score}%
@@ -124,21 +108,20 @@ export function SubjectPerformanceCard({
               </View>
             </View>
 
-            {/* Progress Bar */}
             <View
               style={{
-                height: theme.space.xs + 3,
-                backgroundColor: isDark?theme.color.card:theme.color.border,
+                overflow: 'hidden',
+                height: theme.space.sm,
                 borderRadius: theme.borderRadius.full,
-                overflow: "hidden",
+                backgroundColor: theme.isDark ? theme.color.card : theme.color.border,
               }}
             >
               <View
                 style={{
                   width: `${item.score}%`,
-                  height: "100%",
-                  backgroundColor: scoreColor,
+                  height: '100%',
                   borderRadius: theme.borderRadius.full,
+                  backgroundColor: scoreColor,
                 }}
               />
             </View>
