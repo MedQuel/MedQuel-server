@@ -18,6 +18,9 @@ firestore.indexes.json
 firebase-debug.log
 .firebase/
 
+# Infrastructure files - not needed inside the Docker build.
+infra/
+
 # Throwaway dev tools, not part of the deployed backend
 get-token-script/
 nginx.local.conf
