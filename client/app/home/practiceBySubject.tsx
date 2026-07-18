@@ -1,21 +1,21 @@
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+
 import { useTheme } from '../../theme/ThemeContext';
 import { subjectCatalog, SubjectIcon, SubjectId } from '../../common/constants/subject';
-import { Ionicons } from '@expo/vector-icons';
+
+
 export default function AllSubjectsScreen() {
   const { theme } = useTheme();
-  const allSubjectIds = Object.keys(subjectCatalog) as SubjectId[];
-  const iconBoxSize = theme.space.xxl;      
-  const iconSize = theme.space.md;           
+
+  const iconSize = theme.space.md;
   const chevronSize = theme.space.md;
+  const iconBoxSize = theme.space.xxl;
+  const allSubjectIds = Object.keys(subjectCatalog) as SubjectId[];
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <ScrollView
-        contentContainerStyle={{
-          padding: theme.space.md,
-          gap: theme.space.sm,
-        }}
-      >
+      <ScrollView contentContainerStyle={{ gap: theme.space.sm, padding: theme.space.md }}>
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -32,6 +32,7 @@ export default function AllSubjectsScreen() {
           {allSubjectIds.map((id) => {
             const def = subjectCatalog[id];
             const iconColor = theme.color[def?.variant ?? 'accent'];
+
             return (
               <TouchableOpacity
                 key={id}
@@ -40,9 +41,9 @@ export default function AllSubjectsScreen() {
                   flexDirection: 'row',
                   alignItems: 'center',
                   padding: theme.space.sm,
-                  borderRadius: theme.borderRadius.lg,
                   borderWidth: 1,
                   borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.lg,
                   backgroundColor: theme.color.surface,
                 }}
               >
@@ -53,9 +54,9 @@ export default function AllSubjectsScreen() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginRight: theme.space.sm,
-                    borderRadius: theme.borderRadius.md,
                     borderWidth: 1,
                     borderColor: `${iconColor}35`,
+                    borderRadius: theme.borderRadius.md,
                     backgroundColor: `${iconColor}12`,
                   }}
                 >
@@ -75,7 +76,7 @@ export default function AllSubjectsScreen() {
                 </Text>
 
                 <Ionicons
-                  name="chevron-forward"
+                  name='chevron-forward'
                   size={chevronSize}
                   color={theme.color.textSecondary}
                 />
