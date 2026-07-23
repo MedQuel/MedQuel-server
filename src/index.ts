@@ -8,7 +8,7 @@ import { auth, db } from './config/firebase.js';
 import { typeDefs } from './graphql/schema/index.js';
 import { verifyAuthToken } from './middleware/auth.js';
 import { resolvers } from './graphql/resolvers/index.js';
-import type { GraphQLContext } from './graphql/context.js';
+import { bigqueryService, type GraphQLContext } from './graphql/context.js';
 
 import 'dotenv/config';
 
@@ -38,7 +38,7 @@ async function startServer(): Promise<void> {
     expressMiddleware(server, {
       context: async ({ req }): Promise<GraphQLContext> => {
         const user = await verifyAuthToken(req, auth);
-        return { auth, db, req, user };
+        return { auth, db, req, user, bigqueryService };
       },
     })
   );
