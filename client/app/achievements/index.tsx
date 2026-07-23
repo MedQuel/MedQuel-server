@@ -46,8 +46,6 @@ type LockedBadgeItem = {
 };
 
 const achievementsMock = {
-  header: { title: 'Achievements', subtitle: 'Collect badges & earn EP rewards' },
-
   progress: {
     earned: 14,
     total: 48,
@@ -82,6 +80,7 @@ const achievementsMock = {
   ] satisfies LockedBadgeItem[],
 };
 
+
 export default function AchievementsScreen() {
   const { theme } = useTheme();
   useBottomBar(true, 'profile');
@@ -99,10 +98,7 @@ export default function AchievementsScreen() {
     progressData.bronze > 0 ||
     progressData.epReward > 0;
 
-  const lockedBadgeRows = [
-    lockedBadges.slice(0, 3),
-    lockedBadges.slice(3, 6),
-  ].filter((row) => row.length > 0);
+  const lockedBadgeRows = [lockedBadges.slice(0, 3), lockedBadges.slice(3, 6)].filter((row) => row.length > 0);
 
   const accentMap: Record<LockedAccentKey, string> = {
     premium: theme.color.premium,
@@ -125,21 +121,13 @@ export default function AchievementsScreen() {
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <View
-            style={{
-              flex: 1,
-              gap: theme.space.sm,
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-            }}
-          >
+          <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'flex-start' }}>
             <Pressable
               onPress={() => {}}
               style={{
-                width: theme.space.xl,
-                height: theme.space.xl,
                 alignItems: 'center',
                 justifyContent: 'center',
+                padding: theme.space.xs * 1.25,
                 borderWidth: 1,
                 borderColor: theme.color.border,
                 borderRadius: theme.borderRadius.lg,
@@ -148,25 +136,22 @@ export default function AchievementsScreen() {
             >
               <Feather
                 name='chevron-left'
-                size={theme.space.md}
+                size={theme.space.md * 1.5}
                 color={theme.color.textSecondary}
               />
             </Pressable>
 
-            <View style={{ flex: 1, paddingRight: theme.space.sm }}>
+            <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
               <Text
                 style={{
                   color: theme.color.textPrimary,
                   fontSize: theme.fontSize.lg + 1,
                   lineHeight: theme.fontSize.xl,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
-                  marginBottom: theme.space.xs,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
                 {theme.i18n.t('achievements.title')}
               </Text>
-
               <Text
                 style={{
                   color: theme.color.textSecondary,
@@ -185,7 +170,7 @@ export default function AchievementsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: theme.space.sm,
-          paddingBottom: theme.space.xl,
+          paddingBottom: theme.space.xxl * 1.75,
           paddingHorizontal: theme.space.md,
         }}
       >
@@ -194,9 +179,9 @@ export default function AchievementsScreen() {
             <AchievementProgressCard {...progressData} />
           ) : (
             <EmptyStateCard
+              icon='bar-chart-2'
               title={theme.i18n.t('achievements.empty_states.no_progress.title')}
               description={theme.i18n.t('achievements.empty_states.no_progress.description')}
-              icon='bar-chart-2'
             />
           )}
 
@@ -214,9 +199,9 @@ export default function AchievementsScreen() {
             <BadgeProgressCard items={badgeProgressItems} />
           ) : (
             <EmptyStateCard
+              icon='activity'
               title={theme.i18n.t('achievements.empty_states.in_progress.title')}
               description={theme.i18n.t('achievements.empty_states.in_progress.description')}
-              icon='activity'
             />
           )}
 
@@ -251,9 +236,9 @@ export default function AchievementsScreen() {
               </View>
             ) : (
               <EmptyStateCard
+                icon='lock'
                 title={theme.i18n.t('achievements.empty_states.no_locked.title')}
                 description={theme.i18n.t('achievements.empty_states.no_locked.description')}
-                icon='lock'
               />
             )}
           </View>
