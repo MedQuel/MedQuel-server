@@ -159,6 +159,8 @@
   "achievements": {
     "title": "Achievements",
     "subtitle": "Collect badges & earn EP rewards",
+    "earnedBadges": "Earned Badges",
+    "inProgress": "In Progress",
     "locked": "Locked",
     "empty_states": {
       "no_progress": {
@@ -180,14 +182,10 @@
     }
   },
 
-  "screens": {
-    "Analytics": {
-      "title": "Analytics",
-      "subtitle": "Track your learning progress"
-    }
-  },
-
   "analytics": {
+    "title": "Analytics",
+    "subtitle": "Track your learning progress",
+    "subjectPerformance": "Subject Performance",
     "empty_states": {
       "subject": {
         "title": "No subject performance yet",
