@@ -162,8 +162,8 @@ export const contestsMockData: ContestItem[] = [
 ];
 
 
-export default function contestsScreen() {
-  const [search, setSearch] = useState('');
+export default function ContestsScreen() {
+  const [search, setSearch] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<ContestFilter>('all');
 
   const router = useRouter();
@@ -197,7 +197,7 @@ export default function contestsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          gap: theme.space.xs / 2,
+          gap: theme.space.xs/2,
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
