@@ -1,5 +1,6 @@
 import { GraphQLError } from 'graphql';
 
+
 /**
  * Throw this from any resolver when context.user is null but the
  * operation requires a signed-in user.
@@ -33,5 +34,69 @@ export class NotOnboardedError extends GraphQLError {
     super(message, {
       extensions: { code: 'NOT_ONBOARDED' },
     });
+  }
+}
+
+/**
+ * Throw when a quizSessions/{sessionId} doc doesn't exist, or exists but
+ * doesn't belong to the calling user.
+ */
+export class SessionNotFoundError extends GraphQLError {
+  constructor(message = 'Quiz session not found.') {
+    super(message, {
+      extensions: { code: 'NOT_FOUND' },
+    });
+  }
+}
+
+/**
+ * Throw from submitQuizSession when the session's status isn't "in_progress",
+ * covers both legitimate double-submits (retry storms) and someone replaying an old sessionId.
+ */
+export class SessionAlreadyCompletedError extends GraphQLError {
+  constructor(message = 'This quiz session has already been submitted.') {
+    super(message, {
+      extensions: { code: 'FAILED_PRECONDITION' },
+    });
+  }
+}
+
+/**
+ * Throw when a submitted answer references a questionId that was never
+ * part of this session's frozen questionIds list.
+ */
+export class InvalidAnswerError extends GraphQLError {
+  constructor(message = 'One or more answers reference a question not in this session.') {
+    super(message, {
+      extensions: { code: 'BAD_USER_INPUT' },
+    });
+  }
+}
+
+/**
+ * Throw when a contest doesn't exist or isn't accessible.
+ */
+export class ContestNotFoundError extends GraphQLError {
+  constructor(message = 'Contest not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when a contest exists but isn't currently active (e.g. not started yet, or already ended).
+ */
+export class ContestNotActiveError extends GraphQLError {
+  constructor(message = 'This contest is not currently active.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a contest exists but the user isn't allowed to join it
+ * (e.g. non-premium user trying to join a premium contest).
+ */
+export class InsufficientQuestionsError extends GraphQLError {
+  constructor(message = 'Not enough questions are available to start this session.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
   }
 }
