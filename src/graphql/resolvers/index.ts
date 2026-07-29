@@ -1,4 +1,5 @@
 import type { GraphQLContext } from '../context.js';
+import { startQuizSessionResolver } from './quiz.js';
 import { completeOnboardingResolver } from './onboarding.js';
 import { meResolver, updateProfileResolver } from './user.js';
 
@@ -15,5 +16,6 @@ export const resolvers = {
       context: GraphQLContext
     ) => completeOnboardingResolver(parent, args, context, context.db),
     updateProfile: updateProfileResolver,
+    startQuizSession: startQuizSessionResolver,
   },
 };
