@@ -20,7 +20,7 @@ export interface QuestionForQuiz {
   marks: number;
 }
 
-const MAX_QUESTION_COUNT = 50;
+export const MAX_QUESTION_COUNT = 50;
 const ALLOWED_DIFFICULTIES: ReadonlySet<string> = new Set(['easy', 'medium', 'hard']);
 
 
@@ -56,6 +56,35 @@ export class BigQueryService {
       query,
       params: { subject, difficulty, includePremium, questionCount },
       types: { subject: 'STRING', difficulty: 'STRING', includePremium: 'BOOL', questionCount: 'INT64' },
+    });
+
+    return rows.map((row) => ({
+      questionId: row.question_id,
+      questionText: row.question_text,
+      optionA: row.option_a,
+      optionB: row.option_b,
+      optionC: row.option_c,
+      optionD: row.option_d,
+      imageUrl: row.image_url ?? null,
+      questionType: row.question_type,
+      marks: row.marks,
+    }));
+  }
+
+  async fetchQuestionsByIds(questionIds: string[]): Promise<QuestionForQuiz[]> {
+    if (questionIds.length === 0) return [];
+
+    // Same column list as fetchQuestions — correct_answer/explanation are never selected here either.
+    const query = `
+      SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
+      FROM \`${this.projectId}.${this.datasetId}.questions\`
+      WHERE question_id IN UNNEST(@questionIds) AND is_active = TRUE
+    `;
+
+    const [rows] = await this.bigquery.query({
+      query,
+      params: { questionIds },
+      types: { questionIds: ['STRING'] },
     });
 
     return rows.map((row) => ({
