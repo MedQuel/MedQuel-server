@@ -95,6 +95,8 @@ export const quizTypeDefs = `#graphql
     updatedEpPoints: Int!
     updatedCurrentLevel: Int!
     updatedCurrentStreak: Int!
+    leveledUp: Boolean!
+    isNewLongestStreak: Boolean!
     results: [QuestionResult!]!
   }
 
