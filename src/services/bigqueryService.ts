@@ -1,7 +1,9 @@
 import { BigQuery } from '@google-cloud/bigquery';
 
 
+export const MAX_QUESTION_COUNT = 50;
 export type QuizDifficulty = 'easy' | 'medium' | 'hard';
+const ALLOWED_DIFFICULTIES: ReadonlySet<string> = new Set(['easy', 'medium', 'hard']);
 export interface FetchQuestionsFilters {
   subject: string;
   difficulty: QuizDifficulty;
@@ -19,9 +21,12 @@ export interface QuestionForQuiz {
   questionType: string;
   marks: number;
 }
-
-export const MAX_QUESTION_COUNT = 50;
-const ALLOWED_DIFFICULTIES: ReadonlySet<string> = new Set(['easy', 'medium', 'hard']);
+export interface AnswerKeyRow {
+  questionId: string;
+  correctAnswer: string;
+  explanation: string;
+  marks: number;
+}
 
 
 export class BigQueryService {
@@ -40,7 +45,6 @@ export class BigQueryService {
     }
     const questionCount = Math.min(Math.max(Math.trunc(filters.questionCount), 1), MAX_QUESTION_COUNT);
 
-    // NEVER select correct_answer or explanation here, this result goes straight to the client.
     const query = `
       SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
       FROM \`${this.projectId}.${this.datasetId}.questions\`
@@ -74,7 +78,6 @@ export class BigQueryService {
   async fetchQuestionsByIds(questionIds: string[]): Promise<QuestionForQuiz[]> {
     if (questionIds.length === 0) return [];
 
-    // Same column list as fetchQuestions — correct_answer/explanation are never selected here either.
     const query = `
       SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
       FROM \`${this.projectId}.${this.datasetId}.questions\`
@@ -96,6 +99,29 @@ export class BigQueryService {
       optionD: row.option_d,
       imageUrl: row.image_url ?? null,
       questionType: row.question_type,
+      marks: row.marks,
+    }));
+  }
+
+  async fetchAnswerKey(questionIds: string[]): Promise<AnswerKeyRow[]> {
+    if (questionIds.length === 0) return [];
+
+    const query = `
+      SELECT question_id, correct_answer, explanation, marks
+      FROM \`${this.projectId}.${this.datasetId}.questions\`
+      WHERE question_id IN UNNEST(@questionIds)
+    `;
+
+    const [rows] = await this.bigquery.query({
+      query,
+      params: { questionIds },
+      types: { questionIds: ['STRING'] },
+    });
+
+    return rows.map((row) => ({
+      questionId: row.question_id,
+      correctAnswer: row.correct_answer,
+      explanation: row.explanation ?? '',
       marks: row.marks,
     }));
   }
