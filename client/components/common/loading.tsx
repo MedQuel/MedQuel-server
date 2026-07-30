@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from 'react';
-import Svg, { Path, Defs, LinearGradient, Stop, ClipPath, G } from 'react-native-svg';
-import { View, Animated, type StyleProp, type ViewStyle, Easing, Platform, useWindowDimensions } from 'react-native';
+import Svg, { G, Defs, Path, Stop, ClipPath, LinearGradient } from 'react-native-svg';
+import { View, Easing, Animated, Platform, type StyleProp, type ViewStyle, useWindowDimensions } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 
+const AnimatedView = Animated.createAnimatedComponent(View);
 const GWithoutCollapsable = React.forwardRef<any, any>((props, ref) => {
   const rest = { ...props };
   delete (rest as any).collapsable;
   return <G ref={ref} {...rest} />;
 });
 const AnimatedG = Animated.createAnimatedComponent(GWithoutCollapsable);
+
 
 interface PremiumLoaderProps {
   size?: number;
@@ -20,7 +21,6 @@ interface PremiumLoaderProps {
   color: string;
   secondaryColor: string;
 }
-
 function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLoaderProps) {
   const finalWidth = width ?? size ?? 120;
   const finalHeight = height ?? size ?? 120;
@@ -60,7 +60,7 @@ function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLo
           toValue: 0,
           duration: 0,
           useNativeDriver: false,
-        })
+        }),
       ])
     );
 
@@ -73,33 +73,24 @@ function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLo
     };
   }, [progress, wavePhase]);
 
-  const wave1X = wavePhase.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -12],
-  });
-  
-  const wave2X = wavePhase.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-12, 0],
-  });
+  const wave1X = wavePhase.interpolate({ inputRange: [0, 1], outputRange: [0, -12] });
+  const wave2X = wavePhase.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] });
 
-  const liquidY = progress.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [24, -5, -5],
-  });
-  
-  const liquidY2 = progress.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [23, -6, -6],
-  });
+  const liquidY = progress.interpolate({ inputRange: [0, 1, 2], outputRange: [24, -5, -5] });
+  const liquidY2 = progress.interpolate({ inputRange: [0, 1, 2], outputRange: [23, -6, -6] });
 
-  const coreScale = progress.interpolate({
-    inputRange: [0, 0.95, 1, 1.1, 1.3, 2],
-    outputRange: [1, 1, 1, 1.6, 0.9, 1],
-  });
+  const coreScale = progress.interpolate({ inputRange: [0, 0.95, 1, 1.1, 1.3, 2], outputRange: [1, 1, 1, 1.6, 0.9, 1] });
+
 
   return (
-    <View style={{ width: finalWidth, height: finalHeight, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        width: finalWidth,
+        height: finalHeight,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <AnimatedView
         style={{
           width: minDim * 0.65,
@@ -107,30 +98,30 @@ function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLo
           transform: [{ scale: coreScale }],
         }}
       >
-        <Svg width="100%" height="100%" viewBox="0 0 24 24">
+        <Svg width='100%' height='100%' viewBox='0 0 24 24'>
           <Defs>
-            <ClipPath id="boltClip">
+            <ClipPath id='boltClip'>
               <Path d={boltPath} />
             </ClipPath>
-            <LinearGradient id="liquidGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={secondaryColor} stopOpacity="1" />
-              <Stop offset="100%" stopColor={color} stopOpacity="1" />
+            <LinearGradient id='liquidGrad1' x1='0%' y1='0%' x2='0%' y2='100%'>
+              <Stop offset='0%' stopColor={secondaryColor} stopOpacity='1' />
+              <Stop offset='100%' stopColor={color} stopOpacity='1' />
             </LinearGradient>
-            <LinearGradient id="liquidGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={color} stopOpacity="0.75" />
-              <Stop offset="100%" stopColor={secondaryColor} stopOpacity="0.75" />
+            <LinearGradient id='liquidGrad2' x1='0%' y1='0%' x2='0%' y2='100%'>
+              <Stop offset='0%' stopColor={color} stopOpacity='0.75' />
+              <Stop offset='100%' stopColor={secondaryColor} stopOpacity='0.75' />
             </LinearGradient>
           </Defs>
 
-          <Path d={boltPath} stroke={color} strokeWidth={1} fill="none" opacity={0.2} />
+          <Path d={boltPath} stroke={color} strokeWidth={1} fill='none' opacity={0.2} />
 
-          <G clipPath="url(#boltClip)">
+          <G clipPath='url(#boltClip)'>
             <AnimatedG x={wave2X as any} y={liquidY2 as any}>
-              <Path d={wavePath} fill="url(#liquidGrad2)" />
+              <Path d={wavePath} fill='url(#liquidGrad2)' />
             </AnimatedG>
-            
+
             <AnimatedG x={wave1X as any} y={liquidY as any}>
-              <Path d={wavePath} fill="url(#liquidGrad1)" />
+              <Path d={wavePath} fill='url(#liquidGrad1)' />
             </AnimatedG>
           </G>
         </Svg>
@@ -138,6 +129,7 @@ function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLo
     </View>
   );
 }
+
 
 export interface LoadingProps {
   message?: string;
@@ -147,15 +139,14 @@ export interface LoadingProps {
   fullscreen?: boolean;
   style?: StyleProp<ViewStyle>;
 }
-
 export function Loading({ message, size, width, height, fullscreen = false, style }: LoadingProps) {
   const { theme } = useTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  
+
   const primaryColor = theme.color.info;
   const secondaryColor = theme.color.accent;
 
-  const responsiveSize = Math.min(screenWidth, screenHeight) * 0.30;
+  const responsiveSize = Math.min(screenWidth, screenHeight) * 0.3;
 
   const containerStyle: StyleProp<ViewStyle> = fullscreen
     ? [
@@ -169,24 +160,27 @@ export function Loading({ message, size, width, height, fullscreen = false, styl
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: theme.color.background + 'EE',
-          ...(Platform.OS === 'web' && { backdropFilter: 'blur(8px)' } as any),
+          ...(Platform.OS === 'web' && ({ backdropFilter: 'blur(8px)' } as any)),
         },
         style,
       ]
-    : [{ justifyContent: 'center', alignItems: 'center', padding: theme.space.xl }, style];
+    : [
+        { alignItems: 'center', justifyContent: 'center', padding: theme.space.xl },
+        style,
+      ];
 
   return (
     <View
       style={containerStyle}
-      accessibilityRole="progressbar"
+      accessibilityRole='progressbar'
       accessibilityLabel={message || 'Loading'}
     >
-      <PremiumLoader 
-        size={size ?? responsiveSize} 
-        width={width} 
-        height={height} 
-        color={primaryColor} 
-        secondaryColor={secondaryColor} 
+      <PremiumLoader
+        size={size ?? responsiveSize}
+        width={width}
+        height={height}
+        color={primaryColor}
+        secondaryColor={secondaryColor}
       />
     </View>
   );
