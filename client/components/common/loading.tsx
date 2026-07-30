@@ -1,122 +1,161 @@
-import { useEffect, useRef } from 'react';
-import Svg, { Path } from 'react-native-svg';
-import { Text, View, Animated, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import Svg, { Path, Defs, LinearGradient, Stop, ClipPath, G } from 'react-native-svg';
+import { View, Animated, type StyleProp, type ViewStyle, Easing, Platform, useWindowDimensions } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
-
 const AnimatedView = Animated.createAnimatedComponent(View);
-interface ChargingBoltProps {
-  size: number;
+
+const GWithoutCollapsable = React.forwardRef<any, any>((props, ref) => {
+  const rest = { ...props };
+  delete (rest as any).collapsable;
+  return <G ref={ref} {...rest} />;
+});
+const AnimatedG = Animated.createAnimatedComponent(GWithoutCollapsable);
+
+interface PremiumLoaderProps {
+  size?: number;
+  width?: number;
+  height?: number;
   color: string;
+  secondaryColor: string;
 }
 
-function ChargingBolt({ size, color }: ChargingBoltProps) {
-  const animValue = useRef(new Animated.Value(0)).current;
+function PremiumLoader({ size, width, height, color, secondaryColor }: PremiumLoaderProps) {
+  const finalWidth = width ?? size ?? 120;
+  const finalHeight = height ?? size ?? 120;
+  const minDim = Math.min(finalWidth, finalHeight);
+
+  const progress = useRef(new Animated.Value(0)).current;
+  const wavePhase = useRef(new Animated.Value(0)).current;
+
   const boltPath = 'M16.5 2 L8.5 13.5 h5 L10.5 22 l8 -11.5 h-5 Z';
+  const wavePath = 'M 0 5 Q 3 0 6 5 T 12 5 T 18 5 T 24 5 T 30 5 T 36 5 T 42 5 T 48 5 L 48 40 L 0 40 Z';
 
   useEffect(() => {
-    const animation = Animated.loop(
+    const waveAnim = Animated.loop(
+      Animated.timing(wavePhase, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.linear,
+        useNativeDriver: false,
+      })
+    );
+
+    const fillAnim = Animated.loop(
       Animated.sequence([
-        Animated.timing(animValue, { toValue: 1, duration: 1300, useNativeDriver: true }),
-        Animated.timing(animValue, { toValue: 2, duration: 180, useNativeDriver: true }),
-        Animated.timing(animValue, { toValue: 0, duration: 0, useNativeDriver: true }),
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(progress, {
+          toValue: 2,
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(progress, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: false,
+        })
       ])
     );
 
-    animation.start();
-    return () => animation.stop();
-  }, [animValue]);
+    waveAnim.start();
+    fillAnim.start();
 
-  const maskTranslateY = animValue.interpolate({
+    return () => {
+      waveAnim.stop();
+      fillAnim.stop();
+    };
+  }, [progress, wavePhase]);
+
+  const wave1X = wavePhase.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -12],
+  });
+  
+  const wave2X = wavePhase.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-12, 0],
+  });
+
+  const liquidY = progress.interpolate({
     inputRange: [0, 1, 2],
-    outputRange: [size, 0, 0],
+    outputRange: [24, -5, -5],
   });
-  const svgTranslateY = animValue.interpolate({
+  
+  const liquidY2 = progress.interpolate({
     inputRange: [0, 1, 2],
-    outputRange: [-size, 0, 0],
+    outputRange: [23, -6, -6],
   });
 
-  const mainScale = animValue.interpolate({
-    inputRange: [0, 1, 1.5, 2],
-    outputRange: [1, 1, 1.05, 1],
-  });
-  const glowScale = animValue.interpolate({
-    inputRange: [0, 1, 1.5, 2],
-    outputRange: [1, 1, 1.3, 1],
-  });
-
-  const glowOpacity = animValue.interpolate({
-    inputRange: [0, 1, 1.5, 2],
-    outputRange: [0, 0, 0.4, 0],
+  const coreScale = progress.interpolate({
+    inputRange: [0, 0.95, 1, 1.1, 1.3, 2],
+    outputRange: [1, 1, 1, 1.6, 0.9, 1],
   });
 
   return (
-    <AnimatedView
-      style={{
-        width: size,
-        height: size,
-        alignItems: 'center',
-        justifyContent: 'center',
-        transform: [{ scale: mainScale }],
-      }}
-    >
+    <View style={{ width: finalWidth, height: finalHeight, alignItems: 'center', justifyContent: 'center' }}>
       <AnimatedView
-        style={[
-          StyleSheet.absoluteFill,
-          { opacity: glowOpacity, transform: [{ scale: glowScale }] },
-        ]}
+        style={{
+          width: minDim * 0.65,
+          height: minDim * 0.65,
+          transform: [{ scale: coreScale }],
+        }}
       >
-        <Svg width='100%' height='100%' viewBox='0 0 24 24'>
-          <Path d={boltPath} fill={color} />
+        <Svg width="100%" height="100%" viewBox="0 0 24 24">
+          <Defs>
+            <ClipPath id="boltClip">
+              <Path d={boltPath} />
+            </ClipPath>
+            <LinearGradient id="liquidGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={secondaryColor} stopOpacity="1" />
+              <Stop offset="100%" stopColor={color} stopOpacity="1" />
+            </LinearGradient>
+            <LinearGradient id="liquidGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={color} stopOpacity="0.75" />
+              <Stop offset="100%" stopColor={secondaryColor} stopOpacity="0.75" />
+            </LinearGradient>
+          </Defs>
+
+          <Path d={boltPath} stroke={color} strokeWidth={1} fill="none" opacity={0.2} />
+
+          <G clipPath="url(#boltClip)">
+            <AnimatedG x={wave2X as any} y={liquidY2 as any}>
+              <Path d={wavePath} fill="url(#liquidGrad2)" />
+            </AnimatedG>
+            
+            <AnimatedG x={wave1X as any} y={liquidY as any}>
+              <Path d={wavePath} fill="url(#liquidGrad1)" />
+            </AnimatedG>
+          </G>
         </Svg>
       </AnimatedView>
-
-      <View style={StyleSheet.absoluteFill}>
-        <Svg width='100%' height='100%' viewBox='0 0 24 24'>
-          <Path
-            d={boltPath}
-            fill='none'
-            stroke={color}
-            strokeWidth={1.5}
-            opacity={0.25}
-          />
-        </Svg>
-      </View>
-
-      <AnimatedView
-        style={[
-          StyleSheet.absoluteFill,
-          { overflow: 'hidden', transform: [{ translateY: maskTranslateY }] },
-        ]}
-      >
-        <AnimatedView
-          style={{
-            width: size,
-            height: size,
-            transform: [{ translateY: svgTranslateY }],
-          }}
-        >
-          <Svg width='100%' height='100%' viewBox='0 0 24 24'>
-            <Path d={boltPath} fill={color} />
-          </Svg>
-        </AnimatedView>
-      </AnimatedView>
-    </AnimatedView>
+    </View>
   );
 }
-
 
 export interface LoadingProps {
   message?: string;
   size?: number;
+  width?: number;
+  height?: number;
   fullscreen?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
-export function Loading({ message, size = 80, fullscreen = false, style }: LoadingProps) {
+export function Loading({ message, size, width, height, fullscreen = false, style }: LoadingProps) {
   const { theme } = useTheme();
-  const boltColor = theme.isDark ? theme.color.info : theme.color.accent;
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
+  const primaryColor = theme.color.info;
+  const secondaryColor = theme.color.accent;
+
+  const responsiveSize = Math.min(screenWidth, screenHeight) * 0.30;
 
   const containerStyle: StyleProp<ViewStyle> = fullscreen
     ? [
@@ -129,33 +168,26 @@ export function Loading({ message, size = 80, fullscreen = false, style }: Loadi
           zIndex: 999,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: theme.color.background + 'D9',
+          backgroundColor: theme.color.background + 'EE',
+          ...(Platform.OS === 'web' && { backdropFilter: 'blur(8px)' } as any),
         },
         style,
       ]
-    : [{ justifyContent: 'center', alignItems: 'center', padding: 24 }, style];
-
+    : [{ justifyContent: 'center', alignItems: 'center', padding: theme.space.xl }, style];
 
   return (
     <View
       style={containerStyle}
-      accessibilityRole='progressbar'
+      accessibilityRole="progressbar"
       accessibilityLabel={message || 'Loading'}
     >
-      <ChargingBolt size={size} color={boltColor} />
-      {!!message && (
-        <Text
-          style={{
-            textAlign: 'center',
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm,
-            fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.md,
-          }}
-        >
-          {message}
-        </Text>
-      )}
+      <PremiumLoader 
+        size={size ?? responsiveSize} 
+        width={width} 
+        height={height} 
+        color={primaryColor} 
+        secondaryColor={secondaryColor} 
+      />
     </View>
   );
 }
