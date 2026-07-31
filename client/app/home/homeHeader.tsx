@@ -1,20 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-
 import { useTheme } from '../../theme/ThemeContext';
 import { UserLevelChip } from '../../components/UserLevelChip';
-
-
-export function HomeHeader({ name, streak, level, initial, onNotificationsPress }: {
-  name: string;
-  streak: number;
-  level: number;
-  initial: string;
-  onNotificationsPress?: () => void;
-}) {
+function getAvatarLabel(fullName: string): string {
+  const words = fullName.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '';
+  if (words.length === 1) return words[0]!.charAt(0).toUpperCase();
+  return (words[0]!.charAt(0) + words[words.length - 1]!.charAt(0)).toUpperCase();
+}
+export function HomeHeader({ name, streak, level, onNotificationsPress }: { name: string, streak: number, level: number, onNotificationsPress?: () => void }) {
   const { theme } = useTheme();
-
+  const avatarLabel = getAvatarLabel(name);
   return (
     <View
       style={{
@@ -46,7 +43,7 @@ export function HomeHeader({ name, streak, level, initial, onNotificationsPress 
               fontFamily: theme.fontFamily.bold,
             }}
           >
-            {initial}
+            {avatarLabel}
           </Text>
         </LinearGradient>
 
