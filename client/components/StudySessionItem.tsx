@@ -1,31 +1,35 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../theme/ThemeContext';
 
 type SessionStatus = 'completed' | 'current' | 'upcoming';
 
-type StudySession = {
-  id: string;
-  time: string;
-  title: string;
-  subject: string;
-  questionsCount: number;
-  reward: number;
-  status: SessionStatus;
-  iconName: keyof typeof Feather.glyphMap;
-};
-
-type StudyTimelineProps = {
-  sessions?: StudySession[];
-  onPress?: (session: StudySession) => void;
-};
-
 export function StudyTimelineCard({
   sessions = [],
   onPress,
-}: StudyTimelineProps) {
+}: {
+  sessions?: {
+    id: string;
+    time: string;
+    title: string;
+    subject: string;
+    questionsCount: number;
+    reward: number;
+    status: SessionStatus;
+    iconName: keyof typeof Feather.glyphMap;
+  }[];
+  onPress?: (session: {
+    id: string;
+    time: string;
+    title: string;
+    subject: string;
+    questionsCount: number;
+    reward: number;
+    status: SessionStatus;
+    iconName: keyof typeof Feather.glyphMap;
+  }) => void;
+}) {
   const { theme } = useTheme();
 
   const getStatusConfig = (status: SessionStatus) => {
@@ -80,7 +84,7 @@ export function StudyTimelineCard({
               alignItems: 'center',
 
               paddingVertical: theme.space.sm,
-              paddingHorizontal: theme.space.lg,
+              paddingHorizontal: theme.space.md,
 
               borderRadius: theme.borderRadius.xl,
 
@@ -92,13 +96,13 @@ export function StudyTimelineCard({
               borderColor: status.border,
               backgroundColor: status.background,
 
-              gap: theme.space.md,
+              gap: theme.space.sm,
             }}
           >
             {/* TIME */}
             <View
               style={{
-                minWidth: theme.space.xl * 1.8,
+                minWidth: theme.space.xl * 1.5,
 
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -128,8 +132,8 @@ export function StudyTimelineCard({
             <View
   style={{
     position: 'relative',
-    width: theme.space.xl * 1.8,
-    height: theme.space.xl * 1.8,
+    width: theme.space.xl * 1.6,
+    height: theme.space.xl * 1.6,
     alignItems: 'center',
     justifyContent: 'center',
   }}
@@ -137,8 +141,8 @@ export function StudyTimelineCard({
 
   <View
     style={{
-      width: theme.space.xl * 1.8,
-      height: theme.space.xl * 1.8,
+      width: theme.space.xl * 1.6,
+      height: theme.space.xl * 1.6,
 
       alignItems: 'center',
       justifyContent: 'center',
@@ -175,7 +179,6 @@ export function StudyTimelineCard({
                 }}
               >
                 <Text
-                  numberOfLines={1}
                   style={{
                     flexShrink: 1,
 
@@ -198,42 +201,6 @@ export function StudyTimelineCard({
                 >
                   {session.title}
                 </Text>
-
-                {session.status === 'current' && (
-                  <View
-                    style={{
-                      paddingHorizontal:
-                        theme.space.sm * 1.2,
-
-                      paddingVertical:
-                        theme.space.xs * 0.8,
-
-                      borderRadius:
-                        theme.borderRadius.full,
-
-                      backgroundColor:
-                        theme.color.accent,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          theme.color.textInverse,
-
-                        fontSize:
-                          theme.fontSize.xs,
-
-                        fontWeight:
-                          theme.fontWeight.bold.toString() as any,
-
-                        fontFamily:
-                          theme.fontFamily.regular,
-                      }}
-                    >
-                      NOW
-                    </Text>
-                  </View>
-                )}
               </View>
 
               <View

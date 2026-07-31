@@ -70,6 +70,11 @@ export function WeeklyProgressCard({
 
   const completedCount = completedDays.length;
 
+  // NOTE: this estimates the card's inner width from the *screen* width minus
+  // an assumed outer margin. If the screen wrapping this card changes its
+  // horizontal padding, update `horizontalPadding` below to match, or the day
+  // circles will be sized for the wrong width (this only affects circle size,
+  // not the card's own width, which always matches its parent).
   const horizontalPadding = theme.space.lg * 2;
 
   const daySize = Math.min(
@@ -82,8 +87,8 @@ export function WeeklyProgressCard({
   return (
     <View
       style={{
-        paddingVertical: theme.space.md,
-        paddingHorizontal: theme.space.lg,
+        paddingVertical: theme.space.sm,
+        paddingHorizontal: theme.space.md,
         borderRadius: theme.borderRadius.xl,
         borderWidth: 1.5,
         borderColor: theme.isDark

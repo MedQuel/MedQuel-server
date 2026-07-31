@@ -159,6 +159,24 @@
 
   "profile": {},
 
+  "studyPlan": {
+    "loading": "Loading your study plan...",
+    "loadError": "Could not load your study plan. Pull to retry.",
+    "notFound": "Study plan not found.",
+    "thisWeek": "This Week",
+    "editModal": {
+      "title": "Edit Study Plan",
+      "examName": "Exam Name",
+      "examDate": "Exam Date",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "projection": {
+      "title": "Weekly Projection",
+      "subtitle": "Keep your current pace to maximize rewards"
+    }
+  },
+
   "components": {
     "FeatureHighlightsCard": {
       "title": "What awaits you",

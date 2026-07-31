@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
-
 import { ChatHeader } from './chatHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-
+import { Loading } from '../../components/common/loading';
+import { api } from '../../common/api/api';
+import { subjectCatalog, SubjectIcon, type SubjectId, type SubjectVariant } from '../../common/constants/subject';
+import type { ChatRoom } from '../../common/types/types';
 
 type DiscussionRoom = {
   id: string;
   name: string;
-  subject: Subject;
+  subject: SubjectId;
   lastMessage: string;
   lastActive: string;
   unreadCount: number;
@@ -19,101 +21,80 @@ type DiscussionRoom = {
   isJoined: boolean;
   isTrending: boolean;
 };
-
-type Subject = 'cardiology' | 'usmle' | 'pharma' | 'anatomy';
-type SubjectColorKey = 'error' | 'accent' | 'success' | 'premium';
-
-export const subjectColorKeys: Record<Subject, SubjectColorKey> = {
-  cardiology: 'error',
-  usmle: 'accent',
-  pharma: 'success',
-  anatomy: 'premium',
+const resolveSubjectId = (subjectTitle: string): SubjectId => {
+  const normalized = subjectTitle.trim().toLowerCase();
+  const match = Object.entries(subjectCatalog).find(
+    ([, def]) => def.title.toLowerCase() === normalized
+  );
+  return (match?.[0] as SubjectId) ?? 'medicine';
 };
-
-export const DUMMY_ROOMS: DiscussionRoom[] = [
-  {
-    id: 'room1',
-    name: 'Cardiology Discussion',
-    subject: 'cardiology',
-    lastMessage: 'Great point about STEMI management!',
-    lastActive: '2m',
-    unreadCount: 3,
-    membersCount: 142,
-    isJoined: true,
-    isTrending: true,
-  },
-  {
-    id: 'room2',
-    name: 'USMLE Step 1 Prep',
-    subject: 'usmle',
-    lastMessage: 'Anyone struggling with Biochemistry?',
-    lastActive: '5m',
-    unreadCount: 12,
-    membersCount: 847,
-    isJoined: true,
-    isTrending: true,
-  },
-  {
-    id: 'room3',
-    name: 'Pharmacology Hub',
-    subject: 'pharma',
-    lastMessage: 'Pharmacokinetics practice Q posted!',
-    lastActive: '15m',
-    unreadCount: 0,
-    membersCount: 234,
-    isJoined: false,
-    isTrending: false,
-  },
-  {
-    id: 'room4',
-    name: 'Anatomy Masters',
-    subject: 'anatomy',
-    lastMessage: 'Brachial plexus mnemonics anyone?',
-    lastActive: '2h',
-    unreadCount: 1,
-    membersCount: 421,
-    isJoined: false,
-    isTrending: false,
-  },
-];
-
-export const SubjectIcon = ({ id, color, size }: { id: Subject, color: string, size: number }) => {
-  switch (id) {
-    case 'cardiology':
-      return <Ionicons name='heart-outline' size={size} color={color} />;
-    case 'usmle':
-      return <Ionicons name='school' size={size} color={color} />;
-    case 'pharma':
-      return <MaterialCommunityIcons name='pill' size={size} color={color} />;
-    case 'anatomy':
-      return <MaterialCommunityIcons name='brain' size={size} color={color} />;
-    default:
-      return null;
-  }
+const formatRelativeTime = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d`;
 };
-
-
+const toDiscussionRoom = (room: ChatRoom): DiscussionRoom => ({
+  id: room.roomId,
+  name: room.name,
+  subject: resolveSubjectId(room.subject),
+  lastMessage: room.lastMessage ?? '',
+  lastActive: formatRelativeTime(room.lastMessageAt),
+  unreadCount: 0,
+  membersCount: room.memberCount,
+  isJoined: false,
+  isTrending: false,
+});
 export default function DiscussionRoomsScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [search, setSearch] = useState('');
-
+  const [rooms, setRooms] = useState<DiscussionRoom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'chat');
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchRooms() {
+      try {
+        setLoading(true);
+        setError(null);
+        const chatRooms = await api.chat.getChatRooms();
+        if (!isMounted) return;
 
-  const rooms = DUMMY_ROOMS;
+        setRooms(chatRooms.map(toDiscussionRoom));
+      } catch (err) {
+        console.log('Failed to fetch chat rooms:', err);
+        if (isMounted) {
+          setError(theme.i18n.t('Could not load discussion rooms. Pull to retry.'));
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    fetchRooms();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredRooms = rooms.filter((r) => r.name.toLowerCase().includes(search.toLowerCase()));
-  const subjectColorMap: Record<SubjectColorKey, string> = {
+  const subjectColorMap: Record<SubjectVariant, string> = {
     error: theme.color.error,
     accent: theme.color.accent,
     success: theme.color.success,
     premium: theme.color.premium,
+    warning: theme.color.warning,
   };
-
   const renderRoom = ({ item }: { item: DiscussionRoom }) => {
-    const colorKey = subjectColorKeys[item.subject] ?? 'accent';
-    const iconColor = subjectColorMap[colorKey];
-
+    const variant = subjectCatalog[item.subject]?.variant ?? 'accent';
+    const iconColor = subjectColorMap[variant];
     return (
       <TouchableOpacity
         activeOpacity={0.7}
@@ -248,29 +229,46 @@ export default function DiscussionRoomsScreen() {
         setSearchVisible={setSearchVisible}
       />
 
-      <FlatList
-        data={filteredRooms}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRoom}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: theme.space.md,
-          paddingBottom: theme.space.xxl,
-        }}
-        ListEmptyComponent={
-          <View style={{ gap: theme.space.sm, alignItems: 'center', marginTop: theme.space.xxl * 2 }}>
-            <Text
-              style={{
-                color: theme.color.textSecondary,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
-              }}
-            >
-              {theme.i18n.t('No discussion rooms found')}
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <Loading message={theme.i18n.t('Loading discussion rooms...')} fullscreen />
+      ) : error ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.space.md }}>
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
+              textAlign: 'center',
+            }}
+          >
+            {error}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredRooms}
+          keyExtractor={(item) => item.id}
+          renderItem={renderRoom}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: theme.space.md,
+            paddingBottom: theme.space.xxl,
+          }}
+          ListEmptyComponent={
+            <View style={{ gap: theme.space.sm, alignItems: 'center', marginTop: theme.space.xxl * 2 }}>
+              <Text
+                style={{
+                  color: theme.color.textSecondary,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('No discussion rooms found')}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </View>
   );
 }

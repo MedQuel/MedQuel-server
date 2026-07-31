@@ -23,7 +23,7 @@ export function ProjectionCard({
         borderWidth: 1,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
-        padding: theme.space.lg,
+        padding: theme.space.md,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
