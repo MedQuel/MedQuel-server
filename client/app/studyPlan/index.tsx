@@ -232,19 +232,11 @@ export default function StudyPlanScreen() {
       isMounted = false;
     };
   }, []);
-
-  // generateStudyPlan mutation only accepts examDate (+ optional weakSubjects/hoursPerDay) -
-  // there's no backend field to change targetExam via this call, so the edited exam name
-  // is tracked locally and re-applied on top of whatever the mutation returns.
   const handleSavePlan = async (newExamName: string, newExamDate: string) => {
     if (!plan) return;
     const previousPlan = plan;
-
-    // TargetExam is a closed union server-side, but the edit modal takes free text.
     const nextTargetExam = newExamName as TargetExam;
-
     setPlan({ ...plan, targetExam: nextTargetExam, examDate: newExamDate });
-
     try {
       const updated = await api.studyPlan.generateStudyPlan({
         examDate: newExamDate,
