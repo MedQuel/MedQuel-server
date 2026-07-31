@@ -2,19 +2,39 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-
+import { useEffect, useState } from 'react';
+import { userApi } from "@/common/api/api";
 
 type ProfilePropsCards = {
-  icoName: string;
-  name: string;
-  email: string;
-  lv: Number;
+  
+  // name: string;
+  // email: string;
+  // lv: Number;
   day: Number;
 };
 
-export function UserProfileCard({ icoName, name, email }: ProfilePropsCards) {
+export function UserProfileCard({  }: ProfilePropsCards) {
   const { theme } = useTheme();
   const { isDark } = theme;
+  const [loading,setLoading] = useState(true)
+  const [error,setError] = useState<string |null>(null)
+  const [userData,setUserData] = useState<any>(null)
+
+  const fetchUserData = async()=>{
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await userApi.getMe()
+      setUserData(response)
+    } catch (error) {
+      setError('Could not load profile. Pull to refresh.')
+    }finally{
+      setLoading(false)
+    }
+  }
+  useEffect(()=>{
+    fetchUserData()
+  },[])
 
   return (
     <View
@@ -49,7 +69,7 @@ export function UserProfileCard({ icoName, name, email }: ProfilePropsCards) {
               fontWeight: theme.fontWeight.regular,
             }}
           >
-            {icoName}
+            {userData?.displayName?.charAt(0)?.toUpperCase() || 'J'}
           </Text>
         </View>
 
@@ -57,15 +77,15 @@ export function UserProfileCard({ icoName, name, email }: ProfilePropsCards) {
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.sm + 2,
+              fontSize: theme.fontSize.md+1 ,
               fontWeight: theme.fontWeight.bold,
             }}
           >
-            {name}
+            {userData?.displayName}
           </Text>
 
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.xs * 0.75 }}>
-            {email}
+          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm +1 }}>
+            {userData?.email}
           </Text>
 
           <View
@@ -85,8 +105,8 @@ export function UserProfileCard({ icoName, name, email }: ProfilePropsCards) {
               }}
             />
 
-            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs - 1 }}>
-              Lv{12} . {24} days streak
+            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm }}>
+              Lv{userData?.currentLevel} . {userData?.currentStreak} days streak
             </Text>
           </View>
         </View>

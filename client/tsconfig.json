@@ -7,34 +7,51 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-
     "target": "es2020",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "lib": ["ES2020"],
-
-    "customConditions": ["react-native"],
+    "lib": [
+      "ES2020"
+    ],
+    "customConditions": [
+      "react-native"
+    ],
     "noEmit": true,
     "paths": {
-      "@/*": ["./*"],
-      "@common/*": ["./common/*"],
-      "@components/*": ["./components/*"],
-      "@theme/*": ["./theme/*"],
-      "@i18n/*": ["./i18n/*"],
-      "@assets/*": ["./assets/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@common/*": [
+        "./common/*"
+      ],
+      "@components/*": [
+        "./components/*"
+      ],
+      "@theme/*": [
+        "./theme/*"
+      ],
+      "@i18n/*": [
+        "./i18n/*"
+      ],
+      "@assets/*": [
+        "./assets/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "env.d.ts",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "env.d.ts"
   ],
-  "exclude": ["node_modules", "android", "ios", "dist", "web-build"]
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    "dist",
+    "web-build"
+  ]
 }

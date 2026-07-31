@@ -10,16 +10,8 @@ type SubjectItem = {
 };
 type PerformanceBySubjectProps = {
   title?: string;
-  subjects?: SubjectItem[];
+  subjects: SubjectItem[];
 };
-
-const defaultSubjects: SubjectItem[] = [ // Remove this deffaultSubjects array
-  { name: 'Anatomy', score: 90 },
-  { name: 'Pharmacology', score: 81 },
-  { name: 'Pathology', score: 74 },
-  { name: 'Microbiology', score: 68 },
-  { name: 'Surgery', score: 55 },
-];
 
 function getScoreColor(score: number, theme: any): string {
   if (score >= 90) return theme.color.success + 'FF';
@@ -30,7 +22,7 @@ function getScoreColor(score: number, theme: any): string {
 }
 
 
-export function SubjectPerformanceCard({ title = 'Performance by Subject', subjects = defaultSubjects }: PerformanceBySubjectProps) {
+export function SubjectPerformanceCard({ title = 'Performance by Subject', subjects }: PerformanceBySubjectProps) {
   const { theme } = useTheme();
 
   return (
@@ -63,71 +55,85 @@ export function SubjectPerformanceCard({ title = 'Performance by Subject', subje
         </Text>
       </View>
 
-      {subjects.map((item, index) => {
-        const scoreColor = getScoreColor(item.score, theme);
+      {subjects.length === 0 ? (
+        <Text
+          style={{
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.xs + 2,
+            fontWeight: theme.fontWeight.medium,
+            textAlign: 'center',
+            paddingVertical: theme.space.sm,
+          }}
+        >
+          No subject data available
+        </Text>
+      ) : (
+        subjects.map((item, index) => {
+          const scoreColor = getScoreColor(item.score, theme);
 
-        return (
-          <View
-            key={`${item.name}-${item.score}-${index}`}
-            style={{ paddingBottom: index === subjects.length-1 ? 0 : theme.space.xs * 1.5 }}
-          >
+          return (
             <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingBottom: theme.space.sm,
-              }}
+              key={`${item.name}-${item.score}-${index}`}
+              style={{ paddingBottom: index === subjects.length - 1 ? 0 : theme.space.xs * 1.5 }}
             >
-              <Text
-                style={{
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.xs + 2,
-                  fontWeight: theme.fontWeight.medium,
-                }}
-              >
-                {item.name}
-              </Text>
-
               <View
                 style={{
-                  paddingVertical: theme.space.xs,
-                  paddingHorizontal: theme.space.xs + 2,
-                  borderRadius: theme.borderRadius.full,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingBottom: theme.space.sm,
                 }}
               >
                 <Text
                   style={{
-                    color: scoreColor,
+                    color: theme.color.textSecondary,
                     fontSize: theme.fontSize.xs + 2,
-                    fontWeight: theme.fontWeight.bold,
+                    fontWeight: theme.fontWeight.medium,
                   }}
                 >
-                  {item.score}%
+                  {item.name}
                 </Text>
-              </View>
-            </View>
 
-            <View
-              style={{
-                overflow: 'hidden',
-                height: theme.space.sm,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.isDark ? theme.color.card : theme.color.border,
-              }}
-            >
+                <View
+                  style={{
+                    paddingVertical: theme.space.xs,
+                    paddingHorizontal: theme.space.xs + 2,
+                    borderRadius: theme.borderRadius.full,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: scoreColor,
+                      fontSize: theme.fontSize.xs + 2,
+                      fontWeight: theme.fontWeight.bold,
+                    }}
+                  >
+                    {item.score}%
+                  </Text>
+                </View>
+              </View>
+
               <View
                 style={{
-                  width: `${item.score}%`,
-                  height: '100%',
+                  overflow: 'hidden',
+                  height: theme.space.sm,
                   borderRadius: theme.borderRadius.full,
-                  backgroundColor: scoreColor,
+                  backgroundColor: theme.isDark ? theme.color.card : theme.color.border,
                 }}
-              />
+              >
+                <View
+                  style={{
+                    width: `${item.score}%`,
+                    height: '100%',
+                    borderRadius: theme.borderRadius.full,
+                    backgroundColor: scoreColor,
+                  }}
+                />
+              </View>
             </View>
-          </View>
-        );
-      })}
+          );
+        })
+      )}
     </View>
   );
 }
