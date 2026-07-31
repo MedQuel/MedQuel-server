@@ -1,7 +1,6 @@
-import { useMemo } from 'react';
+
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
@@ -158,7 +157,6 @@ console.log(mockHomeData);
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <HomeHeader
-        initial={MOCK_USER.displayName?.charAt(0) ?? 'M'}
         name={MOCK_USER.displayName}
         streak={MOCK_USER.currentStreak}
         level={MOCK_USER.currentLevel}
