@@ -1,0 +1,10 @@
+export type NotificationType=
+| 'streak'
+| 'contest'
+| 'level'
+| 'leaderboard'
+| 'achievements'
+| 'chat'
+| 'dailyChallenge'
+| 'premium'
+| 'studyPlan'

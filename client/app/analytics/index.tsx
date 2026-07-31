@@ -28,7 +28,6 @@ type AttemptItem = {
   timeTaken: string;
 };
 type AnalyticsMock = {
-  header: { title: string, subtitle: string };
   tabs: { key: TabKey, label: string }[];
   stats: { accuracy: number, streak: number, questions: number };
   keyStats: {
@@ -49,8 +48,6 @@ type AnalyticsMock = {
 };
 
 const analyticsMock: AnalyticsMock = {
-  header: { title: 'Analytics', subtitle: 'Track your learning progress' },
-
   tabs: [
     { key: 'overview', label: 'Overview' },
     { key: 'performance', label: 'Performance' },
@@ -108,52 +105,26 @@ const monthNames = [
   'November',
   'December',
 ];
-
 const formatMonthLabel = (month: number, year: number) => {
-  const index = Math.max(0, Math.min(11, month - 1));
+  const index = Math.max(0, Math.min(11, month-1));
   return `${monthNames[index]} ${year}`;
 };
 
-const tText = (value: string, fallback: string, key: string) => {
-  const text = String(value ?? '').trim();
-  const placeholderTexts = new Set([
-    'title',
-    'subtitle',
-    'overview',
-    'performance',
-    'subjects',
-    'attempts',
-  ]);
-
-  return !text || text === key || placeholderTexts.has(text.toLowerCase()) ? fallback : text;
-};
-
 function SubjectEmptyState() {
-  useTheme();
-
+  const { theme } = useTheme();
   return (
     <EmptyStateCard
-      title='No subject performance yet'
-      description='Add subject-wise results to see the chart here.'
       icon='book-open'
+      title={theme.i18n.t('analytics.empty_states.subject.title')}
+      description={theme.i18n.t('analytics.empty_states.subject.description')}
     />
   );
 }
 
+
 export default function AnalyticsScreen() {
   const { theme } = useTheme();
   useBottomBar(true, 'profile');
-
-  const headerTitle = tText(
-    theme.i18n.t('screens.Analytics.title'),
-    analyticsMock.header.title,
-    'screens.Analytics.title'
-  );
-  const headerSubtitle = tText(
-    theme.i18n.t('screens.Analytics.subtitle'),
-    analyticsMock.header.subtitle,
-    'screens.Analytics.subtitle'
-  );
 
   const hasStats =
     analyticsMock.stats.accuracy > 0 ||
@@ -167,25 +138,16 @@ export default function AnalyticsScreen() {
     analyticsMock.keyStats.longestStreak > 0 ||
     analyticsMock.keyStats.weakSubject.trim().length > 0;
 
-  const hasSubjects = analyticsMock.subjectPerformance.length > 0;
-  const hasHeatmap = analyticsMock.activityHeatmap.grid.some((row) =>
-    row.some((level) => level > 0)
-  );
   const hasAttempts = analyticsMock.attempts.length > 0;
+  const hasSubjects = analyticsMock.subjectPerformance.length > 0;
+  const hasHeatmap = analyticsMock.activityHeatmap.grid.some((row) => row.some((level) => level > 0));
 
   const subjectPerformanceItems = analyticsMock.subjectPerformance.map(
-    (item) => ({
-      name: item.subject,
-      score: item.percentage,
-    })
+    (item) => ({ name: item.subject, score: item.percentage })
   );
 
   const activity = analyticsMock.activityHeatmap.grid.flat();
-
-  const currentMonthLabel = formatMonthLabel(
-    analyticsMock.activityHeatmap.month,
-    analyticsMock.activityHeatmap.year
-  );
+  const currentMonthLabel = formatMonthLabel(analyticsMock.activityHeatmap.month, analyticsMock.activityHeatmap.year);
 
 
   return (
@@ -199,22 +161,13 @@ export default function AnalyticsScreen() {
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <View
-            style={{
-              flex: 1,
-              gap: theme.space.sm,
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-            }}
-          >
+          <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'flex-start' }}>
             <Pressable
               onPress={() => {}}
               style={{
-                width: theme.space.xl,
-                height: theme.space.xl,
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: theme.space.xs * 0.5,
+                padding: theme.space.xs * 1.25,
                 borderWidth: 1,
                 borderColor: theme.color.border,
                 borderRadius: theme.borderRadius.lg,
@@ -223,25 +176,22 @@ export default function AnalyticsScreen() {
             >
               <Feather
                 name='chevron-left'
-                size={18}
+                size={theme.space.md * 1.5}
                 color={theme.color.textSecondary}
               />
             </Pressable>
 
-            <View style={{ flex: 1, paddingRight: theme.space.sm }}>
+            <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
               <Text
                 style={{
                   color: theme.color.textPrimary,
                   fontSize: theme.fontSize.lg + 1,
                   lineHeight: theme.fontSize.xl,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
-                  marginBottom: theme.space.xs,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {headerTitle}
+                {theme.i18n.t('analytics.title')}
               </Text>
-
               <Text
                 style={{
                   color: theme.color.textSecondary,
@@ -249,7 +199,7 @@ export default function AnalyticsScreen() {
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {headerSubtitle}
+                {theme.i18n.t('analytics.subtitle')}
               </Text>
             </View>
           </View>
@@ -260,7 +210,7 @@ export default function AnalyticsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: theme.space.sm,
-          paddingBottom: theme.space.xxl * 2.5,
+          paddingBottom: theme.space.xxl * 1.75,
           paddingHorizontal: theme.space.md,
         }}
       >
@@ -273,8 +223,8 @@ export default function AnalyticsScreen() {
             />
           ) : (
             <EmptyStateCard
-              title='No analytics data yet'
-              description='Start completing quizzes to see your overview here.'
+              title={theme.i18n.t('analytics.empty_states.overview.title')}
+              description={theme.i18n.t('analytics.empty_states.overview.description')}
               icon='bar-chart-2'
             />
           )}
@@ -290,19 +240,15 @@ export default function AnalyticsScreen() {
             />
           ) : (
             <EmptyStateCard
-              title='No key statistics yet'
-              description='Your performance summary will appear after a few attempts.'
+              title={theme.i18n.t('analytics.empty_states.key_stats.title')}
+              description={theme.i18n.t('analytics.empty_states.key_stats.description')}
               icon='grid'
             />
           )}
 
           {hasSubjects ? (
             <SubjectPerformanceCard
-              title={tText(
-                theme.i18n.t('components.SubjectPerformanceCard.title'),
-                'Subject Performance',
-                'components.SubjectPerformanceCard.title'
-              )}
+              title={theme.i18n.t('analytics.subjectPerformance')}
               subjects={subjectPerformanceItems}
             />
           ) : (
@@ -331,8 +277,8 @@ export default function AnalyticsScreen() {
             </View>
           ) : (
             <EmptyStateCard
-              title='No activity yet'
-              description='Your learning activity heatmap will show up here.'
+              title={theme.i18n.t('analytics.empty_states.activity.title')}
+              description={theme.i18n.t('analytics.empty_states.activity.description')}
               icon='calendar'
             />
           )}
@@ -341,8 +287,8 @@ export default function AnalyticsScreen() {
             <AttemptHistoryCard attempts={analyticsMock.attempts} />
           ) : (
             <EmptyStateCard
-              title='No attempts yet'
-              description='Once you start taking quizzes, your history will appear here.'
+              title={theme.i18n.t('analytics.empty_states.attempts.title')}
+              description={theme.i18n.t('analytics.empty_states.attempts.description')}
               icon='file-text'
             />
           )}

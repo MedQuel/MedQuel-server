@@ -1,19 +1,20 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { useBottomBar } from '@/common/context/useBottomBar';
 import { ContestDetailCard } from '../../components/ContestDetailCard';
 import { ContestDifficultyCard } from '../../components/ContestDifficultyCard';
 
+
+export type QuizTopic = { id: string; label: string };
 export type QuizRule = {
   id: string; points: number; description: string;
   icon: 'plus-circle' | 'minus-circle' | 'clock';
   color: 'success' | 'error' | 'textMuted' | 'info';
 };
-
-export type QuizTopic = { id: string; label: string };
-
 export type PreQuizData = {
   subtitle: string; title: string; creator: string; creatorSpecialty: string;
   qCount: number; timeMinutes: number; epReward: number; passPercentage: number;
@@ -55,33 +56,23 @@ function StatItem({ value, label, color }: StatItemProps) {
   const { theme } = useTheme();
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: theme.space.xs }}>
-      <Text
-        style={{
-          color,
-          fontSize: theme.fontSize.xl,
-          fontWeight: theme.fontWeight.bold as any,
-          fontFamily: theme.fontFamily.number,
-        }}
-      >
+      <Text style={{ color, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
         {value}
       </Text>
-      <Text
-        style={{
-          color: theme.color.textMuted,
-          fontSize: theme.fontSize.xs,
-          fontFamily: theme.fontFamily.light,
-        }}
-      >
+      <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light }}>
         {label}
       </Text>
     </View>
   );
 }
 
+
 export default function PreQuizScreen() {
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const data = preQuizMockData;
   const router = useRouter();
+  useBottomBar(false);
 
   const ruleColor = (color: typeof data.rules[0]['color']): string => {
     if (color === 'success')  return theme.color.success;
@@ -90,17 +81,17 @@ export default function PreQuizScreen() {
     return theme.color.textMuted;
   };
 
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-
       <View
         style={{
+          gap: theme.space.md,
           flexDirection: 'row',
           alignItems: 'center',
-          paddingHorizontal: theme.space.md,
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
-          gap: theme.space.md,
+          paddingHorizontal: theme.space.md,
         }}
       >
         <TouchableOpacity
@@ -110,9 +101,9 @@ export default function PreQuizScreen() {
             height: 36,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.color.card,
             borderWidth: 1,
+            backgroundColor: theme.color.card,
+            borderRadius: theme.borderRadius.lg,
             borderColor: theme.color.border,
           }}
         >
@@ -124,7 +115,7 @@ export default function PreQuizScreen() {
             style={{
               color: theme.color.textPrimary,
               fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.regular,
             }}
           >
@@ -143,8 +134,8 @@ export default function PreQuizScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: theme.space.md, padding: theme.space.md, paddingBottom: 160 }}
       >
         <ContestDetailCard
           subtitle={data.subtitle}
@@ -161,9 +152,9 @@ export default function PreQuizScreen() {
           style={{
             flexDirection: 'row',
             padding: theme.space.md,
-            borderRadius: theme.borderRadius.xl,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
             backgroundColor: theme.color.card,
           }}
         >
@@ -174,14 +165,14 @@ export default function PreQuizScreen() {
           />
           <View style={{ width: 1, backgroundColor: theme.color.border }} />
           <StatItem
-            value={String(data.attempts)}
             label="Attempts"
+            value={String(data.attempts)}
             color={theme.color.textPrimary}
           />
           <View style={{ width: 1, backgroundColor: theme.color.border }} />
           <StatItem
-            value={`#${data.bestRank}`}
             label="Best Rank"
+            value={`#${data.bestRank}`}
             color={theme.color.warning}
           />
         </View>
@@ -193,13 +184,13 @@ export default function PreQuizScreen() {
           <View
             style={{
               flex: 1,
-              padding: theme.space.md,
-              borderRadius: theme.borderRadius.xl,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              backgroundColor: theme.color.card,
               gap: theme.space.sm,
               justifyContent: 'center',
+              padding: theme.space.md,
+              borderWidth: 1,
+              borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.xl,
+              backgroundColor: theme.color.card,
             }}
           >
             <Text
@@ -215,7 +206,7 @@ export default function PreQuizScreen() {
               style={{
                 color: theme.color.textPrimary,
                 fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.bold as any,
+                fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
@@ -226,21 +217,21 @@ export default function PreQuizScreen() {
 
         <View
           style={{
+            gap: theme.space.md,
             padding: theme.space.md,
-            borderRadius: theme.borderRadius.xl,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
             backgroundColor: theme.color.card,
-            gap: theme.space.md,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
             <Feather name="book-open" size={theme.fontSize.md} color={theme.color.accent} />
             <Text
               style={{
                 color: theme.color.textPrimary,
                 fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.bold as any,
+                fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
@@ -248,17 +239,17 @@ export default function PreQuizScreen() {
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', flexWrap: 'wrap' }}>
             {data.topics.map((topic) => (
               <View
                 key={topic.id}
                 style={{
-                  paddingHorizontal: theme.space.sm,
                   paddingVertical: theme.space.xs,
-                  borderRadius: theme.borderRadius.md,
-                  backgroundColor: theme.color.surface,
+                  paddingHorizontal: theme.space.sm,
                   borderWidth: 1,
                   borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.md,
+                  backgroundColor: theme.color.surface,
                 }}
               >
                 <Text
@@ -277,21 +268,21 @@ export default function PreQuizScreen() {
 
         <View
           style={{
+            gap: theme.space.md,
             padding: theme.space.md,
-            borderRadius: theme.borderRadius.xl,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
             backgroundColor: theme.color.card,
-            gap: theme.space.md,
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
             <Feather name="info" size={theme.fontSize.md} color={theme.color.accent} />
             <Text
               style={{
                 color: theme.color.textPrimary,
                 fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.bold as any,
+                fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
@@ -303,15 +294,15 @@ export default function PreQuizScreen() {
             {data.rules.map((rule) => (
               <View
                 key={rule.id}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}
+                style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}
               >
                 <View
                   style={{
                     width: 28,
                     height: 28,
-                    borderRadius: theme.borderRadius.md,
                     alignItems: 'center',
                     justifyContent: 'center',
+                    borderRadius: theme.borderRadius.md,
                     backgroundColor: ruleColor(rule.color) + '18',
                   }}
                 >
@@ -319,7 +310,7 @@ export default function PreQuizScreen() {
                     style={{
                       color: ruleColor(rule.color),
                       fontSize: theme.fontSize.xs,
-                      fontWeight: theme.fontWeight.bold as any,
+                      fontWeight: theme.fontWeight.bold,
                       fontFamily: theme.fontFamily.number,
                     }}
                   >
@@ -341,7 +332,6 @@ export default function PreQuizScreen() {
           </View>
         </View>
 
-        <View style={{ height: theme.space.xxl * 2 }} />
       </ScrollView>
 
       <View
@@ -350,21 +340,22 @@ export default function PreQuizScreen() {
           bottom: 0,
           left: 0,
           right: 0,
-          padding: theme.space.md,
           gap: theme.space.sm,
-          backgroundColor: theme.color.background,
+          padding: theme.space.md,
+          paddingBottom: theme.space.md + insets.bottom,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
+          backgroundColor: theme.color.background,
         }}
       >
         <TouchableOpacity
-          onPress={() => router.push('/contests/QuizScreen')}
+          onPress={() => router.push('/contests/quizScreen')}
           activeOpacity={0.85}
           style={{
+            gap: theme.space.sm,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: theme.space.sm,
             paddingVertical: theme.space.md,
             borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.accent,
@@ -375,7 +366,7 @@ export default function PreQuizScreen() {
             style={{
               color: '#FFFFFF',
               fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.bold as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.regular,
             }}
           >
@@ -385,7 +376,7 @@ export default function PreQuizScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push({ pathname: '/contests/QuizScreen', params: { practice: '1' } })}
+          onPress={() => router.push({ pathname: '/contests/quizScreen', params: { practice: '1' } })}
           activeOpacity={0.85}
           style={{
             alignItems: 'center',

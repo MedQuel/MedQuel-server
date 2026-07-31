@@ -1,125 +1,139 @@
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ScrollView, View, Text, TouchableOpacity } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
+import { ScrollView, View, Text, TouchableOpacity } from "react-native";
 
-import { useTheme } from '../../theme/ThemeContext';
-
+import { useTheme } from "../../theme/ThemeContext";
+import { NotificationType } from "../../common/constants/notification";
 
 function withOpacity(hex: string, opacity: number) {
-  const bigint = parseInt(hex.replace('#', ''), 16);
+  const bigint = parseInt(hex.replace("#", ""), 16);
   const r = Math.floor(bigint / 65536) % 256;
   const g = Math.floor(bigint / 256) % 256;
   const b = bigint % 256;
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+
 type ColorKey =
-  | 'accent'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'info'
-  | 'premium';
+  | "accent"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "premium";
+
+interface TypeConfig {
+  icon: string; 
+  colorKey: ColorKey;
+}
+
+
+const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
+  streak: { icon: "fire", colorKey: "danger" },
+  contest: { icon: "trophy-outline", colorKey: "warning" },
+  level: { icon: "star-outline", colorKey: "accent" },
+  leaderboard: { icon: "trending-up", colorKey: "success" },
+  achievements: { icon: "medal-outline", colorKey: "warning" },
+  chat: { icon: "chat-outline", colorKey: "accent" },
+  dailyChallenge: {
+    icon: "book-open-blank-variant-outline",
+    colorKey: "accent",
+  },
+  premium: { icon: "crown-outline", colorKey: "premium" },
+  studyPlan: { icon: "bullseye", colorKey: "success" },
+};
+
 interface NotificationItem {
   id: string;
-  icon: string;
-  colorKey: ColorKey;
+  type: NotificationType;
   title: string;
   description: string;
   time: string;
   unread: boolean;
-  section: 'UNREAD' | 'EARLIER';
+  section: "UNREAD" | "EARLIER";
 }
 
 const NOTIFICATIONS: NotificationItem[] = [
   {
-    id: '1',
-    icon: 'fire',
-    colorKey: 'danger',
-    title: 'Streak at Risk!',
+    id: "1",
+    type: "streak",
+    title: "Streak at Risk!",
     description: "Don't break your 24-day streak. Complete today's challenge.",
-    time: '2m',
+    time: "2m",
     unread: true,
-    section: 'UNREAD',
+    section: "UNREAD",
   },
   {
-    id: '2',
-    icon: 'trophy-outline',
-    colorKey: 'warning',
-    title: 'New Contest Live',
-    description: 'Cardiology Grand Prix has started. 500 EP prize pool!',
-    time: '15m',
+    id: "2",
+    type: "contest",
+    title: "New Contest Live",
+    description: "Cardiology Grand Prix has started. 500 EP prize pool!",
+    time: "15m",
     unread: true,
-    section: 'UNREAD',
+    section: "EARLIER",
   },
   {
-    id: '3',
-    icon: 'star-outline',
-    colorKey: 'accent',
-    title: 'Level Up!',
+    id: "3",
+    type: "level",
+    title: "Level Up!",
     description: "You've reached Level 12. New challenges are unlocked.",
-    time: '1h',
+    time: "1h",
     unread: true,
-    section: 'UNREAD',
+    section: "UNREAD",
   },
   {
-    id: '4',
-    icon: 'trending-up',
-    colorKey: 'success',
-    title: 'Rank Improved',
-    description: 'You climbed from #139 to #127 globally this week.',
-    time: '2h',
+    id: "4",
+    type: "leaderboard",
+    title: "Rank Improved",
+    description: "You climbed from #139 to #127 globally this week.",
+    time: "2h",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
   {
-    id: '5',
-    icon: 'medal-outline',
-    colorKey: 'warning',
-    title: 'Badge Earned',
-    description: 'Gold Medalist — scored 95%+ in Grand Medical Championship.',
-    time: '3h',
+    id: "5",
+    type: "achievements",
+    title: "Badge Earned",
+    description: "Gold Medalist — scored 95%+ in Grand Medical Championship.",
+    time: "3h",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
   {
-    id: '6',
-    icon: 'chat-outline',
-    colorKey: 'accent',
-    title: 'Discussion Reply',
-    description: 'Dr. Sarah K. replied to your question in Cardiology Room.',
-    time: '4h',
+    id: "6",
+    type: "chat",
+    title: "Discussion Reply",
+    description: "Dr. Sarah K. replied to your question in Cardiology Room.",
+    time: "4h",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
   {
-    id: '7',
-    icon: 'book-open-blank-variant-outline',
-    colorKey: 'accent',
-    title: 'Daily Challenge',
+    id: "7",
+    type: "dailyChallenge",
+    title: "Daily Challenge",
     description: "Today's Anatomy challenge is available. +150 EP awaits.",
-    time: '6h',
+    time: "6h",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
   {
-    id: '8',
-    icon: 'crown-outline',
-    colorKey: 'premium',
-    title: 'Premium Trial',
-    description: 'Try Premium free for 7 days. Access all contests!',
-    time: '1d',
+    id: "8",
+    type: "premium",
+    title: "Premium Trial",
+    description: "Try Premium free for 7 days. Access all contests!",
+    time: "1d",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
   {
-    id: '9',
-    icon: 'bullseye',
-    colorKey: 'success',
-    title: 'Weekly Goal',
-    description: 'You completed 50 questions this week. Keep it up!',
-    time: '2d',
+    id: "9",
+    type: "studyPlan",
+    title: "Weekly Goal",
+    description: "You completed 50 questions this week. Keep it up!",
+    time: "2d",
     unread: false,
-    section: 'EARLIER',
+    section: "EARLIER",
   },
 ];
 
@@ -134,15 +148,17 @@ function NotificationCard({ item }: { item: NotificationItem }) {
     info: colors.info,
     premium: colors.premium,
   };
-  const iconColor = iconColorMap[item.colorKey] ?? colors.accent;
+
+  const { icon, colorKey } = TYPE_CONFIG[item.type];
+  const iconColor = iconColorMap[colorKey] ?? colors.accent;
 
   return (
     <View
       style={{
         backgroundColor: item.unread ? colors.surface : colors.card,
         borderRadius: theme.borderRadius.lg,
-        padding: 10,
-        flexDirection: 'row',
+        padding: theme.space.md - 3,
+        flexDirection: "row",
         borderWidth: 1,
         borderColor: colors.border,
       }}
@@ -152,13 +168,13 @@ function NotificationCard({ item }: { item: NotificationItem }) {
           width: 38,
           height: 38,
           borderRadius: theme.borderRadius.lg,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           backgroundColor: withOpacity(iconColor, 0.15),
         }}
       >
         <MaterialCommunityIcons
-          name={item.icon as any}
+          name={icon as any}
           size={theme.fontSize.md + 2}
           color={iconColor}
         />
@@ -166,9 +182,9 @@ function NotificationCard({ item }: { item: NotificationItem }) {
       <View style={{ flex: 1, paddingLeft: 10 }}>
         <View
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
           }}
         >
           <Text
@@ -214,7 +230,13 @@ function NotificationCard({ item }: { item: NotificationItem }) {
   );
 }
 
-function Section({ label, items }: { label: string, items: NotificationItem[] }) {
+function Section({
+  label,
+  items,
+}: {
+  label: string;
+  items: NotificationItem[];
+}) {
   const { theme } = useTheme();
   const colors = theme.color;
   if (items.length === 0) return null;
@@ -222,18 +244,18 @@ function Section({ label, items }: { label: string, items: NotificationItem[] })
     <>
       <Text
         style={{
-          fontSize: theme.fontSize.sm - 2,
+          fontSize: theme.fontSize.md,
           fontWeight: theme.fontWeight.medium,
           color: colors.textMuted,
-          letterSpacing: 0.4,
-          marginTop:
-            label === 'UNREAD' ? theme.space.md - 4 : theme.space.sm + 3,
-          marginBottom: label === 'UNREAD' ? theme.space.sm : theme.space.sm,
+          letterSpacing: 0.5,
+          marginTop: label === "UNREAD" ? theme.space.md : theme.space.md + 3,
+          marginBottom:
+            label === "UNREAD" ? theme.space.sm + 2 : theme.space.sm + 2,
         }}
       >
         {label}
       </Text>
-      <View style={{ gap: 6 }}>
+      <View style={{ gap: 10 }}>
         {items.map((item) => (
           <NotificationCard key={item.id} item={item} />
         ))}
@@ -242,53 +264,61 @@ function Section({ label, items }: { label: string, items: NotificationItem[] })
   );
 }
 
-
 export default function NotificationsScreen() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { isDark } = theme;
   const colors = theme.color;
 
-  const unread = NOTIFICATIONS.filter((n) => n.section === 'UNREAD');
-  const earlier = NOTIFICATIONS.filter((n) => n.section === 'EARLIER');
+  const [notifications, setNotifications] =
+    useState<NotificationItem[]>(NOTIFICATIONS);
+
+  const unread = notifications.filter((n) => n.unread);
+  const earlier = notifications.filter((n) => !n.unread);
+
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 70 }}
+      contentContainerStyle={{
+        paddingHorizontal: theme.space.md,
+        paddingBottom: 70,
+      }}
       showsVerticalScrollIndicator={false}
     >
       <View
         style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingVertical: 12,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: theme.space.sm,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             style={{
-              paddingVertical: theme.space.xs + 1,
-              paddingHorizontal: theme.space.xs + 2,
-              borderRadius: theme.borderRadius.lg - 2,
+              paddingVertical: theme.space.sm,
+              paddingHorizontal: theme.space.sm,
+              borderRadius: theme.borderRadius.lg,
               backgroundColor: isDark ? colors.card : colors.surface,
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems: "center",
+              justifyContent: "center",
               borderWidth: 1,
               borderColor: colors.border,
             }}
           >
             <Ionicons
-              name='chevron-back'
-              size={theme.space.md}
+              name="chevron-back"
+              size={theme.space.lg}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
-          <View style={{ paddingLeft: theme.space.sm }}>
+          <View style={{ paddingLeft: theme.space.md }}>
             <Text
-              onPress={toggleTheme}
               style={{
-                fontSize: theme.fontSize.md,
+                fontSize: theme.fontSize.lg,
                 fontWeight: theme.fontWeight.medium,
                 color: colors.textPrimary,
               }}
@@ -297,19 +327,19 @@ export default function NotificationsScreen() {
             </Text>
             <Text
               style={{
-                fontSize: theme.fontSize.xs,
+                fontSize: theme.fontSize.sm,
                 color: colors.textMuted,
-                paddingTop: 1,
+                paddingTop: 2,
               }}
             >
               {unread.length} unread
             </Text>
           </View>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleMarkAllRead}>
           <Text
             style={{
-              fontSize: theme.fontSize.sm - 1,
+              fontSize: theme.fontSize.md,
               fontWeight: theme.fontWeight.medium,
               color: colors.accent,
             }}
@@ -319,8 +349,8 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
       </View>
 
-      <Section label='UNREAD' items={unread} />
-      <Section label='EARLIER' items={earlier} />
+      <Section label="UNREAD" items={unread} />
+      <Section label="EARLIER" items={earlier} />
     </ScrollView>
   );
 }

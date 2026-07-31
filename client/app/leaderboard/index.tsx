@@ -279,7 +279,7 @@ export default function LeaderboardScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: theme.space.md,
-          paddingBottom: theme.space.xxl * 2.5,
+          paddingBottom: theme.space.xl,
           paddingHorizontal: theme.space.md,
         }}
       >
@@ -301,7 +301,7 @@ export default function LeaderboardScreen() {
                 fontFamily: theme.fontFamily.regular,
               }}
             >
-              Leaderboard
+              {theme.i18n.t('leaderboard.title')}
             </Text>
 
             <Text
@@ -312,7 +312,7 @@ export default function LeaderboardScreen() {
                 fontFamily: theme.fontFamily.regular,
               }}
             >
-              Compete & climb the ranks
+              {theme.i18n.t('leaderboard.subtitle')}
             </Text>
           </View>
 
@@ -387,7 +387,7 @@ export default function LeaderboardScreen() {
                     fontFamily: theme.fontFamily.regular,
                   }}
                 >
-                  {tab.label}
+                  {theme.i18n.t(`leaderboard.tabs.${tab.id}`)}
                 </Text>
               </Pressable>
             );
@@ -396,7 +396,10 @@ export default function LeaderboardScreen() {
 
         <View style={{ height: theme.space.md }} />
         <TabContainer
-          tabs={leaderboardMock.scopeTabs}
+          tabs={useMemo(() => [
+            { id: 'global', label: theme.i18n.t('components.TabContainer.global') },
+            { id: 'friends', label: theme.i18n.t('components.TabContainer.friends') },
+          ], [theme])}
           value={scopeFilter}
           onChange={(value) => switchScope(value as LeaderboardScope)}
         />
@@ -429,7 +432,7 @@ export default function LeaderboardScreen() {
               fontFamily: theme.fontFamily.regular,
             }}
           >
-            Rankings
+            {theme.i18n.t('leaderboard.rankings')}
           </Text>
 
           <Text
@@ -439,7 +442,7 @@ export default function LeaderboardScreen() {
               fontFamily: theme.fontFamily.regular,
             }}
           >
-            {activeSnapshot.playersCount.toLocaleString()} players
+            {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
           </Text>
         </View>
 

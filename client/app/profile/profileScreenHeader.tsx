@@ -13,7 +13,7 @@ export function ProfileScreenHeader() {
     <View style={{ position: 'relative', backgroundColor: theme.color.card }}>
       <View
         style={{
-          paddingVertical: theme.space.xxl - 3,
+          paddingVertical: theme.space.xxl - 1,
           backgroundColor: theme.isDark ? theme.color.card : theme.color.accent,
         }}
       />
@@ -22,49 +22,49 @@ export function ProfileScreenHeader() {
         onPress={() => router.push('/profile/settingsScreen')}
         style={{
           position: 'absolute',
-          top: theme.space.md,
-          right: theme.space.md,
-          paddingHorizontal: theme.space.sm,
-          paddingVertical: theme.space.sm,
-          borderRadius: theme.borderRadius.lg, // square-ish box, full nahi
-          justifyContent: 'center',
+          top: theme.space.md + 4,
+          right: theme.space.md + 4,
           alignItems: 'center',
-          backgroundColor: theme.color.textMuted + 90,
+          justifyContent: 'center',
+          paddingVertical: theme.space.sm + 4,
+          paddingHorizontal: theme.space.sm + 4,
           borderWidth: 1,
+          borderRadius: theme.borderRadius.lg + 2,
+          backgroundColor: theme.color.textMuted + 90,
           borderColor: theme.color.border,
           elevation: 3,
         }}
       >
         <MaterialCommunityIcons
           name='cog-outline'
-          size={theme.space.md}
+          size={theme.space.md + 2}
           color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
         />
       </TouchableOpacity>
 
       <View
         style={{
-          width: theme.space.xxl + 30,
-          height: theme.space.xxl + 30,
-          borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.color.premium + 'FF',
           position: 'absolute',
           bottom: -36,
+          width: theme.space.xxl + 40,
+          height: theme.space.xxl + 40,
           alignSelf: 'center',
+          alignItems: 'center',
+          justifyContent: 'center',
           borderWidth: 4,
           borderColor: theme.color.border,
-          justifyContent: 'center',
-          alignItems: 'center',
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: theme.color.premium + 'FF',
         }}
       >
         <Text
           style={{
-            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-            fontSize: theme.fontSize.xxl + 4,
-            fontWeight: theme.fontWeight.bold,
-            lineHeight: 64,
+            lineHeight: 66,
             textAlign: 'center',
             includeFontPadding: false,
+            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+            fontSize: theme.fontSize.xxl + 6,
+            fontWeight: theme.fontWeight.bold,
           }}
         >
           J
@@ -75,19 +75,19 @@ export function ProfileScreenHeader() {
             position: 'absolute',
             bottom: 0,
             right: 0,
-            height: theme.space.lg - 2,
-            width: theme.space.lg - 2,
-            borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.accent,
+            height: theme.space.lg,
+            width: theme.space.lg,
+            alignItems: 'center',
+            justifyContent: 'center',
             borderWidth: 2,
             borderColor: theme.color.border,
-            justifyContent: 'center',
-            alignItems: 'center',
+            borderRadius: theme.borderRadius.full,
+            backgroundColor: theme.color.accent,
           }}
         >
           <MaterialCommunityIcons
             name='camera-outline'
-            size={theme.space.md - 4}
+            size={theme.space.md - 2}
             color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
           />
         </View>

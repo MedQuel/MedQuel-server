@@ -111,8 +111,8 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                   >
                     <View
                       style={{
-                        width: 6,
-                        height: 6,
+                        width: theme.space.xs * 1.5,
+                        height: theme.space.xs * 1.5,
                         borderRadius: theme.borderRadius.full,
                         backgroundColor: theme.color.error,
                       }}
@@ -150,6 +150,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                   color: theme.color.textSecondary,
                   fontSize: theme.fontSize.sm,
                   fontFamily: theme.fontFamily.light,
+                
                 }}
               >
                 {contest.subject}
@@ -177,6 +178,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
                       : contest.participantsCount.toString()}
                   </Text>
                 </View>
+
                 <Text
                   style={{
                     color: theme.color.accent,

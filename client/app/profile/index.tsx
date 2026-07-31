@@ -11,30 +11,24 @@ import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard'
 
 
 export default function ChatScreen() {
+  const level = '12';
+
   const { theme } = useTheme();
   useBottomBar(true, 'profile');
-
-  const level = '12';
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.color.background }}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 75 }}
     >
       <ProfileScreenHeader />
 
-      <View
-        style={{
-          gap: theme.space.xs,
-          alignItems: 'center',
-          marginTop: theme.space.xxl - 4,
-        }}
-      >
+      <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl - 2 }}>
         <Text
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.lg,
+            fontSize: theme.fontSize.lg + 2,
             fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.bold,
           }}
@@ -42,16 +36,16 @@ export default function ChatScreen() {
           {theme.i18n.t('components.ProfileCard.name')}
         </Text>
 
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
           <View
             style={{
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: theme.space.xs - 7,
-              paddingHorizontal: theme.space.md,
+              paddingVertical: theme.space.xs - 5,
+              paddingHorizontal: theme.space.md + 2,
               borderWidth: 1,
               borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.md,
+              borderRadius: theme.borderRadius.md + 2,
               backgroundColor: theme.color.card,
             }}
           >
@@ -59,7 +53,7 @@ export default function ChatScreen() {
               style={{
                 color: theme.color.accent,
                 fontWeight: theme.fontWeight.bold,
-                fontSize: theme.fontSize.xs - 1,
+                fontSize: theme.fontSize.xs + 1,
               }}
             >
               Medical student
@@ -68,52 +62,62 @@ export default function ChatScreen() {
 
           <View
             style={{
-              gap: 3,
+              gap: 5,
               flexDirection: 'row',
               alignItems: 'center',
-              paddingVertical: theme.space.xs - 2,
-              paddingHorizontal: theme.space.sm + 1,
+              paddingVertical: theme.space.xs,
+              paddingHorizontal: theme.space.sm + 3,
               borderWidth: 0.5,
               borderColor: theme.color.warning + '22',
-              borderRadius: theme.borderRadius.md,
+              borderRadius: theme.borderRadius.md + 2,
               backgroundColor: theme.color.warning + '22',
             }}
           >
-            <Text style={{ fontSize: theme.space.sm }}>
+            <Text style={{ fontSize: theme.space.sm + 2 }}>
               <MaterialCommunityIcons
                 name='star'
-                size={theme.space.md - 5}
+                size={theme.space.md - 3}
                 color={theme.color.warning}
               />
             </Text>
-            <Text style={{ color: theme.color.warning, fontSize: theme.fontSize.xs }}>
+            <Text
+              style={{
+                color: theme.color.warning,
+                fontSize: theme.fontSize.xs + 2,
+              }}
+            >
               {theme.i18n.t('components.ProfileCard.level', { level: level })}12
             </Text>
           </View>
         </View>
 
-        <View style={{ gap: theme.space.md, flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ gap: theme.space.sm - 2, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ gap: theme.space.md + 2, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
             <MaterialCommunityIcons
               name='map-marker-outline'
-              size={theme.space.md - 2}
+              size={theme.space.md}
               color={theme.color.textMuted}
             />
-            <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
+            <Text
+              style={{
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.xs + 2,
+              }}
+            >
               {theme.i18n.t('components.ProfileCard.location')}
             </Text>
           </View>
 
-          <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ gap: theme.space.xs + 2, flexDirection: 'row', alignItems: 'center' }}>
             <MaterialCommunityIcons
               name='lightning-bolt-outline'
-              size={theme.space.md - 2}
+              size={theme.space.md}
               color={theme.color.info}
             />
             <Text
               style={{
                 color: theme.color.info,
-                fontSize: theme.fontSize.xs - 1.5,
+                fontSize: theme.fontSize.xs + 0.5,
                 fontWeight: theme.fontWeight.bold,
               }}
             >
@@ -123,19 +127,19 @@ export default function ChatScreen() {
         </View>
       </View>
 
-      <View style={{ marginTop: -theme.space.sm, paddingHorizontal: theme.space.xs }}>
+      <View style={{ marginTop: -theme.space.sm, paddingHorizontal: theme.space.xs * 1.5 }}>
         <ProfileScreenStatsCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <PremiumUpsellCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <SubjectPerformanceCard />
       </View>
 
-      <View style={{ marginTop: theme.space.sm + 2, paddingHorizontal: theme.space.sm + 4 }}>
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <AttemptHistoryItemCard />
       </View>
     </ScrollView>

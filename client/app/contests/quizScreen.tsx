@@ -1,25 +1,25 @@
-import { useEffect, useRef, useState } from 'react';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { QuizProgressBar } from '../../components/QuizProgressBar';
+import { useBottomBar } from '@/common/context/useBottomBar';
 import { QuestionCard } from '../../components/QuestionCard';
+import { QuizProgressBar } from '../../components/QuizProgressBar';
+
 
 export type MCQOption = { label: string; text: string; isCorrect: boolean };
-
 export type QuizQuestion = {
   id: string; subject: string; question: string; image?: string;
   options: MCQOption[]; explanation: string; points: number;
 };
-
 export type QuizData = {
   id: string; title: string; totalQuestions: number; durationMinutes: number;
   epReward: number; pointsPerCorrect: number; pointsPerWrong: number;
   questions: QuizQuestion[];
 };
-
 export const quizMockData: QuizData = {
   id: 'cardiology-sprint-001',
   title: 'Cardiology Sprint',
@@ -127,6 +127,7 @@ export const quizMockData: QuizData = {
   ],
 };
 
+type ModalType = 'summary' | null;
 type AnswerRecord = {
   questionId: string;
   selectedLabel: string | null;
@@ -134,8 +135,6 @@ type AnswerRecord = {
   isBookmarked: boolean;
   isFlagged: boolean;
 };
-
-type ModalType = 'summary' | null;
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -145,17 +144,21 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+
 export default function QuizScreen() {
+  const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const router = useRouter();
-  const params = useLocalSearchParams();
+  useBottomBar(false);
+
   const isPractice = params.practice === '1';
   const quiz = quizMockData;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(quiz.durationMinutes * 60);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const [displayedEp, setDisplayedEp] = useState(0);
+  const [displayedEp, setDisplayedEp] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>(() =>
     Object.fromEntries(
       quiz.questions.map(q => [
@@ -166,8 +169,8 @@ export default function QuizScreen() {
   );
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentQuestion: QuizQuestion = quiz.questions[currentIndex];
-  const currentAnswer = answers[currentQuestion.id];
+  const currentQuestion: QuizQuestion = quiz.questions[currentIndex]!;
+  const currentAnswer = answers[currentQuestion.id]!;
 
   useEffect(() => {
     if (activeModal !== null) return;
@@ -187,7 +190,7 @@ export default function QuizScreen() {
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: { ...prev[questionId], ...patch },
+      [questionId]: { ...prev[questionId]!, ...patch },
     }));
   };
 
@@ -216,7 +219,7 @@ export default function QuizScreen() {
     const skipped = Object.values(answers).filter(a => a.selectedLabel === null).length;
 
     router.push({
-      pathname: '/contests/PostQuizScreen',
+      pathname: '/contests/postQuizScreen',
       params: {
         quizId:   quiz.id,
         title:    quiz.title,
@@ -244,33 +247,33 @@ export default function QuizScreen() {
   const flaggedQuestions    = quiz.questions.filter(q => answers[q.id]?.isFlagged);
 
   const getQuestionStatus = (qId: string) => {
-    const a = answers[qId];
+    const a = answers[qId]!;
     if (a.isFlagged)            return { icon: 'flag'     as const, color: theme.color.error   };
     if (a.isBookmarked)         return { icon: 'bookmark' as const, color: theme.color.accent  };
     if (a.selectedLabel !== null) return { icon: 'check'    as const, color: theme.color.success };
     return { icon: 'minus' as const, color: theme.color.textMuted };
   };
 
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingHorizontal: theme.space.md,
           paddingTop: theme.space.md,
           paddingBottom: theme.space.sm,
+          paddingHorizontal: theme.space.md,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
+        <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
           <Feather name="clock" size={theme.fontSize.md} color={theme.color.info} />
           <Text
             style={{
               color: theme.color.info,
               fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -280,19 +283,19 @@ export default function QuizScreen() {
 
         <View
           style={{
-            paddingHorizontal: theme.space.md,
             paddingVertical: theme.space.xs,
-            borderRadius: theme.borderRadius.full,
-            backgroundColor: isPractice ? theme.color.info + '22' : theme.color.warning + '22',
+            paddingHorizontal: theme.space.md,
             borderWidth: 1,
+            borderRadius: theme.borderRadius.full,
             borderColor: isPractice ? theme.color.info + '55' : theme.color.warning + '55',
+            backgroundColor: isPractice ? theme.color.info + '22' : theme.color.warning + '22',
           }}
         >
           <Text
             style={{
               color: isPractice ? theme.color.info : theme.color.warning,
               fontSize: theme.fontSize.sm,
-              fontWeight: theme.fontWeight.bold as any,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
             }}
           >
@@ -301,13 +304,13 @@ export default function QuizScreen() {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: theme.space.md, paddingBottom: theme.space.sm }}>
+      <View style={{ paddingBottom: theme.space.sm, paddingHorizontal: theme.space.md }}>
         <QuizProgressBar current={currentIndex + 1} total={quiz.questions.length} />
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: theme.space.md, padding: theme.space.md, paddingBottom: 140 }}
       >
         <QuestionCard
           subject={currentQuestion.subject}
@@ -321,26 +324,26 @@ export default function QuizScreen() {
         {currentQuestion.image && (
           <View
             style={{
-              borderRadius: theme.borderRadius.xl,
               overflow: 'hidden',
               borderWidth: 1,
               borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.xl,
             }}
           >
             <Image
+              resizeMode="cover"
               source={{ uri: currentQuestion.image }}
               style={{ width: '100%', height: 200 }}
-              resizeMode="cover"
             />
             <View
               style={{
                 position: 'absolute',
                 bottom: theme.space.sm,
                 right: theme.space.sm,
+                paddingVertical: theme.space.xs/2,
                 paddingHorizontal: theme.space.sm,
-                paddingVertical: 2,
-                backgroundColor: 'rgba(0,0,0,0.6)',
                 borderRadius: theme.borderRadius.sm,
+                backgroundColor: 'rgba(0,0,0,0.6)',
               }}
             >
               <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.xs }}>FIGURE 1.A</Text>
@@ -357,9 +360,9 @@ export default function QuizScreen() {
                 onPress={() => handleSelect(option.label)}
                 activeOpacity={0.75}
                 style={{
+                  gap: theme.space.md,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: theme.space.md,
                   padding: theme.space.md,
                   borderWidth: 2,
                   borderRadius: theme.borderRadius.xl,
@@ -381,7 +384,7 @@ export default function QuizScreen() {
                     style={{
                       color: selected ? '#FFFFFF' : theme.color.textSecondary,
                       fontSize: theme.fontSize.sm,
-                      fontWeight: theme.fontWeight.bold as any,
+                      fontWeight: theme.fontWeight.bold,
                       fontFamily: theme.fontFamily.regular,
                     }}
                   >
@@ -393,7 +396,7 @@ export default function QuizScreen() {
                     flex: 1,
                     color: selected ? theme.color.accent : theme.color.textPrimary,
                     fontSize: theme.fontSize.md,
-                    fontWeight: selected ? theme.fontWeight.bold as any : theme.fontWeight.regular as any,
+                    fontWeight: selected ? theme.fontWeight.bold : theme.fontWeight.regular,
                     fontFamily: theme.fontFamily.regular,
                   }}
                 >
@@ -411,12 +414,13 @@ export default function QuizScreen() {
           bottom: 0,
           left: 0,
           right: 0,
-          flexDirection: 'row',
           gap: theme.space.sm,
+          flexDirection: 'row',
+          paddingBottom: theme.space.md + insets.bottom,
           padding: theme.space.md,
-          backgroundColor: theme.color.background,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
+          backgroundColor: theme.color.background,
         }}
       >
         <TouchableOpacity
@@ -424,14 +428,14 @@ export default function QuizScreen() {
           disabled={currentIndex === 0}
           style={{
             flex: 1,
+            gap: theme.space.xs,
+            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            flexDirection: 'row',
-            gap: theme.space.xs,
             paddingVertical: theme.space.sm * 1.5,
-            borderRadius: theme.borderRadius.lg,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.card,
             opacity: currentIndex === 0 ? 0.4 : 1,
           }}
@@ -447,9 +451,9 @@ export default function QuizScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             paddingVertical: theme.space.sm * 1.5,
-            borderRadius: theme.borderRadius.lg,
             borderWidth: 1,
             borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.card,
           }}
         >
@@ -468,23 +472,23 @@ export default function QuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>Finish</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>Finish</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             onPress={() => goTo(currentIndex + 1)}
             style={{
               flex: 1,
+              gap: theme.space.xs,
+              flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              flexDirection: 'row',
-              gap: theme.space.xs,
               paddingVertical: theme.space.sm * 1.5,
               borderRadius: theme.borderRadius.lg,
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>Next</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>Next</Text>
             <Feather name="chevron-right" size={theme.fontSize.md} color="#FFFFFF" />
           </TouchableOpacity>
         )}
@@ -492,9 +496,9 @@ export default function QuizScreen() {
 
       <Modal visible={activeModal === 'summary'} transparent animationType="slide">
         <TouchableOpacity
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
           activeOpacity={1}
           onPress={() => setActiveModal(null)}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
         />
         <View
           style={{
@@ -502,16 +506,16 @@ export default function QuizScreen() {
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: theme.color.card,
+            maxHeight: '75%',
+            gap: theme.space.md,
+            padding: theme.space.lg,
             borderTopLeftRadius: theme.borderRadius.xl + 4,
             borderTopRightRadius: theme.borderRadius.xl + 4,
-            padding: theme.space.lg,
-            gap: theme.space.md,
-            maxHeight: '75%',
+            backgroundColor: theme.color.card,
           }}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
               Review
             </Text>
             <TouchableOpacity onPress={() => setActiveModal(null)}>
@@ -526,8 +530,8 @@ export default function QuizScreen() {
               { label: 'Flagged',  value: flaggedQuestions.length, color: theme.color.error },
               { label: 'Saved',    value: bookmarkedQuestions.length, color: theme.color.accent },
             ].map(stat => (
-              <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-                <Text style={{ color: stat.color, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.number }}>
+              <View key={stat.label} style={{ gap: theme.space.xs/2, flex: 1, alignItems: 'center' }}>
+                <Text style={{ color: stat.color, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
                   {stat.value}
                 </Text>
                 <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
@@ -538,7 +542,7 @@ export default function QuizScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+            <View style={{ gap: theme.space.sm, flexWrap: 'wrap', flexDirection: 'row' }}>
               {quiz.questions.map((q, idx) => {
                 const status = getQuestionStatus(q.id);
                 const isCurrent = idx === currentIndex;
@@ -551,13 +555,13 @@ export default function QuizScreen() {
                       height: 44,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      borderRadius: theme.borderRadius.md,
                       borderWidth: isCurrent ? 2 : 1,
+                      borderRadius: theme.borderRadius.md,
                       borderColor: isCurrent ? theme.color.accent : status.color + '55',
                       backgroundColor: status.color + '18',
                     }}
                   >
-                    <Text style={{ color: status.color, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.number }}>
+                    <Text style={{ color: status.color, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
                       {idx + 1}
                     </Text>
                   </TouchableOpacity>
@@ -565,7 +569,7 @@ export default function QuizScreen() {
               })}
             </View>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.md, marginTop: theme.space.lg }}>
+            <View style={{ gap: theme.space.md, flexWrap: 'wrap', flexDirection: 'row', marginTop: theme.space.lg }}>
               {[
                 { icon: 'check'    as const, color: theme.color.success,  label: 'Answered' },
                 { icon: 'minus'    as const, color: theme.color.textMuted, label: 'Skipped'  },
@@ -590,7 +594,7 @@ export default function QuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold as any }}>
+            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold }}>
               Submit Quiz
             </Text>
           </TouchableOpacity>

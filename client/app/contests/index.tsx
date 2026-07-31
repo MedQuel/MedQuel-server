@@ -11,8 +11,20 @@ import { CustomSearchBar } from '../../components/CustomSearchBar';
 import { FeatureContestCard } from '../../components/FeatureContestCard';
 
 
-type ContestFilter = 'all' | 'daily' | 'weekly' | 'live' | 'premium' | 'anatomy';
-const filterChips: ContestFilter[] = ['all', 'daily', 'weekly', 'live', 'premium', 'anatomy'];
+type ContestFilter =
+  | 'all' | 'premium'
+  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
+  | 'forensic_medicine' | 'pathology' | 'ophthalmology' | 'ent' | 'community_medicine'
+  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology_obstetrics' | 'orthopedics'
+  | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
+
+const filterChips: ContestFilter[] = [
+  'all', 'premium',
+  'anatomy', 'biochemistry', 'physiology', 'microbiology', 'pharmacology',
+  'forensic_medicine', 'pathology', 'ophthalmology', 'ent', 'community_medicine',
+  'medicine', 'surgery', 'pediatrics', 'gynaecology_obstetrics', 'orthopedics',
+  'dermatology', 'psychiatry', 'anesthesia', 'radiology',
+];
 type ContestItem = {
   id: string;
   title: string;
@@ -53,7 +65,7 @@ export const contestsMockData: ContestItem[] = [
     id: 'daily-anatomy-quiz',
     title: 'Daily Anatomy Quiz',
     subject: 'Anatomy',
-    category: ['daily', 'anatomy'],
+    category: ['anatomy'],
     difficulty: 'medium',
     epReward: 75,
     timeLeft: '480',
@@ -67,7 +79,7 @@ export const contestsMockData: ContestItem[] = [
     id: 'pharmacology-sprint',
     title: 'Pharmacology Sprint',
     subject: 'Pharmacology',
-    category: ['daily', 'premium'],
+    category: ['pharmacology', 'premium'],
     difficulty: 'hard',
     epReward: 200,
     timeLeft: '4320',
@@ -78,10 +90,10 @@ export const contestsMockData: ContestItem[] = [
     isLive: false,
   },
   {
-    id: 'immunology-basics',
-    title: 'Immunology Basics',
-    subject: 'Immunology',
-    category: ['daily'],
+    id: 'microbiology-basics',
+    title: 'Microbiology Basics',
+    subject: 'Microbiology',
+    category: ['microbiology'],
     difficulty: 'easy',
     epReward: 50,
     timeLeft: '300',
@@ -93,9 +105,9 @@ export const contestsMockData: ContestItem[] = [
   },
   {
     id: 'live-cardio-challenge',
-    title: 'Cardiology Live Challenge',
-    subject: 'Cardiology',
-    category: ['live'],
+    title: 'Medicine Live Challenge',
+    subject: 'Medicine',
+    category: ['medicine', 'premium'],
     difficulty: 'hard',
     epReward: 500,
     timeLeft: '0',
@@ -107,9 +119,9 @@ export const contestsMockData: ContestItem[] = [
   },
   {
     id: 'genetics-pro-tier',
-    title: 'Genetics Expert Series',
-    subject: 'Genetics',
-    category: ['premium'],
+    title: 'Pathology Expert Series',
+    subject: 'Pathology',
+    category: ['pathology', 'premium'],
     difficulty: 'hard',
     epReward: 750,
     timeLeft: '720',
@@ -121,9 +133,9 @@ export const contestsMockData: ContestItem[] = [
   },
   {
     id: 'live-nursing-triage',
-    title: 'Nursing Triage Speed Round',
-    subject: 'Nursing',
-    category: ['live', 'premium'],
+    title: 'Surgery Triage Speed Round',
+    subject: 'Surgery',
+    category: ['surgery', 'premium'],
     difficulty: 'medium',
     epReward: 300,
     timeLeft: '5',
@@ -137,7 +149,7 @@ export const contestsMockData: ContestItem[] = [
     id: 'biochem-midterm-prep',
     title: 'Biochemistry Midterm Prep',
     subject: 'Biochemistry',
-    category: ['daily', 'anatomy'],
+    category: ['biochemistry'],
     difficulty: 'medium',
     epReward: 150,
     timeLeft: '2880',
@@ -150,8 +162,8 @@ export const contestsMockData: ContestItem[] = [
 ];
 
 
-export default function ChatScreen() {
-  const [search, setSearch] = useState('');
+export default function ContestsScreen() {
+  const [search, setSearch] = useState<string>('');
   const [activeFilter, setActiveFilter] = useState<ContestFilter>('all');
 
   const router = useRouter();
@@ -185,7 +197,7 @@ export default function ChatScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          gap: theme.space.xs / 2,
+          gap: theme.space.xs/2,
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
@@ -213,7 +225,7 @@ export default function ChatScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: theme.space.xl }}
+        contentContainerStyle={{ paddingBottom: theme.space.xl + 55 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps='handled'
       >

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -75,11 +77,7 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
                 backgroundColor: `${iconColor}12`,
               }}
             >
-              <SubjectIcon
-                id={subject.id}
-                color={iconColor}
-                size={getIconSizeValue(subject.id)}
-              />
+              <SubjectIcon id={subject.id} color={iconColor} size={getIconSizeValue(subject.id)} />
             </View>
             <Text
               numberOfLines={1}

@@ -1,10 +1,23 @@
+<<<<<<< HEAD
 import { View, Text, ViewStyle } from 'react-native';
+=======
+>>>>>>> main
 import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, ViewStyle } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
 
+<<<<<<< HEAD
 
 export function UserLevelChip({ level, size = 'md', style }: { level: number, size?: 'sm' | 'md', style?: ViewStyle }) {
+=======
+export function UserLevelChip({ level, size = 'md', style }: {
+  level: number;
+  size?: 'sm' | 'md';
+  style?: ViewStyle;
+}) {
+  const isSm = size === 'sm';
+>>>>>>> main
   const { theme } = useTheme();
   const isSm = size === 'sm';
 
@@ -15,11 +28,19 @@ export function UserLevelChip({ level, size = 'md', style }: { level: number, si
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+<<<<<<< HEAD
         borderWidth: isSm ? 1 : 2,
         borderRadius: theme.borderRadius.full,
         borderColor: theme.color.accent + '33',
         paddingVertical: isSm ? theme.space.xs : theme.space.sm * 0.8,
         paddingHorizontal: isSm ? theme.space.sm : theme.space.md,
+=======
+        paddingVertical: isSm ? theme.space.xs : theme.space.sm * 0.8,
+        paddingHorizontal: isSm ? theme.space.sm : theme.space.md,
+        borderWidth: isSm ? 1 : 2,
+        borderRadius: theme.borderRadius.full,
+        borderColor: theme.color.accent + '33',
+>>>>>>> main
         backgroundColor: theme.color.surface,
         ...style,
       }}
