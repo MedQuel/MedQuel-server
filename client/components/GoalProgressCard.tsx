@@ -4,19 +4,17 @@ import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-type GoalProgressCardProps = {
-  examName: string;
-  examDate: string;
-  preparationPercent: number;
-  daysLeft: number;
-};
-
 export function GoalProgressCard({
   examName,
   examDate,
   preparationPercent,
   daysLeft,
-}: GoalProgressCardProps) {
+}: {
+  examName: string;
+  examDate: string;
+  preparationPercent: number;
+  daysLeft: number;
+}) {
   const { theme } = useTheme();
 
   const actualProgress = Math.max(
@@ -37,16 +35,12 @@ export function GoalProgressCard({
     ? theme.color.textPrimary
     : theme.color.textInverse;
 
-  const cardMutedColor = theme.isDark
-    ? theme.color.textSecondary
-    : theme.color.textInverse + 'CC';
-
   return (
     <View
       style={{
         backgroundColor: cardBackground,
         borderRadius: theme.borderRadius.xl,
-        padding: theme.space.xl,
+        padding: theme.space.md,
         overflow: 'hidden',
         position: 'relative',
       }}
@@ -56,11 +50,11 @@ export function GoalProgressCard({
         style={{
           position: 'absolute',
 
-          right: -theme.space.xl,
-          top: -theme.space.xl,
+          right: -theme.space.lg,
+          top: -theme.space.lg,
 
-          width: theme.space.xxl * 4,
-          height: theme.space.xxl * 4,
+          width: theme.space.xxl * 3.2,
+          height: theme.space.xxl * 3.2,
 
           justifyContent: 'center',
           alignItems: 'center',
@@ -139,7 +133,7 @@ export function GoalProgressCard({
 
           fontFamily: theme.fontFamily.regular,
 
-          marginBottom: theme.space.md,
+          marginBottom: theme.space.sm,
         }}
       >
         {examName}
@@ -153,7 +147,7 @@ export function GoalProgressCard({
 
           gap: theme.space.xs,
 
-          marginBottom: theme.space.lg,
+          marginBottom: theme.space.md,
         }}
       >
         <Feather
