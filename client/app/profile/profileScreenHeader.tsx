@@ -1,39 +1,24 @@
-import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, TouchableOpacity  } from 'react-native';
-import { userApi } from "@/common/api/api";
+import { useRouter } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity } from "react-native";
 
-import { useTheme } from '../../theme/ThemeContext';
-import { useState , useEffect } from 'react';
+import { useTheme } from "../../theme/ThemeContext";
 
-
-export function ProfileScreenHeader() {
-  const { theme } = useTheme();
-  const router = useRouter();
-  const [user,setUser] = useState<any>(null)
- 
-
-  const loadUser = async () => {
-  try {
-   
-
-    const response = await userApi.getMe();
-
-    setUser(response);
-
-    // console.log(response);
-  } catch (error) {
-   
-    console.log(error)
-  } 
+type User = {
+  displayName?: string;
+  [key: string]: any;
 };
 
-useEffect(() => {
-  loadUser();
-}, []);
+type Props = {
+  user: User | null;
+};
+
+export function ProfileScreenHeader({ user }: Props) {
+  const { theme } = useTheme();
+  const router = useRouter();
 
   return (
-    <View style={{ position: 'relative', backgroundColor: theme.color.card }}>
+    <View style={{ position: "relative", backgroundColor: theme.color.card }}>
       <View
         style={{
           paddingVertical: theme.space.xxl - 1,
@@ -42,13 +27,13 @@ useEffect(() => {
       />
 
       <TouchableOpacity
-        onPress={() => router.push('/profile/settingsScreen')}
+        onPress={() => router.push("/profile/settingsScreen")}
         style={{
-          position: 'absolute',
+          position: "absolute",
           top: theme.space.md + 4,
           right: theme.space.md + 4,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           paddingVertical: theme.space.sm + 4,
           paddingHorizontal: theme.space.sm + 4,
           borderWidth: 1,
@@ -59,61 +44,75 @@ useEffect(() => {
         }}
       >
         <MaterialCommunityIcons
-          name='cog-outline'
+          name="cog-outline"
           size={theme.space.md + 2}
-          color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+          color={
+            theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+          }
         />
       </TouchableOpacity>
 
       <View
         style={{
-          position: 'absolute',
+          position: "absolute",
           bottom: -36,
           width: theme.space.xxl + 40,
           height: theme.space.xxl + 40,
-          alignSelf: 'center',
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignSelf: "center",
+          alignItems: "center",
+          justifyContent: "center",
           borderWidth: 4,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.color.premium + 'FF',
+          backgroundColor: theme.color.premium + "FF",
         }}
       >
-         
         <Text
           style={{
             lineHeight: 66,
-            textAlign: 'center',
+            textAlign: "center",
             includeFontPadding: false,
-            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+            color: theme.isDark
+              ? theme.color.textPrimary
+              : theme.color.textInverse,
             fontSize: theme.fontSize.xxl + 6,
             fontWeight: theme.fontWeight.bold,
           }}
         >
-          {user?.displayName?.charAt(0)?.toUpperCase() || 'J'}
+          {user?.photoUrl ? (
+            <img
+              src={user.photoUrl}
+              alt={user?.displayName || "User"}
+              className="rounded-full w-8 h-8"
+            />
+          ) : (
+            <span>{user?.displayName?.charAt(0)?.toUpperCase() || "J"}</span>
+          )}
         </Text>
 
         <View
           style={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             right: 0,
             height: theme.space.lg,
             width: theme.space.lg,
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
             borderWidth: 2,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.full,
             backgroundColor: theme.color.accent,
           }}
-        >
+        ><TouchableOpacity>
           <MaterialCommunityIcons
-            name='camera-outline'
+            name="camera-outline"
             size={theme.space.md - 2}
-            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            color={
+              theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+            }
           />
+          </TouchableOpacity>
         </View>
       </View>
     </View>

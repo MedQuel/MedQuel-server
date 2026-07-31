@@ -74,6 +74,23 @@ export default function ChatScreen() {
       </View>
     );
   }
+  if (error) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        width: "100%",
+        height: "100%",
+        backgroundColor: theme.color.background,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: theme.space.md,
+      }}
+    >
+      {error} 
+    </View>
+  );
+}
 
   return (
     <ScrollView
@@ -181,8 +198,8 @@ export default function ChatScreen() {
                 color: theme.color.textMuted,
                 fontSize: theme.fontSize.xs + 2,
               }}
-            >
-              {theme.i18n.t("components.ProfileCard.location")}
+            > 
+              { userData?. institution??theme.i18n.t("components.ProfileCard.location")}
             </Text>
           </View>
 
