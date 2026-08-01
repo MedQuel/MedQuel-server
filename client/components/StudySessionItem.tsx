@@ -1,294 +1,176 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text, TouchableOpacity } from 'react-native';
+
 import { useTheme } from '../theme/ThemeContext';
 
-type SessionStatus = 'completed' | 'current' | 'upcoming';
 
-type StudySession = {
-  id: string;
-  time: string;
-  title: string;
-  subject: string;
-  questionsCount: number;
-  reward: number;
-  status: SessionStatus;
-  iconName: keyof typeof Feather.glyphMap;
+type StudyTimelineCardProps = {
+  sessions?: {
+    id: string;
+    time: string;
+    title: string;
+    subject: string;
+    questionsCount: number;
+    reward: number;
+    status: 'completed' | 'current' | 'upcoming';
+    iconName: keyof typeof Feather.glyphMap;
+  }[];
+  onPress?: (session: {
+    id: string;
+    time: string;
+    title: string;
+    subject: string;
+    questionsCount: number;
+    reward: number;
+    status: 'completed' | 'current' | 'upcoming';
+    iconName: keyof typeof Feather.glyphMap;
+  }) => void;
 };
 
-type StudyTimelineProps = {
-  sessions?: StudySession[];
-  onPress?: (session: StudySession) => void;
-};
-
-export function StudyTimelineCard({
-  sessions = [],
-  onPress,
-}: StudyTimelineProps) {
+export function StudyTimelineCard({ sessions = [], onPress }: StudyTimelineCardProps) {
   const { theme } = useTheme();
 
-  const getStatusConfig = (status: SessionStatus) => {
+  const getStatusConfig = (status: 'completed' | 'current' | 'upcoming') => {
     switch (status) {
       case 'completed':
         return {
-          border: theme.color.success,
-         background: theme.color.card,
           icon: theme.color.success,
           text: theme.color.textMuted,
           line: theme.color.success + '40',
+          border: theme.color.success,
+          background: theme.color.card,
         };
-
       case 'current':
         return {
-          border: theme.color.accent,
-          background: theme.color.card,
           icon: theme.color.accent,
           text: theme.color.textPrimary,
           line: theme.color.accent + '40',
+          border: theme.color.accent,
+          background: theme.color.card,
         };
-
       default:
         return {
-          border: theme.color.border,
-          background: theme.color.card,
           icon: theme.color.textMuted,
           text: theme.color.textPrimary,
           line: theme.color.border,
+          border: theme.color.border,
+          background: theme.color.card,
         };
     }
   };
 
   return (
-    <View
-      style={{
-        gap: theme.space.md,
-      }}
-    >
-      {sessions.map((session, index) => {
+    <View style={{ gap: theme.space.md }}>
+      {sessions.map((session, i) => {
         const status = getStatusConfig(session.status);
 
         return (
           <TouchableOpacity
-            key={session.id}
+            key={`${session.id}-${i}`}
             activeOpacity={0.8}
             onPress={() => onPress?.(session)}
             style={{
+              gap: theme.space.sm,
               position: 'relative',
-
               flexDirection: 'row',
               alignItems: 'center',
-
               paddingVertical: theme.space.sm,
-              paddingHorizontal: theme.space.lg,
-
-              borderRadius: theme.borderRadius.xl,
-
-              borderWidth:
-                session.status === 'current'
-                  ? 2
-                  : 1.5,
-
+              paddingHorizontal: theme.space.md,
               borderColor: status.border,
+              borderRadius: theme.borderRadius.xl,
+              borderWidth: session.status === 'current' ? 2 : 1.5,
               backgroundColor: status.background,
-
-              gap: theme.space.md,
             }}
           >
-            {/* TIME */}
-            <View
-              style={{
-                minWidth: theme.space.xl * 1.8,
-
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <View style={{ minWidth: theme.space.xl * 1.5, alignItems: 'center', justifyContent: 'center' }}>
               <Text
                 style={{
-                  color:
-                    session.status === 'current'
-                      ? theme.color.accent
-                      : theme.color.textMuted,
-
+                  color: session.status === 'current' ? theme.color.accent : theme.color.textMuted,
                   fontSize: theme.fontSize.md,
-
-                  fontWeight:
-                    theme.fontWeight.bold.toString() as any,
-
-                  fontFamily:
-                    theme.fontFamily.number,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.number,
                 }}
               >
                 {session.time}
               </Text>
             </View>
 
-            {/* ICON */}
-            <View
-  style={{
-    position: 'relative',
-    width: theme.space.xl * 1.8,
-    height: theme.space.xl * 1.8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  }}
->
-
-  <View
-    style={{
-      width: theme.space.xl * 1.8,
-      height: theme.space.xl * 1.8,
-
-      alignItems: 'center',
-      justifyContent: 'center',
-
-      borderRadius: theme.borderRadius.lg,
-
-      borderWidth: 1.5,
-      borderColor: status.border,
-     backgroundColor: theme.color.card,
-    }}
-  >
-    <Feather
-      name={session.iconName}
-      size={theme.fontSize.lg}
-      color={status.icon}
-    />
-  </View>
-</View>
-
-            {/* CONTENT */}
             <View
               style={{
-                flex: 1,
+                position: 'relative',
+                width: theme.space.xl * 1.6,
+                height: theme.space.xl * 1.6,
+                alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
               <View
                 style={{
-                  flexDirection: 'row',
+                  width: theme.space.xl * 1.6,
+                  height: theme.space.xl * 1.6,
                   alignItems: 'center',
-                  flexWrap: 'wrap',
-
-                  gap: theme.space.sm,
+                  justifyContent: 'center',
+                  borderWidth: 1.5,
+                  borderColor: status.border,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.card,
                 }}
               >
+                <Feather
+                  name={session.iconName}
+                  size={theme.fontSize.lg}
+                  color={status.icon}
+                />
+              </View>
+            </View>
+
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <View style={{ gap: theme.space.sm, flexWrap: 'wrap', flexDirection: 'row', alignItems: 'center' }}>
                 <Text
-                  numberOfLines={1}
                   style={{
                     flexShrink: 1,
-
                     color: status.text,
-
-                    textDecorationLine:
-                      session.status ===
-                      'completed'
-                        ? 'line-through'
-                        : 'none',
-
+                    textDecorationLine: session.status === 'completed' ? 'line-through' : 'none',
                     fontSize: theme.fontSize.lg,
-
-                    fontWeight:
-                      theme.fontWeight.bold.toString() as any,
-
-                    fontFamily:
-                      theme.fontFamily.regular,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.regular,
                   }}
                 >
                   {session.title}
                 </Text>
-
-                {session.status === 'current' && (
-                  <View
-                    style={{
-                      paddingHorizontal:
-                        theme.space.sm * 1.2,
-
-                      paddingVertical:
-                        theme.space.xs * 0.8,
-
-                      borderRadius:
-                        theme.borderRadius.full,
-
-                      backgroundColor:
-                        theme.color.accent,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          theme.color.textInverse,
-
-                        fontSize:
-                          theme.fontSize.xs,
-
-                        fontWeight:
-                          theme.fontWeight.bold.toString() as any,
-
-                        fontFamily:
-                          theme.fontFamily.regular,
-                      }}
-                    >
-                      NOW
-                    </Text>
-                  </View>
-                )}
               </View>
 
               <View
                 style={{
+                  gap: theme.space.sm,
+                  flexWrap: 'wrap',
                   flexDirection: 'row',
                   alignItems: 'center',
-                  flexWrap: 'wrap',
-
-                  gap: theme.space.sm,
-
-                  marginTop:
-                    theme.space.xs * 0.5,
+                  marginTop: theme.space.xs * 0.5,
                 }}
               >
                 <Text
                   style={{
-                    color:
-                      theme.color.textMuted,
-
-                    fontSize:
-                      theme.fontSize.md,
-
-                    fontFamily:
-                      theme.fontFamily.light,
+                    color: theme.color.textMuted,
+                    fontSize: theme.fontSize.md,
+                    fontFamily: theme.fontFamily.light,
                   }}
                 >
                   {session.subject}
                 </Text>
 
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-
-                    gap: theme.space.xs,
-                  }}
-                >
+                <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
                   <Feather
-                    name="clock"
+                    name='clock'
                     size={theme.fontSize.sm}
-                    color={
-                      theme.color.textMuted
-                    }
+                    color={theme.color.textMuted}
                   />
 
                   <Text
                     style={{
-                      color:
-                        theme.color.textMuted,
-
-                      fontSize:
-                        theme.fontSize.md,
-
-                      fontFamily:
-                        theme.fontFamily.light,
+                      color: theme.color.textMuted,
+                      fontSize: theme.fontSize.md,
+                      fontFamily: theme.fontFamily.light,
                     }}
                   >
                     {session.questionsCount} Qs
@@ -297,38 +179,25 @@ export function StudyTimelineCard({
               </View>
             </View>
 
-            {/* REWARD */}
             <View
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'flex-end',
-
-                paddingLeft:
-                  theme.space.xs,
+                paddingLeft: theme.space.xs,
               }}
             >
               <Feather
-                name="zap"
+                name='zap'
                 size={theme.fontSize.md}
-                color={
-                  theme.color.warning
-                }
+                color={theme.color.warning}
               />
-
               <Text
                 style={{
-                  color:
-                    theme.color.warning,
-
-                  fontSize:
-                    theme.fontSize.lg,
-
-                  fontWeight:
-                    theme.fontWeight.bold.toString() as any,
-
-                  fontFamily:
-                    theme.fontFamily.number,
+                  color: theme.color.warning,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.number,
                 }}
               >
                 +{session.reward}
