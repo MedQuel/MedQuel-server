@@ -8,16 +8,51 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
 } from 'react-native';
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { api } from '../../common/api/api';
 import { StudyHeader } from './studyPlanHeader';
 import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { ProjectionCard } from '../../components/ProjectionCard';
 import { GoalProgressCard } from '../../components/GoalProgressCard';
 import { StudyTimelineCard } from '../../components/StudySessionItem';
 import { WeeklyProgressCard } from '../../components/WeeklyTrackerCard';
+import type { StudyPlan, TargetExam } from '../../common/types/types';
+
+
+type SessionIconName = 'book-open' | 'edit-3' | 'clipboard';
+type SessionUiStatus = 'completed' | 'current' | 'upcoming';
+const SUBJECT_ICON_MAP: Record<string, SessionIconName> = {
+  surgery: 'edit-3',
+  cardiology: 'book-open',
+  pathology: 'clipboard',
+  pharmacology: 'clipboard',
+  medicine: 'book-open',
+  anatomy: 'book-open',
+};
+
+const getSessionIcon = (subject: string): SessionIconName => SUBJECT_ICON_MAP[subject.trim().toLowerCase()] ?? 'book-open';
+const deriveSessionStatuses = (sessions: StudyPlan['sessions']): (StudyPlan['sessions'][number] & { uiStatus: SessionUiStatus })[] => {
+  let currentAssigned = false;
+  return sessions.map((s) => {
+    if (s.status === 'completed') return { ...s, uiStatus: 'completed' as const };
+    if (!currentAssigned) {
+      currentAssigned = true;
+      return { ...s, uiStatus: 'current' as const };
+    }
+    return { ...s, uiStatus: 'upcoming' as const };
+  });
+};
+
+const daysUntil = (isoDate: string): number => {
+  const diffMs = new Date(isoDate).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diffMs / 86400000));
+};
+const formatExamDate = (isoDate: string): string => new Date(isoDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
 
 function EditPlanModal({ visible, onSave, onClose, initialExamName, initialExamDate }: {
@@ -70,7 +105,6 @@ function EditPlanModal({ visible, onSave, onClose, initialExamName, initialExamD
             >
               {theme.i18n.t('Edit Study Plan')}
             </Text>
-
             <Text
               style={{
                 color: theme.color.textSecondary,
@@ -81,7 +115,6 @@ function EditPlanModal({ visible, onSave, onClose, initialExamName, initialExamD
             >
               {theme.i18n.t('Exam Name')}
             </Text>
-
             <TextInput
               value={examName}
               onChangeText={setExamName}
@@ -108,7 +141,6 @@ function EditPlanModal({ visible, onSave, onClose, initialExamName, initialExamD
             >
               {theme.i18n.t('Exam Date')}
             </Text>
-
             <TextInput
               value={examDate}
               onChangeText={setExamDate}
@@ -181,22 +213,96 @@ function EditPlanModal({ visible, onSave, onClose, initialExamName, initialExamD
 
 export default function StudyPlanScreen() {
   const [isEditModalVisible, setEditModalVisible] = useState(false);
-  const [examName, setExamName] = useState('USMLE Step 1');
-  const [examDate, setExamDate] = useState('Aug 15, 2026');
+  const [plan, setPlan] = useState<StudyPlan | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   useBottomBar(true, 'profile');
 
-  const handleSavePlan = (newExamName: string, newExamDate: string) => {
-    setExamName(newExamName);
-    setExamDate(newExamDate);
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchStudyPlan() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await api.studyPlan.getStudyPlan();
+        if (isMounted) setPlan(data);
+      } catch (err) {
+        console.log('Failed to fetch study plan:', err);
+        if (isMounted) setError(theme.i18n.t('Could not load your study plan. Pull to retry.'));
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchStudyPlan();
+    return () => { isMounted = false };
+  }, [theme.i18n]);
+
+  const handleSavePlan = async (newExamName: string, newExamDate: string) => {
+    if (!plan) return;
+    const previousPlan = plan;
+    const nextTargetExam = newExamName as TargetExam;
+    setPlan({ ...plan, targetExam: nextTargetExam, examDate: newExamDate });
+
+    try {
+      const updated = await api.studyPlan.generateStudyPlan({ examDate: newExamDate });
+      setPlan({ ...updated, targetExam: nextTargetExam });
+    } catch (err) {
+      console.log('Failed to update study plan:', err);
+      setPlan(previousPlan);
+    }
   };
+
+  const sessionsWithStatus = useMemo(
+    () => (plan ? deriveSessionStatuses(plan.sessions) : []),
+    [plan]
+  );
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+        <Loading message={theme.i18n.t('Loading your study plan...')} fullscreen />
+      </View>
+    );
+  }
+
+  if (error || !plan) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          padding: theme.space.md,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <Text
+          style={{
+            textAlign: 'center',
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.sm,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
+          {error ?? theme.i18n.t('Study plan not found.')}
+        </Text>
+      </View>
+    );
+  }
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <StudyHeader
-        onBack={() => router.back()}
+        onBack={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace('/home');
+        }}
         onEdit={() => setEditModalVisible(true)}
       />
 
@@ -204,50 +310,54 @@ export default function StudyPlanScreen() {
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: theme.space.sm,
-          paddingBottom: 120,
+          gap: theme.space.md,
+          paddingTop: theme.space.md,
+          paddingBottom: insets.bottom + theme.space.xxl + theme.space.xl,
           paddingHorizontal: theme.space.md,
         }}
       >
-        <View style={{ gap: theme.space.lg }}>
-          <GoalProgressCard
-            examName={examName}
-            examDate={examDate}
-            preparationPercent={68}
-            daysLeft={42}
-          />
+        <GoalProgressCard
+          examName={plan.targetExam}
+          examDate={formatExamDate(plan.examDate)}
+          preparationPercent={plan.preparationPercent}
+          daysLeft={daysUntil(plan.examDate)}
+        />
 
-          <WeeklyProgressCard
-            title='This Week'
-            date='July 6 - July 12'
-            completedDays={[0, 1, 2]}
-            currentDay={3}
-            reward={150}
-          />
+        <WeeklyProgressCard
+          title={theme.i18n.t('This Week')}
+          date={formatExamDate(new Date().toISOString())}
+          completedDays={Array.from({ length: plan.currentWeekProgress.daysCompleted }, (_, i) => i)}
+          currentDay={plan.currentWeekProgress.daysCompleted}
+          reward={plan.weeklyEpTarget}
+        />
 
-          <StudyTimelineCard
-            sessions={[
-              { id: '1', time: '09:00', title: 'Cardiology Revision', subject: 'Cardiology', questionsCount: 25, reward: 50, status: 'completed', iconName: 'book-open' },
-              { id: '2', time: '11:00', title: 'Practice Questions', subject: 'Physiology', questionsCount: 30, reward: 75, status: 'current', iconName: 'edit-3' },
-              { id: '3', time: '02:00', title: 'Mock Test', subject: 'Pathology', questionsCount: 50, reward: 100, status: 'upcoming', iconName: 'clipboard' },
-            ]}
-            onPress={() => {}}
-          />
+        <StudyTimelineCard
+          sessions={sessionsWithStatus.map((s) => ({
+            id: s.sessionId,
+            time: s.scheduledTime,
+            title: s.topic,
+            subject: s.subject,
+            questionsCount: s.questionCount,
+            reward: s.epReward,
+            status: s.uiStatus,
+            iconName: getSessionIcon(s.subject),
+          }))}
+          onPress={() => {}}
+        />
 
-          <ProjectionCard
-            title='Weekly Projection'
-            subtitle='Keep your current pace to maximize rewards'
-            projectedEP={450}
-          />
-        </View>
+        <ProjectionCard
+          title={theme.i18n.t('Weekly Projection')}
+          subtitle={theme.i18n.t('Keep your current pace to maximize rewards')}
+          projectedEP={plan.weeklyEpTarget}
+        />
       </ScrollView>
 
       <EditPlanModal
         visible={isEditModalVisible}
         onClose={() => setEditModalVisible(false)}
         onSave={handleSavePlan}
-        initialExamName={examName}
-        initialExamDate={examDate}
+        initialExamName={plan.targetExam}
+        initialExamDate={formatExamDate(plan.examDate)}
       />
     </View>
   );
