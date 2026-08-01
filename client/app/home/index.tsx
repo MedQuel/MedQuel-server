@@ -1,39 +1,41 @@
-
 import { useRouter } from 'expo-router';
-import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { LevelProgressCard } from '../../components/LevelProgressCard';
 import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
-import { Loading } from '../../components/common/loading';
-import { subjectCatalog, SubjectIcon, SubjectId } from '../../common/constants/subject';
+import { SubjectId, SubjectIcon, subjectCatalog } from '../../common/constants/subject';
+
 import { MOCK_HOME_DATA, MOCK_USER } from '../../common/constants/mockData';
 
-type PracticeSubject = { id: SubjectId, label: string };
+
+type PracticeSubject = { id: SubjectId; label: string };
 function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[], onPress?: (id: SubjectId) => void }) {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
+
   const randomSubjects: PracticeSubject[] = useMemo(() => {
     const allIds = Object.keys(subjectCatalog) as SubjectId[];
     const shuffled: SubjectId[] = [...allIds];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+
+    for (let i=shuffled.length-1; i>0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
       const current = shuffled[i];
       const next = shuffled[j];
       if (current !== undefined && next !== undefined) {
         [shuffled[i], shuffled[j]] = [next, current];
       }
     }
-    return shuffled.slice(0, 6).map((id) => ({
-      id,
-      label: theme.i18n.t(subjectCatalog[id].title),
-    }));
-  }, []);
+
+    return shuffled.slice(0, 6).map((id) => ({ id, label: theme.i18n.t(subjectCatalog[id].title) }));
+  }, [theme.i18n]);
 
   const iconSize = Math.min(width * 0.13, 58);
   const iconSizeValue = iconSize * 0.42;
@@ -57,11 +59,7 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
             key={subject.id}
             activeOpacity={0.8}
             onPress={() => onPress?.(subject.id)}
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              paddingHorizontal: theme.space.xs * 0.5,
-            }}
+            style={{ flex: 1, alignItems: 'center', paddingHorizontal: theme.space.xs * 0.5 }}
           >
             <View
               style={{
@@ -76,8 +74,13 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
                 backgroundColor: `${iconColor}12`,
               }}
             >
-              <SubjectIcon id={subject.id} color={iconColor} size={getIconSizeValue(subject.id)} />
+              <SubjectIcon
+                id={subject.id}
+                color={iconColor}
+                size={getIconSizeValue(subject.id)}
+              />
             </View>
+
             <Text
               numberOfLines={1}
               style={{
@@ -95,39 +98,33 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
     </View>
   );
 }
+
+
 export default function HomeScreen() {
+  const [mockHomeData, setMockHomeData] = useState(MOCK_HOME_DATA);
+  const [loading, setLoading] = useState(true);
+
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'home');
-  const [loading, setLoading] = useState(true);
-  const [mockHomeData, setMockHomeData] = useState(MOCK_HOME_DATA);
-console.log(mockHomeData);
+
   useEffect(() => {
     let isMounted = true;
     async function fetchHomeData() {
       try {
         setLoading(true);
-        const data = await new Promise<typeof MOCK_HOME_DATA>((resolve) => {
-          setTimeout(() => resolve(MOCK_HOME_DATA), 1200);
-        });
+        const data = await new Promise<typeof MOCK_HOME_DATA>((resolve) => { setTimeout(() => resolve(MOCK_HOME_DATA), 1200) });
 
-        if (isMounted) {
-          setMockHomeData(data);
-        }
+        if (isMounted) setMockHomeData(data);
       } catch (error) {
         console.log('Failed to fetch home data:', error);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     }
 
     fetchHomeData();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false };
   }, []);
 
   const dailyChallenge = mockHomeData.dailyChallenge;
@@ -135,10 +132,10 @@ console.log(mockHomeData);
   const practiceSubjects = useMemo(() => {
     return (mockHomeData.subjectGrid ?? []).slice(0, 6).map((item) => {
       const normalized = item.subject.toLowerCase();
-      const match = Object.entries(subjectCatalog).find(([, def]) => def.title.toLowerCase() === normalized);
-      return match
-        ? { id: match[0] as SubjectId, label: item.subject }
-        : { id: 'anatomy' as SubjectId, label: item.subject };
+      const match = Object.entries(subjectCatalog).find(
+        ([, def]) => def.title.toLowerCase() === normalized
+      );
+      return match ? { id: match[0] as SubjectId, label: item.subject } : { id: 'anatomy' as SubjectId, label: item.subject };
     });
   }, [mockHomeData]);
 
@@ -171,7 +168,7 @@ console.log(mockHomeData);
           contentContainerStyle={{
             gap: theme.space.md,
             paddingTop: theme.space.md,
-            paddingBottom: theme.space.xxl + theme.space.xl,
+            paddingBottom: theme.space.xxl * 1.75,
             paddingHorizontal: theme.space.md,
           }}
         >
@@ -182,21 +179,30 @@ console.log(mockHomeData);
             nextLevelEP={MOCK_USER.epPoints + 650}
             remainingEP={Math.max(0, MOCK_USER.epPoints + 650 - MOCK_USER.epPoints)}
           />
+
           <StatsOverviewCard
             rank={5}
-            accuracy={Math.round((mockHomeData.subjectGrid.reduce((sum, item) => sum + item.accuracy, 0) / mockHomeData.subjectGrid.length))}
-            quizzesTaken={mockHomeData.subjectGrid.reduce((sum, item) => sum + item.totalAttempted, 0)}
+            accuracy={Math.round(
+              mockHomeData.subjectGrid.reduce((sum, item) => sum+item.accuracy, 0) / mockHomeData.subjectGrid.length
+            )}
+            quizzesTaken={mockHomeData.subjectGrid.reduce((sum, item) => sum+item.totalAttempted, 0)}
             earnedPoints={MOCK_USER.epPoints}
           />
+
           <DailyChallengeCard
             title={dailyChallenge?.subject ?? 'Anatomy Essentials'}
             questions={30}
             duration={45}
             difficulty='medium'
-            endsAt={dailyChallenge?.expiresAt ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000))) : '840'}
+            endsAt={
+              dailyChallenge?.expiresAt
+                ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
+                : '840'
+            }
             epReward={dailyChallenge?.epReward ?? 150}
             onStart={() => {}}
           />
+
           <View style={{ gap: theme.space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text
@@ -221,6 +227,7 @@ console.log(mockHomeData);
                 </Text>
               </TouchableOpacity>
             </View>
+
             <View>
               <ActiveContestsCard
                 contests={mockHomeData.activeContests.map((contest) => ({
@@ -234,6 +241,7 @@ console.log(mockHomeData);
               />
             </View>
           </View>
+
           <View style={{ gap: theme.space.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text
@@ -258,7 +266,11 @@ console.log(mockHomeData);
                 </Text>
               </TouchableOpacity>
             </View>
-            <PracticeBySubject subjects={practiceSubjects} onPress={(subjectId) => { console.log('Selected Subject:', subjectId) }} />
+
+            <PracticeBySubject
+              subjects={practiceSubjects}
+              onPress={(subjectId) => { console.log('Selected Subject:', subjectId) }}
+            />
           </View>
           <PerformanceTrendCard accuracy={performanceTrend} />
         </ScrollView>
