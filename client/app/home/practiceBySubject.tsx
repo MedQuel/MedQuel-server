@@ -1,10 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { subjectCatalog, SubjectIcon, SubjectId } from '../../common/constants/subject';
+import { SubjectId, SubjectIcon, subjectCatalog } from '../../common/constants/subject';
+
 
 export default function AllSubjectsScreen() {
   const { theme } = useTheme();
@@ -16,20 +17,12 @@ export default function AllSubjectsScreen() {
   const backIconSize = theme.space.lg;
   const iconBoxSize = theme.space.xxl;
   const hitSlopValue = theme.space.xs;
-  const backButtonHitSlop = {
-    top: hitSlopValue,
-    bottom: hitSlopValue,
-    left: hitSlopValue,
-    right: hitSlopValue,
-  };
+  const backButtonHitSlop = { top: hitSlopValue, bottom: hitSlopValue, left: hitSlopValue, right: hitSlopValue };
   const allSubjectIds = Object.keys(subjectCatalog) as SubjectId[];
 
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.push('/home');
-    }
+    if (router.canGoBack()) router.back();
+    else router.push('/home');
   };
 
   return (
@@ -38,8 +31,8 @@ export default function AllSubjectsScreen() {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingHorizontal: theme.space.md,
           paddingVertical: theme.space.sm,
+          paddingHorizontal: theme.space.md,
           borderBottomWidth: 1,
           borderBottomColor: theme.color.border,
           backgroundColor: theme.color.background,
@@ -59,6 +52,7 @@ export default function AllSubjectsScreen() {
         >
           <Ionicons name='chevron-back' size={backIconSize} color={theme.color.textPrimary} />
         </TouchableOpacity>
+
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -70,11 +64,13 @@ export default function AllSubjectsScreen() {
           {theme.i18n.t('All Subjects')}
         </Text>
       </View>
+
       <ScrollView contentContainerStyle={{ gap: theme.space.sm, padding: theme.space.md }}>
         <View style={{ gap: theme.space.sm }}>
           {allSubjectIds.map((id) => {
             const def = subjectCatalog[id];
             const iconColor = theme.color[def?.variant ?? 'accent'];
+
             return (
               <TouchableOpacity
                 key={id}
@@ -104,6 +100,7 @@ export default function AllSubjectsScreen() {
                 >
                   <SubjectIcon id={id} color={iconColor} size={iconSize} />
                 </View>
+
                 <Text
                   style={{
                     flex: 1,
