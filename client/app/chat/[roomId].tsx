@@ -1,106 +1,191 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, FlatList, Platform, TextInput, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
-
+import { View, Text, FlatList, Platform, TextInput, TouchableOpacity, KeyboardAvoidingView, Modal, Pressable } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { DUMMY_ROOMS, subjectColorKeys, SubjectIcon } from './index';
+import { subjectCatalog, SubjectIcon, type SubjectId } from '../../common/constants/subject';
+import { Loading } from '../../components/common/loading';
+import { api } from '../../common/api/api';
+import { MOCK_USER } from '../../common/constants/mockData';
+import type { ChatRoom, GetChatMessagesResult } from '../../common/types/types';
+const createChatMessage = (
+  id: string,
+  text: string,
+  isMe: boolean,
+  senderName: string,
+  timestamp: string
+) => ({ id, text, isMe, senderName, timestamp });
 
+type ChatMessage = ReturnType<typeof createChatMessage>;
 
-type ChatMessage = {
-  id: string;
-  text: string;
-  isMe: boolean;
-  senderName: string;
-  senderInitials: string;
-  timestamp: string;
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
 };
-
-const AVATAR_COLORS = [
-  'error',
-  'accent',
-  'success',
-  'premium',
-  'warning',
-] as const;
-
-const DUMMY_MESSAGES: ChatMessage[] = [
-  {
-    id: 'm1',
-    text: 'The key in STEMI is time — door-to-balloon within 90 min!',
-    senderName: 'Sarah Khan',
-    senderInitials: 'SK',
-    timestamp: '10:32',
-    isMe: false,
-  },
-  {
-    id: 'm2',
-    text: 'Agreed! Aspirin + heparin immediately. Cath lab protocol is crucial.',
-    senderName: 'Rehan Piracha',
-    senderInitials: 'RP',
-    timestamp: '10:34',
-    isMe: false,
-  },
-  {
-    id: 'm3',
-    text: "What about fibrinolysis if PCI isn't available within 2 hours?",
-    senderName: 'You',
-    senderInitials: 'ME',
-    timestamp: '10:36',
-    isMe: true,
-  },
-];
-
-
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const toChatMessage = (
+  msg: GetChatMessagesResult['messages'][number],
+  currentUserId: string
+): ChatMessage => ({
+  id: msg.messageId,
+  text: msg.text,
+  isMe: msg.userId === currentUserId,
+  senderName: msg.displayName,
+  timestamp: formatTime(msg.createdAt),
+});
+const resolveSubjectId = (subjectTitle: string): SubjectId => {
+  const normalized = subjectTitle.trim().toLowerCase();
+  const match = Object.entries(subjectCatalog).find(
+    ([, def]) => def.title.toLowerCase() === normalized
+  );
+  return (match?.[0] as SubjectId) ?? 'medicine';
+};
 export default function DiscussionChatViewScreen() {
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>(DUMMY_MESSAGES);
+  const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [room, setRoom] = useState<ChatRoom | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(false);
-
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const rawRoomId = (params as any)?.roomId;
   const roomId = Array.isArray(rawRoomId) ? rawRoomId[0] : (rawRoomId ?? '');
-
   const flatListRef = useRef<FlatList>(null);
-  const room = DUMMY_ROOMS.find((r) => r.id === roomId) ?? DUMMY_ROOMS[0]!;
-  const subjectColorMap: Record<string, string> = {
-    error: theme.color.error,
-    accent: theme.color.accent,
-    success: theme.color.success,
-    premium: theme.color.premium,
-    warning: theme.color.warning,
-  };
-  const roomIconColor =
-    subjectColorMap[(subjectColorKeys as any)[room.subject]] ?? theme.color.accent;
-
-  const avatarColorFor = (name: string) => {
-    const idx = name.length % AVATAR_COLORS.length;
-    const key = AVATAR_COLORS[idx] ?? 'accent';
-    return subjectColorMap[key];
-  };
-
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchChat() {
+      try {
+        setLoading(true);
+        setError(null);
+        const [rooms, messagesResult] = await Promise.all([
+          api.chat.getChatRooms(),
+          api.chat.getChatMessages(roomId),
+        ]);
+        if (!isMounted) return;
+        const matchedRoom = rooms.find((r) => r.roomId === roomId) ?? null;
+        if (!matchedRoom) {
+          setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
+          return;
+        }
+        setRoom(matchedRoom);
+        setMessages(
+          messagesResult.messages.map((m) => toChatMessage(m, MOCK_USER.uid))
+        );
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
+      } catch (err) {
+        console.log('Failed to fetch chat:', err);
+        if (isMounted) {
+          setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    if (roomId) {
+      fetchChat();
+    } else {
+      setLoading(false);
+      setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [roomId]);
+  const roomSubjectId = room ? resolveSubjectId(room.subject) : 'medicine';
+  const roomVariant = subjectCatalog[roomSubjectId]?.variant ?? 'accent';
+  const roomIconColor = theme.color[roomVariant] ?? theme.color.accent;
+  const handleSend = async () => {
+    const text = inputText.trim();
+    if (!text || sending || !roomId) return;
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
       isMe: true,
-      senderName: 'You',
-      senderInitials: 'ME',
-      text: inputText.trim(),
+      senderName: MOCK_USER.displayName,
+      text,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
     };
-
     setInputText('');
-    setMessages((prev) => [...prev, newMessage]);
-    setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: true }) }, 100);
+    setMessages((prev) => [...prev, optimisticMessage]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    try {
+      setSending(true);
+      const sent = await api.chat.sendMessage(roomId, text);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimisticMessage.id ? toChatMessage(sent, MOCK_USER.uid) : m))
+      );
+    } catch (err) {
+      console.log('Failed to send message:', err);
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
+      setInputText(text);
+    } finally {
+      setSending(false);
+    }
   };
+  const menuItems: {
+    key: string;
+    label: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    danger?: boolean;
+    onPress: () => void;
+  }[] = [
+    {
+      key: 'info',
+      label: theme.i18n.t('Room Info'),
+      icon: 'information-circle-outline',
+      onPress: () => {
+        setMenuVisible(false);
+      },
+    },
+    {
+      key: 'members',
+      label: theme.i18n.t('Members'),
+      icon: 'people-outline',
+      onPress: () => {
+        setMenuVisible(false);
+      },
+    },
+    {
+      key: 'mute',
+      label: isMuted ? theme.i18n.t('Unmute Notifications') : theme.i18n.t('Mute Notifications'),
+      icon: isMuted ? 'notifications-off' : 'notifications-off-outline',
+      onPress: () => {
+        setIsMuted((prev) => !prev);
+        setMenuVisible(false);
+      },
+    },
+    {
+      key: 'leave',
+      label: theme.i18n.t('Leave Room'),
+      icon: 'exit-outline',
+      danger: true,
+      onPress: () => {
+        setMenuVisible(false);
+        // TODO: leave room + navigate back
+      },
+    },
+    {
+      key: 'report',
+      label: theme.i18n.t('Report Room'),
+      icon: 'flag-outline',
+      danger: true,
+      onPress: () => {
+        setMenuVisible(false);
+        // TODO: open report flow
+      },
+    },
+  ];
 
   const renderMessage = ({ item }: { item: ChatMessage }) => (
     <View
@@ -120,17 +205,17 @@ export default function DiscussionChatViewScreen() {
             justifyContent: 'center',
             marginRight: theme.space.xs,
             borderRadius: theme.borderRadius.full,
-            backgroundColor: `${avatarColorFor(item.senderName)}22`,
+            backgroundColor: `${theme.color.accent}22`,
           }}
         >
           <Text
             style={{
-              color: avatarColorFor(item.senderName),
+              color: theme.color.accent,
               fontSize: theme.fontSize.xs,
               fontFamily: theme.fontFamily.bold,
             }}
           >
-            {item.senderInitials}
+            {getInitials(item.senderName)}
           </Text>
         </View>
       )}
@@ -148,7 +233,7 @@ export default function DiscussionChatViewScreen() {
         >
           <Text
             style={{
-              color: item.isMe ? theme.color.textPrimary : theme.color.textPrimary,
+              color: theme.color.textPrimary,
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.regular,
             }}
@@ -172,15 +257,38 @@ export default function DiscussionChatViewScreen() {
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+        <Loading message={theme.i18n.t('Loading conversation...')} fullscreen />
+      </View>
+    );
+  }
+
+  if (error || !room) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center', padding: theme.space.md }}>
+        <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, textAlign: 'center' }}>
+          {error ?? theme.i18n.t('Room not found.')}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.sm,
+          justifyContent: 'space-between',
+
+          paddingTop: theme.space.lg,
+          paddingBottom: theme.space.md,
           paddingHorizontal: theme.space.md,
+
+          minHeight: theme.space.xxl + theme.space.lg,
+
           borderBottomWidth: 1,
           borderBottomColor: theme.color.border,
         }}
@@ -191,15 +299,15 @@ export default function DiscussionChatViewScreen() {
         >
           <Ionicons
             name='arrow-back'
-            size={theme.fontSize.md}
+            size={theme.fontSize.lg}
             color={theme.color.textPrimary}
           />
         </TouchableOpacity>
 
         <View
           style={{
-            width: theme.space.xl + theme.space.xs,
-            height: theme.space.xl + theme.space.xs,
+            width: theme.space.xxl,
+            height: theme.space.xxl,
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: theme.space.sm,
@@ -208,9 +316,9 @@ export default function DiscussionChatViewScreen() {
           }}
         >
           <SubjectIcon
-            id={room.subject as any}
+            id={roomSubjectId}
             color={roomIconColor}
-            size={theme.fontSize.md}
+            size={theme.fontSize.lg}
           />
         </View>
 
@@ -219,7 +327,7 @@ export default function DiscussionChatViewScreen() {
             numberOfLines={1}
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.md,
+              fontSize: theme.fontSize.lg,
               fontFamily: theme.fontFamily.bold,
             }}
           >
@@ -239,23 +347,78 @@ export default function DiscussionChatViewScreen() {
             <Text
               style={{
                 color: theme.color.success,
-                fontSize: theme.fontSize.xs,
+                fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
-              {`${room.membersCount} ${theme.i18n.t('online')}`}
+              {`${room.memberCount} ${theme.i18n.t('online')}`}
             </Text>
           </View>
         </View>
 
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setMenuVisible(true)}>
           <Ionicons
             name='ellipsis-horizontal'
-            size={theme.fontSize.md}
+            size={theme.fontSize.lg}
             color={theme.color.textSecondary}
           />
         </TouchableOpacity>
       </View>
+
+      <Modal
+        transparent
+        visible={menuVisible}
+        animationType='fade'
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => setMenuVisible(false)}
+        >
+          <View
+            style={{
+              position: 'absolute',
+              top: insets.top + theme.space.xxl,
+              right: theme.space.md,
+              minWidth: 200,
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.color.card,
+              paddingVertical: theme.space.xs,
+              boxShadow: `0px 4px 12px ${theme.color.textPrimary}22`,
+              elevation: Platform.OS === 'android' ? 4 : 0,
+            }}
+          >
+            {menuItems.map((item) => (
+              <TouchableOpacity
+                key={item.key}
+                onPress={item.onPress}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: theme.space.sm,
+                  paddingHorizontal: theme.space.md,
+                }}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={theme.fontSize.md}
+                  color={item.danger ? theme.color.error : theme.color.textPrimary}
+                  style={{ marginRight: theme.space.sm }}
+                />
+                <Text
+                  style={{
+                    color: item.danger ? theme.color.error : theme.color.textPrimary,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -291,11 +454,11 @@ export default function DiscussionChatViewScreen() {
           <View
             style={{
               flex: 1,
-              minHeight: theme.space.xl,
-              maxHeight: theme.space.xxl * 2,
+              height: theme.space.xxl,
               justifyContent: 'center',
               borderRadius: theme.borderRadius.full,
               backgroundColor: theme.color.card,
+              overflow: 'hidden',
             }}
           >
             <TextInput
@@ -305,34 +468,41 @@ export default function DiscussionChatViewScreen() {
               placeholderTextColor={theme.color.textSecondary}
               multiline
               style={{
+                flex: 1,
                 outline: 'none',
-                textAlignVertical: 'center',
-                lineHeight: theme.fontSize.md * 1.3,
+
                 color: theme.color.textPrimary,
-                fontSize: theme.fontSize.md,
+                fontSize: theme.fontSize.lg,
                 fontFamily: theme.fontFamily.regular,
-                includeFontPadding: false,
-                paddingVertical: theme.space.xs,
+
                 paddingHorizontal: theme.space.md,
+                paddingVertical: theme.space.sm,
+
+                ...(Platform.OS === 'android'
+                  ? {
+                      textAlignVertical: 'center' as const,
+                      includeFontPadding: false,
+                    }
+                  : {}),
               }}
             />
           </View>
 
           <TouchableOpacity
             onPress={handleSend}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || sending}
             style={{
-              width: theme.space.xl,
-              height: theme.space.xl,
+              width: theme.space.xxl,
+              height: theme.space.xxl,
               alignItems: 'center',
               justifyContent: 'center',
               borderRadius: theme.borderRadius.full,
-              opacity: inputText.trim() ? 1 : 0.5,
+              opacity: inputText.trim() && !sending ? 1 : 0.5,
               backgroundColor: theme.color.accent,
             }}
           >
             <Ionicons
-              name='send'
+              name="send"
               size={theme.fontSize.md}
               color={theme.color.textPrimary}
             />

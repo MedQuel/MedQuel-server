@@ -1,33 +1,30 @@
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity } from 'react-native';
-
 import { useTheme } from '../../theme/ThemeContext';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
-
-
-type ChatHeaderProps = {
-  search: string;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
-  searchVisible: boolean;
-  setSearchVisible: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
+const createChatHeaderProps = (
+  search: string,
+  setSearch: React.Dispatch<React.SetStateAction<string>>,
+  searchVisible: boolean,
+  setSearchVisible: React.Dispatch<React.SetStateAction<boolean>>
+) => ({ search, setSearch, searchVisible, setSearchVisible });
+type ChatHeaderProps = ReturnType<typeof createChatHeaderProps>;
 export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible }: ChatHeaderProps) {
   const { theme } = useTheme();
-
   return (
     <>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.sm,
-          paddingHorizontal: theme.space.md,
-        }}
-      >
+   <View
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: theme.space.md,
+    paddingBottom: theme.space.sm,
+    paddingHorizontal: theme.space.md,
+    minHeight: theme.space.xxl + theme.space.sm,
+  }}
+>
         <View style={{ flex: 1, marginRight: theme.space.sm }}>
           <Text
             style={{
@@ -50,31 +47,29 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
             {theme.i18n.t('Join, discuss & learn together')}
           </Text>
         </View>
-
         <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setSearchVisible((v) => !v)}
-            style={{
-              width: theme.space.xl + theme.space.xs,
-              height: theme.space.xl + theme.space.xs,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
-            }}
-          >
-            <Ionicons
-              name='search'
-              size={theme.fontSize.md}
-              color={theme.color.textSecondary}
-            />
-          </TouchableOpacity>
+        <TouchableOpacity
+  activeOpacity={0.8}
+  onPress={() => setSearchVisible((v) => !v)}
+  style={{
+    width: theme.space.xl,
+    height: theme.space.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.full,
+    backgroundColor: theme.color.card,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+  }}
+>
+  <Ionicons
+    name="search"
+    size={theme.fontSize.md}
+    color={theme.color.textSecondary}
+  />
+</TouchableOpacity>
         </View>
       </View>
-
       {searchVisible && (
         <View style={{ marginBottom: theme.space.sm, marginHorizontal: theme.space.md }}>
           <CustomSearchBar
