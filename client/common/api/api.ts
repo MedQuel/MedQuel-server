@@ -1,8 +1,3 @@
-// Domain-organized API calls. Every function here either talks to the real GraphQL
-// backend or falls back to mock data - screens never need to know which one they got.
-
-import { config } from './config';
-import { gql, graphqlRequest } from './http';
 import {
   AuthenticationError,
   AuthorizationError,
@@ -41,6 +36,8 @@ import type {
   VerifyPaymentInput,
   Subscription,
 } from '../types/types';
+import { config } from './config';
+import { gql, graphqlRequest } from './http';
 import * as Mock from '../constants/mockData';
 
 
@@ -51,8 +48,9 @@ const IMPLEMENTED_OPERATIONS = {
   'user.updateNotifPrefs': false,
   'user.updateQuizPrefs': false,
   'home.getHomeData': false,
-  'quiz.startQuizSession': false,
-  'quiz.submitQuizSession': false,
+  'quiz.getTopicsForSubject': true,
+  'quiz.startQuizSession': true,
+  'quiz.submitQuizSession': true,
   'contest.getContests': false,
   'contest.getContest': false,
   'contest.joinContest': false,
@@ -325,6 +323,11 @@ export const homeApi = {
 
 
 // -----> Quiz <-----
+const GET_TOPICS_FOR_SUBJECT_QUERY = gql`
+  query GetTopicsForSubject($subject: String!) {
+    getTopicsForSubject(subject: $subject)
+  }
+`;
 const START_QUIZ_SESSION_MUTATION = gql`
   mutation StartQuizSession($input: StartQuizSessionInput!) {
     startQuizSession(input: $input) {
@@ -380,6 +383,25 @@ const SUBMIT_QUIZ_SESSION_MUTATION = gql`
 `;
 
 export const quizApi = {
+  getTopicsForSubject: (subject: string) =>
+    withMockFallback(
+      'quiz.getTopicsForSubject',
+      async () =>
+        (
+          await graphqlRequest<
+            { getTopicsForSubject: string[] },
+            { subject: string }
+          >(GET_TOPICS_FOR_SUBJECT_QUERY, { subject }, { idempotent: true })
+        ).getTopicsForSubject,
+      () => Array.from(
+        new Set(
+          Mock.MOCK_CONTESTS
+            .filter((contest) => contest.subject === subject)
+            .flatMap((contest) => contest.topics)
+        )
+      )
+    ),
+
   startQuizSession: (input: StartQuizSessionInput) =>
     withMockFallback(
       'quiz.startQuizSession',
