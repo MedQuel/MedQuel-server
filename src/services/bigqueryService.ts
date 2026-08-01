@@ -6,6 +6,7 @@ export type QuizDifficulty = 'easy' | 'medium' | 'hard';
 const ALLOWED_DIFFICULTIES: ReadonlySet<string> = new Set(['easy', 'medium', 'hard']);
 export interface FetchQuestionsFilters {
   subject: string;
+  topic?: string | null;
   difficulty: QuizDifficulty;
   questionCount: number;
   includePremium: boolean;
@@ -37,7 +38,7 @@ export class BigQueryService {
   }
 
   async fetchQuestions(filters: FetchQuestionsFilters): Promise<QuestionForQuiz[]> {
-    const { subject, difficulty, includePremium } = filters;
+    const { subject, topic, difficulty, includePremium } = filters;
 
     if (!subject?.trim()) throw new Error('subject is required');
     if (!ALLOWED_DIFFICULTIES.has(difficulty)) {
@@ -49,6 +50,7 @@ export class BigQueryService {
       SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
       FROM \`${this.projectId}.${this.datasetId}.questions\`
       WHERE subject = @subject
+        AND (@topic IS NULL OR topic = @topic)
         AND difficulty = @difficulty
         AND is_active = TRUE
         AND (is_premium = FALSE OR @includePremium = TRUE)
@@ -58,8 +60,8 @@ export class BigQueryService {
 
     const [rows] = await this.bigquery.query({
       query,
-      params: { subject, difficulty, includePremium, questionCount },
-      types: { subject: 'STRING', difficulty: 'STRING', includePremium: 'BOOL', questionCount: 'INT64' },
+      params: { subject, topic: topic ?? null, difficulty, includePremium, questionCount },
+      types: { subject: 'STRING', topic: 'STRING', difficulty: 'STRING', includePremium: 'BOOL', questionCount: 'INT64' },
     });
 
     return rows.map((row) => ({
@@ -124,5 +126,21 @@ export class BigQueryService {
       explanation: row.explanation ?? '',
       marks: row.marks,
     }));
+  }
+
+  async fetchTopicsForSubject(subject: string): Promise<string[]> {
+    const query = `
+      SELECT DISTINCT topic
+      FROM \`${this.projectId}.${this.datasetId}.questions\`
+      WHERE subject = @subject AND is_active = TRUE
+      ORDER BY topic
+    `;
+    const [rows] = await this.bigquery.query({
+      query,
+      params: { subject },
+      types: { subject: 'STRING' },
+    });
+
+    return rows.map((r) => r.topic as string);
   }
 }
