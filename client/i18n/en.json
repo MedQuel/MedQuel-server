@@ -143,7 +143,12 @@
   "home": {
     "title": "Home",
     "daily_challenge": "Daily Challenge",
-    "ep_to_next_level": "{{remainingEP}} EP to next level"
+    "ep_to_next_level": "{{remainingEP}} EP to next level",
+    "loading": "Loading your dashboard...",
+    "day_streak": "Day Streak",
+    "active_contests": "Active Contests",
+    "practice_by_subject": "Practice by Subject",
+    "view_all": "View All"
   },
 
   "leaderboard": {
@@ -242,9 +247,51 @@
     }
   },
 
-  "chat": {},
+  "chat": {
+    "loading": "Loading discussion rooms...",
+    "loadError": "Could not load discussion rooms. Pull to retry.",
+    "empty": "No discussion rooms found",
+    "online": "online",
+    "header": {
+      "title": "Discussion Rooms",
+      "subtitle": "Join, discuss & learn together",
+      "searchPlaceholder": "Search discussion rooms..."
+    },
+    "roomView": {
+      "loading": "Loading conversation...",
+      "loadError": "Could not load this chat. Pull to retry.",
+      "notFound": "Room not found.",
+      "inputPlaceholder": "Ask or share an insight..."
+    },
+    "menu": {
+      "roomInfo": "Room Info",
+      "members": "Members",
+      "mute": "Mute Notifications",
+      "unmute": "Unmute Notifications",
+      "leaveRoom": "Leave Room",
+      "reportRoom": "Report Room"
+    }
+  },
 
   "profile": {},
+
+  "studyPlan": {
+    "loading": "Loading your study plan...",
+    "loadError": "Could not load your study plan. Pull to retry.",
+    "notFound": "Study plan not found.",
+    "thisWeek": "This Week",
+    "editModal": {
+      "title": "Edit Study Plan",
+      "examName": "Exam Name",
+      "examDate": "Exam Date",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "projection": {
+      "title": "Weekly Projection",
+      "subtitle": "Keep your current pace to maximize rewards"
+    }
+  },
 
   "components": {
     "FeatureHighlightsCard": {
