@@ -1,203 +1,155 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { ScrollView, Text, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
+import { api } from '../../common/api/api';
+import { normalizeError } from '../../common/api/api.errors';
+import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
 import { ContestCard } from '../../components/ContestCard';
 import { ChipContainer } from '../../components/common/Chip';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
 import { FeatureContestCard } from '../../components/FeatureContestCard';
+import { Loading } from '../../components/common/loading';
+import type { Contest, GetContestsFilter, ContestFilter, ContestItem, FeaturedContest } from '../../common/types/types';
 
+const filterChips: ContestFilter[] = ['all', 'premium', ...(Object.keys(subjectCatalog) as SubjectId[])];
 
-type ContestFilter =
-  | 'all' | 'premium'
-  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
-  | 'forensic_medicine' | 'pathology' | 'ophthalmology' | 'ent' | 'community_medicine'
-  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology_obstetrics' | 'orthopedics'
-  | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
-
-const filterChips: ContestFilter[] = [
-  'all', 'premium',
-  'anatomy', 'biochemistry', 'physiology', 'microbiology', 'pharmacology',
-  'forensic_medicine', 'pathology', 'ophthalmology', 'ent', 'community_medicine',
-  'medicine', 'surgery', 'pediatrics', 'gynaecology_obstetrics', 'orthopedics',
-  'dermatology', 'psychiatry', 'anesthesia', 'radiology',
-];
-type ContestItem = {
-  id: string;
-  title: string;
-  subject: string;
-  category: Exclude<ContestFilter, 'all'>[];
-  difficulty: 'easy' | 'medium' | 'hard';
-  epReward: number;
-  timeLeft: string;
-  questionsCount: number;
-  duration: string;
-  participantsCount: number;
-  isPro: boolean;
-  isLive: boolean;
-};
-type FeaturedContest = {
-  id: string;
-  title: string;
-  participants: number;
-  reward: number;
-  questions: number;
-  duration: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  endsAt: string;
+// Backend `contest.subject` strings that don't exactly match subjectCatalog titles.
+const SUBJECT_ALIASES: Record<string, SubjectId> = {
+  'general medicine': 'medicine',
+  'general surgery': 'surgery',
+  otorhinolaryngology: 'ent',
+  'obstetrics & gynaecology': 'gynae_obstetrics',
+  'preventive & social medicine': 'community_medicine',
+  orthopaedics: 'orthopedics',
+  anaesthesia: 'anesthesia',
+  paediatrics: 'pediatrics',
 };
 
-const featuredContest: FeaturedContest = {
-  id: 'grand-medical-championship',
-  title: 'Grand Medical Championship',
-  participants: 2341,
-  reward: 500,
-  questions: 100,
-  duration: 120,
-  difficulty: 'hard',
-  endsAt: new Date(Date.now() + (1 * 3600 + 23 * 60 + 45) * 1000).toISOString(),
+const SUBJECT_TO_FILTER_ID: Record<string, SubjectId> = {
+  ...Object.fromEntries(Object.values(subjectCatalog).map((s) => [s.title.toLowerCase(), s.id])),
+  ...SUBJECT_ALIASES,
 };
-export const contestsMockData: ContestItem[] = [
-  {
-    id: 'daily-anatomy-quiz',
-    title: 'Daily Anatomy Quiz',
-    subject: 'Anatomy',
-    category: ['anatomy'],
-    difficulty: 'medium',
-    epReward: 75,
-    timeLeft: '480',
-    questionsCount: 20,
-    duration: '30',
-    participantsCount: 847,
-    isPro: false,
-    isLive: false,
-  },
-  {
-    id: 'pharmacology-sprint',
-    title: 'Pharmacology Sprint',
-    subject: 'Pharmacology',
-    category: ['pharmacology', 'premium'],
-    difficulty: 'hard',
-    epReward: 200,
-    timeLeft: '4320',
-    questionsCount: 50,
-    duration: '60',
-    participantsCount: 1203,
-    isPro: true,
-    isLive: false,
-  },
-  {
-    id: 'microbiology-basics',
-    title: 'Microbiology Basics',
-    subject: 'Microbiology',
-    category: ['microbiology'],
-    difficulty: 'easy',
-    epReward: 50,
-    timeLeft: '300',
-    questionsCount: 15,
-    duration: '15',
-    participantsCount: 2100,
-    isPro: false,
-    isLive: false,
-  },
-  {
-    id: 'live-cardio-challenge',
-    title: 'Medicine Live Challenge',
-    subject: 'Medicine',
-    category: ['medicine', 'premium'],
-    difficulty: 'hard',
-    epReward: 500,
-    timeLeft: '0',
-    questionsCount: 40,
-    duration: '45',
-    participantsCount: 890,
-    isPro: false,
-    isLive: true,
-  },
-  {
-    id: 'genetics-pro-tier',
-    title: 'Pathology Expert Series',
-    subject: 'Pathology',
-    category: ['pathology', 'premium'],
-    difficulty: 'hard',
-    epReward: 750,
-    timeLeft: '720',
-    questionsCount: 60,
-    duration: '90',
-    participantsCount: 320,
-    isPro: true,
-    isLive: false,
-  },
-  {
-    id: 'live-nursing-triage',
-    title: 'Surgery Triage Speed Round',
-    subject: 'Surgery',
-    category: ['surgery', 'premium'],
-    difficulty: 'medium',
-    epReward: 300,
-    timeLeft: '5',
-    questionsCount: 25,
-    duration: '20',
-    participantsCount: 1500,
-    isPro: true,
-    isLive: true,
-  },
-  {
-    id: 'biochem-midterm-prep',
-    title: 'Biochemistry Midterm Prep',
-    subject: 'Biochemistry',
-    category: ['biochemistry'],
-    difficulty: 'medium',
-    epReward: 150,
-    timeLeft: '2880',
-    questionsCount: 40,
-    duration: '60',
-    participantsCount: 450,
-    isPro: false,
-    isLive: false,
-  },
-];
 
+function subjectToFilterId(subject: string): SubjectId | null {
+  return SUBJECT_TO_FILTER_ID[subject.trim().toLowerCase()] ?? null;
+}
+
+function minutesUntil(iso?: string): number {
+  if (!iso) return 0;
+  return Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 60000));
+}
+
+function mapContest(raw: Contest): ContestItem {
+  const subjectTag = subjectToFilterId(raw.subject);
+  const category: Exclude<ContestFilter, 'all'>[] = [
+    ...(subjectTag ? [subjectTag] : []),
+    ...(raw.isPremium ? ['premium' as const] : []),
+  ];
+
+  return {
+    id: raw.contestId,
+    title: raw.title,
+    subject: raw.subject,
+    category,
+    difficulty: raw.difficulty,
+    epReward: raw.epReward,
+    timeLeft: raw.status === 'active' ? '0' : String(minutesUntil(raw.endsAt ?? raw.startsAt)),
+    questionsCount: raw.totalQuestions,
+    duration: String(Math.round(raw.timeLimitSecs / 60)),
+    participantsCount: raw.participantCount,
+    isPro: raw.isPremium,
+    isLive: raw.status === 'active',
+  };
+}
+
+function pickFeatured(contests: Contest[]): FeaturedContest | null {
+  const live = contests.filter((c) => c.status === 'active');
+  const best = (live.length > 0 ? live : contests).slice().sort((a, b) => b.participantCount - a.participantCount)[0];
+  if (!best) return null;
+
+  return {
+    id: best.contestId,
+    title: best.title,
+    participants: best.participantCount,
+    reward: best.epReward,
+    questions: best.totalQuestions,
+    duration: Math.round(best.timeLimitSecs / 60),
+    difficulty: best.difficulty,
+    endsAt: best.endsAt ?? new Date(Date.now() + 3600_000).toISOString(),
+  };
+}
 
 export default function ContestsScreen() {
-  const [search, setSearch] = useState<string>('');
+  const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<ContestFilter>('all');
+
+  const [contests, setContests] = useState<ContestItem[]>([]);
+  const [featured, setFeatured] = useState<FeaturedContest | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
   const { theme } = useTheme();
+  
   useBottomBar(true, 'contests');
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchContests() {
+      setLoading(true);
+      setError(null);
+      try {
+        const filter: GetContestsFilter | undefined = undefined;
+        const raw = await api.contest.getContests(filter);
+        if (cancelled) return;
+
+        setContests(raw.map(mapContest));
+        setFeatured(pickFeatured(raw));
+      } catch (err) {
+        if (cancelled) return;
+        const apiErr = normalizeError(err);
+        console.log('[contests] fetch failed:', apiErr);
+        setError(apiErr.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchContests();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filterOptions = useMemo(
-    () =>
-      filterChips.map((filter) => ({
-        id: filter,
-        labelKey: `contests.filters.${filter}`,
-      })),
+    () => filterChips.map((filter) => ({ id: filter, labelKey: `contests.filters.${filter}` })),
     []
   );
 
   const filteredContests = useMemo(() => {
-    return contestsMockData.filter((contest) => {
+    return contests.filter((contest) => {
       const matchesFilter = activeFilter === 'all' || contest.category.includes(activeFilter);
       const query = search.trim().toLowerCase();
-      
+
       const matchesSearch = query.length === 0 ||
         contest.title.toLowerCase().includes(query) ||
         contest.subject.toLowerCase().includes(query);
 
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, search]);
-
+  }, [activeFilter, search, contests]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <View style={{ flex: 1, opacity: (loading && contests.length === 0) ? 0 : 1 }}>
       <View
         style={{
-          gap: theme.space.xs/2,
+          gap: theme.space.xs / 2,
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
@@ -245,18 +197,20 @@ export default function ContestsScreen() {
           onChange={(id) => setActiveFilter(id as ContestFilter)}
         />
 
-        <View style={{ paddingBottom: theme.space.lg, paddingHorizontal: theme.space.md }}>
-          <FeatureContestCard
-            title={featuredContest.title}
-            participants={featuredContest.participants}
-            reward={featuredContest.reward}
-            questions={featuredContest.questions}
-            duration={featuredContest.duration}
-            difficulty={featuredContest.difficulty}
-            endsAt={featuredContest.endsAt}
-            onPress={() => router.push('/contests/preQuizScreen')}
-          />
-        </View>
+        {featured && (
+          <View style={{ paddingBottom: theme.space.lg, paddingHorizontal: theme.space.md }}>
+            <FeatureContestCard
+              title={featured.title}
+              participants={featured.participants}
+              reward={featured.reward}
+              questions={featured.questions}
+              duration={featured.duration}
+              difficulty={featured.difficulty}
+              endsAt={featured.endsAt}
+              onPress={() => router.push({ pathname: '/contests/preQuizScreen', params: { contestId: featured.id } })}
+            />
+          </View>
+        )}
 
         <View
           style={{
@@ -289,7 +243,21 @@ export default function ContestsScreen() {
         </View>
 
         <View style={{ gap: theme.space.md, paddingHorizontal: theme.space.md }}>
-          {filteredContests.length > 0 ? (
+          {error ? (
+            <View style={{ gap: theme.space.sm, alignItems: 'center', paddingVertical: theme.space.xxl }}>
+              <Feather name='alert-circle' size={32} color={theme.color.error} />
+              <Text
+                style={{
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                  textAlign: 'center',
+                }}
+              >
+                {error}
+              </Text>
+            </View>
+          ) : filteredContests.length > 0 ? (
             filteredContests.map((contest) => (
               <ContestCard
                 key={contest.id}
@@ -303,7 +271,7 @@ export default function ContestsScreen() {
                 participantsCount={contest.participantsCount}
                 isPro={contest.isPro}
                 isLive={contest.isLive}
-                onStartPress={() => router.push('/contests/preQuizScreen')}
+                onStartPress={() => router.push({ pathname: '/contests/preQuizScreen', params: { contestId: contest.id } })}
               />
             ))
           ) : (
@@ -322,6 +290,12 @@ export default function ContestsScreen() {
           )}
         </View>
       </ScrollView>
+      </View>
+      {loading && contests.length === 0 && (
+        <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.color.background }}>
+          <Loading message={theme.i18n.t('contests.loading')} />
+        </View>
+      )}
     </View>
   );
 }

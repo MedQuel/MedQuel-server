@@ -1,283 +1,178 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '@/common/context/useBottomBar';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuizResultCard } from '../../components/QuizResultCard';
 import { TopicPerfomanceCard } from '../../components/TopicPerfomanceCard';
 import { AchievementBadgeCard } from '../../components/AchievementBadgeCard';
+import { api } from '../../common/api/api';
+import { normalizeError } from '../../common/api/api.errors';
+import { Loading } from '../../components/common/loading';
+import { achievementCatalog, type AchievementId } from '../../common/constants/achievements';
+import type { SubmitQuizSessionResult, QuizResultData, ReviewQuestion, SelectedOption } from '../../common/types/types';
 
+type Translate = (key: string, opts?: Record<string, unknown>) => string;
 
-export type MCQOption = { label: string; text: string; isCorrect: boolean };
-export type QuizQuestion = {
-  id: string;
-  subject: string;
-  question: string;
-  image?: string;
-  options: MCQOption[];
-  explanation: string;
-  points: number;
-};
-export type QuizData = {
-  id: string;
-  title: string;
-  totalQuestions: number;
-  durationMinutes: number;
-  epReward: number;
-  pointsPerCorrect: number;
-  pointsPerWrong: number;
-  questions: QuizQuestion[];
-};
+function buildQuizResult(
+  submission: SubmitQuizSessionResult,
+  reviewQuestions: ReviewQuestion[],
+  isPractice: boolean,
+  title: string,
+  t: Translate
+): QuizResultData {
+  const total = reviewQuestions.length;
+  const scorePercent = Math.round(submission.session.scorePercent);
+  const epEarned = isPractice ? 0 : submission.session.epEarned;
+  const showBadge = !isPractice && submission.badgesUnlocked.length > 0;
 
-export const quizMockData: QuizData = {
-  id: 'cardiology-sprint-001',
-  title: 'Cardiology Sprint',
-  totalQuestions: 7,
-  durationMinutes: 45,
-  epReward: 120,
-  pointsPerCorrect: 4,
-  pointsPerWrong: -1,
-  questions: [
-    {
-      id: 'q1',
-      subject: 'Cardiology',
-      question: 'A 45-year-old male presents with sudden onset chest pain radiating to the left arm. He has a history of hypertension and smoking. What is the most likely diagnosis?',
-      options: [
-        { label: 'A', text: 'Pneumothorax', isCorrect: false },
-        { label: 'B', text: 'Myocardial Infarction', isCorrect: true },
-        { label: 'C', text: 'Pulmonary Embolism', isCorrect: false },
-        { label: 'D', text: 'Aortic Dissection', isCorrect: false },
-      ],
-      explanation: 'Classic STEMI presentation with ST-elevation and troponin rise. Door-to-balloon <90 min is key.',
-      points: 4,
-    },
-    {
-      id: 'q2',
-      subject: 'Cardiology',
-      question: 'Which ECG finding is most characteristic of hyperkalemia?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Hyperkalemia_peaked_T_waves.png',
-      options: [
-        { label: 'A', text: 'Prolonged QT interval', isCorrect: false },
-        { label: 'B', text: 'Delta waves', isCorrect: false },
-        { label: 'C', text: 'Peaked T waves', isCorrect: true },
-        { label: 'D', text: 'Osborn J waves', isCorrect: false },
-      ],
-      explanation: 'Hyperkalemia classically presents with tall, peaked T waves on ECG, progressing to a sine wave pattern in severe cases.',
-      points: 4,
-    },
-    {
-      id: 'q3',
-      subject: 'Cardiology',
-      question: 'A patient presents with syncope, exertional dyspnea, and a systolic ejection murmur. What is the most likely diagnosis?',
-      options: [
-        { label: 'A', text: 'Mitral Regurgitation', isCorrect: false },
-        { label: 'B', text: 'Aortic Stenosis', isCorrect: true },
-        { label: 'C', text: 'Tricuspid Stenosis', isCorrect: false },
-        { label: 'D', text: 'Pulmonary Hypertension', isCorrect: false },
-      ],
-      explanation: 'The classic triad of aortic stenosis is syncope, angina, and heart failure. The systolic ejection murmur radiates to the carotids.',
-      points: 4,
-    },
-    {
-      id: 'q4',
-      subject: 'Cardiology',
-      question: 'Analyze the provided rhythm strip from a patient who suddenly collapsed. What is the immediate recommended management?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Ventricular_fibrillation.png',
-      options: [
-        { label: 'A', text: 'Synchronized cardioversion', isCorrect: false },
-        { label: 'B', text: 'Unsynchronized defibrillation', isCorrect: true },
-        { label: 'C', text: 'Intravenous amiodarone bolus', isCorrect: false },
-        { label: 'D', text: 'Carotid sinus massage', isCorrect: false },
-      ],
-      explanation: 'The strip shows Ventricular Fibrillation (VF). VF and pulseless VT require immediate unsynchronized defibrillation alongside continuous CPR.',
-      points: 4,
-    },
-    {
-      id: 'q5',
-      subject: 'Cardiology',
-      question: 'A 29-year-old female presents with fatigue and a mid-systolic click followed by a late systolic murmur. What structural abnormality is most likely present?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Mitral_valve_prolapse_scheme.jpg',
-      options: [
-        { label: 'A', text: 'Mitral Valve Prolapse', isCorrect: true },
-        { label: 'B', text: 'Aortic Regurgitation', isCorrect: false },
-        { label: 'C', text: 'Ventricular Septal Defect', isCorrect: false },
-        { label: 'D', text: 'Bicuspid Aortic Valve', isCorrect: false },
-      ],
-      explanation: 'MVP classically presents with a mid-systolic click followed by a late systolic murmur, caused by billowing of leaflets into the left atrium.',
-      points: 4,
-    },
-    {
-      id: 'q6',
-      subject: 'Cardiology',
-      question: 'Which medication is absolutely contraindicated in acute right ventricular myocardial infarction?',
-      options: [
-        { label: 'A', text: 'Aspirin', isCorrect: false },
-        { label: 'B', text: 'Nitroglycerin', isCorrect: true },
-        { label: 'C', text: 'Heparin', isCorrect: false },
-        { label: 'D', text: 'Clopidogrel', isCorrect: false },
-      ],
-      explanation: 'RV infarctions are preload-dependent. Nitroglycerin reduces preload causing profound hypotension.',
-      points: 4,
-    },
-    {
-      id: 'q7',
-      subject: 'Cardiology',
-      question: 'A 60-year-old male presents with worsening dyspnea. His chest X-ray shows a "bat-wing" opacity. What is the underlying pathology?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Pulmonary_oedema.jpg',
-      options: [
-        { label: 'A', text: 'Lobar Pneumonia', isCorrect: false },
-        { label: 'B', text: 'Acute Pulmonary Edema', isCorrect: true },
-        { label: 'C', text: 'Idiopathic Fibrosis', isCorrect: false },
-        { label: 'D', text: 'Bilateral Pneumothorax', isCorrect: false },
-      ],
-      explanation: 'Bilateral perihilar "bat-wing" infiltrates on CXR is a classic sign of acute alveolar pulmonary edema.',
-      points: 4,
-    },
-  ],
-};
+  const badgeId = submission.badgesUnlocked[0] as AchievementId | undefined;
+  const badgeDef = badgeId ? achievementCatalog[badgeId] : undefined;
 
-export type ReviewItem = {
-  id: string;
-  index: number;
-  question: string;
-  isCorrect: boolean;
-  isSkipped: boolean;
-  selectedLabel: string | null;
-  selectedText: string | null;
-  correctLabel: string;
-  correctText: string;
-  explanation: string;
-};
-export type StatBox = {
-  key: 'correct' | 'wrong' | 'time' | 'rank';
-  icon: 'check' | 'x' | 'clock' | 'trending-up';
-  value: string;
-  labelKey: string;
-  colorToken: 'success' | 'error' | 'textPrimary' | 'accent';
-};
-export type QuizResultData = {
-  title: string;
-  totalQuestions: number;
-  scorePercent: number;
-  epEarned: number;
-  rank: number;
-  formattedTime: string;
-  percentileMessage: string;
-  showBadge: boolean;
-  badge: { label: string; title: string; subtitle: string } | null;
-  weakTopics: { name: string; score: number }[];
-  statBoxes: StatBox[];
-  reviewItems: ReviewItem[];
-  reviewSummary: { correct: number; wrong: number; skipped: number };
-  isPractice: boolean;
-};
-type RawQuizSubmission = {
-  quizId?: string;
-  title?: string;
-  total?: number;
-  correct: number;
-  wrong: number;
-  skipped: number;
-  timeTaken: number;
-  epEarned: number;
-  isPractice?: boolean;
-  answers: Record<string, { selectedLabel: string | null; isCorrect: boolean }>;
-};
-
-function getQuizResult(raw: RawQuizSubmission): QuizResultData {
-  const total = raw.total ?? quizMockData.totalQuestions;
-  const scorePercent = Math.round((raw.correct / total) * 100);
-  const isPractice = raw.isPractice ?? false;
-  const epEarned = isPractice ? 0 : raw.epEarned;
-  const showBadge = !isPractice && scorePercent >= 80;
-  const rank = 42;
-
-  const reviewItems: ReviewItem[] = quizMockData.questions.map((q, idx) => {
-    const answer = raw.answers[q.id];
-    const correctOption = q.options.find((o) => o.isCorrect)!;
-    const selectedOption = q.options.find((o) => o.label === answer?.selectedLabel);
+  const reviewItems = reviewQuestions.map((q, idx) => {
+    const graded = submission.gradedAnswers.find((g) => g.questionId === q.id);
+    const isSkipped = !graded || graded.selected === 'SKIPPED';
+    const selectedLabel: SelectedOption | null = isSkipped ? null : graded!.selected;
+    const correctLabel: SelectedOption | '' = graded?.correctAnswer ?? '';
+    const correctOption = q.options.find((o) => o.label === correctLabel);
+    const selectedOption = q.options.find((o) => o.label === selectedLabel);
 
     return {
       id: q.id,
       index: idx + 1,
       question: q.question,
-      isCorrect: answer?.isCorrect ?? false,
-      isSkipped: answer?.selectedLabel === null,
-      selectedLabel: answer?.selectedLabel ?? null,
+      isCorrect: graded?.isCorrect ?? false,
+      isSkipped,
+      selectedLabel,
       selectedText: selectedOption?.text ?? null,
-      correctLabel: correctOption.label,
-      correctText: correctOption.text,
-      explanation: q.explanation,
+      correctLabel,
+      correctText: correctOption?.text ?? '',
+      explanation: graded?.explanation ?? '',
     };
   });
 
-
   return {
-    title: raw.title ?? quizMockData.title,
+    title,
     totalQuestions: total,
     scorePercent,
     epEarned,
-    rank,
-    formattedTime: `${Math.floor(raw.timeTaken / 60)}m ${raw.timeTaken % 60}s`,
-    percentileMessage: scorePercent >= 80 ? 'Better than 78% of all participants' : 'Keep practicing!',
+    formattedTime: `${Math.floor(submission.session.timeTaken / 60)}m ${submission.session.timeTaken % 60}s`,
+    percentileMessage: scorePercent >= 80
+      ? t('contests.postQuizScreen.percentile_high')
+      : t('contests.postQuizScreen.percentile_low'),
     showBadge,
-    badge: showBadge
-      ? { label: 'NEW BADGE', title: 'Cardiology Champion', subtitle: 'Scored 80%+ in Cardiology' }
+    badge: showBadge && badgeDef
+      ? { label: t('contests.postQuizScreen.new_badge'), title: badgeDef.title, subtitle: badgeDef.subtitle }
       : null,
-    weakTopics: [
-      { name: 'Arrhythmias', score: 60 },
-      { name: 'Valve Disorders', score: 40 },
-      { name: 'Pericarditis', score: 50 },
-    ],
     statBoxes: [
-      { key: 'correct', icon: 'check', value: String(raw.correct), labelKey: 'components.PostQuizScreen.correct', colorToken: 'success' },
-      { key: 'wrong', icon: 'x', value: String(raw.wrong), labelKey: 'components.PostQuizScreen.wrong', colorToken: 'error' },
-      { key: 'time', icon: 'clock', value: `${Math.floor(raw.timeTaken / 60)}m`, labelKey: 'components.PostQuizScreen.time', colorToken: 'textPrimary' },
-      { key: 'rank', icon: 'trending-up', value: `#${rank}`, labelKey: 'components.PostQuizScreen.rank', colorToken: 'accent' },
+      { key: 'correct', icon: 'check', value: String(submission.session.correctCount), labelKey: 'contests.postQuizScreen.correct', colorToken: 'success' },
+      { key: 'wrong', icon: 'x', value: String(submission.session.wrongCount), labelKey: 'contests.postQuizScreen.wrong', colorToken: 'error' },
+      { key: 'time', icon: 'clock', value: `${Math.floor(submission.session.timeTaken / 60)}m`, labelKey: 'contests.postQuizScreen.time', colorToken: 'textPrimary' },
+      { key: 'xp', icon: 'trending-up', value: `+${submission.session.xpEarned}`, labelKey: 'contests.postQuizScreen.xp_earned', colorToken: 'accent' },
     ],
     reviewItems,
-    reviewSummary: { correct: raw.correct, wrong: raw.wrong, skipped: raw.skipped },
+    reviewSummary: {
+      correct: submission.session.correctCount,
+      wrong: submission.session.wrongCount,
+      skipped: total - submission.session.correctCount - submission.session.wrongCount,
+    },
     isPractice,
   };
 }
 
-
 export default function PostQuizScreen() {
-  const [showReview, setShowReview] = useState(false);
-
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
-  const router = useRouter();
   useBottomBar(false);
+  const router = useRouter();
+  const t: Translate = (key, opts) => theme.i18n.t(key, opts);
 
-  const result = getQuizResult({
-    quizId: params.quizId as string,
-    title: params.title as string,
-    total: Number(params.total),
-    correct: Number(params.correct) || 0,
-    wrong: Number(params.wrong) || 0,
-    skipped: Number(params.skipped) || 0,
-    timeTaken: Number(params.timeTaken) || 0,
-    epEarned: Number(params.epEarned) || 0,
-    isPractice: params.practice === '1',
-    answers: params.answers ? JSON.parse(String(params.answers)) : {},
-  });
+  const [showReview, setShowReview] = useState(false);
+  const [weakTopics, setWeakTopics] = useState<{ name: string; score: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const contestId = params.contestId as string | undefined;
+  const isPractice = params.practice === '1';
+  const title = (params.title as string) ?? t('contests.postQuizScreen.default_title');
+
+  let submission: SubmitQuizSessionResult | null = null;
+  let reviewQuestions: ReviewQuestion[] = [];
+  let parseError: string | null = null;
+  try {
+    submission = params.submission ? JSON.parse(String(params.submission)) : null;
+    reviewQuestions = params.questions ? JSON.parse(String(params.questions)) : [];
+  } catch {
+    parseError = t('contests.postQuizScreen.parse_error');
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchWeakTopics() {
+      setLoading(true);
+      try {
+        const analytics = await api.analytics.getAnalytics();
+        if (cancelled) return;
+        setWeakTopics(
+          analytics.subjectPerformance
+            .filter((s) => s.accuracy < 70)
+            .map((s) => ({ name: s.subject, score: Math.round(s.accuracy) }))
+        );
+      } catch (err) {
+        if (cancelled) return;
+        const apiErr = normalizeError(err);
+        console.log('[postQuiz] analytics fetch failed:', apiErr);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchWeakTopics();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (parseError || !submission) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: theme.space.sm,
+          backgroundColor: theme.color.background,
+          padding: theme.space.xl,
+        }}
+      >
+        <Feather name="alert-circle" size={32} color={theme.color.error} />
+        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, textAlign: 'center' }}>
+          {parseError ?? t('contests.postQuizScreen.no_result')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/contests')}
+          style={{
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.lg,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.color.accent,
+          }}
+        >
+          <Text style={{ color: theme.color.textInverse, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+            {t('common.back_to_contests')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const result = buildQuizResult(submission, reviewQuestions, isPractice, title, t);
 
   const cardBg = theme.isDark ? theme.color.card : theme.color.accent;
-  const subText = theme.isDark
-    ? theme.color.textSecondary
-    : 'rgba(255,255,255,0.75)';
-  const epBg = theme.isDark
-    ? theme.color.warning + '22'
-    : 'rgba(255,255,255,0.18)';
-  const epBorder = theme.isDark
-    ? theme.color.warning
-    : 'rgba(255,255,255,0.40)';
-  const epColor = theme.isDark ? theme.color.warning : '#FFFFFF';
+  const subText = theme.color.textSecondary;
+  const epBg = theme.color.warning + '22';
+  const epBorder = theme.color.warning;
+  const epColor = theme.color.warning;
 
   const colorFor = (token: string) => {
     if (token === 'success') return theme.color.success;
@@ -286,9 +181,9 @@ export default function PostQuizScreen() {
     return theme.color.textPrimary;
   };
 
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <View style={{ flex: 1, opacity: loading ? 0 : 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 145 }} showsVerticalScrollIndicator={false}>
         <View
           style={{
@@ -302,47 +197,33 @@ export default function PostQuizScreen() {
           <View
             pointerEvents='none'
             style={{
-              position: 'absolute',
-              top: -60,
-              right: -60,
-              width: 180,
-              height: 180,
+              position: 'absolute', top: -60, right: -60, width: 180, height: 180,
               borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.isDark ? theme.color.accent + '18' : 'rgba(255,255,255,0.12)',
+              backgroundColor: theme.isDark ? theme.color.accent + '18' : theme.color.surface + '20',
             }}
           />
           <View
             pointerEvents='none'
             style={{
-              position: 'absolute',
-              bottom: -40,
-              left: -40,
-              width: 130,
-              height: 130,
+              position: 'absolute', bottom: -40, left: -40, width: 130, height: 130,
               borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.isDark ? theme.color.accent + '10' : 'rgba(255,255,255,0.08)',
+              backgroundColor: theme.isDark ? theme.color.accent + '10' : theme.color.surface + '10',
             }}
           />
 
           <View style={{ gap: theme.space.xs, alignItems: 'center' }}>
             <Text
               style={{
-                color: '#FFFFFF',
+                color: theme.color.textInverse,
                 fontSize: theme.fontSize.xxl,
                 fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.regular,
               }}
             >
-              {theme.i18n.t('contests.postQuizScreen.quiz_completed')}
+              {t('contests.postQuizScreen.quiz_completed')}
             </Text>
-            <Text
-              style={{
-                color: subText,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.light,
-              }}
-            >
-              {`${result.title} · ${result.totalQuestions} ${theme.i18n.t('contests.questions')}`}
+            <Text style={{ color: subText, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.light }}>
+              {`${result.title} · ${result.totalQuestions} ${t('contests.questions')}`}
             </Text>
           </View>
 
@@ -350,72 +231,35 @@ export default function PostQuizScreen() {
 
           <View
             style={{
-              flexDirection: 'row',
-              gap: theme.space.sm,
-              alignItems: 'center',
-              paddingVertical: theme.space.sm + 2,
-              paddingHorizontal: theme.space.xl,
-              borderWidth: 1.5,
-              borderColor: epBorder,
-              borderRadius: theme.borderRadius.full,
+              flexDirection: 'row', gap: theme.space.sm, alignItems: 'center',
+              paddingVertical: theme.space.sm + 2, paddingHorizontal: theme.space.xl,
+              borderWidth: 1.5, borderColor: epBorder, borderRadius: theme.borderRadius.full,
               backgroundColor: epBg,
             }}
           >
             <Feather name={result.isPractice ? 'book-open' : 'zap'} size={theme.fontSize.lg} color={epColor} />
-            <Text
-              style={{
-                color: epColor,
-                fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.number,
-              }}
-            >
-              {result.isPractice ? theme.i18n.t('contests.postQuizScreen.practice_mode') : `+${result.epEarned} ${theme.i18n.t('contests.postQuizScreen.ep_earned')}`}
+            <Text style={{ color: epColor, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
+              {result.isPractice ? t('contests.postQuizScreen.practice_mode') : `+${result.epEarned} ${t('contests.postQuizScreen.ep_earned')}`}
             </Text>
           </View>
         </View>
 
-        <View
-          style={{
-            flexDirection: 'row',
-            gap: theme.space.sm,
-            paddingTop: theme.space.md,
-            paddingHorizontal: theme.space.md,
-          }}
-        >
+        <View style={{ flexDirection: 'row', gap: theme.space.sm, paddingTop: theme.space.md, paddingHorizontal: theme.space.md }}>
           {result.statBoxes.map((stat) => (
             <View
               key={stat.key}
               style={{
-                flex: 1,
-                gap: theme.space.xs,
-                alignItems: 'center',
-                paddingVertical: theme.space.md,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.xl,
+                flex: 1, gap: theme.space.xs, alignItems: 'center', paddingVertical: theme.space.md,
+                borderWidth: 1, borderColor: theme.color.border, borderRadius: theme.borderRadius.xl,
                 backgroundColor: theme.color.card,
               }}
             >
               <Feather name={stat.icon} size={theme.fontSize.md} color={colorFor(stat.colorToken)} />
-              <Text
-                style={{
-                  color: colorFor(stat.colorToken),
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.number,
-                }}
-              >
+              <Text style={{ color: colorFor(stat.colorToken), fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
                 {stat.value}
               </Text>
-              <Text
-                style={{
-                  color: theme.color.textMuted,
-                  fontSize: theme.fontSize.xs,
-                  fontFamily: theme.fontFamily.light,
-                }}
-              >
-                {theme.i18n.t(stat.labelKey)}
+              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light }}>
+                {t(stat.labelKey)}
               </Text>
             </View>
           ))}
@@ -423,145 +267,96 @@ export default function PostQuizScreen() {
 
         <View
           style={{
-            flexDirection: 'row',
-            gap: theme.space.sm,
-            alignItems: 'center',
-            padding: theme.space.md,
-            marginTop: theme.space.md,
-            marginHorizontal: theme.space.md,
-            borderWidth: 1,
-            borderRadius: theme.borderRadius.xl,
-            borderColor: theme.color.success + '44',
-            backgroundColor: theme.color.success + '12',
+            flexDirection: 'row', gap: theme.space.sm, alignItems: 'center', padding: theme.space.md,
+            marginTop: theme.space.md, marginHorizontal: theme.space.md,
+            borderWidth: 1, borderRadius: theme.borderRadius.xl,
+            borderColor: theme.color.success + '44', backgroundColor: theme.color.success + '12',
           }}
         >
           <Feather name='trending-up' size={theme.fontSize.md} color={theme.color.success} />
-          <Text
-            style={{
-              color: theme.color.success,
-              fontSize: theme.fontSize.sm,
-              fontWeight: theme.fontWeight.bold,
-            }}
-          >
+          <Text style={{ color: theme.color.success, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
             {result.percentileMessage}
           </Text>
         </View>
 
         <View style={{ gap: theme.space.md, paddingTop: theme.space.md, paddingHorizontal: theme.space.md }}>
           {result.showBadge && result.badge && (
-            <AchievementBadgeCard
-              label={result.badge.label}
-              title={result.badge.title}
-              subtitle={result.badge.subtitle}
-            />
+            <AchievementBadgeCard label={result.badge.label} title={result.badge.title} subtitle={result.badge.subtitle} />
           )}
 
-          <TopicPerfomanceCard
-            title={theme.i18n.t('contests.postQuizScreen.needs_improvement')}
-            topics={result.weakTopics}
-          />
+          {weakTopics.length > 0 && (
+            <TopicPerfomanceCard title={t('contests.postQuizScreen.needs_improvement')} topics={weakTopics} />
+          )}
         </View>
       </ScrollView>
 
       <View
         style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          gap: theme.space.sm,
-          padding: theme.space.md,
-          paddingBottom: theme.space.md + insets.bottom,
-          borderTopWidth: 1,
-          borderTopColor: theme.color.border,
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          padding: theme.space.md, gap: theme.space.sm,
+          borderTopWidth: 1, borderTopColor: theme.color.border,
           backgroundColor: theme.color.background,
         }}
       >
         <TouchableOpacity
           onPress={() => setShowReview(true)}
           style={{
-            flexDirection: 'row',
-            gap: theme.space.sm,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: theme.space.md,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.color.accent,
+            flexDirection: 'row', gap: theme.space.sm, alignItems: 'center', justifyContent: 'center',
+            paddingVertical: theme.space.md, borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.accent,
           }}
         >
-          <Feather name='book-open' size={theme.fontSize.lg} color='#FFFFFF' />
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.bold,
-            }}
-          >
-            {theme.i18n.t('contests.postQuizScreen.review_answers')}
+          <Feather name='book-open' size={theme.fontSize.lg} color={theme.color.textInverse} />
+          <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+            {t('contests.postQuizScreen.review_answers')}
           </Text>
         </TouchableOpacity>
 
         <View style={{ flexDirection: 'row', gap: theme.space.sm }}>
           <TouchableOpacity
-            onPress={() => router.push('/contests/preQuizScreen')}
+            onPress={() => {
+              if (contestId) {
+                router.push({ pathname: '/contests/preQuizScreen', params: { contestId } });
+              } else {
+                router.push('/contests');
+              }
+            }}
             style={{
-              flex: 1,
-              flexDirection: 'row',
-              gap: theme.space.xs,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.sm * 1.5,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
+              flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
+              paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
             }}
           >
             <Feather name='rotate-ccw' size={theme.fontSize.sm} color={theme.color.textSecondary} />
-            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm }}>
-              {theme.i18n.t('common.retry')}
+            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+              {t('common.retry')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => {}}
             style={{
-              flex: 1,
-              flexDirection: 'row',
-              gap: theme.space.xs,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.sm * 1.5,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
+              flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
+              paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
             }}
           >
             <Feather name='share-2' size={theme.fontSize.sm} color={theme.color.textSecondary} />
-            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm }}>
-              {theme.i18n.t('common.share')}
+            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+              {t('common.share')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/contests')}
             style={{
-              flex: 1,
-              flexDirection: 'row',
-              gap: theme.space.xs,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.sm * 1.5,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
+              flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
+              paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
             }}
           >
             <Feather name='chevron-left' size={theme.fontSize.sm} color={theme.color.textSecondary} />
-            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm }}>
-              {theme.i18n.t('common.back')}
+            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+              {t('common.back')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -571,31 +366,19 @@ export default function PostQuizScreen() {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setShowReview(false)}
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ flex: 1, backgroundColor: theme.color.textPrimary + '80' }}
         />
         <View
           style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            maxHeight: '80%',
-            gap: theme.space.md,
-            padding: theme.space.lg,
-            borderTopLeftRadius: theme.borderRadius.xl + 4,
-            borderTopRightRadius: theme.borderRadius.xl + 4,
+            position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '80%',
+            gap: theme.space.md, padding: theme.space.lg,
+            borderTopLeftRadius: theme.borderRadius.xl + 4, borderTopRightRadius: theme.borderRadius.xl + 4,
             backgroundColor: theme.color.card,
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text
-              style={{
-                color: theme.color.textPrimary,
-                fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
-              }}
-            >
-              {theme.i18n.t('contests.postQuizScreen.review_answers')}
+            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+              {t('contests.postQuizScreen.review_answers')}
             </Text>
             <TouchableOpacity onPress={() => setShowReview(false)}>
               <Feather name='x' size={theme.fontSize.xl} color={theme.color.textMuted} />
@@ -604,28 +387,12 @@ export default function PostQuizScreen() {
 
           <View style={{ flexDirection: 'row', gap: theme.space.sm }}>
             {[
-              { label: `${result.reviewSummary.correct} ${theme.i18n.t('contests.postQuizScreen.correct')}`, color: theme.color.success, bg: theme.color.success + '18' },
-              { label: `${result.reviewSummary.wrong} ${theme.i18n.t('contests.postQuizScreen.wrong')}`, color: theme.color.error, bg: theme.color.error + '18' },
-              { label: `${result.reviewSummary.skipped} ${theme.i18n.t('contests.postQuizScreen.skipped')}`, color: theme.color.textMuted, bg: theme.color.surface },
+              { label: `${result.reviewSummary.correct} ${t('contests.postQuizScreen.correct')}`, color: theme.color.success, bg: theme.color.success + '18' },
+              { label: `${result.reviewSummary.wrong} ${t('contests.postQuizScreen.wrong')}`, color: theme.color.error, bg: theme.color.error + '18' },
+              { label: `${result.reviewSummary.skipped} ${t('contests.postQuizScreen.skipped')}`, color: theme.color.textMuted, bg: theme.color.surface },
             ].map((p) => (
-              <View
-                key={p.label}
-                style={{
-                  paddingVertical: theme.space.xs,
-                  paddingHorizontal: theme.space.md,
-                  borderRadius: theme.borderRadius.full,
-                  backgroundColor: p.bg,
-                }}
-              >
-                <Text
-                  style={{
-                    color: p.color,
-                    fontSize: theme.fontSize.sm,
-                    fontWeight: theme.fontWeight.bold,
-                  }}
-                >
-                  {p.label}
-                </Text>
+              <View key={p.label} style={{ paddingHorizontal: theme.space.md, paddingVertical: theme.space.xs, borderRadius: theme.borderRadius.full, backgroundColor: p.bg }}>
+                <Text style={{ color: p.color, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>{p.label}</Text>
               </View>
             ))}
           </View>
@@ -633,41 +400,21 @@ export default function PostQuizScreen() {
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={{ gap: theme.space.sm }}>
               {result.reviewItems.map((item) => {
-                const statusColor = item.isSkipped
-                  ? theme.color.textMuted
-                  : item.isCorrect ? theme.color.success : theme.color.error;
-                const statusIcon = item.isSkipped
-                  ? 'minus-circle'
-                  : item.isCorrect ? 'check-circle' : 'x-circle';
+                const statusColor = item.isSkipped ? theme.color.textMuted : item.isCorrect ? theme.color.success : theme.color.error;
+                const statusIcon = item.isSkipped ? 'minus-circle' : item.isCorrect ? 'check-circle' : 'x-circle';
 
                 return (
                   <View
                     key={item.id}
                     style={{
-                      gap: theme.space.sm,
-                      padding: theme.space.md,
-                      borderWidth: 1,
-                      borderColor: statusColor + '44',
-                      borderRadius: theme.borderRadius.xl,
+                      gap: theme.space.sm, padding: theme.space.md, borderWidth: 1,
+                      borderColor: statusColor + '44', borderRadius: theme.borderRadius.xl,
                       backgroundColor: statusColor + '0C',
                     }}
                   >
-                    <View
-                      style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
-                      <Feather
-                        name={statusIcon}
-                        size={theme.fontSize.md}
-                        color={statusColor}
-                        style={{ marginTop: theme.space.xs/2 }}
-                      />
-                      <Text
-                        style={{
-                          flex: 1,
-                          color: theme.color.textPrimary,
-                          fontSize: theme.fontSize.sm,
-                          fontFamily: theme.fontFamily.regular,
-                        }}
-                      >
+                    <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'flex-start' }}>
+                      <Feather name={statusIcon} size={theme.fontSize.md} color={statusColor} style={{ marginTop: theme.space.xs / 2 }} />
+                      <Text style={{ flex: 1, color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
                         {`Q${item.index}. ${item.question}`}
                       </Text>
                     </View>
@@ -675,53 +422,28 @@ export default function PostQuizScreen() {
                     {item.selectedText && !item.isCorrect && (
                       <View
                         style={{
-                          alignSelf: 'flex-start',
-                          paddingVertical: theme.space.xs,
-                          paddingHorizontal: theme.space.sm,
-                          borderRadius: theme.borderRadius.md,
-                          backgroundColor: theme.color.error + '18',
+                          alignSelf: 'flex-start', paddingVertical: theme.space.xs, paddingHorizontal: theme.space.sm,
+                          borderRadius: theme.borderRadius.md, backgroundColor: theme.color.error + '18',
                         }}
                       >
-                        <Text
-                          style={{
-                            color: theme.color.error,
-                            fontSize: theme.fontSize.xs,
-                            fontWeight: theme.fontWeight.bold,
-                          }}
-                        >
-                          ✗{' '}{theme.i18n.t('contests.postQuizScreen.your_answer')} : {item.selectedLabel}. {item.selectedText}
+                        <Text style={{ color: theme.color.error, fontSize: theme.fontSize.xs, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+                          ✗ {t('contests.postQuizScreen.your_answer')} : {item.selectedLabel}. {item.selectedText}
                         </Text>
                       </View>
                     )}
 
                     <View
                       style={{
-                        alignSelf: 'flex-start',
-                        paddingVertical: theme.space.xs,
-                        paddingHorizontal: theme.space.sm,
-                        borderRadius: theme.borderRadius.md,
-                        backgroundColor: theme.color.success + '18',
+                        alignSelf: 'flex-start', paddingVertical: theme.space.xs, paddingHorizontal: theme.space.sm,
+                        borderRadius: theme.borderRadius.md, backgroundColor: theme.color.success + '18',
                       }}
                     >
-                      <Text
-                        style={{
-                          color: theme.color.success,
-                          fontSize: theme.fontSize.xs,
-                          fontWeight: theme.fontWeight.bold,
-                        }}
-                      >
+                      <Text style={{ color: theme.color.success, fontSize: theme.fontSize.xs, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
                         ✓ {item.correctLabel}. {item.correctText}
                       </Text>
                     </View>
 
-                    <Text
-                      style={{
-                        color: theme.color.textSecondary,
-                        fontSize: theme.fontSize.xs,
-                        fontFamily: theme.fontFamily.light,
-                        lineHeight: theme.fontSize.xs * 1.6,
-                      }}
-                    >
+                    <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light, lineHeight: theme.fontSize.xs * 1.6 }}>
                       {item.explanation}
                     </Text>
                   </View>
@@ -731,6 +453,12 @@ export default function PostQuizScreen() {
           </ScrollView>
         </View>
       </Modal>
+      </View>
+      {loading && (
+        <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 999, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.color.background }}>
+          <Loading message={t('contests.postQuizScreen.loading')} />
+        </View>
+      )}
     </View>
   );
 }

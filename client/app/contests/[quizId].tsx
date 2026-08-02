@@ -1,140 +1,16 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useEffect, useRef, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '@/common/context/useBottomBar';
-import { QuestionCard } from '../../components/QuestionCard';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuizProgressBar } from '../../components/QuizProgressBar';
-
-
-export type MCQOption = { label: string; text: string; isCorrect: boolean };
-export type QuizQuestion = {
-  id: string; subject: string; question: string; image?: string;
-  options: MCQOption[]; explanation: string; points: number;
-};
-export type QuizData = {
-  id: string; title: string; totalQuestions: number; durationMinutes: number;
-  epReward: number; pointsPerCorrect: number; pointsPerWrong: number;
-  questions: QuizQuestion[];
-};
-export const quizMockData: QuizData = {
-  id: 'cardiology-sprint-001',
-  title: 'Cardiology Sprint',
-  totalQuestions: 7,
-  durationMinutes: 45,
-  epReward: 120,
-  pointsPerCorrect: 4,
-  pointsPerWrong: -1,
-  questions: [
-    {
-      id: 'q1',
-      subject: 'Cardiology',
-      question: 'A 45-year-old male presents with sudden onset chest pain radiating to the left arm. He has a history of hypertension and smoking. What is the most likely diagnosis?',
-      options: [
-        { label: 'A', text: 'Pneumothorax',          isCorrect: false },
-        { label: 'B', text: 'Myocardial Infarction', isCorrect: true  },
-        { label: 'C', text: 'Pulmonary Embolism',    isCorrect: false },
-        { label: 'D', text: 'Aortic Dissection',     isCorrect: false },
-      ],
-      explanation: 'Classic STEMI presentation with ST-elevation and troponin rise. Door-to-balloon <90 min is key.',
-      points: 4,
-    },
-    {
-      id: 'q2',
-      subject: 'Cardiology',
-      question: 'Which ECG finding is most characteristic of hyperkalemia?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/5/5b/Hyperkalemia_peaked_T_waves.png',
-      options: [
-        { label: 'A', text: 'Prolonged QT interval', isCorrect: false },
-        { label: 'B', text: 'Delta waves',            isCorrect: false },
-        { label: 'C', text: 'Peaked T waves',         isCorrect: true  },
-        { label: 'D', text: 'Osborn J waves',         isCorrect: false },
-      ],
-      explanation: 'Hyperkalemia classically presents with tall, peaked T waves on ECG, progressing to a sine wave pattern in severe cases.',
-      points: 4,
-    },
-    {
-      id: 'q3',
-      subject: 'Cardiology',
-      question: 'A patient presents with syncope, exertional dyspnea, and a systolic ejection murmur. What is the most likely diagnosis?',
-      options: [
-        { label: 'A', text: 'Mitral Regurgitation',   isCorrect: false },
-        { label: 'B', text: 'Aortic Stenosis',        isCorrect: true  },
-        { label: 'C', text: 'Tricuspid Stenosis',     isCorrect: false },
-        { label: 'D', text: 'Pulmonary Hypertension', isCorrect: false },
-      ],
-      explanation: 'The classic triad of aortic stenosis is syncope, angina, and heart failure. The systolic ejection murmur radiates to the carotids.',
-      points: 4,
-    },
-    {
-      id: 'q4',
-      subject: 'Cardiology',
-      question: 'Analyze the provided rhythm strip from a patient who suddenly collapsed. What is the immediate recommended management?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Ventricular_fibrillation.png',
-      options: [
-        { label: 'A', text: 'Synchronized cardioversion',    isCorrect: false },
-        { label: 'B', text: 'Unsynchronized defibrillation', isCorrect: true  },
-        { label: 'C', text: 'Intravenous amiodarone bolus',  isCorrect: false },
-        { label: 'D', text: 'Carotid sinus massage',         isCorrect: false },
-      ],
-      explanation: 'The strip shows Ventricular Fibrillation (VF). VF and pulseless VT require immediate unsynchronized defibrillation alongside continuous CPR.',
-      points: 4,
-    },
-    {
-      id: 'q5',
-      subject: 'Cardiology',
-      question: 'A 29-year-old female presents with fatigue and a mid-systolic click followed by a late systolic murmur. What structural abnormality is most likely present?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/2/29/Mitral_valve_prolapse_scheme.jpg',
-      options: [
-        { label: 'A', text: 'Mitral Valve Prolapse',      isCorrect: true  },
-        { label: 'B', text: 'Aortic Regurgitation',       isCorrect: false },
-        { label: 'C', text: 'Ventricular Septal Defect',  isCorrect: false },
-        { label: 'D', text: 'Bicuspid Aortic Valve',      isCorrect: false },
-      ],
-      explanation: 'MVP classically presents with a mid-systolic click followed by a late systolic murmur, caused by billowing of leaflets into the left atrium.',
-      points: 4,
-    },
-    {
-      id: 'q6',
-      subject: 'Cardiology',
-      question: 'Which medication is absolutely contraindicated in acute right ventricular myocardial infarction?',
-      options: [
-        { label: 'A', text: 'Aspirin',       isCorrect: false },
-        { label: 'B', text: 'Nitroglycerin', isCorrect: true  },
-        { label: 'C', text: 'Heparin',       isCorrect: false },
-        { label: 'D', text: 'Clopidogrel',   isCorrect: false },
-      ],
-      explanation: 'RV infarctions are preload-dependent. Nitroglycerin reduces preload causing profound hypotension.',
-      points: 4,
-    },
-    {
-      id: 'q7',
-      subject: 'Cardiology',
-      question: 'A 60-year-old male presents with worsening dyspnea. His chest X-ray shows a "bat-wing" opacity. What is the underlying pathology?',
-      image: 'https://upload.wikimedia.org/wikipedia/commons/4/4c/Pulmonary_oedema.jpg',
-      options: [
-        { label: 'A', text: 'Lobar Pneumonia',       isCorrect: false },
-        { label: 'B', text: 'Acute Pulmonary Edema', isCorrect: true  },
-        { label: 'C', text: 'Idiopathic Fibrosis',   isCorrect: false },
-        { label: 'D', text: 'Bilateral Pneumothorax',isCorrect: false },
-      ],
-      explanation: 'Bilateral perihilar "bat-wing" infiltrates on CXR is a classic sign of acute alveolar pulmonary edema.',
-      points: 4,
-    },
-  ],
-};
-
-type ModalType = 'summary' | null;
-type AnswerRecord = {
-  questionId: string;
-  selectedLabel: string | null;
-  isCorrect: boolean;
-  isBookmarked: boolean;
-  isFlagged: boolean;
-};
+import { QuestionCard } from '../../components/QuestionCard';
+import { api } from '../../common/api/api';
+import { normalizeError } from '../../common/api/api.errors';
+import { Loading } from '../../components/common/loading';
+import type { ClientQuestion, QuizQuestion, ModalType, AnswerRecord, SubmittedAnswer, SelectedOption } from '../../common/types/types';
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -144,116 +20,220 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+function mapClientQuestion(q: ClientQuestion): QuizQuestion {
+  return {
+    id: q.questionId,
+    subject: q.subject,
+    question: q.questionText,
+    image: q.imageUrl ?? undefined,
+    options: [
+      { label: 'A', text: q.optionA },
+      { label: 'B', text: q.optionB },
+      { label: 'C', text: q.optionC },
+      { label: 'D', text: q.optionD },
+    ],
+    points: q.marks,
+  };
+}
 
 export default function QuizScreen() {
-  const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ quizId: string; practice?: string; totalQuestions?: string }>();
   const { theme } = useTheme();
-  const router = useRouter();
   useBottomBar(false);
+  const router = useRouter();
+  const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
 
+  const quizId = params.quizId;
   const isPractice = params.practice === '1';
-  const quiz = quizMockData;
+
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(quiz.durationMinutes * 60);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
-  const [displayedEp, setDisplayedEp] = useState<number>(0);
-  const [answers, setAnswers] = useState<Record<string, AnswerRecord>>(() =>
-    Object.fromEntries(
-      quiz.questions.map(q => [
-        q.id,
-        { questionId: q.id, selectedLabel: null, isCorrect: false, isBookmarked: false, isFlagged: false },
-      ])
-    )
-  );
+  const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentQuestion: QuizQuestion = quiz.questions[currentIndex]!;
-  const currentAnswer = answers[currentQuestion.id]!;
+  const currentIndexRef = useRef(0);
+  const timeSpentRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    if (activeModal !== null) return;
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSession() {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const session = await api.contest.joinContest(quizId);
+        if (cancelled) return;
+        const mapped = session.questions.map(mapClientQuestion);
+        setSessionId(session.sessionId);
+        setTimeLeft(session.timeLimitSecs);
+        setQuestions(mapped);
+        
+        setAnswers(
+          Object.fromEntries(
+            mapped.map((q) => [q.id, { questionId: q.id, selectedLabel: null, isBookmarked: false, isFlagged: false }])
+          )
+        );
+      } catch (err) {
+        if (cancelled) return;
+        const apiErr = normalizeError(err);
+        console.log('[quiz] session load failed:', apiErr);
+        setLoadError(apiErr.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadSession();
+    return () => {
+      cancelled = true;
+    };
+  }, [quizId]);
+
+  const currentQuestion = questions[currentIndex];
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+
+  const handleFinish = useCallback(async () => {
+    if (submitting || !sessionId) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const answerInputs: SubmittedAnswer[] = Object.values(answers).map((a) => ({
+        questionId: a.questionId,
+        selected: (a.selectedLabel ?? 'SKIPPED') as SelectedOption,
+        timeSpent: timeSpentRef.current[a.questionId] ?? 0,
+      }));
+      const result = await api.quiz.submitQuizSession({ sessionId, answers: answerInputs });
+
+      router.push({
+        pathname: '/contests/postQuizScreen',
+        params: {
+          title: currentQuestion?.subject ?? t('contests.postQuizScreen.default_title'),
+          questions: JSON.stringify(
+            questions.map((q) => ({ id: q.id, subject: q.subject, question: q.question, options: q.options }))
+          ),
+          submission: JSON.stringify(result),
+          practice: isPractice ? '1' : '0',
+          contestId: quizId,
+        },
+      });
+    } catch (err) {
+      const apiErr = normalizeError(err);
+      console.log('[quiz] submit failed:', apiErr);
+      setSubmitError(apiErr.message);
+      setSubmitting(false);
+    }
+  }, [answers, currentQuestion?.subject, isPractice, questions, quizId, router, sessionId, submitting, t]);
+
+  const handleFinishRef = useRef(handleFinish);
+  useEffect(() => {
+    handleFinishRef.current = handleFinish;
+  }, [handleFinish]);
+
+  useEffect(() => {
+    if (loading || loadError || activeModal !== null || submitting) return;
+    if (questions.length === 0) return;
+
     timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
+      const activeQuestion = questions[currentIndexRef.current];
+      if (activeQuestion) {
+        timeSpentRef.current[activeQuestion.id] = (timeSpentRef.current[activeQuestion.id] ?? 0) + 1;
+      }
+      setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleFinish();
+          if (timerRef.current) clearInterval(timerRef.current);
+          handleFinishRef.current();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-    return () => clearInterval(timerRef.current!);
-  }, [activeModal]);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [activeModal, loading, loadError, submitting, questions.length]);
 
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: { ...prev[questionId]!, ...patch },
-    }));
+    setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId]!, ...patch } }));
   };
 
-  const handleSelect = (label: string) => {
-    const option = currentQuestion.options.find(o => o.label === label);
-    if (!option) return;
-    updateAnswer(currentQuestion.id, {
-      selectedLabel: label,
-      isCorrect: option.isCorrect,
-    });
-  };
-
-  const calculateCurrentEp = (latestAnswers: Record<string, AnswerRecord>) => {
-    return Math.max(
-      0,
-      Object.values(latestAnswers).filter(a => a.isCorrect).length * quiz.pointsPerCorrect +
-      Object.values(latestAnswers).filter(a => a.selectedLabel !== null && !a.isCorrect).length * quiz.pointsPerWrong
-    );
-  };
-
-  const handleFinish = () => {
-    clearInterval(timerRef.current!);
-    const timeTaken = quiz.durationMinutes * 60 - timeLeft;
-    const correct = Object.values(answers).filter(a => a.isCorrect).length;
-    const wrong   = Object.values(answers).filter(a => a.selectedLabel !== null && !a.isCorrect).length;
-    const skipped = Object.values(answers).filter(a => a.selectedLabel === null).length;
-
-    router.push({
-      pathname: '/contests/postQuizScreen',
-      params: {
-        quizId:   quiz.id,
-        title:    quiz.title,
-        total:    quiz.totalQuestions,
-        correct,
-        wrong,
-        skipped,
-        timeTaken,
-        epEarned: isPractice ? 0 : Math.max(0, correct * quiz.pointsPerCorrect + wrong * quiz.pointsPerWrong),
-        answers:   JSON.stringify(answers),
-        practice:  isPractice ? '1' : '0',
-      },
-    });
+  const handleSelect = (label: SelectedOption) => {
+    if (!currentQuestion) return;
+    updateAnswer(currentQuestion.id, { selectedLabel: label });
   };
 
   const goTo = (index: number) => {
-    setDisplayedEp(calculateCurrentEp(answers));
     setCurrentIndex(index);
     setActiveModal(null);
   };
 
-  const answeredCount = Object.values(answers).filter(a => a.selectedLabel !== null).length;
-  const skippedCount  = quiz.questions.length - answeredCount;
-  const bookmarkedQuestions = quiz.questions.filter(q => answers[q.id]?.isBookmarked);
-  const flaggedQuestions    = quiz.questions.filter(q => answers[q.id]?.isFlagged);
+  const answeredCount = Object.values(answers).filter((a) => a.selectedLabel !== null).length;
+  const skippedCount = questions.length - answeredCount;
+  const bookmarkedQuestions = questions.filter((q) => answers[q.id]?.isBookmarked);
+  const flaggedQuestions = questions.filter((q) => answers[q.id]?.isFlagged);
 
   const getQuestionStatus = (qId: string) => {
-    const a = answers[qId]!;
-    if (a.isFlagged)            return { icon: 'flag'     as const, color: theme.color.error   };
-    if (a.isBookmarked)         return { icon: 'bookmark' as const, color: theme.color.accent  };
-    if (a.selectedLabel !== null) return { icon: 'check'    as const, color: theme.color.success };
+    const a = answers[qId];
+    if (a?.isFlagged) return { icon: 'flag' as const, color: theme.color.error };
+    if (a?.isBookmarked) return { icon: 'bookmark' as const, color: theme.color.accent };
+    if (a?.selectedLabel !== null && a?.selectedLabel !== undefined) return { icon: 'check' as const, color: theme.color.success };
     return { icon: 'minus' as const, color: theme.color.textMuted };
   };
 
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background, justifyContent: 'center', alignItems: 'center' }}>
+        <Loading message={t('contests.quizScreen.loading')} />
+      </View>
+    );
+  }
+
+  if (loadError || !currentQuestion || !currentAnswer) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: theme.space.sm,
+          backgroundColor: theme.color.background,
+          padding: theme.space.xl,
+        }}
+      >
+        <Feather name="alert-circle" size={32} color={theme.color.error} />
+        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, textAlign: 'center' }}>
+          {loadError ?? t('contests.quizScreen.load_error')}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/contests')}
+          style={{
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.lg,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.color.accent,
+          }}
+        >
+          <Text style={{ color: theme.color.textInverse, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+            {t('common.back_to_contests')}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -299,18 +279,20 @@ export default function QuizScreen() {
               fontFamily: theme.fontFamily.number,
             }}
           >
-            {isPractice ? 'Practice Mode' : `+${displayedEp} EP`}
+            {isPractice
+              ? t('contests.quizScreen.practice_mode')
+              : t('contests.quizScreen.answered_count', { answered: answeredCount, total: questions.length })}
           </Text>
         </View>
       </View>
 
-      <View style={{ paddingBottom: theme.space.sm, paddingHorizontal: theme.space.md }}>
-        <QuizProgressBar current={currentIndex + 1} total={quiz.questions.length} />
+      <View style={{ paddingHorizontal: theme.space.md, paddingBottom: theme.space.sm }}>
+        <QuizProgressBar current={currentIndex + 1} total={questions.length} />
       </View>
 
       <ScrollView
+        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: theme.space.md, padding: theme.space.md, paddingBottom: 140 }}
       >
         <QuestionCard
           subject={currentQuestion.subject}
@@ -322,31 +304,22 @@ export default function QuizScreen() {
         />
 
         {currentQuestion.image && (
-          <View
-            style={{
-              overflow: 'hidden',
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.xl,
-            }}
-          >
-            <Image
-              resizeMode="cover"
-              source={{ uri: currentQuestion.image }}
-              style={{ width: '100%', height: 200 }}
-            />
+          <View style={{ overflow: 'hidden', borderWidth: 1, borderColor: theme.color.border, borderRadius: theme.borderRadius.xl }}>
+            <Image resizeMode="cover" source={{ uri: currentQuestion.image }} style={{ width: '100%', height: 200 }} />
             <View
               style={{
                 position: 'absolute',
                 bottom: theme.space.sm,
                 right: theme.space.sm,
-                paddingVertical: theme.space.xs/2,
                 paddingHorizontal: theme.space.sm,
+                paddingVertical: 2,
                 borderRadius: theme.borderRadius.sm,
-                backgroundColor: 'rgba(0,0,0,0.6)',
+                backgroundColor: theme.color.textPrimary + '99',
               }}
             >
-              <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.xs }}>FIGURE 1.A</Text>
+              <Text style={{ color: theme.color.background, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>
+                {t('contests.quizScreen.figure_label')}
+              </Text>
             </View>
           </View>
         )}
@@ -382,7 +355,7 @@ export default function QuizScreen() {
                 >
                   <Text
                     style={{
-                      color: selected ? '#FFFFFF' : theme.color.textSecondary,
+                      color: selected ? theme.color.textInverse : theme.color.textSecondary,
                       fontSize: theme.fontSize.sm,
                       fontWeight: theme.fontWeight.bold,
                       fontFamily: theme.fontFamily.regular,
@@ -406,6 +379,13 @@ export default function QuizScreen() {
             );
           })}
         </View>
+
+        {submitError && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
+            <Feather name="alert-circle" size={theme.fontSize.md} color={theme.color.error} />
+            <Text style={{ flex: 1, color: theme.color.error, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>{submitError}</Text>
+          </View>
+        )}
       </ScrollView>
 
       <View
@@ -416,11 +396,10 @@ export default function QuizScreen() {
           right: 0,
           gap: theme.space.sm,
           flexDirection: 'row',
-          paddingBottom: theme.space.md + insets.bottom,
           padding: theme.space.md,
+          backgroundColor: theme.color.background,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
-          backgroundColor: theme.color.background,
         }}
       >
         <TouchableOpacity
@@ -441,7 +420,9 @@ export default function QuizScreen() {
           }}
         >
           <Feather name="chevron-left" size={theme.fontSize.md} color={theme.color.textSecondary} />
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>Prev</Text>
+          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+            {t('common.prev')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -457,12 +438,15 @@ export default function QuizScreen() {
             backgroundColor: theme.color.card,
           }}
         >
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>Review</Text>
+          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+            {t('common.review')}
+          </Text>
         </TouchableOpacity>
 
-        {currentIndex === quiz.questions.length - 1 ? (
+        {currentIndex === questions.length - 1 ? (
           <TouchableOpacity
             onPress={handleFinish}
+            disabled={submitting}
             style={{
               flex: 1,
               alignItems: 'center',
@@ -470,9 +454,16 @@ export default function QuizScreen() {
               paddingVertical: theme.space.sm * 1.5,
               borderRadius: theme.borderRadius.lg,
               backgroundColor: theme.color.accent,
+              opacity: submitting ? 0.6 : 1,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>Finish</Text>
+            {submitting ? (
+              <ActivityIndicator size="small" color={theme.color.textInverse} />
+            ) : (
+              <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+                {t('contests.quizScreen.finish')}
+              </Text>
+            )}
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
@@ -488,8 +479,10 @@ export default function QuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>Next</Text>
-            <Feather name="chevron-right" size={theme.fontSize.md} color="#FFFFFF" />
+            <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+              {t('common.next')}
+            </Text>
+            <Feather name="chevron-right" size={theme.fontSize.md} color={theme.color.textInverse} />
           </TouchableOpacity>
         )}
       </View>
@@ -498,7 +491,7 @@ export default function QuizScreen() {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setActiveModal(null)}
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}
+          style={{ flex: 1, backgroundColor: theme.color.textPrimary + '80' }}
         />
         <View
           style={{
@@ -516,7 +509,7 @@ export default function QuizScreen() {
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
-              Review
+              {t('common.review')}
             </Text>
             <TouchableOpacity onPress={() => setActiveModal(null)}>
               <Feather name="x" size={theme.fontSize.xl} color={theme.color.textMuted} />
@@ -525,16 +518,16 @@ export default function QuizScreen() {
 
           <View style={{ flexDirection: 'row', gap: theme.space.md }}>
             {[
-              { label: 'Answered', value: answeredCount, color: theme.color.success },
-              { label: 'Skipped',  value: skippedCount,  color: theme.color.textMuted },
-              { label: 'Flagged',  value: flaggedQuestions.length, color: theme.color.error },
-              { label: 'Saved',    value: bookmarkedQuestions.length, color: theme.color.accent },
-            ].map(stat => (
-              <View key={stat.label} style={{ gap: theme.space.xs/2, flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: stat.color, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
+              { label: t('contests.quizScreen.answered'), value: answeredCount, color: theme.color.success },
+              { label: t('contests.quizScreen.skipped'), value: skippedCount, color: theme.color.textMuted },
+              { label: t('contests.quizScreen.flagged'), value: flaggedQuestions.length, color: theme.color.error },
+              { label: t('contests.quizScreen.saved'), value: bookmarkedQuestions.length, color: theme.color.accent },
+            ].map((stat) => (
+              <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+                <Text style={{ color: stat.color, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.number }}>
                   {stat.value}
                 </Text>
-                <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
+                <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>
                   {stat.label}
                 </Text>
               </View>
@@ -542,8 +535,8 @@ export default function QuizScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={{ gap: theme.space.sm, flexWrap: 'wrap', flexDirection: 'row' }}>
-              {quiz.questions.map((q, idx) => {
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+              {questions.map((q, idx) => {
                 const status = getQuestionStatus(q.id);
                 const isCurrent = idx === currentIndex;
                 return (
@@ -571,14 +564,14 @@ export default function QuizScreen() {
 
             <View style={{ gap: theme.space.md, flexWrap: 'wrap', flexDirection: 'row', marginTop: theme.space.lg }}>
               {[
-                { icon: 'check'    as const, color: theme.color.success,  label: 'Answered' },
-                { icon: 'minus'    as const, color: theme.color.textMuted, label: 'Skipped'  },
-                { icon: 'flag'     as const, color: theme.color.error,     label: 'Flagged'  },
-                { icon: 'bookmark' as const, color: theme.color.accent,    label: 'Saved'    },
-              ].map(item => (
+                { icon: 'check' as const, color: theme.color.success, label: t('contests.quizScreen.answered') },
+                { icon: 'minus' as const, color: theme.color.textMuted, label: t('contests.quizScreen.skipped') },
+                { icon: 'flag' as const, color: theme.color.error, label: t('contests.quizScreen.flagged') },
+                { icon: 'bookmark' as const, color: theme.color.accent, label: t('contests.quizScreen.saved') },
+              ].map((item) => (
                 <View key={item.label} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
                   <Feather name={item.icon} size={theme.fontSize.sm} color={item.color} />
-                  <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.xs }}>{item.label}</Text>
+                  <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{item.label}</Text>
                 </View>
               ))}
             </View>
@@ -586,17 +579,23 @@ export default function QuizScreen() {
 
           <TouchableOpacity
             onPress={handleFinish}
+            disabled={submitting}
             style={{
               alignItems: 'center',
               justifyContent: 'center',
               paddingVertical: theme.space.md,
               borderRadius: theme.borderRadius.lg,
               backgroundColor: theme.color.accent,
+              opacity: submitting ? 0.6 : 1,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold }}>
-              Submit Quiz
-            </Text>
+            {submitting ? (
+              <ActivityIndicator size="small" color={theme.color.textInverse} />
+            ) : (
+              <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+                {t('contests.quizScreen.submit_quiz')}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </Modal>
