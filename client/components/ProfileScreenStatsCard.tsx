@@ -1,63 +1,24 @@
-import { View, Text,ActivityIndicator,Button } from 'react-native';
+import { View, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-import { useEffect, useState } from 'react';
-import { userApi } from "@/common/api/api";
 
+type Stat = {
+  label: string;
+  value: string;
+  color: string;
+  icon: string;
+};
 
-const stats = [
-  { label: 'Level', value:'', color: '#F59E0B', icon: 'star' },
-  { label: 'Rank',value:'#127', color: '#3B82F6', icon: 'trending-up' },
-  { label: 'Streak', value: '24', color: '#EF4444', icon: 'fire' },
-  { label: 'Accuracy', value: '87%', color: '#22C55E', icon: 'bullseye' },
-];
+type Props = {
+  stats: Stat[];
+};
 
-export function ProfileScreenStatsCard() {
+export function ProfileScreenStatsCard({ stats }: Props) {
   const { theme } = useTheme();
-  const [userData,setUserData] = useState<any>(null)
-  const [loading,setLoading] = useState(true)
-  const [error,setError] = useState<string|null>(null)
 
-  const fetchData = async()=>{
-    try {
-      setError(null)
-      setLoading(true)
-      const response = await userApi.getMe()
-      if(!response){
-        console.log('no data found')
-      }
-      setUserData(response)
-    } catch (error) {
-      setError('Could not load profile. Pull to refresh.')
-    }finally{
-      setLoading(false)
-    }
-  }
-  useEffect(()=>{
-    fetchData()
-  },[])
-
-if (loading) {
   return (
-    <View style={{ padding: 20, alignItems: 'center' }}>
-      <ActivityIndicator size="large" color={theme.color.textMuted} />
-    </View>
-  );
-}
-if (error) {
-  return (
-    <View style={{ alignItems: 'center', padding: 20 }}>
-      <Text style={{ color: 'red', marginBottom: 10 }}>
-        {error}
-      </Text>
-
-      <Button title="Retry" onPress={fetchData} />
-    </View>
-  );
-}
-  return (
-   <View
+    <View
       style={{
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -94,11 +55,7 @@ if (error) {
               marginTop: theme.space.xs * 0.5,
             }}
           >
-            
-            {item.label === "Level" && userData?.currentLevel}
-            {item.label === "Streak" && userData?.currentStreak}
-            {item.label === 'Accuracy' && item.value}
-            {item.label === 'Rank' && item.value}
+            {item.value}
           </Text>
 
           <Text

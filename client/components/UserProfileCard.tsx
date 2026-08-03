@@ -2,39 +2,22 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-import { useEffect, useState } from 'react';
-import { userApi } from "@/common/api/api";
 
-type ProfilePropsCards = {
-  
-  // name: string;
-  // email: string;
-  // lv: Number;
-  day: Number;
+type UserData = {
+  displayName?: string;
+  email?: string;
+  currentLevel?: number;
+  currentStreak?: number;
+  [key: string]: any;
 };
 
-export function UserProfileCard({  }: ProfilePropsCards) {
+type ProfilePropsCards = {
+  userData: UserData | null;
+};
+
+export function UserProfileCard({ userData }: ProfilePropsCards) {
   const { theme } = useTheme();
   const { isDark } = theme;
-  const [loading,setLoading] = useState(true)
-  const [error,setError] = useState<string |null>(null)
-  const [userData,setUserData] = useState<any>(null)
-
-  const fetchUserData = async()=>{
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await userApi.getMe()
-      setUserData(response)
-    } catch (error) {
-      setError('Could not load profile. Pull to refresh.')
-    }finally{
-      setLoading(false)
-    }
-  }
-  useEffect(()=>{
-    fetchUserData()
-  },[])
 
   return (
     <View
@@ -77,14 +60,14 @@ export function UserProfileCard({  }: ProfilePropsCards) {
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.md+1 ,
+              fontSize: theme.fontSize.md + 1,
               fontWeight: theme.fontWeight.bold,
             }}
           >
             {userData?.displayName}
           </Text>
 
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm +1 }}>
+          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm + 1 }}>
             {userData?.email}
           </Text>
 

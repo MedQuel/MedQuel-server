@@ -13,6 +13,8 @@ type PerformanceBySubjectProps = {
   subjects: SubjectItem[];
 };
 
+// ---color logic score----
+
 function getScoreColor(score: number, theme: any): string {
   if (score >= 90) return theme.color.success + 'FF';
   if (score > 80 && score < 90) return theme.color.accent;

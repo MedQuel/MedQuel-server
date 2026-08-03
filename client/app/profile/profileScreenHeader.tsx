@@ -1,36 +1,21 @@
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, TouchableOpacity  } from 'react-native';
-import { userApi } from "@/common/api/api";
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { useState , useEffect } from 'react';
 
-
-export function ProfileScreenHeader() {
-  const { theme } = useTheme();
-  const router = useRouter();
-  const [user,setUser] = useState<any>(null)
- 
-
-  const loadUser = async () => {
-  try {
-   
-
-    const response = await userApi.getMe();
-
-    setUser(response);
-
-    // console.log(response);
-  } catch (error) {
-   
-    console.log(error)
-  } 
+type User = {
+  displayName?: string;
+  [key: string]: any;
 };
 
-useEffect(() => {
-  loadUser();
-}, []);
+type Props = {
+  user: User | null;
+};
+
+export function ProfileScreenHeader({ user }: Props) {
+  const { theme } = useTheme();
+  const router = useRouter();
 
   return (
     <View style={{ position: 'relative', backgroundColor: theme.color.card }}>
@@ -80,7 +65,6 @@ useEffect(() => {
           backgroundColor: theme.color.premium + 'FF',
         }}
       >
-         
         <Text
           style={{
             lineHeight: 66,

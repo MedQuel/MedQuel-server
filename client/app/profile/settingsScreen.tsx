@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-// import ToggleSwitch from "toggle-switch-react-native";
 import { Loading } from "../../components/common/loading";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { View, ScrollView, Text, TouchableOpacity } from "react-native";
@@ -10,41 +9,173 @@ import { userApi } from "@/common/api/api";
 import { UserProfileCard } from "../../components/UserProfileCard";
 import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
 
+
+
+function SectionLabel({ text, theme }: any) {
+  return (
+    <Text
+      style={{
+        textTransform: "capitalize",
+        color: theme.color.textMuted,
+        fontSize: theme.fontSize.md,
+        fontWeight: theme.fontWeight.medium,
+        marginTop: theme.space.sm + 4,
+        paddingHorizontal: theme.space.sm + 4,
+      }}
+    >
+      {text}
+    </Text>
+  );
+}
+
+function Card({ theme, children }: any) {
+  return (
+    <View style={{ paddingHorizontal: theme.space.xs + 1 }}>
+      <View style={{ justifyContent: "center", padding: theme.space.sm }}>
+        <View
+          style={{
+            overflow: "hidden",
+            paddingVertical: theme.space.sm,
+            borderWidth: 1,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.color.card,
+          }}
+        >
+          {children}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Divider({ theme }: any) {
+  return <View style={{ height: 0.6, backgroundColor: theme.color.border }} />;
+}
+
+
+function Row({
+  theme,
+  icon,
+  iconLib: IconLib = MaterialCommunityIcons,
+  iconBg,
+  iconColor,
+  title,
+  titleColor,
+  subtitle,
+  onPress,
+  right,
+}: any) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: theme.space.sm,
+        paddingVertical: theme.space.sm - 1,
+      }}
+    >
+      <View
+        style={{
+          padding: theme.space.xs + 2,
+          borderRadius: theme.borderRadius.md - 2,
+          backgroundColor: iconBg ?? theme.color.surface,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <IconLib name={icon} size={theme.space.md} color={iconColor} />
+      </View>
+      <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
+        <Text
+          style={{
+            color: titleColor ?? theme.color.textPrimary,
+            fontSize: theme.fontSize.sm + 1,
+            fontWeight: theme.fontWeight.medium,
+          }}
+        >
+          {title}
+        </Text>
+        {!!subtitle && (
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.sm - 1,
+              paddingTop: 2,
+            }}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
+      {right ?? (
+        <MaterialCommunityIcons
+          name="chevron-right"
+          size={theme.space.md}
+          color={theme.color.textMuted}
+        />
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function ToggleRight({ theme, value, onChange }: any) {
+  return (
+    <View style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}>
+      <ToggleSwitch
+        isOn={value}
+        onColor="#3B82F6"
+        offColor={
+          theme.isDark ? theme.color.border : theme.color.textMuted + "55"
+        }
+        size="medium"
+        onToggle={onChange}
+      />
+    </View>
+  );
+}
+
+
+
 export default function SettingsScreen() {
-  const [rankEnabled, setRankEnabled] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [emailEnabled, setEmailEnabled] = useState(false);
-  const [contestEnabled, setContestEnabled] = useState(false);
-  const [achievementEnabled, setAchievementEnabled] = useState(false);
-  const [timerSoundEnabled, setTimerSoundEnabled] = useState(false);
-  const [autoSubmitEnabled, setAutoSubmitEnabled] = useState(false);
+  const [toggles, setToggles] = useState({
+    rank: false,
+    push: false,
+    email: false,
+    contest: false,
+    achievement: false,
+    timerSound: false,
+    autoSubmit: false,
+  });
+  const set = (key: string) => (val: boolean) =>
+    setToggles((t) => ({ ...t, [key]: val }));
+
   const [userData, setUserData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // useBottomBar(false);
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const t = theme.i18n.t;
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await userApi.getMe();
-      setUserData(response);
-    } catch (error) {
-      setError("Could not load profile. Pull to refresh.");
-    } finally {
-      setLoading(false);
-    }
-  };
   useEffect(() => {
-    fetchUserData();
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setUserData(await userApi.getMe());
+      } catch {
+        setError("Could not load profile. Pull to refresh.");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const formatTime = (isoString: string) => {
-    const date = new Date(isoString);
-    return date.toLocaleString("en-IN", {
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -52,21 +183,19 @@ export default function SettingsScreen() {
       minute: "2-digit",
       hour12: true,
     });
-  };
 
-  if (loading) {
+  if (loading || error) {
     return (
       <View
         style={{
           flex: 1,
-          width: "100%",
-          height: "100%",
           backgroundColor: theme.color.background,
           justifyContent: "center",
           alignItems: "center",
+          paddingHorizontal: theme.space.md,
         }}
       >
-        <Loading />
+        {loading ? <Loading /> : <Text>{error}</Text>}
       </View>
     );
   }
@@ -77,6 +206,7 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
       style={{ flex: 1, backgroundColor: theme.color.background }}
     >
+      {/* Header */}
       <View
         style={{
           flexDirection: "row",
@@ -94,9 +224,7 @@ export default function SettingsScreen() {
             borderWidth: 1,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.lg - 3,
-            backgroundColor: theme.isDark
-              ? theme.color.card
-              : theme.color.card + "FF",
+            backgroundColor: theme.color.card,
             aspectRatio: 1,
           }}
         >
@@ -106,29 +234,25 @@ export default function SettingsScreen() {
             color={theme.color.textSecondary}
           />
         </TouchableOpacity>
-
         <View style={{ flex: 1, paddingLeft: theme.space.md }}>
           <Text
             style={{
-              letterSpacing: 0.3,
               textTransform: "capitalize",
               color: theme.color.textPrimary,
               fontSize: theme.fontSize.lg + 2,
               fontWeight: theme.fontWeight.bold,
             }}
           >
-            {theme.i18n.t("common.settings")}
+            {t("common.settings")}
           </Text>
           <Text
             style={{
-              letterSpacing: 0.1,
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.sm,
-              fontWeight: theme.fontWeight.regular,
               paddingTop: theme.space.xs * 0.5,
             }}
           >
-            {theme.i18n.t("common.account_preferences")}
+            {t("common.account_preferences")}
           </Text>
         </View>
       </View>
@@ -139,1398 +263,272 @@ export default function SettingsScreen() {
           marginTop: theme.space.sm + 2,
         }}
       >
-        <UserProfileCard userData={userData}></UserProfileCard>
+        <UserProfileCard userData={userData} />
       </View>
 
-      <Text
-        style={{
-          textTransform: "capitalize",
+      {/* Account */}
+      <SectionLabel theme={theme} text={t("common.account")} />
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="email-outline"
+          iconBg="#5B9CF61A"
+          iconColor="#5B9CF6"
+          title={t("common.email_address")}
+          subtitle={userData?.email}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="lock-outline"
+          iconBg="#5B9CF61A"
+          iconColor="#5B9CF6"
+          title={t("profile.change_password")}
+          subtitle={userData?.updatedAt ? formatTime(userData.updatedAt) : ""}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="school-outline"
+          iconBg="#F6A0201A"
+          iconColor="#F6A020"
+          title={t("profile.target_exam")}
+          subtitle={userData?.targetExam}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="book-open-outline"
+          iconBg="#22C55E1A"
+          iconColor="#22C55E"
+          title={t("common.study_level")}
+          subtitle={userData?.studyLevel}
+        />
+      </Card>
 
-          color: theme.color.textMuted,
-          fontSize: theme.fontSize.md,
-          fontWeight: theme.fontWeight.medium,
-          marginTop: theme.space.sm + 14,
-          paddingHorizontal: theme.space.sm + 4,
-        }}
-      >
-        {theme.i18n.t("common.account")}
-      </Text>
+      {/* Notifications */}
+      <SectionLabel theme={theme} text="NOTIFICATIONS" />
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="bell-outline"
+          iconBg="#5B9CF61A"
+          iconColor="#5B9CF6"
+          title={t("settings.push_notifications")}
+          subtitle={t("settings.daily_reminders")}
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.push}
+              onChange={set("push")}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="email-outline"
+          iconBg="#5B9CF61A"
+          iconColor="#5B9CF6"
+          title={t("settings.email_digest")}
+          subtitle={t("settings.weekly_performance_summary")}
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.email}
+              onChange={set("email")}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="chart-bar"
+          iconBg="#F6A0201A"
+          iconColor="#F6A020"
+          title={t("settings.rank_change_alerts")}
+          subtitle={t("settings.notify_on_leaderboard_moves")}
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.rank}
+              onChange={set("rank")}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="medal-outline"
+          iconBg="#22C55E1A"
+          iconColor="#22C55E"
+          title={t("settings.achievement_alerts")}
+          subtitle="Badges & milestone unlocks"
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.achievement}
+              onChange={set("achievement")}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="trophy-outline"
+          iconBg={theme.color.error + "1A"}
+          iconColor={theme.color.error}
+          title={t("settings.contest_reminders")}
+          subtitle={t("settings.upcoming_contest_alerts")}
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.contest}
+              onChange={set("contest")}
+            />
+          }
+        />
+      </Card>
+
+      {/* Quiz preferences */}
+      <SectionLabel theme={theme} text={t("settings.quiz_preferences")} />
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="tune-vertical"
+          iconBg={theme.color.warning + "22"}
+          iconColor={theme.color.warning}
+          title={t("settings.default_difficulty")}
+          subtitle={t("settings.intermediate")}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="volume-high"
+          iconBg={theme.color.accent + "22"}
+          iconColor={theme.color.accent}
+          title={t("settings.timer_sounds")}
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.timerSound}
+              onChange={set("timerSound")}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="clock-outline"
+          iconBg={theme.color.error + "22"}
+          iconColor={theme.color.error}
+          title="Auto-Submit on Expiry"
+          right={
+            <ToggleRight
+              theme={theme}
+              value={toggles.autoSubmit}
+              onChange={set("autoSubmit")}
+            />
+          }
+        />
+      </Card>
+
+      {/* Appearance */}
+      <SectionLabel theme={theme} text="APPEARANCE" />
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="moon-outline"
+          iconLib={Ionicons}
+          iconBg={theme.color.accent + "22"}
+          iconColor={theme.color.accent}
+          title={t("settings.dark_mode")}
+          subtitle={
+            theme.isDark
+              ? t("settings.dark_theme_active")
+              : t("settings.dark_theme_off")
+          }
+          right={
+            <ToggleRight
+              theme={theme}
+              value={theme.isDark}
+              onChange={toggleTheme}
+            />
+          }
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="web"
+          iconBg={theme.color.success + "22"}
+          iconColor={theme.color.success}
+          title={t("settings.language")}
+          subtitle="English"
+        />
+      </Card>
 
       <View
-        style={{
-          paddingHorizontal: theme.space.xs + 1,
-        }}
+        style={{ paddingHorizontal: theme.space.sm, marginTop: theme.space.sm }}
       >
-        <View
-          style={{
-            justifyContent: "center",
-            padding: theme.space.sm,
-            backgroundColor: theme.isDark
-              ? theme.color.background
-              : theme.color.background,
-          }}
-        >
-          <View
-            style={{
-              overflow: "hidden",
-              paddingVertical: theme.space.sm,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.isDark
-                ? theme.color.card
-                : theme.color.card,
-            }}
-          >
-            {/* Email */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: theme.space.xs,
-                paddingHorizontal: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: theme.space.xs + 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="email-outline"
-                  size={theme.space.md - 1}
-                  color="#5B9CF6"
-                />
-              </View>
-
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("common.email_address")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 3,
-                    paddingBottom: 3,
-                  }}
-                >
-                  {userData?.email}
-                </Text>
-              </View>
-
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Change Password */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: theme.space.sm,
-                paddingHorizontal: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: theme.space.sm - 2,
-                  paddingHorizontal: theme.space.sm - 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="lock-outline"
-                  size={theme.space.md}
-                  color="#5B9CF6"
-                />
-              </View>
-
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("profile.change_password")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 2,
-                  }}
-                >
-                  {userData?.updatedAt ? formatTime(userData.updatedAt) : ''}
-                </Text>
-              </View>
-
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color="#4A5568"
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Target Exam */}
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.xs + 2,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#2A1F0A" + 90
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="school-outline"
-                  size={theme.space.md}
-                  color="#F6A020"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("profile.target_exam")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 2,
-                  }}
-                >
-                  {userData?.targetExam}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Study Level */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#0A2A14" + 90
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="book-open-outline"
-                  size={theme.space.md}
-                  color="#22C55E"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("common.study_level")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    // paddingBottom: 0,
-                    paddingTop: 3,
-                  }}
-                >
-                  {userData?.studyLevel}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Text
-          style={{
-            marginTop: theme.space.sm + 4,
-            paddingHorizontal: theme.space.sm + 4,
-            color: theme.color.textMuted,
-            fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.medium,
-          }}
-        >
-          NOTIFICATIONS
-        </Text>
-        <View
-          style={{
-            backgroundColor: theme.isDark
-              ? theme.color.background
-              : theme.color.background,
-            justifyContent: "center",
-            padding: theme.space.sm,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: theme.isDark
-                ? theme.color.card
-                : theme.color.card,
-              borderRadius: theme.borderRadius.lg,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              overflow: "hidden",
-              paddingVertical: theme.space.sm,
-            }}
-          >
-            {/* Push Notifications */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.xs,
-              }}
-            >
-              <View
-                style={{
-                  padding: theme.space.xs + 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="bell-outline"
-                  size={theme.space.md - 1}
-                  color="#5B9CF6"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.push_notifications")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 3,
-                    paddingBottom: 3,
-                  }}
-                >
-                  {theme.i18n.t("settings.daily_reminders")}
-                </Text>
-              </View>
-              <View
-                style={{
-                  transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
-                }}
-              >
-                <ToggleSwitch
-                  isOn={pushEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    theme.isDark
-                      ? theme.color.border
-                      : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setPushEnabled}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Email Digest */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm - 2,
-                  paddingVertical: theme.space.sm - 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="email-outline"
-                  size={theme.space.md}
-                  color="#5B9CF6"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.email_digest")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 2,
-                  }}
-                >
-                  {theme.i18n.t("settings.weekly_performance_summary")}
-                </Text>
-              </View>
-              <View
-                style={{
-                  transform: [{ scaleX: 0.8 }, { scaleY: 0.85 }],
-                }}
-              >
-                <ToggleSwitch
-                  isOn={emailEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    theme.isDark
-                      ? theme.color.border
-                      : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setEmailEnabled}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Rank Change Alerts */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.xs + 2,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#2A1F0A" + 90
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="chart-bar"
-                  size={theme.space.md}
-                  color="#F6A020"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.rank_change_alerts")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 2,
-                  }}
-                >
-                  {theme.i18n.t("settings.notify_on_leaderboard_moves")}
-                </Text>
-              </View>
-              <View
-                style={{
-                  transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                }}
-              >
-                <ToggleSwitch
-                  isOn={rankEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    theme.isDark
-                      ? theme.color.border
-                      : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setRankEnabled}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Achievement Alerts */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#0A2A14" + 90
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="medal-outline"
-                  size={theme.space.md}
-                  color="#22C55E"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.achievement_alerts")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 3,
-                  }}
-                >
-                  Badges & milestone unlocks
-                </Text>
-              </View>
-              <View
-                style={{
-                  transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                }}
-              >
-                <ToggleSwitch
-                  isOn={achievementEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    theme.isDark
-                      ? theme.color.border
-                      : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setAchievementEnabled}
-                />
-              </View>
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            {/* Contest Reminders */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#2A0A0A"
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="trophy-outline"
-                  size={theme.space.md}
-                  color={theme.color.error}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.contest_reminders")}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm - 1,
-                    paddingTop: 3,
-                  }}
-                >
-                  {theme.i18n.t("settings.upcoming_contest_alerts")}
-                </Text>
-              </View>
-              <View
-                style={{
-                  transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                }}
-              >
-                <ToggleSwitch
-                  isOn={contestEnabled}
-                  onColor="#3B82F6"
-                  offColor={
-                    theme.isDark
-                      ? theme.color.border
-                      : theme.color.textMuted + "55"
-                  }
-                  size="medium"
-                  onToggle={setContestEnabled}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Text
-          style={{
-            textTransform: "capitalize",
-            color: theme.color.textMuted,
-            fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.medium,
-            paddingHorizontal: theme.space.md,
-            paddingVertical: theme.space.sm - 2,
-          }}
-        >
-          {theme.i18n.t("settings.quiz_preferences")}
-        </Text>
-        <View
-          style={{
-            paddingHorizontal: theme.space.xs - 5,
-          }}
-        >
-          <View
-            style={{
-              justifyContent: "center",
-              padding: theme.space.sm,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: theme.isDark
-                  ? theme.color.card
-                  : theme.color.card,
-                borderRadius: theme.borderRadius.lg,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                overflow: "hidden",
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.xs,
-                }}
-              >
-                <View
-                  style={{
-                    padding: theme.space.xs + 2,
-                    borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: theme.isDark
-                      ? theme.color.warning + 22
-                      : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="tune-vertical"
-                    size={theme.space.md - 1}
-                    color={theme.color.warning}
-                  />
-                </View>
-                <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                  <Text
-                    style={{
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm + 1,
-                      fontWeight: theme.fontWeight.medium,
-                    }}
-                  >
-                    {theme.i18n.t("settings.default_difficulty")}
-                  </Text>
-                  <Text
-                    style={{
-                      textTransform: "capitalize",
-                      color: theme.color.textMuted,
-                      fontSize: theme.fontSize.sm - 1,
-                      paddingTop: 3,
-                      paddingBottom: 3,
-                    }}
-                  >
-                    {theme.i18n.t("settings.intermediate")}
-                  </Text>
-                </View>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={theme.space.md}
-                  color={theme.color.textMuted}
-                />
-              </TouchableOpacity>
-
-              <View
-                style={{ height: 0.6, backgroundColor: theme.color.border }}
-              />
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm + 3,
-                }}
-              >
-                <View
-                  style={{
-                    paddingHorizontal: theme.space.sm - 2,
-                    paddingVertical: theme.space.sm - 2,
-                    borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: theme.isDark
-                      ? theme.color.accent + 22
-                      : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="volume-high"
-                    size={theme.space.md}
-                    color={theme.color.accent}
-                  />
-                </View>
-                <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                  <Text
-                    style={{
-                      textTransform: "capitalize",
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm + 1,
-                      fontWeight: theme.fontWeight.medium,
-                    }}
-                  >
-                    {theme.i18n.t("settings.timer_sounds")}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                  }}
-                >
-                  <ToggleSwitch
-                    isOn={timerSoundEnabled}
-                    onColor="#3B82F6"
-                    offColor={
-                      theme.isDark
-                        ? theme.color.border
-                        : theme.color.textMuted + "55"
-                    }
-                    size="medium"
-                    onToggle={setTimerSoundEnabled}
-                  />
-                </View>
-              </TouchableOpacity>
-              <View
-                style={{ height: 0.6, backgroundColor: theme.color.border }}
-              />
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm - 1,
-                }}
-              >
-                <View
-                  style={{
-                    paddingHorizontal: theme.space.sm - 2,
-                    paddingVertical: theme.space.sm - 2,
-                    borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: theme.isDark
-                      ? theme.color.error + 21
-                      : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="clock-outline"
-                    size={theme.space.md}
-                    color={theme.color.error}
-                  />
-                </View>
-                <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                  <Text
-                    style={{
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm + 1,
-                      fontWeight: theme.fontWeight.medium,
-                    }}
-                  >
-                    Auto-Submit on Expiry
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                  }}
-                >
-                  <ToggleSwitch
-                    isOn={autoSubmitEnabled}
-                    onColor="#3B82F6"
-                    offColor={
-                      theme.isDark
-                        ? theme.color.border
-                        : theme.color.textMuted + "55"
-                    }
-                    size="medium"
-                    onToggle={setAutoSubmitEnabled}
-                  />
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-        <Text
-          style={{
-            color: theme.color.textMuted,
-            fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.medium,
-            paddingHorizontal: theme.space.md,
-            paddingVertical: theme.space.sm - 2,
-          }}
-        >
-          APPEARANCE
-        </Text>
-        <View style={{ paddingHorizontal: theme.space.xs - 5 }}>
-          <View
-            style={{
-              justifyContent: "center",
-              padding: theme.space.sm,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: theme.isDark
-                  ? theme.color.card
-                  : theme.color.card,
-                borderRadius: theme.borderRadius.lg,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                overflow: "hidden",
-              }}
-            >
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm + 3,
-                }}
-              >
-                <View
-                  style={{
-                    paddingHorizontal: theme.space.sm - 2,
-                    paddingVertical: theme.space.sm - 2,
-                    borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: theme.isDark
-                      ? theme.color.accent + 22
-                      : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Ionicons
-                    name="moon-outline"
-                    size={theme.space.md - 1}
-                    color={theme.color.accent}
-                  />
-                </View>
-                <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                  <Text
-                    style={{
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm + 1,
-                      fontWeight: theme.fontWeight.medium,
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {theme.i18n.t("settings.dark_mode")}
-                  </Text>
-                  <Text
-                    style={{
-                      color: theme.color.textMuted,
-                      fontSize: theme.fontSize.sm - 1,
-                      paddingTop: 2,
-                      paddingBottom: 2,
-                    }}
-                  >
-                    {theme.isDark
-                      ? theme.i18n.t("settings.dark_theme_active")
-                      : theme.i18n.t("settings.dark_theme_off")}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-                  }}
-                >
-                  <ToggleSwitch
-                    isOn={theme.isDark}
-                    onColor="#3B82F6"
-                    offColor={
-                      theme.isDark
-                        ? theme.color.border
-                        : theme.color.textMuted + "55"
-                    }
-                    size="medium"
-                    onToggle={toggleTheme}
-                  />
-                </View>
-              </TouchableOpacity>
-              <View
-                style={{ height: 0.6, backgroundColor: theme.color.border }}
-              />
-              <TouchableOpacity
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.xs,
-                }}
-              >
-                <View
-                  style={{
-                    padding: theme.space.xs + 2,
-                    borderRadius: theme.borderRadius.md - 2,
-                    backgroundColor: theme.isDark
-                      ? theme.color.success + 22
-                      : theme.color.surface,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="web"
-                    size={theme.space.md - 1}
-                    color={theme.color.success}
-                  />
-                </View>
-                <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                  <Text
-                    style={{
-                      textTransform: "capitalize",
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm + 1,
-                      fontWeight: theme.fontWeight.medium,
-                    }}
-                  >
-                    {theme.i18n.t("settings.language")}
-                  </Text>
-                  <Text
-                    style={{
-                      color: theme.color.textMuted,
-                      fontSize: theme.fontSize.sm - 1,
-                      paddingTop: 3,
-                      paddingBottom: 3,
-                    }}
-                  >
-                    English
-                  </Text>
-                </View>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={theme.space.md}
-                  color={theme.color.textMuted}
-                />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-        <View
-          style={{
-            paddingHorizontal: theme.space.sm,
-            marginTop: theme.space.sm,
-          }}
-        >
-          <PremiumUpsellCardFull />
-        </View>
-        <Text
-          style={{
-            color: theme.color.textMuted,
-            fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.medium,
-            paddingHorizontal: theme.space.md,
-            paddingVertical: theme.space.sm + 4,
-          }}
-        >
-          Help and Support
-        </Text>
-
-        <View
-          style={{
-            backgroundColor: theme.isDark
-              ? theme.color.background
-              : theme.color.background,
-            justifyContent: "center",
-            padding: theme.space.sm,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: theme.isDark
-                ? theme.color.card
-                : theme.color.card,
-              borderRadius: theme.borderRadius.lg,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              overflow: "hidden",
-              paddingVertical: theme.space.sm,
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm,
-              }}
-            >
-              <View
-                style={{
-                  padding: theme.space.xs + 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="help-circle-outline"
-                  size={theme.space.md - 1}
-                  color="#5B9CF6"
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.help_center")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm + 1,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm - 2,
-                  paddingVertical: theme.space.sm - 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? "#1A2744"
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="message-outline"
-                  size={theme.space.md}
-                  color={theme.color.accent}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.contact_support")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color="#4A5568"
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm + 2,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm - 1,
-                  borderRadius: theme.borderRadius.md,
-                  backgroundColor: theme.isDark
-                    ? theme.color.warning + 22
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="star-outline"
-                  size={theme.space.md}
-                  color={theme.color.warning}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.rate_medquel")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm - 3,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? theme.color.surface
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="file-document-outline"
-                  size={theme.space.md}
-                  color={theme.color.textMuted}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.privacy_policy")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View
-          style={{
-            backgroundColor: theme.isDark
-              ? theme.color.background
-              : theme.color.background,
-            justifyContent: "center",
-            padding: theme.space.sm,
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: theme.isDark
-                ? theme.color.card
-                : theme.color.card,
-              borderRadius: theme.borderRadius.lg,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              overflow: "hidden",
-              paddingVertical: theme.space.sm,
-            }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm - 2,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm,
-                  paddingVertical: theme.space.sm - 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? theme.color.error + 22
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="logout"
-                  size={theme.space.md}
-                  color={theme.color.error}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.error,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.sign_out")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-            <View
-              style={{ height: 0.6, backgroundColor: theme.color.border }}
-            />
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingHorizontal: theme.space.sm,
-                paddingVertical: theme.space.sm - 3,
-              }}
-            >
-              <View
-                style={{
-                  paddingHorizontal: theme.space.sm - 1,
-                  paddingVertical: theme.space.sm - 2,
-                  borderRadius: theme.borderRadius.md - 2,
-                  backgroundColor: theme.isDark
-                    ? theme.color.error + 22
-                    : theme.color.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="trash-can-outline"
-                  size={theme.space.md}
-                  color={theme.color.error}
-                />
-              </View>
-              <View style={{ flex: 1, paddingLeft: theme.space.sm }}>
-                <Text
-                  style={{
-                    textTransform: "capitalize",
-                    color: theme.color.error,
-                    fontSize: theme.fontSize.sm + 1,
-                    fontWeight: theme.fontWeight.medium,
-                  }}
-                >
-                  {theme.i18n.t("settings.delete_account")}
-                </Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={theme.space.md}
-                color={theme.color.textMuted}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <PremiumUpsellCardFull />
       </View>
+
+      {/* Help & Support */}
+      <SectionLabel theme={theme} text="Help and Support" />
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="help-circle-outline"
+          iconBg="#5B9CF61A"
+          iconColor="#5B9CF6"
+          title={t("settings.help_center")}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="message-outline"
+          iconBg="#5B9CF61A"
+          iconColor={theme.color.accent}
+          title={t("settings.contact_support")}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="star-outline"
+          iconBg={theme.color.warning + "22"}
+          iconColor={theme.color.warning}
+          title={t("settings.rate_medquel")}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="file-document-outline"
+          iconBg={theme.color.surface}
+          iconColor={theme.color.textMuted}
+          title={t("settings.privacy_policy")}
+        />
+      </Card>
+
+      {/* Danger zone */}
+      <Card theme={theme}>
+        <Row
+          theme={theme}
+          icon="logout"
+          iconBg={theme.color.error + "22"}
+          iconColor={theme.color.error}
+          title={t("settings.sign_out")}
+          titleColor={theme.color.error}
+        />
+        <Divider theme={theme} />
+        <Row
+          theme={theme}
+          icon="trash-can-outline"
+          iconBg={theme.color.error + "22"}
+          iconColor={theme.color.error}
+          title={t("settings.delete_account")}
+          titleColor={theme.color.error}
+        />
+      </Card>
     </ScrollView>
   );
 }
