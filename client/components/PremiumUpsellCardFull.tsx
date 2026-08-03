@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from "../theme/ThemeContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
