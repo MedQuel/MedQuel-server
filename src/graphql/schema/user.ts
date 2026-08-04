@@ -1,4 +1,3 @@
-// User domain schema. Mirrors the users/{uid} Firestore document
 export const userTypeDefs = `#graphql
   type User {
     uid: ID!
@@ -34,6 +33,7 @@ export const userTypeDefs = `#graphql
     yearOfStudy: String
     institution: String
   }
+
   input CompleteOnboardingInput {
     displayName: String!
     describesYou: String!
