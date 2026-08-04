@@ -2,9 +2,11 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 
+import { api } from '../../common/api/api';
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
+import type { HomeData, User } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { LevelProgressCard } from '../../components/LevelProgressCard';
 import { StatsOverviewCard } from '../../components/StatsOverviewCard';
@@ -12,8 +14,6 @@ import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
 import { SubjectId, SubjectIcon, subjectCatalog } from '../../common/constants/subject';
-
-import { MOCK_HOME_DATA, MOCK_USER } from '../../common/constants/mockData';
 
 
 type PracticeSubject = { id: SubjectId; label: string };
@@ -101,8 +101,10 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
 
 
 export default function HomeScreen() {
-  const [mockHomeData, setMockHomeData] = useState(MOCK_HOME_DATA);
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const { theme } = useTheme();
   const router = useRouter();
@@ -110,171 +112,212 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchHomeData() {
+
+    async function fetchHomeDashboard() {
       try {
         setLoading(true);
-        const data = await new Promise<typeof MOCK_HOME_DATA>((resolve) => { setTimeout(() => resolve(MOCK_HOME_DATA), 1200) });
+        setError(null);
+        const [nextHomeData, currentUser] = await Promise.all([
+          api.home.getHomeData(),
+          api.user.getMe(),
+        ]);
 
-        if (isMounted) setMockHomeData(data);
-      } catch (error) {
-        console.log('Failed to fetch home data:', error);
+        if (isMounted) {
+          setHomeData(nextHomeData);
+          setUser(currentUser);
+        }
+      } catch (err) {
+        console.log('Failed to fetch home dashboard:', err);
+        if (isMounted) setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
       } finally {
         if (isMounted) setLoading(false);
       }
     }
 
-    fetchHomeData();
+    fetchHomeDashboard();
     return () => { isMounted = false };
-  }, []);
+  }, [theme.i18n]);
 
-  const dailyChallenge = mockHomeData.dailyChallenge;
-
+  const dailyChallenge = homeData?.dailyChallenge ?? null;
   const practiceSubjects = useMemo(() => {
-    return (mockHomeData.subjectGrid ?? []).slice(0, 6).map((item) => {
+    return (homeData?.subjectGrid ?? []).slice(0, 6).map((item) => {
       const normalized = item.subject.toLowerCase();
-      const match = Object.entries(subjectCatalog).find(
-        ([, def]) => def.title.toLowerCase() === normalized
-      );
-      return match ? { id: match[0] as SubjectId, label: item.subject } : { id: 'anatomy' as SubjectId, label: item.subject };
+      const match = Object.entries(subjectCatalog).find(([, def]) => def.title.toLowerCase() === normalized);
+
+      return match
+        ? { id: match[0] as SubjectId, label: item.subject }
+        : { id: 'anatomy' as SubjectId, label: item.subject };
     });
-  }, [mockHomeData]);
+  }, [homeData]);
 
   const performanceTrend = useMemo(() => {
     const weekDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
     const trend = {} as Record<(typeof weekDays)[number], number>;
 
-    mockHomeData.performanceTrend.slice(-7).forEach((point, index) => {
+    homeData?.performanceTrend.slice(-7).forEach((point, index) => {
       const key = weekDays[index];
       if (key) trend[key] = point.accuracy;
     });
 
     return trend;
-  }, [mockHomeData]);
+  }, [homeData]);
+
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+        <Loading message={theme.i18n.t('Loading your dashboard...')} fullscreen />
+      </View>
+    );
+  }
+
+  if (error || !homeData || !user) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: theme.space.md,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <Text
+          style={{
+            textAlign: 'center',
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.sm,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
+          {error ?? theme.i18n.t('Home dashboard not found.')}
+        </Text>
+      </View>
+    );
+  }
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <HomeHeader
-        name={MOCK_USER.displayName}
-        streak={MOCK_USER.currentStreak}
-        level={MOCK_USER.currentLevel}
+        name={user.displayName}
+        streak={user.currentStreak}
+        level={user.currentLevel}
         onNotificationsPress={() => router.push('/notifications')}
       />
 
-      {loading ? (
-        <Loading message={theme.i18n.t('Loading your dashboard...')} fullscreen />
-      ) : (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            gap: theme.space.md,
-            paddingTop: theme.space.md,
-            paddingBottom: theme.space.xxl * 1.75,
-            paddingHorizontal: theme.space.md,
-          }}
-        >
-          <LevelProgressCard
-            currentLevel={MOCK_USER.currentLevel}
-            nextLevel={MOCK_USER.currentLevel + 1}
-            currentEP={MOCK_USER.epPoints}
-            nextLevelEP={MOCK_USER.epPoints + 650}
-            remainingEP={Math.max(0, MOCK_USER.epPoints + 650 - MOCK_USER.epPoints)}
-          />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: theme.space.md,
+          paddingTop: theme.space.md,
+          paddingBottom: theme.space.xxl * 1.75,
+          paddingHorizontal: theme.space.md,
+        }}
+      >
+        <LevelProgressCard
+          currentLevel={user.currentLevel}
+          nextLevel={user.currentLevel + 1}
+          currentEP={user.epPoints}
+          nextLevelEP={user.epPoints + 650}
+          remainingEP={Math.max(0, user.epPoints + 650 - user.epPoints)}
+        />
 
-          <StatsOverviewCard
-            rank={5}
-            accuracy={Math.round(
-              mockHomeData.subjectGrid.reduce((sum, item) => sum+item.accuracy, 0) / mockHomeData.subjectGrid.length
-            )}
-            quizzesTaken={mockHomeData.subjectGrid.reduce((sum, item) => sum+item.totalAttempted, 0)}
-            earnedPoints={MOCK_USER.epPoints}
-          />
+        <StatsOverviewCard
+          rank={5}
+          accuracy={Math.round(homeData.subjectGrid.reduce((sum, item) => sum+item.accuracy, 0) / homeData.subjectGrid.length)}
+          quizzesTaken={homeData.subjectGrid.reduce((sum, item) => sum + item.totalAttempted, 0)}
+          earnedPoints={user.epPoints}
+        />
 
-          <DailyChallengeCard
-            title={dailyChallenge?.subject ?? 'Anatomy Essentials'}
-            questions={30}
-            duration={45}
-            difficulty='medium'
-            endsAt={
-              dailyChallenge?.expiresAt
-                ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
-                : '840'
-            }
-            epReward={dailyChallenge?.epReward ?? 150}
-            onStart={() => {}}
-          />
+        <DailyChallengeCard
+          title={dailyChallenge?.subject ?? 'Anatomy Essentials'}
+          questions={30}
+          duration={45}
+          difficulty='medium'
+          endsAt={dailyChallenge?.expiresAt
+            ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
+            : '840'
+          }
+          epReward={dailyChallenge?.epReward ?? 150}
+          onStart={() => {}}
+        />
 
-          <View style={{ gap: theme.space.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ gap: theme.space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text
+              style={{
+                color: theme.color.textPrimary,
+                fontSize: theme.fontSize.lg,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              {theme.i18n.t('Active Contests')}
+            </Text>
+
+            <TouchableOpacity onPress={() => router.push('/contests')}>
               <Text
                 style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {theme.i18n.t('Active Contests')}
+                {theme.i18n.t('View All')}
               </Text>
-              <TouchableOpacity onPress={() => router.push('/contests')}>
-                <Text
-                  style={{
-                    color: theme.color.accent,
-                    fontSize: theme.fontSize.sm,
-                    fontFamily: theme.fontFamily.regular,
-                  }}
-                >
-                  {theme.i18n.t('View All')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View>
-              <ActiveContestsCard
-                contests={mockHomeData.activeContests.map((contest) => ({
-                  title: contest.title,
-                  subject: contest.subject,
-                  difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
-                  isLive: contest.status === 'active',
-                  participantsCount: contest.participantCount,
-                  epReward: contest.epReward,
-                }))}
-              />
-            </View>
+            </TouchableOpacity>
           </View>
 
-          <View style={{ gap: theme.space.sm }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('Practice by Subject')}
-              </Text>
-              <TouchableOpacity onPress={() => router.push('/home/practiceBySubject')}>
-                <Text
-                  style={{
-                    color: theme.color.accent,
-                    fontSize: theme.fontSize.sm,
-                    fontFamily: theme.fontFamily.regular,
-                  }}
-                >
-                  {theme.i18n.t('View All')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <PracticeBySubject
-              subjects={practiceSubjects}
-              onPress={(subjectId) => { console.log('Selected Subject:', subjectId) }}
+          <View>
+            <ActiveContestsCard
+              contests={homeData.activeContests.map((contest) => ({
+                title: contest.title,
+                subject: contest.subject,
+                difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
+                isLive: contest.status === 'active',
+                participantsCount: contest.participantCount,
+                epReward: contest.epReward,
+              }))}
             />
           </View>
-          <PerformanceTrendCard accuracy={performanceTrend} />
-        </ScrollView>
-      )}
+        </View>
+
+        <View style={{ gap: theme.space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text
+              style={{
+                color: theme.color.textPrimary,
+                fontSize: theme.fontSize.lg,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              {theme.i18n.t('Practice by Subject')}
+            </Text>
+
+            <TouchableOpacity onPress={() => router.push('/home/practiceBySubject')}>
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('View All')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <PracticeBySubject
+            subjects={practiceSubjects}
+            onPress={(subjectId) => {
+              console.log('Selected Subject:', subjectId);
+            }}
+          />
+        </View>
+        <PerformanceTrendCard accuracy={performanceTrend} />
+      </ScrollView>
     </View>
   );
 }
