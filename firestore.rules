@@ -71,12 +71,16 @@ service cloud.firestore {
     // ─────> Contests
     match /contests/{contestId} {
       allow read: if request.auth != null;
-      allow write: if false; // backend/admin only
+      allow write: if false;
 
       match /leaderboard/{userId} {
         allow read: if request.auth != null;
         allow write: if false;
       }
+    }
+
+    match /contestTemplates/{templateId} {
+      allow read, write: if false;
     }
 
 
