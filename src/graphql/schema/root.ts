@@ -1,6 +1,4 @@
-// Root schema
-// Defines the base Query/Mutation types so every domain schema file (user.ts, quiz.ts, ...)
-// can use `extend type Query` / `extend type Mutation` instead of redeclaring the root types.
+// Defines th\e base Query/Mutation types so every domain schema file can use instead of redeclaring the root types.
 export const rootTypeDefs = `#graphql
   type Query {
     ping: String!
