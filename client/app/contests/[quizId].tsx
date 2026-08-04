@@ -36,6 +36,60 @@ function mapClientQuestion(q: ClientQuestion): QuizQuestion {
   };
 }
 
+type QuizTimerProps = {
+  totalSeconds: number;
+  paused: boolean;
+  currentQuestionId?: string;
+  timeSpentRef: React.MutableRefObject<Record<string, number>>;
+  onExpire: () => void;
+  color: string;
+  fontSize: number;
+  fontWeight: any;
+  fontFamily: string;
+};
+
+function QuizTimer({ totalSeconds, paused, currentQuestionId, timeSpentRef, onExpire, color, fontSize, fontWeight, fontFamily }: QuizTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(totalSeconds);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onExpireRef = useRef(onExpire);
+  const questionIdRef = useRef(currentQuestionId);
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
+
+  useEffect(() => {
+    questionIdRef.current = currentQuestionId;
+  }, [currentQuestionId]);
+
+  useEffect(() => {
+    setTimeLeft(totalSeconds);
+  }, [totalSeconds]);
+
+  useEffect(() => {
+    if (paused) return;
+
+    intervalRef.current = setInterval(() => {
+      const qId = questionIdRef.current;
+      if (qId) {
+        timeSpentRef.current[qId] = (timeSpentRef.current[qId] ?? 0) + 1;
+      }
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalRef.current!);
+          onExpireRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(intervalRef.current!);
+  }, [paused, timeSpentRef]);
+
+  return <Text style={{ color, fontSize, fontWeight, fontFamily }}>{formatTime(timeLeft)}</Text>;
+}
+
 export default function QuizScreen() {
   const params = useLocalSearchParams<{ quizId: string; practice?: string; totalQuestions?: string }>();
   const { theme } = useTheme();
@@ -52,19 +106,14 @@ export default function QuizScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(0);
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
+
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentIndexRef = useRef(0);
+  const [sessionTimeLimitSecs, setSessionTimeLimitSecs] = useState(0);
   const timeSpentRef = useRef<Record<string, number>>({});
-
-  useEffect(() => {
-    currentIndexRef.current = currentIndex;
-  }, [currentIndex]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,11 +124,11 @@ export default function QuizScreen() {
       try {
         const session = await api.contest.joinContest(quizId);
         if (cancelled) return;
+
         const mapped = session.questions.map(mapClientQuestion);
         setSessionId(session.sessionId);
-        setTimeLeft(session.timeLimitSecs);
+        setSessionTimeLimitSecs(session.timeLimitSecs);
         setQuestions(mapped);
-        
         setAnswers(
           Object.fromEntries(
             mapped.map((q) => [q.id, { questionId: q.id, selectedLabel: null, isBookmarked: false, isFlagged: false }])
@@ -106,7 +155,6 @@ export default function QuizScreen() {
 
   const handleFinish = useCallback(async () => {
     if (submitting || !sessionId) return;
-    if (timerRef.current) clearInterval(timerRef.current);
     setSubmitting(true);
     setSubmitError(null);
 
@@ -137,35 +185,6 @@ export default function QuizScreen() {
       setSubmitting(false);
     }
   }, [answers, currentQuestion?.subject, isPractice, questions, quizId, router, sessionId, submitting, t]);
-
-  const handleFinishRef = useRef(handleFinish);
-  useEffect(() => {
-    handleFinishRef.current = handleFinish;
-  }, [handleFinish]);
-
-  useEffect(() => {
-    if (loading || loadError || activeModal !== null || submitting) return;
-    if (questions.length === 0) return;
-
-    timerRef.current = setInterval(() => {
-      const activeQuestion = questions[currentIndexRef.current];
-      if (activeQuestion) {
-        timeSpentRef.current[activeQuestion.id] = (timeSpentRef.current[activeQuestion.id] ?? 0) + 1;
-      }
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          handleFinishRef.current();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [activeModal, loading, loadError, submitting, questions.length]);
 
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
     setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId]!, ...patch } }));
@@ -249,16 +268,17 @@ export default function QuizScreen() {
       >
         <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
           <Feather name="clock" size={theme.fontSize.md} color={theme.color.info} />
-          <Text
-            style={{
-              color: theme.color.info,
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
-            }}
-          >
-            {formatTime(timeLeft)}
-          </Text>
+          <QuizTimer
+            totalSeconds={sessionTimeLimitSecs}
+            paused={activeModal !== null || submitting}
+            currentQuestionId={currentQuestion.id}
+            timeSpentRef={timeSpentRef}
+            onExpire={handleFinish}
+            color={theme.color.info}
+            fontSize={theme.fontSize.lg}
+            fontWeight={theme.fontWeight.bold}
+            fontFamily={theme.fontFamily.number}
+          />
         </View>
 
         <View
