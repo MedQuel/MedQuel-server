@@ -197,15 +197,7 @@ export default function SettingsScreen() {
 
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        flexGrow: 1,
-        paddingHorizontal: theme.space.md,
-        paddingBottom: theme.space.xxl * 1.5,
-      }}
-      style={{ flex: 1, backgroundColor: theme.color.background }}
-    >
+    <View style={{ flex: 1, paddingHorizontal: theme.space.md, backgroundColor: theme.color.background }}>
       <View
         style={{
           gap: theme.space.sm,
@@ -213,7 +205,6 @@ export default function SettingsScreen() {
           alignItems: 'center',
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
-          marginBottom: theme.space.sm,
         }}
       >
         <TouchableOpacity
@@ -257,251 +248,245 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <UserProfileCard userData={userData} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          flexGrow: 1,
+          marginTop: theme.space.sm,
+          paddingBottom: theme.space.xxl * 1.5,
+        }}
+      >
+        <UserProfileCard userData={userData} />
 
-      <SectionLabel
-        theme={theme}
-        text={theme.i18n.t('profile.settings.section.account')}
-      />
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='email-outline'
-          iconBg='#5B9CF61A'
-          iconColor='#5B9CF6'
-          title={theme.i18n.t('profile.settings.account.email')}
-          subtitle={userData?.email}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='lock-outline'
-          iconBg='#5B9CF61A'
-          iconColor='#5B9CF6'
-          title={theme.i18n.t('profile.settings.account.changePassword')}
-          subtitle={userData?.updatedAt
-            ? theme.i18n.t('profile.settings.account.lastChanged', { date: countDays(userData.updatedAt) })
-            : theme.i18n.t('profile.settings.account.changePassword')
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='school-outline'
-          iconBg='#F6A0201A'
-          iconColor='#F6A020'
-          title={theme.i18n.t('profile.settings.account.targetExam')}
-          subtitle={userData?.targetExam}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='book-open-outline'
-          iconBg='#22C55E1A'
-          iconColor='#22C55E'
-          title={theme.i18n.t('profile.settings.account.studyLevel')}
-          subtitle={userData?.studyLevel}
-        />
-      </Card>
+        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.account')} />
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='email-outline'
+            iconBg='#5B9CF61A'
+            iconColor='#5B9CF6'
+            title={theme.i18n.t('profile.settings.account.email')}
+            subtitle={userData?.email}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='lock-outline'
+            iconBg='#5B9CF61A'
+            iconColor='#5B9CF6'
+            title={theme.i18n.t('profile.settings.account.changePassword')}
+            subtitle={userData?.updatedAt
+              ? theme.i18n.t('profile.settings.account.lastChanged', { date: countDays(userData.updatedAt) })
+              : theme.i18n.t('profile.settings.account.changePassword')
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='school-outline'
+            iconBg='#F6A0201A'
+            iconColor='#F6A020'
+            title={theme.i18n.t('profile.settings.account.targetExam')}
+            subtitle={userData?.targetExam}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='book-open-outline'
+            iconBg='#22C55E1A'
+            iconColor='#22C55E'
+            title={theme.i18n.t('profile.settings.account.studyLevel')}
+            subtitle={userData?.studyLevel}
+          />
+        </Card>
 
-      <SectionLabel
-        theme={theme}
-        text={theme.i18n.t('profile.settings.section.notifications')}
-      />
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='bell-outline'
-          iconBg='#5B9CF61A'
-          iconColor='#5B9CF6'
-          title={theme.i18n.t('profile.settings.notifications.pushNotifications')}
-          subtitle={theme.i18n.t('profile.settings.notifications.pushNotificationsSubtitle')}
-          right={
-            <ToggleRight theme={theme} value={toggles.push} onChange={set('push')} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='email-outline'
-          iconBg='#5B9CF61A'
-          iconColor='#5B9CF6'
-          title={theme.i18n.t('profile.settings.notifications.emailDigest')}
-          subtitle={theme.i18n.t('profile.settings.notifications.emailDigestSubtitle')}
-          right={
-            <ToggleRight theme={theme} value={toggles.email} onChange={set('email')} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='chart-bar'
-          iconBg='#F6A0201A'
-          iconColor='#F6A020'
-          title={theme.i18n.t('profile.settings.notifications.rankChangeAlerts')}
-          subtitle={theme.i18n.t('profile.settings.notifications.rankChangeAlertsSubtitle')}
-          right={
-            <ToggleRight theme={theme} value={toggles.rank} onChange={set('rank')} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='medal-outline'
-          iconBg='#22C55E1A'
-          iconColor='#22C55E'
-          title={theme.i18n.t('profile.settings.notifications.achievementAlerts')}
-          subtitle={theme.i18n.t('profile.settings.notifications.achievementAlertsSubtitle')}
-          right={
-            <ToggleRight theme={theme} value={toggles.achievement} onChange={set('achievement')} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='trophy-outline'
-          iconBg={theme.color.error + '1A'}
-          iconColor={theme.color.error}
-          title={theme.i18n.t('profile.settings.notifications.contestReminders')}
-          subtitle={theme.i18n.t('profile.settings.notifications.contestRemindersSubtitle')}
-          right={
-            <ToggleRight theme={theme} value={toggles.contest} onChange={set('contest')} />
-          }
-        />
-      </Card>
+        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.notifications')} />
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='bell-outline'
+            iconBg='#5B9CF61A'
+            iconColor='#5B9CF6'
+            title={theme.i18n.t('profile.settings.notifications.pushNotifications')}
+            subtitle={theme.i18n.t('profile.settings.notifications.pushNotificationsSubtitle')}
+            right={
+              <ToggleRight theme={theme} value={toggles.push} onChange={set('push')} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='email-outline'
+            iconBg='#5B9CF61A'
+            iconColor='#5B9CF6'
+            title={theme.i18n.t('profile.settings.notifications.emailDigest')}
+            subtitle={theme.i18n.t('profile.settings.notifications.emailDigestSubtitle')}
+            right={
+              <ToggleRight theme={theme} value={toggles.email} onChange={set('email')} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='chart-bar'
+            iconBg='#F6A0201A'
+            iconColor='#F6A020'
+            title={theme.i18n.t('profile.settings.notifications.rankChangeAlerts')}
+            subtitle={theme.i18n.t('profile.settings.notifications.rankChangeAlertsSubtitle')}
+            right={
+              <ToggleRight theme={theme} value={toggles.rank} onChange={set('rank')} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='medal-outline'
+            iconBg='#22C55E1A'
+            iconColor='#22C55E'
+            title={theme.i18n.t('profile.settings.notifications.achievementAlerts')}
+            subtitle={theme.i18n.t('profile.settings.notifications.achievementAlertsSubtitle')}
+            right={
+              <ToggleRight theme={theme} value={toggles.achievement} onChange={set('achievement')} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='trophy-outline'
+            iconBg={theme.color.error + '1A'}
+            iconColor={theme.color.error}
+            title={theme.i18n.t('profile.settings.notifications.contestReminders')}
+            subtitle={theme.i18n.t('profile.settings.notifications.contestRemindersSubtitle')}
+            right={
+              <ToggleRight theme={theme} value={toggles.contest} onChange={set('contest')} />
+            }
+          />
+        </Card>
 
-      <SectionLabel
-        theme={theme}
-        text={theme.i18n.t('profile.settings.section.quizPreferences')}
-      />
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='tune-vertical'
-          iconBg={theme.color.warning + '22'}
-          iconColor={theme.color.warning}
-          title={theme.i18n.t('profile.settings.quizPreferences.defaultDifficulty')}
-          subtitle={theme.i18n.t('Medium')}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='volume-high'
-          iconBg={theme.color.accent + '22'}
-          iconColor={theme.color.accent}
-          title={theme.i18n.t('profile.settings.quizPreferences.timerSound')}
-          right={
-            <ToggleRight theme={theme} value={toggles.timerSound} onChange={set('timerSound')} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='clock-outline'
-          iconBg={theme.color.error + '22'}
-          iconColor={theme.color.error}
-          title={theme.i18n.t('profile.settings.quizPreferences.autoSubmit')}
-          right={
-            <ToggleRight theme={theme} value={toggles.autoSubmit} onChange={set('autoSubmit')} />
-          }
-        />
-      </Card>
+        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.quizPreferences')} />
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='tune-vertical'
+            iconBg={theme.color.warning + '22'}
+            iconColor={theme.color.warning}
+            title={theme.i18n.t('profile.settings.quizPreferences.defaultDifficulty')}
+            subtitle={theme.i18n.t('Medium')}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='volume-high'
+            iconBg={theme.color.accent + '22'}
+            iconColor={theme.color.accent}
+            title={theme.i18n.t('profile.settings.quizPreferences.timerSound')}
+            right={
+              <ToggleRight theme={theme} value={toggles.timerSound} onChange={set('timerSound')} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='clock-outline'
+            iconBg={theme.color.error + '22'}
+            iconColor={theme.color.error}
+            title={theme.i18n.t('profile.settings.quizPreferences.autoSubmit')}
+            right={
+              <ToggleRight theme={theme} value={toggles.autoSubmit} onChange={set('autoSubmit')} />
+            }
+          />
+        </Card>
 
-      <SectionLabel
-        theme={theme}
-        text={theme.i18n.t('profile.settings.section.appearance')}
-      />
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='moon-outline'
-          iconLib={Ionicons}
-          iconBg={theme.color.accent + '22'}
-          iconColor={theme.color.accent}
-          title={theme.isDark
-            ? theme.i18n.t('profile.settings.appearance.darkMode')
-            : theme.i18n.t('profile.settings.appearance.lightMode')
-          }
-          subtitle={theme.isDark
-            ? theme.i18n.t('profile.settings.appearance.darkModeSubtitle')
-            : theme.i18n.t('profile.settings.appearance.lightModeSubtitle')
-          }
-          right={
-            <ToggleRight theme={theme} value={theme.isDark} onChange={toggleTheme} />
-          }
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='web'
-          iconBg={theme.color.success + '22'}
-          iconColor={theme.color.success}
-          title={theme.i18n.t('profile.settings.appearance.language')}
-          subtitle={theme.i18n.t('profile.settings.appearance.english')}
-        />
-      </Card>
+        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.appearance')} />
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='moon-outline'
+            iconLib={Ionicons}
+            iconBg={theme.color.accent + '22'}
+            iconColor={theme.color.accent}
+            title={theme.isDark
+              ? theme.i18n.t('profile.settings.appearance.darkMode')
+              : theme.i18n.t('profile.settings.appearance.lightMode')
+            }
+            subtitle={theme.isDark
+              ? theme.i18n.t('profile.settings.appearance.darkModeSubtitle')
+              : theme.i18n.t('profile.settings.appearance.lightModeSubtitle')
+            }
+            right={
+              <ToggleRight theme={theme} value={theme.isDark} onChange={toggleTheme} />
+            }
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='web'
+            iconBg={theme.color.success + '22'}
+            iconColor={theme.color.success}
+            title={theme.i18n.t('profile.settings.appearance.language')}
+            subtitle={theme.i18n.t('profile.settings.appearance.english')}
+          />
+        </Card>
 
-      <View style={{ marginTop: theme.space.sm }}>
-        <PremiumUpsellCardFull />
-      </View>
+        <View style={{ marginTop: theme.space.sm }}>
+          <PremiumUpsellCardFull />
+        </View>
 
-      <SectionLabel
-        theme={theme}
-        text={theme.i18n.t('profile.settings.section.helpAndSupport')}
-      />
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='help-circle-outline'
-          iconBg='#5B9CF61A'
-          iconColor='#5B9CF6'
-          title={theme.i18n.t('profile.settings.helpAndSupport.helpCenter')}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='message-outline'
-          iconBg='#5B9CF61A'
-          iconColor={theme.color.accent}
-          title={theme.i18n.t('profile.settings.helpAndSupport.contactSupport')}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='star-outline'
-          iconBg={theme.color.warning + '22'}
-          iconColor={theme.color.warning}
-          title={theme.i18n.t('profile.settings.helpAndSupport.rateMedQuel')}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='file-document-outline'
-          iconBg={theme.color.surface}
-          iconColor={theme.color.textMuted}
-          title={theme.i18n.t('profile.settings.helpAndSupport.privacyPolicy')}
-        />
-      </Card>
+        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.helpAndSupport')} />
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='help-circle-outline'
+            iconBg='#5B9CF61A'
+            iconColor='#5B9CF6'
+            title={theme.i18n.t('profile.settings.helpAndSupport.helpCenter')}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='message-outline'
+            iconBg='#5B9CF61A'
+            iconColor={theme.color.accent}
+            title={theme.i18n.t('profile.settings.helpAndSupport.contactSupport')}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='star-outline'
+            iconBg={theme.color.warning + '22'}
+            iconColor={theme.color.warning}
+            title={theme.i18n.t('profile.settings.helpAndSupport.rateMedQuel')}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='file-document-outline'
+            iconBg={theme.color.surface}
+            iconColor={theme.color.textMuted}
+            title={theme.i18n.t('profile.settings.helpAndSupport.privacyPolicy')}
+          />
+        </Card>
 
-      <Card theme={theme}>
-        <Row
-          theme={theme}
-          icon='logout'
-          iconBg={theme.color.error + '22'}
-          iconColor={theme.color.error}
-          title={theme.i18n.t('profile.settings.signOut')}
-          titleColor={theme.color.error}
-        />
-        <Divider theme={theme} />
-        <Row
-          theme={theme}
-          icon='trash-can-outline'
-          iconBg={theme.color.error + '22'}
-          iconColor={theme.color.error}
-          title={theme.i18n.t('profile.settings.deleteAccount')}
-          titleColor={theme.color.error}
-        />
-      </Card>
-    </ScrollView>
+        <Card theme={theme}>
+          <Row
+            theme={theme}
+            icon='logout'
+            iconBg={theme.color.error + '22'}
+            iconColor={theme.color.error}
+            title={theme.i18n.t('profile.settings.signOut')}
+            titleColor={theme.color.error}
+          />
+          <Divider theme={theme} />
+          <Row
+            theme={theme}
+            icon='trash-can-outline'
+            iconBg={theme.color.error + '22'}
+            iconColor={theme.color.error}
+            title={theme.i18n.t('profile.settings.deleteAccount')}
+            titleColor={theme.color.error}
+          />
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
