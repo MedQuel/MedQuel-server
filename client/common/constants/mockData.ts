@@ -9,7 +9,10 @@ import type {
   LeaderboardResult,
   ChatRoom,
   ChatMessage,
+  DirectConversation,
+  DirectMessageDTO,
   GetChatMessagesResult,
+  GetDirectMessagesResult,
   Badge,
   AnalyticsData,
   StudyPlan,
@@ -321,6 +324,36 @@ export const MOCK_STUDY_PLAN: StudyPlan = {
 
 
 // -----> Chat <-----
+export const MOCK_DIRECT_CONVERSATIONS: DirectConversation[] = [
+  {
+    userId: 'user-2',
+    displayName: 'Sneha Patil',
+    isOnline: true,
+    lastSeenAt: new Date(Date.now() - 120000).toISOString(),
+    lastMessage: 'Can you share the ECG summary for revision?',
+    lastMessageAt: new Date(Date.now() - 120000).toISOString(),
+    unreadCount: 2,
+  },
+  {
+    userId: 'user-3',
+    displayName: 'Imran Sheikh',
+    isOnline: false,
+    lastSeenAt: new Date(Date.now() - 3600000).toISOString(),
+    lastMessage: 'I have the anatomy mnemonics ready.',
+    lastMessageAt: new Date(Date.now() - 900000).toISOString(),
+    unreadCount: 0,
+  },
+  {
+    userId: 'user-4',
+    displayName: 'Priya Singh',
+    isOnline: true,
+    lastSeenAt: new Date(Date.now() - 300000).toISOString(),
+    lastMessage: 'Let’s do a quick revision block tonight.',
+    lastMessageAt: new Date(Date.now() - 1800000).toISOString(),
+    unreadCount: 1,
+  },
+];
+
 export const MOCK_CHAT_ROOMS: ChatRoom[] = [
   {
     roomId: 'cardiology-discussion',
@@ -379,6 +412,51 @@ const MOCK_MESSAGES_BY_ROOM: Record<string, ChatMessage[]> = {
 
 export function getMockChatMessages(roomId: string): GetChatMessagesResult {
   return { messages: MOCK_MESSAGES_BY_ROOM[roomId] ?? [], nextCursor: null };
+}
+
+const MOCK_DIRECT_MESSAGES_BY_USER: Record<string, DirectMessageDTO[]> = {
+  'user-2': [
+    {
+      messageId: 'dm-1',
+      userId: 'user-2',
+      displayName: 'Sneha Patil',
+      text: 'Can you share the ECG summary for revision?',
+      createdAt: new Date(Date.now() - 900000).toISOString(),
+      isEdited: false,
+    },
+    {
+      messageId: 'dm-2',
+      userId: MOCK_USER.uid,
+      displayName: MOCK_USER.displayName,
+      text: 'Yes, I’ll send the summary in a few minutes.',
+      createdAt: new Date(Date.now() - 600000).toISOString(),
+      isEdited: false,
+    },
+  ],
+  'user-3': [
+    {
+      messageId: 'dm-3',
+      userId: 'user-3',
+      displayName: 'Imran Sheikh',
+      text: 'I have the anatomy mnemonics ready.',
+      createdAt: new Date(Date.now() - 1800000).toISOString(),
+      isEdited: false,
+    },
+  ],
+  'user-4': [
+    {
+      messageId: 'dm-4',
+      userId: 'user-4',
+      displayName: 'Priya Singh',
+      text: 'Let’s do a quick revision block tonight.',
+      createdAt: new Date(Date.now() - 2400000).toISOString(),
+      isEdited: false,
+    },
+  ],
+};
+
+export function getMockConversationMessages(userId: string): GetDirectMessagesResult {
+  return { messages: MOCK_DIRECT_MESSAGES_BY_USER[userId] ?? [], nextCursor: null };
 }
 
 

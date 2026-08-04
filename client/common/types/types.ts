@@ -291,6 +291,16 @@ export interface ChatRoom {
   isActive: boolean;
 }
 
+export interface DirectConversation {
+  userId: string;
+  displayName: string;
+  isOnline: boolean;
+  lastSeenAt?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount?: number;
+}
+
 export interface ChatMessage {
   messageId: string;
   roomId: string;
@@ -303,8 +313,24 @@ export interface ChatMessage {
   editedAt?: string;
 }
 
+export interface DirectMessageDTO {
+  messageId: string;
+  userId: string;
+  displayName?: string;
+  photoURL?: string;
+  text: string;
+  createdAt: string;
+  isEdited?: boolean;
+  editedAt?: string;
+}
+
 export interface GetChatMessagesResult {
   messages: ChatMessage[];
+  nextCursor: string | null;
+}
+
+export interface GetDirectMessagesResult {
+  messages: DirectMessageDTO[];
   nextCursor: string | null;
 }
 

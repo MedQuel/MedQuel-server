@@ -32,7 +32,10 @@ import type {
   StudyPlan,
   GenerateStudyPlanInput,
   ChatRoom,
+  DirectConversation,
+  DirectMessageDTO,
   GetChatMessagesResult,
+  GetDirectMessagesResult,
   Badge,
   HomeData,
   AnalyticsData,
@@ -62,7 +65,10 @@ const IMPLEMENTED_OPERATIONS = {
   'studyPlan.generateStudyPlan': false,
   'chat.getChatRooms': false,
   'chat.getChatMessages': false,
+  'chat.getConversations': false,
+  'chat.getConversationMessages': false,
   'chat.sendMessage': false,
+  'chat.sendDirectMessage': false,
   'achievement.getAchievements': false,
   'analytics.getAnalytics': false,
   'subscription.getPlans': false,
@@ -728,11 +734,53 @@ const GET_CHAT_MESSAGES_QUERY = gql`
     }
   }
 `;
+const GET_CONVERSATIONS_QUERY = gql`
+  query GetConversations {
+    getConversations {
+      userId
+      displayName
+      isOnline
+      lastSeenAt
+      lastMessage
+      lastMessageAt
+      unreadCount
+    }
+  }
+`;
+const GET_CONVERSATION_MESSAGES_QUERY = gql`
+  query GetConversationMessages($userId: ID!, $cursor: String) {
+    getConversationMessages(userId: $userId, cursor: $cursor) {
+      messages {
+        messageId
+        userId
+        displayName
+        photoURL
+        text
+        createdAt
+        isEdited
+        editedAt
+      }
+      nextCursor
+    }
+  }
+`;
 const SEND_MESSAGE_MUTATION = gql`
   mutation SendMessage($roomId: ID!, $text: String!) {
     sendMessage(roomId: $roomId, text: $text) {
       messageId
       roomId
+      userId
+      displayName
+      text
+      createdAt
+      isEdited
+    }
+  }
+`;
+const SEND_DIRECT_MESSAGE_MUTATION = gql`
+  mutation SendDirectMessage($userId: ID!, $text: String!) {
+    sendDirectMessage(userId: $userId, text: $text) {
+      messageId
       userId
       displayName
       text
@@ -755,6 +803,33 @@ export const chatApi = {
           )
         ).getChatRooms,
       () => Mock.MOCK_CHAT_ROOMS
+    ),
+
+  getConversations: () =>
+    withMockFallback(
+      'chat.getConversations',
+      async () =>
+        (
+          await graphqlRequest<{ getConversations: DirectConversation[] }>(
+            GET_CONVERSATIONS_QUERY,
+            undefined,
+            { idempotent: true }
+          )
+        ).getConversations,
+      () => Mock.MOCK_DIRECT_CONVERSATIONS
+    ),
+
+  getConversationMessages: (userId: string, cursor?: string) =>
+    withMockFallback(
+      'chat.getConversationMessages',
+      async () =>
+        (
+          await graphqlRequest<
+            { getConversationMessages: GetDirectMessagesResult },
+            { userId: string; cursor?: string }
+          >(GET_CONVERSATION_MESSAGES_QUERY, { userId, cursor }, { idempotent: true })
+        ).getConversationMessages,
+      () => Mock.getMockConversationMessages(userId)
     ),
 
   getChatMessages: (roomId: string, cursor?: string) =>
@@ -783,6 +858,26 @@ export const chatApi = {
       () => ({
         messageId: `mock-msg-${Date.now()}`,
         roomId,
+        userId: Mock.MOCK_USER.uid,
+        displayName: Mock.MOCK_USER.displayName,
+        text,
+        createdAt: new Date().toISOString(),
+        isEdited: false,
+      })
+    ),
+
+  sendDirectMessage: (userId: string, text: string) =>
+    withMockFallback(
+      'chat.sendDirectMessage',
+      async () =>
+        (
+          await graphqlRequest<
+            { sendDirectMessage: DirectMessageDTO },
+            { userId: string; text: string }
+          >(SEND_DIRECT_MESSAGE_MUTATION, { userId, text })
+        ).sendDirectMessage,
+      () => ({
+        messageId: `mock-msg-${Date.now()}`,
         userId: Mock.MOCK_USER.uid,
         displayName: Mock.MOCK_USER.displayName,
         text,
