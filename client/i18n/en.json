@@ -29,6 +29,7 @@
     "quizzes": "Quizzes",
     "questions": "questions",
     "accuracy": "Accuracy",
+    "streak": "Streak",
     "ep": "EP",
     "ep_points": "EP Points",
     "now": "Now",
@@ -104,7 +105,6 @@
     "back": "Back",
     "continue": "Continue",
     "step": "Step {{currentStep}} of {{totalSteps}}",
-
     "welcome": {
       "title": "Welcome to MedQuel",
       "subtitle": "Let's set up your profile in a few quick steps",
@@ -273,7 +273,70 @@
     }
   },
 
-  "profile": {},
+  "profile": {
+    "level": "Lv {{level}}",
+    "xpPoints": "{{points}} XP",
+    "performanceBySubject": "Performance by Subject",
+    "noSubjectData": "No subject data available",
+    "recentAttempts": "Recent Attempts",
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Account & Preferences",
+      "level": "Lv {{level}}",
+      "streak": "{{streak}} day streak",
+      "section": {
+        "account": "Account",
+        "notifications": "Notifications",
+        "quizPreferences": "Quiz Preferences",
+        "appearance": "Appearance",
+        "helpAndSupport": "Help & Support"
+      },
+      "account": {
+        "email": "Email Address",
+        "changePassword": "Change Password",
+        "lastChanged": "Last changed {{date}} ago",
+        "targetExam": "Target Exam",
+        "studyLevel": "Study Level"
+      },
+      "notifications": {
+        "pushNotifications": "Push Notifications",
+        "pushNotificationsSubtitle": "Daily reminders & alerts",
+        "emailDigest": "Email Digest",
+        "emailDigestSubtitle": "Weekly performance summary",
+        "rankChangeAlerts": "Rank Change Alerts",
+        "rankChangeAlertsSubtitle": "Notify on leaderboard moves",
+        "achievementAlerts": "Achievement Alerts",
+        "achievementAlertsSubtitle": "Badges & milestone unlocks",
+        "contestReminders": "Contest Reminders",
+        "contestRemindersSubtitle": "Upcoming contest alerts"
+      },
+      "quizPreferences": {
+        "defaultDifficulty": "Default Difficulty",
+        "timerSound": "Timer Sound",
+        "autoSubmit": "Auto-Submit on Expiry"
+      },
+      "appearance": {
+        "darkMode": "Dark Mode",
+        "darkModeSubtitle": "Dark theme active",
+        "lightMode": "Light Mode",
+        "lightModeSubtitle": "Light theme active",
+        "language": "Language",
+        "english": "English",
+        "spanish": "Spanish",
+        "hindi": "Hindi",
+        "french": "French",
+        "hinglish": "Hinglish"
+      },
+      "helpAndSupport": {
+        "helpCenter": "Help Center",
+        "contactSupport": "Contact Support",
+        "rateMedQuel": "Rate MedQuel",
+        "privacyPolicy": "Privacy Policy"
+      },
+      "signOut": "Sign Out",
+      "deleteAccount": "Delete Account"
+    }
+  },
 
   "studyPlan": {
     "loading": "Loading your study plan...",
