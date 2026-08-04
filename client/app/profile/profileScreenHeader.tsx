@@ -1,22 +1,25 @@
 import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
 
-export function ProfileScreenHeader() {
+type User = {
+  displayName?: string;
+  [key: string]: any;
+};
+type Props = {
+  user: User | null;
+};
+
+export function ProfileScreenHeader({ user }: Props) {
   const { theme } = useTheme();
   const router = useRouter();
 
   return (
-    <View style={{ position: 'relative', backgroundColor: theme.color.card }}>
-      <View
-        style={{
-          paddingVertical: theme.space.xxl - 1,
-          backgroundColor: theme.isDark ? theme.color.card : theme.color.accent,
-        }}
-      />
+    <View style={{ position: 'relative' }}>
+      <View style={{ paddingVertical: theme.space.xxl, backgroundColor: theme.isDark ? theme.color.card : theme.color.accent }} />
 
       <TouchableOpacity
         onPress={() => router.push('/profile/settingsScreen')}
@@ -29,14 +32,14 @@ export function ProfileScreenHeader() {
           paddingVertical: theme.space.sm + 4,
           paddingHorizontal: theme.space.sm + 4,
           borderWidth: 1,
+          borderColor: theme.color.border,
           borderRadius: theme.borderRadius.lg + 2,
           backgroundColor: theme.color.textMuted + 90,
-          borderColor: theme.color.border,
           elevation: 3,
         }}
       >
-        <MaterialCommunityIcons
-          name='cog-outline'
+        <Feather
+          name='settings'
           size={theme.space.md + 2}
           color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
         />
@@ -67,16 +70,16 @@ export function ProfileScreenHeader() {
             fontWeight: theme.fontWeight.bold,
           }}
         >
-          J
+          {user?.displayName?.charAt(0)?.toUpperCase()}
         </Text>
 
         <View
           style={{
             position: 'absolute',
-            bottom: 0,
             right: 0,
-            height: theme.space.lg,
-            width: theme.space.lg,
+            bottom: 0,
+            width: theme.space.lg * 1.1,
+            height: theme.space.lg * 1.1,
             alignItems: 'center',
             justifyContent: 'center',
             borderWidth: 2,
@@ -85,9 +88,9 @@ export function ProfileScreenHeader() {
             backgroundColor: theme.color.accent,
           }}
         >
-          <MaterialCommunityIcons
-            name='camera-outline'
-            size={theme.space.md - 2}
+          <Feather
+            name='camera'
+            size={theme.space.md * 0.85}
             color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
           />
         </View>
