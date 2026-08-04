@@ -4,33 +4,28 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 
 
-const stats = [
-  { label: 'Level', value: '12', color: '#F59E0B', icon: 'star' },
-  { label: 'Rank', value: '#127', color: '#3B82F6', icon: 'trending-up' },
-  { label: 'Streak', value: '24', color: '#EF4444', icon: 'fire' },
-  { label: 'Accuracy', value: '87%', color: '#22C55E', icon: 'bullseye' },
-];
+type Stat = {
+  label: string;
+  value: string;
+  color: string;
+  icon: string;
+};
+type Props = {
+  stats: Stat[];
+};
 
-export function ProfileScreenStatsCard() {
+export function ProfileScreenStatsCard({ stats }: Props) {
   const { theme } = useTheme();
 
   return (
-   <View
-      style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: theme.space.lg,
-        paddingHorizontal: theme.space.md + 6,
-      }}
-    >
+    <View style={{ gap: theme.space.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
       {stats.map((item, index) => (
         <View
           key={index}
           style={{
             flex: 1,
             alignItems: 'center',
-            paddingVertical: theme.space.sm + 8,
-            marginHorizontal: theme.space.xs,
+            paddingVertical: theme.space.sm * 1.5,
             borderWidth: 1.5,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.lg,
@@ -39,16 +34,15 @@ export function ProfileScreenStatsCard() {
         >
           <MaterialCommunityIcons
             name={item.icon as any}
-            size={theme.space.md + 6}
+            size={theme.space.lg * 0.9}
             color={item.color}
           />
-
           <Text
             style={{
               color: item.color,
               fontSize: theme.fontSize.md + 1,
               fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.bold,
+              fontFamily: theme.fontFamily.number,
               marginTop: theme.space.xs * 0.5,
             }}
           >
@@ -58,7 +52,7 @@ export function ProfileScreenStatsCard() {
           <Text
             style={{
               color: theme.color.textMuted,
-              fontSize: theme.fontSize.xs + 1,
+              fontSize: theme.fontSize.xs + 2,
               fontFamily: theme.fontFamily.regular,
               marginTop: theme.space.xs * 0.5,
             }}
