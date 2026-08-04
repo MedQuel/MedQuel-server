@@ -13,6 +13,8 @@ import {
 } from '../utils/errors.js';
 import type { GraphQLContext } from '../graphql/context.js';
 import type { QuestionForQuiz } from './bigqueryService.js';
+import { checkRateLimit } from '../middleware/rateLimiter.js';
+import { publishQuizCompleted } from '../pubsub/publisher.js';
 import { gradeQuizSession, type QuestionGradeResult } from './gradingService.js';
 import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from './quizValidation.js';
 import { updateStreak, computeXpEarned, computeEpEarned, computeLevelFromXp } from './xpEpService.js';
@@ -22,6 +24,13 @@ interface OnboardedUser {
   uid: string;
   isPremium: boolean;
 }
+interface TopicCacheEntry {
+  topics: string[];
+  expiresAt: number;
+}
+const TOPIC_CACHE_TTL_MS = 60 * 60 * 1000;
+const topicCache = new Map<string, TopicCacheEntry>();
+
 export async function fetchOnboardedUser(context: GraphQLContext): Promise<OnboardedUser> {
   if (!context.user) throw new AuthenticationError();
 
@@ -38,6 +47,16 @@ function reorderByIds(ids: string[], questions: QuestionForQuiz[]): QuestionForQ
   return ids.map((id) => byId.get(id)).filter((q): q is QuestionForQuiz => Boolean(q));
 }
 
+export async function getTopicsForSubject(subject: string, context: GraphQLContext): Promise<string[]> {
+  const cached = topicCache.get(subject);
+  if (cached && cached.expiresAt > Date.now()) return cached.topics;
+
+  const topics = await context.bigqueryService.fetchTopicsForSubject(subject);
+  topicCache.set(subject, { topics, expiresAt: Date.now()+TOPIC_CACHE_TTL_MS });
+
+  return topics;
+}
+
 
 interface ActiveContest {
   contestId: string;
@@ -48,6 +67,7 @@ interface ActiveContest {
   wrongPenalty: number;
   epBaseReward: number;
   passPercent: number;
+  timeLimitSecs: number;
 }
 async function fetchActiveContest(contestId: string, db: Firestore): Promise<ActiveContest> {
   const doc = await db.collection('contests').doc(contestId).get();
@@ -72,6 +92,7 @@ async function fetchActiveContest(contestId: string, db: Firestore): Promise<Act
     wrongPenalty: Math.abs(data.markingScheme?.wrong ?? 0),
     epBaseReward: data.epReward ?? 0,
     passPercent: data.passPercent ?? 0,
+    timeLimitSecs: data.timeLimitSecs ?? 0,
   };
 }
 
@@ -81,6 +102,8 @@ export interface StartQuizSessionResult {
   quizType: string;
   subject: string;
   difficulty: string;
+  topic: string | null;
+  timeLimitSecs: number | null;
   totalQuestions: number;
   questions: QuestionForQuiz[];
   startedAt: string;
@@ -96,6 +119,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
   let wrongPenalty: number;
   let epBaseReward: number;
   let passPercent: number;
+  let topic: string | null;
+  let timeLimitSecs: number | null;
 
   if (input.mode === 'contest') {
     const contest = await fetchActiveContest(input.contestId, db);
@@ -104,11 +129,13 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     }
 
     subject = contest.subject;
+    topic = null;
     difficulty = contest.difficulty;
     questionIds = contest.questionIds;
     wrongPenalty = contest.wrongPenalty;
     epBaseReward = contest.epBaseReward;
     passPercent = contest.passPercent;
+    timeLimitSecs = contest.timeLimitSecs;
 
     if (questionIds.length === 0) {
       throw new InsufficientQuestionsError('This contest has no questions configured.');
@@ -117,7 +144,9 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     const fetched = await bigqueryService.fetchQuestionsByIds(questionIds);
     questions = reorderByIds(questionIds, fetched);
     if (questions.length < questionIds.length) {
-      throw new InsufficientQuestionsError(`Contest question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`);
+      throw new InsufficientQuestionsError(
+        `Contest question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`
+      );
     }
   } else {
     subject = input.subject;
@@ -125,16 +154,20 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     wrongPenalty = 0;
     epBaseReward = 0;
     passPercent = 0;
+    topic = input.topic;
+    timeLimitSecs = input.timeLimitSecs;
 
     questions = await bigqueryService.fetchQuestions({
       subject: input.subject,
       difficulty: input.difficulty,
       questionCount: input.questionCount,
       includePremium: user.isPremium,
+      topic,
     });
 
     if (questions.length < input.questionCount) {
-      throw new InsufficientQuestionsError(`Not enough ${difficulty} questions available for ${subject}. Requested ${input.questionCount}, found ${questions.length}.`);
+      const topicNote = topic ? ` for topic "${topic}"` : '';
+      throw new InsufficientQuestionsError(`Not enough ${difficulty} questions available for ${subject}${topicNote}. Requested ${input.questionCount}, found ${questions.length}.`);
     }
 
     questionIds = questions.map((q) => q.questionId);
@@ -150,6 +183,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     quizType: input.quizType,
     subject,
     difficulty,
+    topic,
+    timeLimitSecs,
     questionIds,
     wrongPenalty,
     epBaseReward,
@@ -173,6 +208,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     quizType: input.quizType,
     subject,
     difficulty,
+    topic,
+    timeLimitSecs,
     totalQuestions: questionIds.length,
     questions,
     startedAt: startedAt.toDate().toISOString(),
@@ -184,6 +221,7 @@ interface QuizSessionForGrading {
   sessionId: string;
   userId: string;
   quizType: string;
+  subject: string;
   contestId: string | null;
   questionIds: string[];
   wrongPenalty: number;
@@ -204,6 +242,7 @@ async function fetchSessionForSubmission(sessionId: string, uid: string, db: Fir
     sessionId: doc.id,
     userId: data.userId,
     quizType: data.quizType,
+    subject: data.subject,
     contestId: data.contestId ?? null,
     questionIds: data.questionIds ?? [],
     wrongPenalty: data.wrongPenalty ?? 0,
@@ -236,6 +275,8 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
   const { db, bigqueryService } = context;
   const user = await fetchOnboardedUser(context);
 
+  checkRateLimit(`submitQuizSession:${user.uid}`, { limit: 10, windowMs: 60_000 });
+
   const session = await fetchSessionForSubmission(input.sessionId, user.uid, db);
 
   const grading = await gradeQuizSession(
@@ -259,7 +300,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     if (!sessionSnap.exists) throw new SessionNotFoundError();
 
     const sessionData = sessionSnap.data()!;
-    if (sessionData.status !== 'in_progress')throw new SessionAlreadyCompletedError();
+    if (sessionData.status !== 'in_progress') throw new SessionAlreadyCompletedError();
 
     if (!userSnap.exists) throw new NotOnboardedError();
     const userData = userSnap.data()!;
@@ -301,7 +342,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const answersMap = Object.fromEntries(
       grading.results.map((r) => [
         r.questionId,
-        { selected: r.selectedOption, isCorrect: r.isCorrect, timeSpent: null },
+        { selected: r.selectedOption, isCorrect: r.isCorrect },
       ])
     );
 
@@ -341,6 +382,22 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       isNewLongestStreak: streak.longestStreak > previousLongestStreak,
     };
   });
+
+  publishQuizCompleted({
+    sessionId: session.sessionId,
+    userId: user.uid,
+    quizType: session.quizType,
+    contestId: session.contestId,
+    subject: session.subject,
+    correctCount: grading.correctCount,
+    wrongCount: grading.wrongCount,
+    skippedCount: grading.skippedCount,
+    score: grading.score,
+    scorePercent: grading.scorePercent,
+    epEarned: txResult.epEarned,
+    xpEarned: txResult.xpEarned,
+    completedAt: new Date().toISOString(),
+  }).catch((err) => console.error('[pubsub] unexpected publish error:', err));
 
   return {
     sessionId: session.sessionId,

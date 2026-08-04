@@ -51,6 +51,8 @@ export const quizTypeDefs = `#graphql
     subject: String
     difficulty: QuizDifficulty
     questionCount: Int
+    topic: String
+    timeLimitSecs: Int
     quizType: QuizType!
     contestId: ID
   }
@@ -59,6 +61,8 @@ export const quizTypeDefs = `#graphql
     quizType: QuizType!
     subject: String!
     difficulty: QuizDifficulty!
+    topic: String
+    timeLimitSecs: Int
     totalQuestions: Int!
     questions: [Question!]!
     startedAt: String!
@@ -102,6 +106,7 @@ export const quizTypeDefs = `#graphql
 
   extend type Query {
     getQuizSession(sessionId: ID!): QuizSession
+    getTopicsForSubject(subject: String!): [String!]!
   }
 
   extend type Mutation {

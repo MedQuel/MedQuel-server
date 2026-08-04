@@ -3,9 +3,11 @@ import {
   type SubmitQuizSessionInput,
   validateStartQuizSessionInput,
   validateSubmitQuizSessionInput,
+  validateGetTopicsForSubjectInput,
 } from '../../services/quizValidation.js';
 import type { GraphQLContext } from '../context.js';
-import { startQuizSession, submitQuizSession } from '../../services/quizService.js';
+import { AuthenticationError } from '../../utils/errors.js';
+import { startQuizSession, submitQuizSession, getTopicsForSubject } from '../../services/quizService.js';
 
 
 export async function startQuizSessionResolver(_parent: unknown, args: { input: StartQuizSessionInput }, context: GraphQLContext) {
@@ -16,4 +18,10 @@ export async function startQuizSessionResolver(_parent: unknown, args: { input: 
 export async function submitQuizSessionResolver(_parent: unknown, args: { input: SubmitQuizSessionInput }, context: GraphQLContext) {
   const validated = validateSubmitQuizSessionInput(args.input);
   return submitQuizSession(validated, context);
+}
+
+export async function getTopicsForSubjectResolver(_parent: unknown, args: { subject: string }, context: GraphQLContext) {
+  if (!context.user) throw new AuthenticationError();
+  const subject = validateGetTopicsForSubjectInput(args.subject);
+  return getTopicsForSubject(subject, context);
 }

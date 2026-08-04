@@ -100,3 +100,12 @@ export class InsufficientQuestionsError extends GraphQLError {
     super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
   }
 }
+
+/**
+ * Throw when a user exceeds the rate limit for a given operation.
+ */
+export class RateLimitExceededError extends GraphQLError {
+  constructor(message = 'Too many requests. Please slow down.') {
+    super(message, { extensions: { code: 'RATE_LIMITED' } });
+  }
+}

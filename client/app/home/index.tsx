@@ -57,11 +57,7 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
             key={subject.id}
             activeOpacity={0.8}
             onPress={() => onPress?.(subject.id)}
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              paddingHorizontal: theme.space.xs * 0.5,
-            }}
+            style={{ flex: 1, alignItems: 'center', paddingHorizontal: theme.space.xs * 0.5 }}
           >
             <View
               style={{
@@ -76,7 +72,11 @@ function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[]
                 backgroundColor: `${iconColor}12`,
               }}
             >
-              <SubjectIcon id={subject.id} color={iconColor} size={getIconSizeValue(subject.id)} />
+              <SubjectIcon
+                id={subject.id}
+                color={iconColor}
+                size={getIconSizeValue(subject.id)}
+              />
             </View>
             <Text
               numberOfLines={1}
@@ -257,15 +257,26 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => router.push('/contests')}>
               <Text
                 style={{
-                  color: theme.color.accent,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {theme.i18n.t('View All')}
+                {theme.i18n.t('Active Contests')}
               </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity onPress={() => router.push('/contests')}>
+                <Text
+                  style={{
+                    color: theme.color.accent,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {theme.i18n.t('View All')}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
           <View>
             <ActiveContestsCard
@@ -279,7 +290,6 @@ export default function HomeScreen() {
               }))}
             />
           </View>
-        </View>
 
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -296,15 +306,26 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => router.push('/home/practiceBySubject')}>
               <Text
                 style={{
-                  color: theme.color.accent,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {theme.i18n.t('View All')}
+                {theme.i18n.t('Practice by Subject')}
               </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity onPress={() => router.push('/home/practiceBySubject')}>
+                <Text
+                  style={{
+                    color: theme.color.accent,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {theme.i18n.t('View All')}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
           <PracticeBySubject
             subjects={practiceSubjects}

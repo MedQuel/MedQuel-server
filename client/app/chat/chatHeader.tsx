@@ -21,11 +21,12 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
       <View
         style={{
           flexDirection: 'row',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: theme.space.md,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
+          minHeight: theme.space.xxl + theme.space.sm,
         }}
       >
         <View style={{ flex: 1, marginRight: theme.space.sm }}>
@@ -56,13 +57,13 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
             activeOpacity={0.8}
             onPress={() => setSearchVisible((v) => !v)}
             style={{
-              width: theme.space.xl + theme.space.xs,
-              height: theme.space.xl + theme.space.xs,
+              width: theme.space.xl,
+              height: theme.space.xl,
               alignItems: 'center',
               justifyContent: 'center',
               borderWidth: 1,
               borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
+              borderRadius: theme.borderRadius.full,
               backgroundColor: theme.color.card,
             }}
           >

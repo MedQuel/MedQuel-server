@@ -4,6 +4,9 @@ import { MAX_QUESTION_COUNT } from './bigqueryService.js';
 
 const MIN_QUESTION_COUNT = 2;
 const MAX_SUBJECT_LENGTH = 60;
+const MAX_TOPIC_LENGTH = 80;
+const MIN_TIME_LIMIT_SECS = 60;
+const MAX_TIME_LIMIT_SECS = 7200;
 
 export const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type ValidDifficulty = (typeof VALID_DIFFICULTIES)[number];
@@ -17,24 +20,29 @@ export interface StartQuizSessionInput {
   subject?: string | null;
   difficulty?: string | null;
   questionCount?: number | null;
+  topic?: string | null;
+  timeLimitSecs?: number | null;
   quizType: string;
   contestId?: string | null;
 }
 export type ValidatedStartQuizSession = {
   mode: 'contest';
   quizType: 'contest' | 'daily';
-  contestId: string
+  contestId: string;
 } | {
   mode: 'practice';
   quizType: 'practice' | 'subject';
   subject: string;
   difficulty: ValidDifficulty;
   questionCount: number;
+  topic: string | null;
+  timeLimitSecs: number | null;
 };
 
 function badInput(message: string): never {
   throw new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
 }
+
 
 export function validateStartQuizSessionInput(input: StartQuizSessionInput): ValidatedStartQuizSession {
   const quizType = input.quizType?.toLowerCase();
@@ -47,8 +55,9 @@ export function validateStartQuizSessionInput(input: StartQuizSessionInput): Val
   if (isContestMode) {
     const contestId = input.contestId?.trim();
     if (!contestId) badInput(`contestId is required when quizType is "${quizType}".`);
-    if (input.subject || input.difficulty || input.questionCount) {
-      badInput('subject/difficulty/questionCount must not be sent when quizType is "contest" or "daily" — these are determined by the contest.');
+
+    if (input.subject || input.difficulty || input.questionCount || input.topic || input.timeLimitSecs) {
+      badInput('subject/difficulty/questionCount/topic/timeLimitSecs must not be sent when quizType is "contest" or "daily" — these are determined by the contest.');
     }
 
     return {
@@ -76,18 +85,44 @@ export function validateStartQuizSessionInput(input: StartQuizSessionInput): Val
     badInput(`questionCount must be between ${MIN_QUESTION_COUNT} and ${MAX_QUESTION_COUNT}, got "${input.questionCount}".`);
   }
 
+  let topic: string | null = null;
+  if (input.topic !== undefined && input.topic !== null) {
+    const trimmedTopic = input.topic.trim();
+    if (trimmedTopic.length > 0) {
+      if (trimmedTopic.length > MAX_TOPIC_LENGTH) badInput('topic is too long.');
+      topic = trimmedTopic;
+    }
+  }
+
+  let timeLimitSecs: number | null = null;
+  if (input.timeLimitSecs !== undefined && input.timeLimitSecs !== null) {
+    const parsed = Math.trunc(input.timeLimitSecs);
+    if (!Number.isFinite(parsed) || parsed < MIN_TIME_LIMIT_SECS || parsed > MAX_TIME_LIMIT_SECS) {
+      badInput(`timeLimitSecs must be between ${MIN_TIME_LIMIT_SECS} and ${MAX_TIME_LIMIT_SECS} (1 min-2 hrs), got "${input.timeLimitSecs}".`);
+    }
+    timeLimitSecs = parsed;
+  }
+
   return {
     mode: 'practice',
     quizType: quizType as 'practice' | 'subject',
     subject: subject!,
+    topic,
     difficulty: difficulty as ValidDifficulty,
     questionCount,
+    timeLimitSecs,
   };
+}
+
+export function validateGetTopicsForSubjectInput(subject: string): string {
+  const trimmed = subject?.trim();
+  if (!trimmed) badInput('subject is required.');
+  if (trimmed!.length > MAX_SUBJECT_LENGTH) badInput('subject is too long.');
+  return trimmed!;
 }
 
 
 const VALID_OPTIONS = ['A', 'B', 'C', 'D'];
-
 export interface QuizAnswerInput {
   questionId: string;
   selectedOption?: string | null;
@@ -96,7 +131,6 @@ export interface SubmitQuizSessionInput {
   sessionId: string;
   answers: QuizAnswerInput[];
 }
-
 export interface ValidatedAnswer {
   questionId: string;
   selectedOption: 'A' | 'B' | 'C' | 'D' | null;
