@@ -145,10 +145,14 @@
     "daily_challenge": "Daily Challenge",
     "ep_to_next_level": "{{remainingEP}} EP to next level",
     "loading": "Loading your dashboard...",
-    "day_streak": "Day Streak",
+    "dayStreak": "{{streak}} Day Streak",
     "active_contests": "Active Contests",
     "practice_by_subject": "Practice by Subject",
-    "view_all": "View All"
+    "view_all": "View All",
+    "practiceBySubject": {
+      "title": "Practice by Subject",
+      "subtitle": "Sharpen your skills in specific subjects"
+    }
   },
 
   "leaderboard": {
