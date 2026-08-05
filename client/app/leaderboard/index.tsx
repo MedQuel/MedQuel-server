@@ -1,17 +1,22 @@
 import { Feather } from '@expo/vector-icons';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native';
 
+import type { LeaderboardEntry, LeaderboardResult } from '../../common/types/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { TabContainer } from '../../components/TabContainer';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import { api } from '../../common/api/api';
+import { Loading } from '../../components/common/loading';
+import { useAppContext } from '../../common/context/AppContext';
+
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
 import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
 
 
 type LeaderboardScope = 'global' | 'friends';
-type LeaderboardTimeFilter = 'weekly' | 'monthly' | 'alltime';
+type LeaderboardTimeFilter = 'weekly' | 'monthly' | 'allTime';
 type LeaderboardPodiumUser = {
   id: string;
   name: string;
@@ -41,201 +46,92 @@ type LeaderboardSnapshot = {
   rankings: LeaderboardRankRow[];
   playersCount: number;
 };
-type LeaderboardMock = {
-  timeTabs: readonly { id: LeaderboardTimeFilter; label: string }[];
-  scopeTabs: readonly { id: LeaderboardScope; label: string }[];
-  snapshots: Record<
-    LeaderboardTimeFilter,
-    Record<LeaderboardScope, LeaderboardSnapshot>
-  >;
+
+const getInitials = (name: string) => {
+  const trimmed = name.trim();
+  if (!trimmed) return '??';
+
+  return trimmed
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word[0] ?? '')
+    .join('')
+    .toUpperCase();
 };
 
-const createRankings = (rows: LeaderboardRankRow[]) => rows;
-
-const createSnapshot = (
-  podiumUsers: LeaderboardPodiumUser[],
-  currentUser: CurrentUserLeaderboardRow,
-  rankings: LeaderboardRankRow[],
-  playersCount: number
-): LeaderboardSnapshot => ({
-  podiumUsers,
-  currentUser,
-  rankings,
-  playersCount,
-});
-
-const leaderboardMock: LeaderboardMock = {
-  timeTabs: [
-    { id: 'weekly', label: 'Weekly' },
-    { id: 'monthly', label: 'Monthly' },
-    { id: 'alltime', label: 'All Time' },
-  ],
-  scopeTabs: [
-    { id: 'global', label: 'Global' },
-    { id: 'friends', label: 'Friends' },
-  ],
-  snapshots: {
-    weekly: {
-      global: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 3847 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 5252 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 3411 },
-        ],
-        {
-          rank: 5,
-          initials: 'M',
-          name: 'Dr. John Doe',
-          specialty: 'Surgery',
-          points: 3201,
-          trend: 12,
-          trendLabel: 'this week',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 4892 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 3201 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 2987 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 2654 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 2341 },
-        ]),
-        2341
-      ),
-      friends: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 3010 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 3624 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 2899 },
-        ],
-        {
-          rank: 3,
-          initials: 'M',
-          name: 'Dr. John Doe',
-          specialty: 'Surgery',
-          points: 3201,
-          trend: 9,
-          trendLabel: 'this week',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 3456 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Ayush Kumar', specialty: 'Surgery', points: 3201 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 3012 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 2710 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 2465 },
-        ]),
-        1840
-      ),
-    },
-    monthly: {
-      global: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 10847 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 12520 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 10111 },
-        ],
-        {
-          rank: 8,
-          initials: 'M',
-          name: 'You • Mohsin Ansari',
-          specialty: 'Surgery',
-          points: 8891,
-          trend: 41,
-          trendLabel: 'this month',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 11120 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 8891 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 8422 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 7975 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 7741 },
-        ]),
-        9821
-      ),
-      friends: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 9012 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 10411 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 8760 },
-        ],
-        {
-          rank: 6,
-          initials: 'M',
-          name: 'You • Mohsin Ansari',
-          specialty: 'Surgery',
-          points: 8320,
-          trend: 28,
-          trendLabel: 'this month',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 9870 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 8320 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 7911 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 7440 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 7115 },
-        ]),
-        7120
-      ),
-    },
-    alltime: {
-      global: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 48847 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 62520 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 40111 },
-        ],
-        {
-          rank: 14,
-          initials: 'M',
-          name: 'You • Mohsin Ansari',
-          specialty: 'Surgery',
-          points: 33201,
-          trend: 118,
-          trendLabel: 'all time',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 51492 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 33201 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 31987 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 30254 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 29411 },
-        ]),
-        39241
-      ),
-      friends: createSnapshot(
-        [
-          { id: 'second', initials: 'RP', name: 'Dr. Ravi P.', score: 35100 },
-          { id: 'first', initials: 'TU', name: 'tusharbaghel', score: 40220 },
-          { id: 'third', initials: 'AK', name: 'Dr. Amir K.', score: 32975 },
-        ],
-        {
-          rank: 11,
-          initials: 'M',
-          name: 'You • Mohsin Ansari',
-          specialty: 'Surgery',
-          points: 29840,
-          trend: 90,
-          trendLabel: 'all time',
-        },
-        createRankings([
-          { id: '4', rank: 4, initials: 'SK', name: 'Dr. Sarah K.', specialty: 'Neurology', points: 40120 },
-          { id: '5', rank: 5, initials: 'MA', name: 'Mohsin Ansari', specialty: 'Surgery', points: 29840 },
-          { id: '6', rank: 6, initials: 'PS', name: 'Dr. Priya S.', specialty: 'Pediatrics', points: 28710 },
-          { id: '7', rank: 7, initials: 'JW', name: 'James Wilson', specialty: 'Cardiology', points: 27365 },
-          { id: '8', rank: 8, initials: 'AR', name: 'Aisha Rahman', specialty: 'Radiology', points: 26408 },
-        ]),
-        29874
-      ),
-    },
-  },
+const mapTrendLabel = (timeFilter: LeaderboardTimeFilter) => {
+  if (timeFilter === 'weekly') return 'this week';
+  if (timeFilter === 'monthly') return 'this month';
+  return 'all time';
 };
+
+const mapLeaderboardSnapshot = (
+  result: LeaderboardResult,
+  timeFilter: LeaderboardTimeFilter
+): LeaderboardSnapshot => {
+  const sorted = [...result.entries].sort((a, b) => a.rank - b.rank);
+
+  const podiumUsers = sorted.slice(0, 3).map((entry, index) => ({
+    id: entry.userId || `podium-${index}`,
+    name: entry.displayName,
+    initials: getInitials(entry.displayName),
+    score: entry.epPoints,
+  }));
+
+  const rankings = sorted.slice(3).map((entry: LeaderboardEntry) => ({
+    id: entry.userId,
+    rank: entry.rank,
+    initials: getInitials(entry.displayName),
+    name: entry.displayName,
+    specialty: entry.specialization,
+    points: entry.epPoints,
+  }));
+
+  const currentUserSource = result.currentUserEntry ?? sorted[0] ?? null;
+  const currentUser = currentUserSource
+    ? {
+        rank: currentUserSource.rank,
+        initials: getInitials(currentUserSource.displayName),
+        name: currentUserSource.displayName,
+        specialty: currentUserSource.specialization,
+        points: currentUserSource.epPoints,
+        trend: currentUserSource.weeklyChange,
+        trendLabel: mapTrendLabel(timeFilter),
+      }
+    : {
+        rank: 0,
+        initials: '??',
+        name: '',
+        specialty: '',
+        points: 0,
+        trend: 0,
+        trendLabel: mapTrendLabel(timeFilter),
+      };
+
+  return {
+    podiumUsers,
+    currentUser,
+    rankings,
+    playersCount: sorted.length,
+  };
+};
+
+const timeTabs: { id: LeaderboardTimeFilter; label: string }[] = [
+  { id: 'weekly', label: 'Weekly' },
+  { id: 'monthly', label: 'Monthly' },
+  { id: 'allTime', label: 'All Time' },
+];
 
 
 export default function LeaderboardScreen() {
   const [timeFilter, setTimeFilter] = useState<LeaderboardTimeFilter>('weekly');
   const [scopeFilter, setScopeFilter] = useState<LeaderboardScope>('global');
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardResult | null>(null);
 
   const { theme } = useTheme();
+  const { authStatus } = useAppContext();
   useBottomBar(true, 'leaderboard');
 
   const spin = useRef(new Animated.Value(0)).current;
@@ -248,6 +144,47 @@ export default function LeaderboardScreen() {
     [spin]
   );
 
+  const scopeTabs = useMemo(
+    () => [
+      { id: 'global', label: theme.i18n.t('components.TabContainer.global') },
+      { id: 'friends', label: theme.i18n.t('components.TabContainer.friends') },
+    ],
+    [theme.i18n]
+  );
+
+  const activeSnapshot = useMemo(() => {
+    if (!leaderboardData) return null;
+    return mapLeaderboardSnapshot(leaderboardData, timeFilter);
+  }, [leaderboardData, timeFilter]);
+
+  const fetchLeaderboard = useCallback(async (showLoader = true) => {
+    if (authStatus !== 'authenticated') return;
+    if (showLoader) setIsLoading(true);
+    const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 1200));
+    try {
+      const [data] = await Promise.all([
+        api.leaderboard.getLeaderboard(timeFilter, scopeFilter),
+        showLoader ? minDelay : Promise.resolve(),
+      ]);
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
+  }, [timeFilter, scopeFilter, authStatus]);
+
+  useEffect(() => {
+    if (authStatus !== 'authenticated') return;
+    let isMounted = true;
+    if (isMounted) {
+      fetchLeaderboard(true);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchLeaderboard, authStatus]);
+
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;
 
@@ -259,28 +196,27 @@ export default function LeaderboardScreen() {
       duration: 650,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
-    }).start(() => {
-      setRefreshKey((prev) => prev + 1);
+    }).start();
+
+    fetchLeaderboard(false).finally(() => {
       setRefreshing(false);
     });
-  }, [refreshing, spin]);
+  }, [refreshing, spin, fetchLeaderboard]);
 
   const switchScope = useCallback((value: LeaderboardScope) => {
     setScopeFilter(value);
-    setRefreshKey(0);
   }, []);
 
-  const activeSnapshot = leaderboardMock.snapshots[timeFilter][scopeFilter];
 
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
+      <View
+        style={{
           paddingTop: theme.space.md,
-          paddingBottom: theme.space.xl,
+          paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
+          backgroundColor: theme.color.background,
         }}
       >
         <View
@@ -354,7 +290,7 @@ export default function LeaderboardScreen() {
             marginBottom: theme.space.sm,
           }}
         >
-          {leaderboardMock.timeTabs.map((tab) => {
+          {timeTabs.map((tab) => {
             const active = timeFilter === tab.id;
 
             return (
@@ -393,72 +329,85 @@ export default function LeaderboardScreen() {
             );
           })}
         </View>
+      </View>
 
-        <View style={{ height: theme.space.md }} />
-        <TabContainer
-          tabs={useMemo(() => [
-            { id: 'global', label: theme.i18n.t('components.TabContainer.global') },
-            { id: 'friends', label: theme.i18n.t('components.TabContainer.friends') },
-          ], [theme])}
-          value={scopeFilter}
-          onChange={(value) => switchScope(value as LeaderboardScope)}
-        />
-
-        <View style={{ height: theme.space.md }} />
-        <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
-
-        <View style={{ height: theme.space.md }} />
-        <CurrentUserLeaderboardRankCard
-          name={activeSnapshot.currentUser.name.replace('You • ', '')}
-          rank={activeSnapshot.currentUser.rank}
-          points={activeSnapshot.currentUser.points}
-          weeklyGrowth={activeSnapshot.currentUser.trend}
-        />
-
-        <View style={{ height: theme.space.lg }} />
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: theme.space.lg,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
+      <View style={{ flex: 1 }}>
+        {isLoading || !activeSnapshot ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: theme.space.xl }}>
+            <Loading size={150} />
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingTop: theme.space.md,
+              paddingBottom: theme.space.xl,
+              paddingHorizontal: theme.space.md,
             }}
           >
-            {theme.i18n.t('leaderboard.rankings')}
-          </Text>
+            <TabContainer
+              tabs={scopeTabs}
+              value={scopeFilter}
+              onChange={(value) => switchScope(value as LeaderboardScope)}
+            />
 
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
-            }}
-          >
-            {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
-          </Text>
-        </View>
+            <View style={{ height: theme.space.md }} />
+            <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
 
-        <View key={`${timeFilter}-${scopeFilter}-${refreshKey}`}>
-          {activeSnapshot.rankings.map((item) => (
-            <View key={item.id} style={{ marginBottom: theme.space.sm }}>
-              <LeaderboardRankCard
-                rank={item.rank}
-                name={item.name}
-                specialty={item.specialty}
-                points={item.points}
-              />
+            <View style={{ height: theme.space.md }} />
+            <CurrentUserLeaderboardRankCard
+              name={activeSnapshot.currentUser.name.replace('You • ', '')}
+              rank={activeSnapshot.currentUser.rank}
+              points={activeSnapshot.currentUser.points}
+              weeklyGrowth={activeSnapshot.currentUser.trend}
+            />
+
+            <View style={{ height: theme.space.lg }} />
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: theme.space.lg,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('leaderboard.rankings')}
+              </Text>
+
+              <Text
+                style={{
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
+              </Text>
             </View>
-          ))}
-        </View>
-      </ScrollView>
+
+            <View>
+              {activeSnapshot.rankings.map((item) => (
+                <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                  <LeaderboardRankCard
+                    rank={item.rank}
+                    name={item.name}
+                    specialty={item.specialty}
+                    points={item.points}
+                  />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
