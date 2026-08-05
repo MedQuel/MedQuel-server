@@ -1,21 +1,23 @@
 import React, { useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { api } from '../../common/api/api';
-import { Loading } from '../../components/common/loading';
-import type { AnalyticsData, User } from '../../common/types/types';
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '../../common/context/useBottomBar';
 import { useAppContext } from '../../common/context/AppContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import type { AnalyticsData, User } from '../../common/types/types';
 
+import { Loading } from '../../components/common/loading';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { AnalyticsStatsCard } from '../../components/AnalyticsStatsCard';
 import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 import { ActivityHeatmapCard } from '../../components/ActivityHeatmapCard';
 import { AnalyticsKeyStatItems } from '../../components/AnalyticsKeyStatItems';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-import { useRouter } from 'expo-router';
+
+
 type SubjectPerformanceItem = {
   id: string;
   subject: string;
@@ -31,27 +33,13 @@ type AttemptItem = {
   correctAnswers: number;
   timeTaken: string;
 };
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const formatMonthLabel = (month: number, year: number) => {
-  const index = Math.max(0, Math.min(11, month-1));
+  const index = Math.max(0, Math.min(11, month - 1));
   return `${monthNames[index]} ${year}`;
 };
 
 const colorKeys = ['success', 'accent', 'premium', 'warning', 'error', 'info'] as const;
-
 type AnalyticsSnapshot = {
   stats: {
     accuracy: number;
@@ -86,6 +74,7 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
     if (date.getMonth() + 1 === month && date.getFullYear() === year) {
       const day = date.getDate();
       let level = 0;
+
       if (entry.questionsAttempted > 20) level = 4;
       else if (entry.questionsAttempted > 10) level = 3;
       else if (entry.questionsAttempted > 5) level = 2;
@@ -100,10 +89,9 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
 
   return {
     stats: {
-      accuracy:
-        user.totalQuestions > 0
-          ? Math.round((user.totalCorrect / user.totalQuestions) * 100)
-          : Math.round(analytics.overallAccuracy || 0),
+      accuracy: user.totalQuestions > 0
+        ? Math.round((user.totalCorrect / user.totalQuestions) * 100)
+        : Math.round(analytics.overallAccuracy || 0),
       streak: user.currentStreak || 0,
       questions: user.totalQuestions || 0,
     },
@@ -165,32 +153,19 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
   },
 };
 
-function SubjectEmptyState() {
-  const { theme } = useTheme();
-  return (
-    <EmptyStateCard
-      icon='book-open'
-      title={theme.i18n.t('analytics.empty_states.subject.title')}
-      description={theme.i18n.t('analytics.empty_states.subject.description')}
-    />
-  );
-}
-
 
 export default function AnalyticsScreen() {
-  const { theme } = useTheme();
+  const [userData, setUserData] = React.useState<User | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [analyticsData, setAnalyticsData] = React.useState<AnalyticsData | null>(null);
+
   const { authStatus } = useAppContext();
+  const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'profile');
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [userData, setUserData] = React.useState<User | null>(null);
-  const [analyticsData, setAnalyticsData] = React.useState<AnalyticsData | null>(null);
-
   React.useEffect(() => {
-    if (authStatus !== 'authenticated') {
-      return;
-    }
+    if (authStatus !== 'authenticated') return;
     let isMounted = true;
     const fetchData = async () => {
       setIsLoading(true);
@@ -208,11 +183,10 @@ export default function AnalyticsScreen() {
       } catch (error) {
         console.error('Error fetching analytics data:', error);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
+
     fetchData();
     return () => {
       isMounted = false;
@@ -224,10 +198,7 @@ export default function AnalyticsScreen() {
     return buildAnalyticsSnapshot(userData, analyticsData);
   }, [userData, analyticsData]);
 
-  const hasStats =
-    data.stats.accuracy > 0 ||
-    data.stats.streak > 0 ||
-    data.stats.questions > 0;
+  const hasStats = data.stats.accuracy > 0 || data.stats.streak > 0 || data.stats.questions > 0;
   const hasKeyStats =
     data.keyStats.totalCorrect > 0 ||
     data.keyStats.avgScore > 0 ||
@@ -240,14 +211,10 @@ export default function AnalyticsScreen() {
   const hasSubjects = data.subjectPerformance.length > 0;
   const hasHeatmap = data.activityHeatmap.grid.some((row: number[]) => row.some((level: number) => level > 0));
 
-  const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({
-    name: item.subject,
-    score: item.percentage,
-  }));
+  const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({ name: item.subject, score: item.percentage }));
 
   const activity = data.activityHeatmap.grid.flat();
   const currentMonthLabel = formatMonthLabel(data.activityHeatmap.month, data.activityHeatmap.year);
-
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -345,18 +312,20 @@ export default function AnalyticsScreen() {
                 />
               ) : (
                 <EmptyStateCard
+                  icon='grid'
                   title={theme.i18n.t('analytics.empty_states.key_stats.title')}
                   description={theme.i18n.t('analytics.empty_states.key_stats.description')}
-                  icon='grid'
                 />
               )}
 
               {hasSubjects ? (
-                <SubjectPerformanceCard
-                  subjects={subjectPerformanceItems}
-                />
+                <SubjectPerformanceCard subjects={subjectPerformanceItems} />
               ) : (
-                <SubjectEmptyState />
+                <EmptyStateCard
+                  icon='book-open'
+                  title={theme.i18n.t('analytics.empty_states.subject.title')}
+                  description={theme.i18n.t('analytics.empty_states.subject.description')}
+                />
               )}
 
               {hasHeatmap ? (
@@ -381,9 +350,9 @@ export default function AnalyticsScreen() {
                 </View>
               ) : (
                 <EmptyStateCard
+                  icon='calendar'
                   title={theme.i18n.t('analytics.empty_states.activity.title')}
                   description={theme.i18n.t('analytics.empty_states.activity.description')}
-                  icon='calendar'
                 />
               )}
 
