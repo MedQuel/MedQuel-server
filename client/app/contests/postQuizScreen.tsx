@@ -3,16 +3,18 @@ import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
+import { normalizeError } from '../../common/api/api.errors';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuizResultCard } from '../../components/QuizResultCard';
 import { TopicPerfomanceCard } from '../../components/TopicPerfomanceCard';
 import { AchievementBadgeCard } from '../../components/AchievementBadgeCard';
-import { api } from '../../common/api/api';
-import { normalizeError } from '../../common/api/api.errors';
-import { Loading } from '../../components/common/loading';
+import type { QuizResultData, ReviewQuestion } from '../../common/types/contestTypes';
+import type { SubmitQuizSessionResult, SelectedOption } from '../../common/types/types';
 import { achievementCatalog, type AchievementId } from '../../common/constants/achievements';
-import type { SubmitQuizSessionResult, QuizResultData, ReviewQuestion, SelectedOption } from '../../common/types/types';
+
 
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
 

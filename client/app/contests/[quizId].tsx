@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
+import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
+import { normalizeError } from '../../common/api/api.errors';
+import { QuestionCard } from '../../components/QuestionCard';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuizProgressBar } from '../../components/QuizProgressBar';
-import { QuestionCard } from '../../components/QuestionCard';
-import { api } from '../../common/api/api';
-import { normalizeError } from '../../common/api/api.errors';
-import { Loading } from '../../components/common/loading';
-import type { ClientQuestion, QuizQuestion, ModalType, AnswerRecord, SubmittedAnswer, SelectedOption } from '../../common/types/types';
+import type { QuizQuestion, ModalType, AnswerRecord } from '../../common/types/contestTypes';
+import type { ClientQuestion, SubmittedAnswer, SelectedOption } from '../../common/types/types';
+
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
