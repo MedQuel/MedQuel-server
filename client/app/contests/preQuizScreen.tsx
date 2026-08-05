@@ -3,14 +3,16 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import type { Contest } from '../../common/types/types';
+import { Loading } from '../../components/common/loading';
 import { useBottomBar } from '@/common/context/useBottomBar';
+import { normalizeError } from '../../common/api/api.errors';
 import { ContestDetailCard } from '../../components/ContestDetailCard';
 import { ContestDifficultyCard } from '../../components/ContestDifficultyCard';
-import { api } from '../../common/api/api';
-import { normalizeError } from '../../common/api/api.errors';
-import { Loading } from '../../components/common/loading';
-import type { Contest, PreQuizData, QuizRule, StatItemProps } from '../../common/types/types';
+import type { PreQuizData, QuizRule, StatItemProps } from '../../common/types/contestTypes';
+
 
 function buildRules(markingScheme: Contest['markingScheme']): QuizRule[] {
   const { correct, wrong, skipped } = markingScheme;

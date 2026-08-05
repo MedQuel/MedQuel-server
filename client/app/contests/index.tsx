@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
-import { useTheme } from '../../theme/ThemeContext';
 import { api } from '../../common/api/api';
-import { normalizeError } from '../../common/api/api.errors';
-import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
+import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
 import { ContestCard } from '../../components/ContestCard';
 import { ChipContainer } from '../../components/common/Chip';
+import { normalizeError } from '../../common/api/api.errors';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
 import { FeatureContestCard } from '../../components/FeatureContestCard';
-import { Loading } from '../../components/common/loading';
-import type { Contest, GetContestsFilter, ContestFilter, ContestItem, FeaturedContest } from '../../common/types/types';
+import type { Contest, GetContestsFilter } from '../../common/types/types';
+import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
+import type { ContestFilter, ContestItem, FeaturedContest } from '../../common/types/contestTypes';
+
 
 const filterChips: ContestFilter[] = ['all', 'premium', ...(Object.keys(subjectCatalog) as SubjectId[])];
 
