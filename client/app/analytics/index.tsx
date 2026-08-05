@@ -1,17 +1,21 @@
+import React, { useMemo } from 'react';
 import { Feather } from '@expo/vector-icons';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { api } from '../../common/api/api';
+import { Loading } from '../../components/common/loading';
+import type { AnalyticsData, User } from '../../common/types/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import { useAppContext } from '../../common/context/AppContext';
+
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { AnalyticsStatsCard } from '../../components/AnalyticsStatsCard';
 import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 import { ActivityHeatmapCard } from '../../components/ActivityHeatmapCard';
 import { AnalyticsKeyStatItems } from '../../components/AnalyticsKeyStatItems';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-
-
-type TabKey = 'overview' | 'performance' | 'subjects' | 'attempts';
+import { useRouter } from 'expo-router';
 type SubjectPerformanceItem = {
   id: string;
   subject: string;
@@ -27,70 +31,6 @@ type AttemptItem = {
   correctAnswers: number;
   timeTaken: string;
 };
-type AnalyticsMock = {
-  tabs: { key: TabKey, label: string }[];
-  stats: { accuracy: number, streak: number, questions: number };
-  keyStats: {
-    totalCorrect: number;
-    avgScore: number;
-    bestSubject: string;
-    studyHours: number;
-    longestStreak: number;
-    weakSubject: string;
-  };
-  subjectPerformance: SubjectPerformanceItem[];
-  attempts: AttemptItem[];
-  activityHeatmap: {
-    month: number;
-    year: number;
-    grid: number[][];
-  };
-};
-
-const analyticsMock: AnalyticsMock = {
-  tabs: [
-    { key: 'overview', label: 'Overview' },
-    { key: 'performance', label: 'Performance' },
-    { key: 'subjects', label: 'Subjects' },
-    { key: 'attempts', label: 'Attempts' },
-  ],
-
-  stats: { accuracy: 64, streak: 8, questions: 719 },
-
-  keyStats: {
-    totalCorrect: 517,
-    avgScore: 68,
-    bestSubject: 'Anatomy',
-    studyHours: 172,
-    longestStreak: 16,
-    weakSubject: 'Forensic',
-  },
-
-  subjectPerformance: [
-    { id: '1', subject: 'Anatomy', correct: 127, percentage: 92, colorKey: 'success' },
-    { id: '2', subject: 'Pharmacology', correct: 117, percentage: 81, colorKey: 'accent' },
-    { id: '3', subject: 'Microbiology', correct: 127, percentage: 81, colorKey: 'premium' },
-    { id: '4', subject: 'Community Medicine', correct: 101, percentage: 80, colorKey: 'warning' },
-    { id: '5', subject: 'Forensic Medicine', correct: 78, percentage: 62, colorKey: 'error' },
-  ],
-
-  activityHeatmap: {
-    month: 6,
-    year: 2026,
-    grid: [
-      [0, 1, 2, 0, 1, 3, 2, 1, 0, 0, 2, 3, 1, 2, 0, 1, 2, 3],
-      [0, 1, 0, 2, 1, 0, 3, 2, 1, 0, 2, 1, 3, 0, 1, 2, 0, 1],
-      [1, 0, 2, 1, 3, 0, 1, 2, 2, 1, 0, 1, 3, 2, 1, 0, 2, 1],
-    ],
-  },
-
-  attempts: [
-    { id: '1', title: 'Quiz on Biochemistry', date: 'Jan 14, 2026', totalQuestions: 30, correctAnswers: 25, timeTaken: '33m' },
-    { id: '2', title: 'Quiz on Physiology', date: 'Jan 12, 2026', totalQuestions: 17, correctAnswers: 15, timeTaken: '21m' },
-    { id: '3', title: 'Quiz on Pathology', date: 'Jan 8, 2026', totalQuestions: 39, correctAnswers: 34, timeTaken: '40m' },
-  ],
-};
-
 const monthNames = [
   'January',
   'February',
@@ -110,6 +50,121 @@ const formatMonthLabel = (month: number, year: number) => {
   return `${monthNames[index]} ${year}`;
 };
 
+const colorKeys = ['success', 'accent', 'premium', 'warning', 'error', 'info'] as const;
+
+type AnalyticsSnapshot = {
+  stats: {
+    accuracy: number;
+    streak: number;
+    questions: number;
+  };
+  keyStats: {
+    totalCorrect: number;
+    avgScore: number;
+    bestSubject: string;
+    studyHours: number;
+    longestStreak: number;
+    weakSubject: string;
+  };
+  subjectPerformance: SubjectPerformanceItem[];
+  attempts: AttemptItem[];
+  activityHeatmap: {
+    month: number;
+    year: number;
+    grid: number[][];
+  };
+};
+
+const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): AnalyticsSnapshot => {
+  const month = new Date().getMonth() + 1;
+  const year = new Date().getFullYear();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const activityArray = Array.from({ length: daysInMonth }, () => 0);
+
+  analytics.heatmap.forEach((entry) => {
+    const date = new Date(entry.date);
+    if (date.getMonth() + 1 === month && date.getFullYear() === year) {
+      const day = date.getDate();
+      let level = 0;
+      if (entry.questionsAttempted > 20) level = 4;
+      else if (entry.questionsAttempted > 10) level = 3;
+      else if (entry.questionsAttempted > 5) level = 2;
+      else if (entry.questionsAttempted > 0) level = 1;
+      activityArray[day - 1] = level;
+    }
+  });
+
+  const sortedByAccuracy = [...analytics.subjectPerformance].sort((a, b) => b.accuracy - a.accuracy);
+  const bestSubject = sortedByAccuracy[0]?.subject ?? '';
+  const weakSubject = sortedByAccuracy[sortedByAccuracy.length - 1]?.subject ?? '';
+
+  return {
+    stats: {
+      accuracy:
+        user.totalQuestions > 0
+          ? Math.round((user.totalCorrect / user.totalQuestions) * 100)
+          : Math.round(analytics.overallAccuracy || 0),
+      streak: user.currentStreak || 0,
+      questions: user.totalQuestions || 0,
+    },
+    keyStats: {
+      totalCorrect: user.totalCorrect || 0,
+      avgScore: Math.round(analytics.overallAccuracy) || 0,
+      bestSubject,
+      studyHours: user.studyHours || 0,
+      longestStreak: user.longestStreak || 0,
+      weakSubject,
+    },
+    subjectPerformance: analytics.subjectPerformance.map((item, index) => ({
+      id: `subj-${index}`,
+      subject: item.subject,
+      correct: item.totalCorrect,
+      percentage: item.accuracy,
+      colorKey: colorKeys[index % colorKeys.length] ?? 'accent',
+    })),
+    attempts: analytics.recentAttempts.map((item) => ({
+      id: item.sessionId,
+      title: `Quiz on ${item.subject}`,
+      date: new Date(item.completedAt).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+      totalQuestions: 10,
+      correctAnswers: Math.round((item.scorePercent / 100) * 10),
+      timeTaken: '15m',
+    })),
+    activityHeatmap: {
+      month,
+      year,
+      grid: [activityArray],
+    },
+  };
+};
+
+const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
+  stats: {
+    accuracy: 0,
+    streak: 0,
+    questions: 0,
+  },
+  keyStats: {
+    totalCorrect: 0,
+    avgScore: 0,
+    bestSubject: '',
+    studyHours: 0,
+    longestStreak: 0,
+    weakSubject: '',
+  },
+  subjectPerformance: [],
+  attempts: [],
+  activityHeatmap: {
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    grid: [[] as number[]],
+  },
+};
+
 function SubjectEmptyState() {
   const { theme } = useTheme();
   return (
@@ -124,30 +179,74 @@ function SubjectEmptyState() {
 
 export default function AnalyticsScreen() {
   const { theme } = useTheme();
+  const { authStatus } = useAppContext();
+  const router = useRouter();
   useBottomBar(true, 'profile');
 
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [userData, setUserData] = React.useState<User | null>(null);
+  const [analyticsData, setAnalyticsData] = React.useState<AnalyticsData | null>(null);
+
+  React.useEffect(() => {
+    if (authStatus !== 'authenticated') {
+      return;
+    }
+    let isMounted = true;
+    const fetchData = async () => {
+      setIsLoading(true);
+      const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 600));
+      try {
+        const [user, analytics] = await Promise.all([
+          api.user.getMe(),
+          api.analytics.getAnalytics(),
+          minDelay,
+        ]);
+        if (isMounted) {
+          setUserData(user);
+          setAnalyticsData(analytics);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [authStatus]);
+
+  const data = useMemo(() => {
+    if (!userData || !analyticsData) return emptyAnalyticsSnapshot;
+    return buildAnalyticsSnapshot(userData, analyticsData);
+  }, [userData, analyticsData]);
+
   const hasStats =
-    analyticsMock.stats.accuracy > 0 ||
-    analyticsMock.stats.streak > 0 ||
-    analyticsMock.stats.questions > 0;
+    data.stats.accuracy > 0 ||
+    data.stats.streak > 0 ||
+    data.stats.questions > 0;
   const hasKeyStats =
-    analyticsMock.keyStats.totalCorrect > 0 ||
-    analyticsMock.keyStats.avgScore > 0 ||
-    analyticsMock.keyStats.bestSubject.trim().length > 0 ||
-    analyticsMock.keyStats.studyHours > 0 ||
-    analyticsMock.keyStats.longestStreak > 0 ||
-    analyticsMock.keyStats.weakSubject.trim().length > 0;
+    data.keyStats.totalCorrect > 0 ||
+    data.keyStats.avgScore > 0 ||
+    data.keyStats.bestSubject.trim().length > 0 ||
+    data.keyStats.studyHours > 0 ||
+    data.keyStats.longestStreak > 0 ||
+    data.keyStats.weakSubject.trim().length > 0;
 
-  const hasAttempts = analyticsMock.attempts.length > 0;
-  const hasSubjects = analyticsMock.subjectPerformance.length > 0;
-  const hasHeatmap = analyticsMock.activityHeatmap.grid.some((row) => row.some((level) => level > 0));
+  const hasAttempts = data.attempts.length > 0;
+  const hasSubjects = data.subjectPerformance.length > 0;
+  const hasHeatmap = data.activityHeatmap.grid.some((row: number[]) => row.some((level: number) => level > 0));
 
-  const subjectPerformanceItems = analyticsMock.subjectPerformance.map(
-    (item) => ({ name: item.subject, score: item.percentage })
-  );
+  const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({
+    name: item.subject,
+    score: item.percentage,
+  }));
 
-  const activity = analyticsMock.activityHeatmap.grid.flat();
-  const currentMonthLabel = formatMonthLabel(analyticsMock.activityHeatmap.month, analyticsMock.activityHeatmap.year);
+  const activity = data.activityHeatmap.grid.flat();
+  const currentMonthLabel = formatMonthLabel(data.activityHeatmap.month, data.activityHeatmap.year);
 
 
   return (
@@ -163,7 +262,7 @@ export default function AnalyticsScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'flex-start' }}>
             <Pressable
-              onPress={() => {}}
+              onPress={() => router.push('/profile')}
               style={{
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -206,94 +305,101 @@ export default function AnalyticsScreen() {
         </View>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: theme.space.sm,
-          paddingBottom: theme.space.xxl * 1.75,
-          paddingHorizontal: theme.space.md,
-        }}
-      >
-        <View style={{ gap: theme.space.md }}>
-          {hasStats ? (
-            <AnalyticsStatsCard
-              accuracy={analyticsMock.stats.accuracy}
-              streak={analyticsMock.stats.streak}
-              questions={analyticsMock.stats.questions}
-            />
-          ) : (
-            <EmptyStateCard
-              title={theme.i18n.t('analytics.empty_states.overview.title')}
-              description={theme.i18n.t('analytics.empty_states.overview.description')}
-              icon='bar-chart-2'
-            />
-          )}
+      <View style={{ flex: 1 }}>
+        {isLoading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: theme.space.xl }}>
+            <Loading size={150} />
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingTop: theme.space.sm,
+              paddingBottom: theme.space.xxl * 1.75,
+              paddingHorizontal: theme.space.md,
+            }}
+          >
+            <View style={{ gap: theme.space.md }}>
+              {hasStats ? (
+                <AnalyticsStatsCard
+                  accuracy={data.stats.accuracy}
+                  streak={data.stats.streak}
+                  questions={data.stats.questions}
+                />
+              ) : (
+                <EmptyStateCard
+                  title={theme.i18n.t('analytics.empty_states.overview.title')}
+                  description={theme.i18n.t('analytics.empty_states.overview.description')}
+                  icon='bar-chart-2'
+                />
+              )}
 
-          {hasKeyStats ? (
-            <AnalyticsKeyStatItems
-              totalCorrect={analyticsMock.keyStats.totalCorrect}
-              avgScore={analyticsMock.keyStats.avgScore}
-              bestSubject={analyticsMock.keyStats.bestSubject}
-              studyHours={analyticsMock.keyStats.studyHours}
-              longestStreak={analyticsMock.keyStats.longestStreak}
-              weakSubject={analyticsMock.keyStats.weakSubject}
-            />
-          ) : (
-            <EmptyStateCard
-              title={theme.i18n.t('analytics.empty_states.key_stats.title')}
-              description={theme.i18n.t('analytics.empty_states.key_stats.description')}
-              icon='grid'
-            />
-          )}
+              {hasKeyStats ? (
+                <AnalyticsKeyStatItems
+                  totalCorrect={data.keyStats.totalCorrect}
+                  avgScore={data.keyStats.avgScore}
+                  bestSubject={data.keyStats.bestSubject}
+                  studyHours={data.keyStats.studyHours}
+                  longestStreak={data.keyStats.longestStreak}
+                  weakSubject={data.keyStats.weakSubject}
+                />
+              ) : (
+                <EmptyStateCard
+                  title={theme.i18n.t('analytics.empty_states.key_stats.title')}
+                  description={theme.i18n.t('analytics.empty_states.key_stats.description')}
+                  icon='grid'
+                />
+              )}
 
-          {hasSubjects ? (
-            <SubjectPerformanceCard
-              title={theme.i18n.t('analytics.subjectPerformance')}
-              subjects={subjectPerformanceItems}
-            />
-          ) : (
-            <SubjectEmptyState />
-          )}
+              {hasSubjects ? (
+                <SubjectPerformanceCard
+                  subjects={subjectPerformanceItems}
+                />
+              ) : (
+                <SubjectEmptyState />
+              )}
 
-          {hasHeatmap ? (
-            <View>
-              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: theme.space.xs }}>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.xs,
-                    fontFamily: theme.fontFamily.regular,
-                  }}
-                >
-                  {currentMonthLabel}
-                </Text>
-              </View>
+              {hasHeatmap ? (
+                <View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: theme.space.xs }}>
+                    <Text
+                      style={{
+                        color: theme.color.textMuted,
+                        fontSize: theme.fontSize.xs,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {currentMonthLabel}
+                    </Text>
+                  </View>
 
-              <ActivityHeatmapCard
-                month={analyticsMock.activityHeatmap.month}
-                year={analyticsMock.activityHeatmap.year}
-                activity={activity}
-              />
+                  <ActivityHeatmapCard
+                    month={data.activityHeatmap.month}
+                    year={data.activityHeatmap.year}
+                    activity={activity}
+                  />
+                </View>
+              ) : (
+                <EmptyStateCard
+                  title={theme.i18n.t('analytics.empty_states.activity.title')}
+                  description={theme.i18n.t('analytics.empty_states.activity.description')}
+                  icon='calendar'
+                />
+              )}
+
+              {hasAttempts ? (
+                <AttemptHistoryCard attempts={data.attempts} />
+              ) : (
+                <EmptyStateCard
+                  title={theme.i18n.t('analytics.empty_states.attempts.title')}
+                  description={theme.i18n.t('analytics.empty_states.attempts.description')}
+                  icon='file-text'
+                />
+              )}
             </View>
-          ) : (
-            <EmptyStateCard
-              title={theme.i18n.t('analytics.empty_states.activity.title')}
-              description={theme.i18n.t('analytics.empty_states.activity.description')}
-              icon='calendar'
-            />
-          )}
-
-          {hasAttempts ? (
-            <AttemptHistoryCard attempts={analyticsMock.attempts} />
-          ) : (
-            <EmptyStateCard
-              title={theme.i18n.t('analytics.empty_states.attempts.title')}
-              description={theme.i18n.t('analytics.empty_states.attempts.description')}
-              icon='file-text'
-            />
-          )}
-        </View>
-      </ScrollView>
+          </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
