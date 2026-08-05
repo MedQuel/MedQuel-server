@@ -1,15 +1,15 @@
 import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, Text, View } from 'react-native';
+import { View, Text, Easing, Animated, Pressable, ScrollView } from 'react-native';
 
-import type { LeaderboardEntry, LeaderboardResult } from '../../common/types/types';
+import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { TabContainer } from '../../components/TabContainer';
-import { useBottomBar } from '../../common/context/useBottomBar';
-import { api } from '../../common/api/api';
-import { Loading } from '../../components/common/loading';
 import { useAppContext } from '../../common/context/AppContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import type { LeaderboardEntry, LeaderboardResult } from '../../common/types/types';
 
+import { Loading } from '../../components/common/loading';
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
 import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
@@ -58,17 +58,13 @@ const getInitials = (name: string) => {
     .join('')
     .toUpperCase();
 };
-
 const mapTrendLabel = (timeFilter: LeaderboardTimeFilter) => {
   if (timeFilter === 'weekly') return 'this week';
   if (timeFilter === 'monthly') return 'this month';
   return 'all time';
 };
 
-const mapLeaderboardSnapshot = (
-  result: LeaderboardResult,
-  timeFilter: LeaderboardTimeFilter
-): LeaderboardSnapshot => {
+const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: LeaderboardTimeFilter): LeaderboardSnapshot => {
   const sorted = [...result.entries].sort((a, b) => a.rank - b.rank);
 
   const podiumUsers = sorted.slice(0, 3).map((entry, index) => ({
@@ -124,23 +120,19 @@ const timeTabs: { id: LeaderboardTimeFilter; label: string }[] = [
 
 
 export default function LeaderboardScreen() {
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardResult | null>(null);
   const [timeFilter, setTimeFilter] = useState<LeaderboardTimeFilter>('weekly');
   const [scopeFilter, setScopeFilter] = useState<LeaderboardScope>('global');
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardResult | null>(null);
 
-  const { theme } = useTheme();
   const { authStatus } = useAppContext();
+  const { theme } = useTheme();
   useBottomBar(true, 'leaderboard');
 
   const spin = useRef(new Animated.Value(0)).current;
   const rotate = useMemo(
-    () =>
-      spin.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-      }),
+    () => spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }),
     [spin]
   );
 
@@ -157,29 +149,32 @@ export default function LeaderboardScreen() {
     return mapLeaderboardSnapshot(leaderboardData, timeFilter);
   }, [leaderboardData, timeFilter]);
 
-  const fetchLeaderboard = useCallback(async (showLoader = true) => {
-    if (authStatus !== 'authenticated') return;
-    if (showLoader) setIsLoading(true);
-    const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 1200));
-    try {
-      const [data] = await Promise.all([
-        api.leaderboard.getLeaderboard(timeFilter, scopeFilter),
-        showLoader ? minDelay : Promise.resolve(),
-      ]);
-      setLeaderboardData(data);
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error);
-    } finally {
-      if (showLoader) setIsLoading(false);
-    }
-  }, [timeFilter, scopeFilter, authStatus]);
+  const fetchLeaderboard = useCallback(
+    async (showLoader = true) => {
+      if (authStatus !== 'authenticated') return;
+      if (showLoader) setIsLoading(true);
+      const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 1200));
+
+      try {
+        const [data] = await Promise.all([
+          api.leaderboard.getLeaderboard(timeFilter, scopeFilter),
+          showLoader ? minDelay : Promise.resolve(),
+        ]);
+        setLeaderboardData(data);
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+      } finally {
+        if (showLoader) setIsLoading(false);
+      }
+    },
+    [timeFilter, scopeFilter, authStatus]
+  );
 
   useEffect(() => {
     if (authStatus !== 'authenticated') return;
     let isMounted = true;
-    if (isMounted) {
-      fetchLeaderboard(true);
-    }
+    if (isMounted) fetchLeaderboard(true);
+
     return () => {
       isMounted = false;
     };
@@ -187,7 +182,6 @@ export default function LeaderboardScreen() {
 
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;
-
     setRefreshing(true);
     spin.setValue(0);
 
@@ -198,15 +192,10 @@ export default function LeaderboardScreen() {
       useNativeDriver: true,
     }).start();
 
-    fetchLeaderboard(false).finally(() => {
-      setRefreshing(false);
-    });
+    fetchLeaderboard(false).finally(() => { setRefreshing(false) });
   }, [refreshing, spin, fetchLeaderboard]);
 
-  const switchScope = useCallback((value: LeaderboardScope) => {
-    setScopeFilter(value);
-  }, []);
-
+  const switchScope = useCallback((value: LeaderboardScope) => { setScopeFilter(value) }, []);
 
 
   return (
@@ -266,9 +255,7 @@ export default function LeaderboardScreen() {
               backgroundColor: theme.color.card,
               opacity: pressed ? 0.88 : 1,
               elevation: 2,
-              boxShadow: theme.isDark
-                ? `0px 2px 8px ${theme.color.accent}29`
-                : `0px 2px 8px, ${theme.color.accent}14`,
+              boxShadow: theme.isDark ? `0px 2px 8px ${theme.color.accent}29` : `0px 2px 8px, ${theme.color.accent}14`,
             })}
           >
             <Animated.View style={{ transform: [{ rotate }] }}>
@@ -308,11 +295,9 @@ export default function LeaderboardScreen() {
                   borderRadius: theme.borderRadius.full,
                   borderColor: active ? theme.color.accent : theme.color.border,
                   backgroundColor: active ? theme.color.accent : theme.color.card,
+                  boxShadow: active ? `0px 2px 8px ${theme.color.accent}29` : `0px 0px 0px, ${theme.color.accent}14`,
                   opacity: pressed ? 0.9 : 1,
                   elevation: active ? 2 : 0,
-                  boxShadow: active
-                    ? `0px 2px 8px ${theme.color.accent}29`
-                    : `0px 0px 0px, ${theme.color.accent}14`,
                 })}
               >
                 <Text
