@@ -159,7 +159,8 @@
     "tabs": {
       "weekly": "Weekly",
       "monthly": "Monthly",
-      "alltime": "All Time"
+      "alltime": "All Time",
+      "allTime": "All Time"
     }
   },
 
