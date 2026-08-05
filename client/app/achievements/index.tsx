@@ -1,21 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Feather } from '@expo/vector-icons';
-import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { api } from '../../common/api/api';
-import { Loading } from '../../components/common/loading';
 import {
   achievementCatalog,
   type AchievementId,
   type EarnedAchievement,
 } from '../../common/constants/achievements';
-import type { Badge } from '../../common/types/types';
+import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import type { Badge } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { useAppContext } from '../../common/context/AppContext';
 import { MOCK_ACHIEVEMENTS } from '../../common/constants/mockData';
 
+import { Loading } from '../../components/common/loading';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
 import { BadgeProgressCard } from '../../components/BadgeProgressCard';
@@ -23,8 +23,9 @@ import { LockedBadgeCard } from '../../components/achievements/LockedBadgeCard';
 import { AchievementProgressCard } from '../../components/AchievementProgressCard';
 
 
-type BadgeIcon = 'target' | 'trending' | 'people' | 'medal';
 type BadgeVariant = 'pink' | 'orange' | 'blue' | 'red';
+type BadgeIcon = 'target' | 'trending' | 'people' | 'medal';
+type LockedAccentKey = 'premium' | 'warning' | 'accent' | 'success' | 'info' | 'error';
 type BadgeProgressItem = {
   id: string;
   title: string;
@@ -42,20 +43,12 @@ type AchievementProgress = {
   bronze: number;
   epReward: number;
 };
-type LockedAccentKey =
-  | 'premium'
-  | 'warning'
-  | 'accent'
-  | 'success'
-  | 'info'
-  | 'error';
 type LockedBadgeItem = {
   id: string;
   title: string;
   icon: React.ComponentProps<typeof Feather>['name'];
   accent: LockedAccentKey;
 };
-
 type AchievementSnapshot = {
   progress: AchievementProgress;
   earnedBadges: EarnedAchievement[];
@@ -69,14 +62,12 @@ const mapVariant = (tier: Badge['tier']): BadgeVariant => {
   if (tier === 'bronze') return 'red';
   return 'pink';
 };
-
 const mapProgressIcon = (icon: string): BadgeIcon => {
   if (icon === 'flame') return 'trending';
   if (icon === 'book') return 'target';
   if (icon === 'clock') return 'medal';
   return 'people';
 };
-
 const mapLockedIcon = (icon: string): React.ComponentProps<typeof Feather>['name'] => {
   if (icon === 'flame') return 'zap';
   if (icon === 'book') return 'book-open';
@@ -84,7 +75,6 @@ const mapLockedIcon = (icon: string): React.ComponentProps<typeof Feather>['name
   if (icon === 'zap') return 'zap';
   return 'award';
 };
-
 const mapAccent = (tier: Badge['tier']): LockedAccentKey => {
   if (tier === 'gold') return 'warning';
   if (tier === 'silver') return 'accent';
@@ -94,10 +84,7 @@ const mapAccent = (tier: Badge['tier']): LockedAccentKey => {
 const buildAchievementSnapshot = (badges: Badge[]): AchievementSnapshot => {
   const earnedBadges = badges
     .filter((badge) => badge.status === 'earned')
-    .map((badge) => ({
-      id: badge.badgeId as AchievementId,
-      earnedAt: badge.earnedAt,
-    }));
+    .map((badge) => ({ id: badge.badgeId as AchievementId, earnedAt: badge.earnedAt }));
 
   const badgeProgress = badges
     .filter((badge) => badge.status === 'in_progress')
@@ -128,13 +115,9 @@ const buildAchievementSnapshot = (badges: Badge[]): AchievementSnapshot => {
     const catalogItem = achievementCatalog[badge.id];
     const variant = catalogItem?.variant;
 
-    if (variant === 'gold') {
-      gold++;
-    } else if (variant === 'purple' || variant === 'blue' || variant === 'red') {
-      silver++;
-    } else {
-      bronze++;
-    }
+    if (variant === 'gold') gold++;
+    else if (variant === 'purple' || variant === 'blue' || variant === 'red') silver++;
+    else bronze++;
   });
 
   return {
@@ -154,18 +137,16 @@ const buildAchievementSnapshot = (badges: Badge[]): AchievementSnapshot => {
 
 
 export default function AchievementsScreen() {
-  const { theme } = useTheme();
+  const [achievements, setAchievements] = useState<Badge[]>(MOCK_ACHIEVEMENTS);
+  const [isLoading, setIsLoading] = useState(true);
+
   const { authStatus } = useAppContext();
+  const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'profile');
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [achievements, setAchievements] = useState<Badge[]>(MOCK_ACHIEVEMENTS);
-
   useEffect(() => {
-    if (authStatus !== 'authenticated') {
-      return;
-    }
+    if (authStatus !== 'authenticated') return;
     let isMounted = true;
     const fetchAchievements = async () => {
       setIsLoading(true);
@@ -175,27 +156,25 @@ export default function AchievementsScreen() {
           api.achievement.getAchievements(),
           minDelay,
         ]);
-        if (isMounted) {
-          setAchievements(data);
-        }
+        if (isMounted) setAchievements(data);
       } catch (error) {
         console.error('Error fetching achievements:', error);
-        if (isMounted) {
-          setAchievements(MOCK_ACHIEVEMENTS);
-        }
+        if (isMounted) setAchievements(MOCK_ACHIEVEMENTS);
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (isMounted) setIsLoading(false);
       }
     };
+
     fetchAchievements();
     return () => {
       isMounted = false;
     };
   }, [authStatus]);
 
-  const data = useMemo(() => buildAchievementSnapshot(achievements), [achievements]);
+  const data = useMemo(
+    () => buildAchievementSnapshot(achievements),
+    [achievements]
+  );
   const progressData = data.progress;
   const earnedBadges = data.earnedBadges;
   const lockedBadges = data.lockedBadges;
@@ -275,7 +254,7 @@ export default function AchievementsScreen() {
 
       <View style={{ flex: 1 }}>
         {isLoading ? (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: theme.space.xl }}>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: theme.space.xl }}>
             <Loading size={150} />
           </View>
         ) : (
@@ -302,9 +281,9 @@ export default function AchievementsScreen() {
                 <EarnedBadgeCard achievements={earnedBadges} />
               ) : (
                 <EmptyStateCard
+                  icon='award'
                   title={theme.i18n.t('achievements.empty_states.no_badges.title')}
                   description={theme.i18n.t('achievements.empty_states.no_badges.description')}
-                  icon='award'
                 />
               )}
 
@@ -334,7 +313,10 @@ export default function AchievementsScreen() {
                 {lockedBadgeRows.length > 0 ? (
                   <View style={{ gap: theme.space.sm }}>
                     {lockedBadgeRows.map((row, rowIndex) => (
-                      <View key={`locked-row-${rowIndex}`} style={{ flexDirection: 'row', gap: theme.space.sm }}>
+                      <View
+                        key={`locked-row-${rowIndex}`}
+                        style={{ flexDirection: 'row', gap: theme.space.sm }}
+                      >
                         {row.map((item) => (
                           <View key={item.id} style={{ width: '31.5%' }}>
                             <LockedBadgeCard
