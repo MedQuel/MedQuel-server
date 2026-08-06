@@ -83,6 +83,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /processedQuizEvents/{sessionId} {
+      allow read, write: if false;
+    }
+
 
     // ─────> Study plans
     match /studyPlans/{userId} {
