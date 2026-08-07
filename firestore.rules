@@ -79,6 +79,14 @@ service cloud.firestore {
       }
     }
 
+    match /contests/{contestId}/participants/{userId} {
+      allow read, write: if false;
+    }
+
+    match /contestFinalizations/{contestId} {
+      allow read, write: if false;
+    }
+
     match /contestTemplates/{templateId} {
       allow read, write: if false;
     }
