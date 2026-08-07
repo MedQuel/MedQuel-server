@@ -20,6 +20,8 @@ import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from './qu
 import { updateStreak, computeXpEarned, computeEpEarned, computeLevelFromXp } from './xpEpService.js';
 
 
+const TOPIC_CACHE_TTL_MS = 60 * 60 * 1000;
+const topicCache = new Map<string, TopicCacheEntry>();
 interface OnboardedUser {
   uid: string;
   isPremium: boolean;
@@ -28,8 +30,6 @@ interface TopicCacheEntry {
   topics: string[];
   expiresAt: number;
 }
-const TOPIC_CACHE_TTL_MS = 60 * 60 * 1000;
-const topicCache = new Map<string, TopicCacheEntry>();
 
 export async function fetchOnboardedUser(context: GraphQLContext): Promise<OnboardedUser> {
   if (!context.user) throw new AuthenticationError();
@@ -96,6 +96,19 @@ async function fetchActiveContest(contestId: string, db: Firestore): Promise<Act
   };
 }
 
+async function claimContestParticipation(contestId: string, uid: string, db: Firestore): Promise<void> {
+  const participantRef = db.collection('contests').doc(contestId).collection('participants').doc(uid);
+  const contestRef = db.collection('contests').doc(contestId);
+
+  await db.runTransaction(async (tx) => {
+    const participantSnap = await tx.get(participantRef);
+    if (participantSnap.exists) return;
+
+    tx.set(participantRef, { userId: uid, joinedAt: Timestamp.now() });
+    tx.update(contestRef, { participantCount: FieldValue.increment(1) });
+  });
+}
+
 
 export interface StartQuizSessionResult {
   sessionId: string;
@@ -148,6 +161,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
         `Contest question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`
       );
     }
+
+    await claimContestParticipation(input.contestId, user.uid, db);
   } else {
     subject = input.subject;
     difficulty = input.difficulty;
@@ -290,11 +305,15 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
 
   const sessionRef = db.collection('quizSessions').doc(session.sessionId);
   const userRef = db.collection('users').doc(user.uid);
+  const contestLeaderboardRef = session.contestId
+    ? db.collection('contests').doc(session.contestId).collection('leaderboard').doc(user.uid)
+    : null;
 
   const txResult = await db.runTransaction(async (tx) => {
-    const [sessionSnap, userSnap] = await Promise.all([
+    const [sessionSnap, userSnap, contestLeaderboardSnap] = await Promise.all([
       tx.get(sessionRef),
       tx.get(userRef),
+      contestLeaderboardRef ? tx.get(contestLeaderboardRef) : Promise.resolve(null),
     ]);
 
     if (!sessionSnap.exists) throw new SessionNotFoundError();
@@ -370,6 +389,19 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       totalCorrect: updatedTotalCorrect,
       updatedAt: FieldValue.serverTimestamp(),
     });
+
+    if (contestLeaderboardRef) {
+      const existingScore = contestLeaderboardSnap?.exists ? (contestLeaderboardSnap.data()!.score ?? -Infinity) : -Infinity;
+      const bestScore = Math.max(existingScore, grading.score);
+
+      tx.set(contestLeaderboardRef, {
+        userId: user.uid,
+        displayName: userData.displayName ?? 'Unknown',
+        score: bestScore,
+        rank: 0,
+        completedAt: now,
+      });
+    }
 
     return {
       xpEarned,
