@@ -1,4 +1,5 @@
 import type { GraphQLContext } from '../context.js';
+import { getLeaderboardResolver } from './leaderboard.js';
 import { completeOnboardingResolver } from './onboarding.js';
 import { meResolver, updateProfileResolver } from './user.js';
 import { startQuizSessionResolver, submitQuizSessionResolver, getTopicsForSubjectResolver } from './quiz.js';
@@ -9,6 +10,7 @@ export const resolvers = {
     ping: (): string => 'pong',
     me: meResolver,
     getTopicsForSubject: getTopicsForSubjectResolver,
+    getLeaderboard: getLeaderboardResolver,
   },
   Mutation: {
     completeOnboarding: (
