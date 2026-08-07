@@ -109,3 +109,13 @@ export class RateLimitExceededError extends GraphQLError {
     super(message, { extensions: { code: 'RATE_LIMITED' } });
   }
 }
+
+/**
+ * Throw when a feature is intentionally not built yet.
+ * Distinct from ForbiddenError — this isn't a permissions problem, it's "this doesn't exist yet."
+ */
+export class NotImplementedError extends GraphQLError {
+  constructor(message = 'This feature is not implemented yet.') {
+    super(message, { extensions: { code: 'NOT_IMPLEMENTED' } });
+  }
+}
