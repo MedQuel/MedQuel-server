@@ -5,17 +5,19 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
 
-
-type ChatHeaderProps = {
+type PersonalChatListHeaderProps = {
   search: string;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
   searchVisible: boolean;
   setSearchVisible: React.Dispatch<React.SetStateAction<boolean>>;
 };
-
-export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible }: ChatHeaderProps) {
+export function PersonalChatListHeader({
+  search,
+  setSearch,
+  searchVisible,
+  setSearchVisible,
+}: PersonalChatListHeaderProps) {
   const { theme } = useTheme();
-
   return (
     <>
       <View
@@ -37,7 +39,7 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
               fontFamily: theme.fontFamily.bold,
             }}
           >
-            {theme.i18n.t('Discussion Rooms')}
+            {theme.i18n.t('Messages')}
           </Text>
 
           <Text
@@ -48,7 +50,7 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
               marginTop: theme.space.xs * 0.5,
             }}
           >
-            {theme.i18n.t('Join, discuss & learn together')}
+            {theme.i18n.t('Your direct conversations')}
           </Text>
         </View>
 
@@ -83,7 +85,7 @@ export function ChatHeader({ search, setSearch, searchVisible, setSearchVisible 
             onChange={setSearch}
             onSubmit={setSearch}
             onClear={() => setSearch('')}
-            placeholder={theme.i18n.t('Search discussion rooms...')}
+            placeholder={theme.i18n.t('Search conversations...')}
             autoFocus
           />
         </View>

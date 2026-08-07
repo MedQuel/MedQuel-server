@@ -13,61 +13,111 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
+import type {
+  ChatRoom,
+  ChatMessage as ApiChatMessage,
+  GetChatMessagesResult,
+} from '../../common/types/types';
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
-import { MOCK_USER } from '../../common/constants/mockData';
 import { getInitials } from '../../common/utils/getInitials';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import type { ChatRoom, GetChatMessagesResult } from '../../common/types/types';
-import { subjectCatalog, SubjectIcon, type SubjectId } from '../../common/constants/subject';
-
 
 type ChatMessage = {
   id: string;
   text: string;
   isMe: boolean;
+  senderId: string;
   senderName: string;
   timestamp: string;
+  createdAt: string;
 };
 
-const formatTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-const toChatMessage = (msg: GetChatMessagesResult['messages'][number], currentUserId: string): ChatMessage => ({
+const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
+const getContactColor = (theme: ReturnType<typeof useTheme>['theme'], seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash << 5) - hash + seed.charCodeAt(i);
+    hash |= 0;
+  }
+  const key = CONTACT_COLOR_KEYS[Math.abs(hash) % CONTACT_COLOR_KEYS.length] as keyof typeof theme.color;
+  return theme.color[key] ?? theme.color.accent;
+};
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+// NOTE: assumes ApiChatMessage carries a display name for the sender
+// (e.g. `userName`). Falls back to the userId if it isn't present.
+const toChatMessage = (msg: ApiChatMessage, currentUserId: string): ChatMessage => ({
   id: msg.messageId,
   text: msg.text,
   isMe: msg.userId === currentUserId,
-  senderName: msg.displayName,
+  senderId: msg.userId,
+  senderName: (msg as any).userName ?? msg.userId,
   timestamp: formatTime(msg.createdAt),
+  createdAt: msg.createdAt,
 });
 
-const resolveSubjectId = (subjectTitle: string): SubjectId => {
-  const normalized = subjectTitle.trim().toLowerCase();
-  const match = Object.entries(subjectCatalog).find(([, def]) => def.title.toLowerCase() === normalized);
-
-  return (match?.[0] as SubjectId) ?? 'medicine';
+const isSameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+const formatDayLabel = (date: Date, t: (s: string) => string): string => {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (isSameDay(date, today)) return t('Today');
+  if (isSameDay(date, yesterday)) return t('Yesterday');
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
+type ChatListItem =
+  | { type: 'separator'; id: string; label: string }
+  | { type: 'message'; id: string; message: ChatMessage; isFirstInGroup: boolean; isLastInGroup: boolean };
 
-export default function DiscussionChatViewScreen() {
+// Groups are now defined by consecutive messages from the SAME sender
+// (not just the same isMe boolean), so each participant's run of
+// messages gets its own name label / avatar in a group chat.
+const buildChatListData = (messages: ChatMessage[], t: (s: string) => string): ChatListItem[] => {
+  const items: ChatListItem[] = [];
+  messages.forEach((msg, index) => {
+    const prev = messages[index - 1];
+    const next = messages[index + 1];
+    const msgDate = new Date(msg.createdAt);
+    const prevDate = prev ? new Date(prev.createdAt) : null;
+    const nextDate = next ? new Date(next.createdAt) : null;
+    const isNewDay = !prevDate || !isSameDay(prevDate, msgDate);
+    if (isNewDay) {
+      items.push({ type: 'separator', id: `sep-${msg.id}`, label: formatDayLabel(msgDate, t) });
+    }
+    const isFirstInGroup = isNewDay || !prev || prev.senderId !== msg.senderId;
+    const isLastInGroup =
+      !next || !nextDate || !isSameDay(nextDate, msgDate) || next.senderId !== msg.senderId;
+    items.push({ type: 'message', id: msg.id, message: msg, isFirstInGroup, isLastInGroup });
+  });
+  return items;
+};
+export default function GroupChatViewScreen() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [room, setRoom] = useState<ChatRoom | null>(null);
+  const [conversation, setConversation] = useState<ChatRoom | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const flatListRef = useRef<FlatList<ChatListItem>>(null);
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(false);
 
-  const rawRoomId = (params as any)?.roomId;
-  const roomId = Array.isArray(rawRoomId) ? rawRoomId[0] : (rawRoomId ?? '');
-  const flatListRef = useRef<FlatList>(null);
+  const roomId = Array.isArray(params.userId)
+    ? params.userId[0] ?? ''
+    : params.userId ?? '';
+
+  const groupColor = getContactColor(theme, conversation?.roomId ?? roomId);
 
   useEffect(() => {
     let isMounted = true;
@@ -75,20 +125,25 @@ export default function DiscussionChatViewScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [rooms, messagesResult] = await Promise.all([
+        const [me, rooms, messagesResult]: [
+          Awaited<ReturnType<typeof api.user.getMe>>,
+          ChatRoom[],
+          GetChatMessagesResult
+        ] = await Promise.all([
+          api.user.getMe(),
           api.chat.getChatRooms(),
           api.chat.getChatMessages(roomId),
         ]);
         if (!isMounted) return;
-
-        const matchedRoom = rooms.find((r) => r.roomId === roomId) ?? null;
-        if (!matchedRoom) {
+        setCurrentUserId(me.uid);
+        const matchedConversation =
+          rooms.find((r) => r.roomId === roomId) ?? null;
+        if (!matchedConversation) {
           setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
           return;
         }
-
-        setRoom(matchedRoom);
-        setMessages(messagesResult.messages.map((m) => toChatMessage(m, MOCK_USER.uid)));
+        setConversation(matchedConversation);
+        setMessages(messagesResult.messages.map((m) => toChatMessage(m, me.uid)));
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
       } catch (err) {
         console.log('Failed to fetch chat:', err);
@@ -106,20 +161,18 @@ export default function DiscussionChatViewScreen() {
     return () => { isMounted = false };
   }, [roomId, theme.i18n]);
 
-  const roomSubjectId = room ? resolveSubjectId(room.subject) : 'medicine';
-  const roomVariant = subjectCatalog[roomSubjectId]?.variant ?? 'accent';
-  const roomIconColor = theme.color[roomVariant] ?? theme.color.accent;
-
   const handleSend = async () => {
     const text = inputText.trim();
-    if (!text || sending || !roomId) return;
-
+    if (!text || sending || !roomId || !currentUserId) return;
+    const nowIso = new Date().toISOString();
     const optimisticMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       isMe: true,
-      senderName: MOCK_USER.displayName,
+      senderId: currentUserId,
+      senderName: theme.i18n.t('You'),
       text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+      timestamp: formatTime(nowIso),
+      createdAt: nowIso,
     };
     setInputText('');
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -128,7 +181,13 @@ export default function DiscussionChatViewScreen() {
     try {
       setSending(true);
       const sent = await api.chat.sendMessage(roomId, text);
-      setMessages((prev) => prev.map((m) => m.id === optimisticMessage.id ? toChatMessage(sent, MOCK_USER.uid) : m));
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === optimisticMessage.id
+            ? toChatMessage(sent, currentUserId ?? sent.userId)
+            : m,
+        ),
+      );
     } catch (err) {
       console.log('Failed to send message:', err);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
@@ -147,14 +206,8 @@ export default function DiscussionChatViewScreen() {
   }[] = [
     {
       key: 'info',
-      label: theme.i18n.t('Room Info'),
-      icon: 'information-circle-outline',
-      onPress: () => { setMenuVisible(false) },
-    },
-    {
-      key: 'members',
-      label: theme.i18n.t('Members'),
-      icon: 'people-outline',
+      label: theme.i18n.t('Group Info'),
+      icon: 'people-circle-outline',
       onPress: () => { setMenuVisible(false) },
     },
     {
@@ -167,90 +220,163 @@ export default function DiscussionChatViewScreen() {
       },
     },
     {
-      key: 'leave',
-      label: theme.i18n.t('Leave Room'),
-      icon: 'exit-outline',
+      key: 'report',
+      label: theme.i18n.t('Report Group'),
+      icon: 'flag-outline',
       danger: true,
       onPress: () => { setMenuVisible(false) },
     },
     {
-      key: 'report',
-      label: theme.i18n.t('Report Room'),
-      icon: 'flag-outline',
+      key: 'leave',
+      label: theme.i18n.t('Leave Group'),
+      icon: 'exit-outline',
       danger: true,
       onPress: () => { setMenuVisible(false) },
     },
   ];
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        marginBottom: theme.space.md,
-        justifyContent: item.isMe ? 'flex-end' : 'flex-start',
-      }}
-    >
-      {!item.isMe && (
-        <View
-          style={{
-            width: theme.space.lg,
-            height: theme.space.lg,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: theme.space.xs,
-            borderRadius: theme.borderRadius.full,
-            backgroundColor: `${theme.color.accent}22`,
-          }}
-        >
-          <Text
+  const getBubbleRadius = (isMe: boolean, isFirstInGroup: boolean) => {
+    const lg = theme.borderRadius.lg;
+    const sm = theme.borderRadius.sm;
+
+    if (isMe) {
+      return {
+        borderTopLeftRadius: lg,
+        borderTopRightRadius: isFirstInGroup ? lg : sm,
+        borderBottomRightRadius: sm,
+        borderBottomLeftRadius: lg,
+      };
+    }
+
+    return {
+      borderTopRightRadius: lg,
+      borderTopLeftRadius: isFirstInGroup ? lg : sm,
+      borderBottomLeftRadius: sm,
+      borderBottomRightRadius: lg,
+    };
+  };
+
+  const renderItem = ({ item }: { item: ChatListItem }) => {
+    if (item.type === 'separator') {
+      return (
+        <View style={{ alignItems: 'center', marginVertical: theme.space.sm }}>
+          <View
             style={{
-              color: theme.color.accent,
-              fontSize: theme.fontSize.xs,
-              fontFamily: theme.fontFamily.bold,
+              paddingHorizontal: theme.space.sm,
+              paddingVertical: theme.space.xs * 0.5,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.card,
             }}
           >
-            {getInitials(item.senderName)}
-          </Text>
+            <Text
+              style={{
+                color: theme.color.textSecondary,
+                fontSize: theme.fontSize.xs,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {item.label}
+            </Text>
+          </View>
         </View>
-      )}
+      );
+    }
 
-      <View style={{ maxWidth: '75%' }}>
-        <View
-          style={{
-            paddingHorizontal: theme.space.md,
-            paddingVertical: theme.space.sm,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: item.isMe ? theme.color.accent : theme.color.card,
-            boxShadow: `0px 1px 3px ${theme.color.textPrimary}0D`,
-            elevation: Platform.OS === 'android' ? 1 : 0,
-          }}
-        >
-          <Text
+    const { message, isFirstInGroup, isLastInGroup } = item;
+    const senderColor = getContactColor(theme, message.senderId);
+    const avatarSize = theme.space.lg;
+
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          marginBottom: isLastInGroup ? theme.space.sm : theme.space.xs * 0.5,
+          justifyContent: message.isMe ? 'flex-end' : 'flex-start',
+        }}
+      >
+        {/* Small avatar next to other members' messages, only on the last
+            bubble of their run — same pattern as WhatsApp/Telegram groups. */}
+        {!message.isMe && (
+          <View style={{ width: avatarSize, marginRight: theme.space.xs }}>
+            {isLastInGroup && (
+              <View
+                style={{
+                  width: avatarSize,
+                  height: avatarSize,
+                  borderRadius: avatarSize / 2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: `${senderColor}18`,
+                  borderWidth: 1,
+                  borderColor: senderColor,
+                }}
+              >
+                <Text
+                  style={{
+                    color: senderColor,
+                    fontSize: theme.fontSize.xs,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {getInitials(message.senderName)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        <View style={{ maxWidth: '72%' }}>
+          {!message.isMe && isFirstInGroup && (
+            <Text
+              style={{
+                color: senderColor,
+                fontSize: theme.fontSize.xs,
+                fontFamily: theme.fontFamily.bold,
+                marginBottom: theme.space.xs * 0.5,
+                marginLeft: theme.space.sm,
+              }}
+            >
+              {message.senderName}
+            </Text>
+          )}
+          <View
             style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
+              paddingHorizontal: theme.space.md,
+              paddingVertical: theme.space.sm,
+              backgroundColor: message.isMe ? theme.color.accent : theme.color.card,
+              boxShadow: `0px 1px 3px ${theme.color.textPrimary}0D`,
+              elevation: Platform.OS === 'android' ? 1 : 0,
+              ...getBubbleRadius(message.isMe, isFirstInGroup),
             }}
           >
-            {item.text}
-          </Text>
+            <Text
+              style={{
+                color: message.isMe ? theme.color.textInverse : theme.color.textPrimary,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {message.text}
+            </Text>
+          </View>
+          {isLastInGroup && (
+            <Text
+              style={{
+                alignSelf: message.isMe ? 'flex-end' : 'flex-start',
+                color: theme.color.textSecondary,
+                fontSize: theme.fontSize.xs,
+                fontFamily: theme.fontFamily.regular,
+                marginTop: theme.space.xs * 0.5,
+              }}
+            >
+              {message.timestamp}
+            </Text>
+          )}
         </View>
-
-        <Text
-          style={{
-            alignSelf: item.isMe ? 'flex-end' : 'flex-start',
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.xs,
-            fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.xs * 0.5,
-          }}
-        >
-          {item.timestamp}
-        </Text>
       </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -260,7 +386,7 @@ export default function DiscussionChatViewScreen() {
     );
   }
 
-  if (error || !room) {
+  if (error || !conversation) {
     return (
       <View
         style={{
@@ -279,12 +405,13 @@ export default function DiscussionChatViewScreen() {
             fontFamily: theme.fontFamily.regular,
           }}
         >
-          {error ?? theme.i18n.t('Room not found.')}
+          {error ?? theme.i18n.t('Conversation not found.')}
         </Text>
       </View>
     );
   }
 
+  const chatListData = buildChatListData(messages, theme.i18n.t);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -319,15 +446,13 @@ export default function DiscussionChatViewScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             marginRight: theme.space.sm,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: `${roomIconColor}18`,
+            borderRadius: theme.borderRadius.full,
+            borderWidth: 2,
+            borderColor: groupColor,
+            backgroundColor: `${groupColor}18`,
           }}
         >
-          <SubjectIcon
-            id={roomSubjectId}
-            color={roomIconColor}
-            size={theme.fontSize.lg}
-          />
+          <Ionicons name='people' size={theme.fontSize.lg} color={groupColor} />
         </View>
 
         <View style={{ flex: 1 }}>
@@ -335,39 +460,24 @@ export default function DiscussionChatViewScreen() {
             numberOfLines={1}
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg,
+              fontSize: theme.fontSize.md,
               fontFamily: theme.fontFamily.bold,
             }}
           >
-            {room.name}
+            {conversation.name}
           </Text>
 
-          <View
+          <Text
+            numberOfLines={1}
             style={{
-              flexDirection: 'row',
-              alignItems: 'center',
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
               marginTop: theme.space.xs * 0.5,
             }}
           >
-            <View
-              style={{
-                width: theme.space.xs,
-                height: theme.space.xs,
-                marginRight: theme.space.xs * 0.5,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.success,
-              }}
-            />
-            <Text
-              style={{
-                color: theme.color.success,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
-              }}
-            >
-              {`${room.memberCount} ${theme.i18n.t('online')}`}
-            </Text>
-          </View>
+            {`${conversation.memberCount} ${theme.i18n.t('members')}`}
+          </Text>
         </View>
 
         <TouchableOpacity onPress={() => setMenuVisible(true)}>
@@ -438,9 +548,9 @@ export default function DiscussionChatViewScreen() {
       >
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={chatListData}
           keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
+          renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           contentContainerStyle={{
@@ -475,7 +585,7 @@ export default function DiscussionChatViewScreen() {
             <TextInput
               value={inputText}
               onChangeText={setInputText}
-              placeholder={theme.i18n.t('Ask or share an insight...')}
+              placeholder={theme.i18n.t('Type a message...')}
               placeholderTextColor={theme.color.textSecondary}
               multiline
               style={{
@@ -509,7 +619,7 @@ export default function DiscussionChatViewScreen() {
             <Ionicons
               name='send'
               size={theme.fontSize.md}
-              color={theme.color.textPrimary}
+              color={theme.color.textInverse}
             />
           </TouchableOpacity>
         </View>
