@@ -1,29 +1,19 @@
-import {
-  View,
-  Text,
-  Modal,
-  FlatList,
-  Platform,
-  TextInput,
-  Pressable,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type {
-  ChatRoom,
-  ChatMessage as ApiChatMessage,
-  GetChatMessagesResult,
-} from '../../common/types/types';
+import { View, Text, Modal, FlatList, Platform, TextInput } from 'react-native';
+import { Pressable, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
 import { getInitials } from '../../common/utils/getInitials';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import type { ChatRoom, GetChatMessagesResult, ChatMessage as ApiChatMessage } from '../../common/types/types';
 
+
+const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
 type ChatMessage = {
   id: string;
   text: string;
@@ -34,22 +24,18 @@ type ChatMessage = {
   createdAt: string;
 };
 
-const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
 const getContactColor = (theme: ReturnType<typeof useTheme>['theme'], seed: string) => {
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
+    hash = (hash + seed.charCodeAt(i) * (i+1)) % 2147483647;
   }
   const key = CONTACT_COLOR_KEYS[Math.abs(hash) % CONTACT_COLOR_KEYS.length] as keyof typeof theme.color;
+
   return theme.color[key] ?? theme.color.accent;
 };
 
-const formatTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+const formatTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 
-// NOTE: assumes ApiChatMessage carries a display name for the sender
-// (e.g. `userName`). Falls back to the userId if it isn't present.
 const toChatMessage = (msg: ApiChatMessage, currentUserId: string): ChatMessage => ({
   id: msg.messageId,
   text: msg.text,
@@ -65,18 +51,25 @@ const formatDayLabel = (date: Date, t: (s: string) => string): string => {
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
+
   if (isSameDay(date, today)) return t('Today');
   if (isSameDay(date, yesterday)) return t('Yesterday');
+
   return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
 };
 
-type ChatListItem =
-  | { type: 'separator'; id: string; label: string }
-  | { type: 'message'; id: string; message: ChatMessage; isFirstInGroup: boolean; isLastInGroup: boolean };
+type ChatListItem = {
+  type: 'separator';
+  id: string;
+  label: string
+} | {
+  type: 'message';
+  id: string;
+  message: ChatMessage;
+  isFirstInGroup: boolean;
+  isLastInGroup: boolean;
+};
 
-// Groups are now defined by consecutive messages from the SAME sender
-// (not just the same isMe boolean), so each participant's run of
-// messages gets its own name label / avatar in a group chat.
 const buildChatListData = (messages: ChatMessage[], t: (s: string) => string): ChatListItem[] => {
   const items: ChatListItem[] = [];
   messages.forEach((msg, index) => {
@@ -89,13 +82,22 @@ const buildChatListData = (messages: ChatMessage[], t: (s: string) => string): C
     if (isNewDay) {
       items.push({ type: 'separator', id: `sep-${msg.id}`, label: formatDayLabel(msgDate, t) });
     }
+
     const isFirstInGroup = isNewDay || !prev || prev.senderId !== msg.senderId;
-    const isLastInGroup =
-      !next || !nextDate || !isSameDay(nextDate, msgDate) || next.senderId !== msg.senderId;
-    items.push({ type: 'message', id: msg.id, message: msg, isFirstInGroup, isLastInGroup });
+    const isLastInGroup = !next || !nextDate || !isSameDay(nextDate, msgDate) || next.senderId !== msg.senderId;
+    items.push({
+      type: 'message',
+      id: msg.id,
+      message: msg,
+      isFirstInGroup,
+      isLastInGroup,
+    });
   });
+
   return items;
 };
+
+
 export default function GroupChatViewScreen() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -107,15 +109,14 @@ export default function GroupChatViewScreen() {
   const [isMuted, setIsMuted] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList<ChatListItem>>(null);
+
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(false);
 
-  const roomId = Array.isArray(params.userId)
-    ? params.userId[0] ?? ''
-    : params.userId ?? '';
+  const roomId = Array.isArray(params.userId) ? (params.userId[0] ?? '') : (params.userId ?? '');
 
   const groupColor = getContactColor(theme, conversation?.roomId ?? roomId);
 
@@ -128,20 +129,21 @@ export default function GroupChatViewScreen() {
         const [me, rooms, messagesResult]: [
           Awaited<ReturnType<typeof api.user.getMe>>,
           ChatRoom[],
-          GetChatMessagesResult
+          GetChatMessagesResult,
         ] = await Promise.all([
           api.user.getMe(),
           api.chat.getChatRooms(),
           api.chat.getChatMessages(roomId),
         ]);
+
         if (!isMounted) return;
         setCurrentUserId(me.uid);
-        const matchedConversation =
-          rooms.find((r) => r.roomId === roomId) ?? null;
+        const matchedConversation = rooms.find((r) => r.roomId === roomId) ?? null;
         if (!matchedConversation) {
           setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
           return;
         }
+
         setConversation(matchedConversation);
         setMessages(messagesResult.messages.map((m) => toChatMessage(m, me.uid)));
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
@@ -158,12 +160,14 @@ export default function GroupChatViewScreen() {
       setLoading(false);
       setError(theme.i18n.t('Could not load this chat. Pull to retry.'));
     }
+
     return () => { isMounted = false };
   }, [roomId, theme.i18n]);
 
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || sending || !roomId || !currentUserId) return;
+
     const nowIso = new Date().toISOString();
     const optimisticMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
@@ -182,11 +186,7 @@ export default function GroupChatViewScreen() {
       setSending(true);
       const sent = await api.chat.sendMessage(roomId, text);
       setMessages((prev) =>
-        prev.map((m) =>
-          m.id === optimisticMessage.id
-            ? toChatMessage(sent, currentUserId ?? sent.userId)
-            : m,
-        ),
+        prev.map((m) => m.id === optimisticMessage.id ? toChatMessage(sent, currentUserId ?? sent.userId) : m)
       );
     } catch (err) {
       console.log('Failed to send message:', err);
@@ -262,8 +262,8 @@ export default function GroupChatViewScreen() {
         <View style={{ alignItems: 'center', marginVertical: theme.space.sm }}>
           <View
             style={{
-              paddingHorizontal: theme.space.sm,
               paddingVertical: theme.space.xs * 0.5,
+              paddingHorizontal: theme.space.sm,
               borderRadius: theme.borderRadius.full,
               backgroundColor: theme.color.card,
             }}
@@ -291,12 +291,10 @@ export default function GroupChatViewScreen() {
         style={{
           flexDirection: 'row',
           alignItems: 'flex-end',
-          marginBottom: isLastInGroup ? theme.space.sm : theme.space.xs * 0.5,
           justifyContent: message.isMe ? 'flex-end' : 'flex-start',
+          marginBottom: isLastInGroup ? theme.space.sm : theme.space.xs * 0.5,
         }}
       >
-        {/* Small avatar next to other members' messages, only on the last
-            bubble of their run — same pattern as WhatsApp/Telegram groups. */}
         {!message.isMe && (
           <View style={{ width: avatarSize, marginRight: theme.space.xs }}>
             {isLastInGroup && (
@@ -304,12 +302,12 @@ export default function GroupChatViewScreen() {
                 style={{
                   width: avatarSize,
                   height: avatarSize,
-                  borderRadius: avatarSize / 2,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: `${senderColor}18`,
                   borderWidth: 1,
                   borderColor: senderColor,
+                  borderRadius: avatarSize / 2,
+                  backgroundColor: `${senderColor}18`,
                 }}
               >
                 <Text
@@ -340,10 +338,11 @@ export default function GroupChatViewScreen() {
               {message.senderName}
             </Text>
           )}
+
           <View
             style={{
-              paddingHorizontal: theme.space.md,
               paddingVertical: theme.space.sm,
+              paddingHorizontal: theme.space.md,
               backgroundColor: message.isMe ? theme.color.accent : theme.color.card,
               boxShadow: `0px 1px 3px ${theme.color.textPrimary}0D`,
               elevation: Platform.OS === 'android' ? 1 : 0,
@@ -360,6 +359,7 @@ export default function GroupChatViewScreen() {
               {message.text}
             </Text>
           </View>
+
           {isLastInGroup && (
             <Text
               style={{
@@ -412,6 +412,7 @@ export default function GroupChatViewScreen() {
   }
 
   const chatListData = buildChatListData(messages, theme.i18n.t);
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
