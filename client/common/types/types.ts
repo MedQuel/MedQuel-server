@@ -1,28 +1,7 @@
-export type TargetExam =
-  | 'USMLE'
-  | 'NEET-PG'
-  | 'INI-CET'
-  | 'PLAB'
-  | 'MRCP'
-  | 'FMGE'
-  | 'Clinical Mastery';
-export type StudyLevel =
-  | 'MBBS Year 1-5'
-  | 'Postgraduate'
-  | 'Practitioner'
-  | 'Nursing / Allied';
-export type YearOfStudy =
-  | 'Year 1'
-  | 'Year 2'
-  | 'Year 3'
-  | 'Year 4'
-  | 'Final Year'
-  | 'Intern';
-export type DescribesYou =
-  | 'MBBS Student'
-  | 'Postgraduate'
-  | 'Practicing Doctor'
-  | 'Nursing / Allied';
+export type TargetExam = 'USMLE' | 'NEET-PG' | 'INI-CET' | 'PLAB' | 'MRCP' | 'FMGE' | 'Clinical Mastery';
+export type StudyLevel = 'MBBS Year 1-5' | 'Postgraduate' | 'Practitioner' | 'Nursing / Allied';
+export type YearOfStudy = 'Year 1' | 'Year 2' | 'Year 3' | 'Year 4' | 'Final Year' | 'Intern';
+export type DescribesYou = 'MBBS Student' | 'Postgraduate' | 'Practicing Doctor' | 'Nursing / Allied';
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -57,7 +36,7 @@ export interface User {
   currentLevel: number;
   currentStreak: number;
   longestStreak: number;
-  lastActiveDate: string; // ISO date string
+  lastActiveDate: string;
   totalQuestions: number;
   totalCorrect: number;
   studyHours: number;
@@ -93,13 +72,8 @@ export interface UpdateProfileInput {
 }
 
 
-// -----> Questions (correct_answer NEVER included)
-export type QuestionType =
-  | 'mcq'
-  | 'assertion_reason'
-  | 'match'
-  | 'image_based'
-  | 'clinical';
+// -----> Questions
+export type QuestionType = 'mcq' | 'assertion_reason' | 'match' | 'image_based' | 'clinical';
 
 export interface ClientQuestion {
   questionId: string;
@@ -110,12 +84,13 @@ export interface ClientQuestion {
   optionD: string;
   imageUrl?: string | null;
   questionType: QuestionType;
-  difficulty: Difficulty;
-  subject: string;
-  topic: string;
   marks: number;
+  difficulty?: Difficulty;
+  subject?: string;
+  topic?: string;
 }
 export type SelectedOption = 'A' | 'B' | 'C' | 'D' | 'SKIPPED';
+export type WireSelectedOption = 'A' | 'B' | 'C' | 'D' | null;
 
 
 // -----> Quiz sessions
@@ -142,25 +117,34 @@ export interface QuizSession {
 }
 
 export interface StartQuizSessionInput {
-  contestId?: string;
+  quizType: 'practice' | 'subject';
   subject: string;
+  topic?: string;
   difficulty: Difficulty;
   questionCount: number;
+  timeLimitSecs?: number;
 }
 export interface StartQuizSessionResult {
   sessionId: string;
+  quizType: QuizType;
+  subject: string;
+  difficulty: Difficulty;
+  topic?: string | null;
+  timeLimitSecs: number | null;
+  totalQuestions: number;
   questions: ClientQuestion[];
-  timeLimitSecs: number;
+  startedAt: string;
 }
 
 export interface SubmittedAnswer {
   questionId: string;
-  selected: SelectedOption;
-  timeSpent: number;
+  selectedOption: WireSelectedOption;
 }
-export interface GradedAnswer extends SubmittedAnswer {
+export interface GradedAnswer {
+  questionId: string;
+  selectedOption: WireSelectedOption;
+  correctAnswer: 'A' | 'B' | 'C' | 'D';
   isCorrect: boolean;
-  correctAnswer: SelectedOption;
   explanation: string;
 }
 
@@ -169,17 +153,27 @@ export interface SubmitQuizSessionInput {
   answers: SubmittedAnswer[];
 }
 export interface SubmitQuizSessionResult {
-  session: QuizSession;
-  gradedAnswers: GradedAnswer[];
-  newStreak: number;
-  newXpTotal: number;
-  newEpTotal: number;
-  badgesUnlocked: string[];
+  sessionId: string;
+  totalQuestions: number;
+  correctCount: number;
+  wrongCount: number;
+  skippedCount: number;
+  score: number;
+  scorePercent: number;
+  epEarned: number;
+  xpEarned: number;
+  updatedXpPoints: number;
+  updatedEpPoints: number;
+  updatedCurrentLevel: number;
+  updatedCurrentStreak: number;
+  leveledUp: boolean;
+  isNewLongestStreak: boolean;
+  results: GradedAnswer[];
 }
 
 
 // -----> Contests
-export type ContestType = 'daily' | 'weekly' | 'live' | 'premium';
+export type ContestType = 'daily' | 'weekly' | 'live';
 export type ContestStatus = 'draft' | 'scheduled' | 'active' | 'completed';
 export interface MarkingScheme {
   correct: number;
@@ -200,7 +194,7 @@ export interface Contest {
   markingScheme: MarkingScheme;
   epReward: number;
   passPercent: number;
-  recommendedLevel: string;
+  recommendedLevel: string | null;
   status: ContestStatus;
   startsAt: string;
   endsAt: string;
@@ -215,11 +209,18 @@ export interface ContestLeaderboardEntry {
   completedAt: string;
 }
 export interface GetContestsFilter {
-  type?: ContestType;
+  status?: ContestStatus;
+  contestType?: ContestType;
   subject?: string;
   difficulty?: Difficulty;
+  isPremium?: boolean;
   cursor?: string;
   limit?: number;
+}
+
+export interface GetContestsResult {
+  contests: Contest[];
+  nextCursor: string | null;
 }
 
 
@@ -236,13 +237,15 @@ export interface LeaderboardEntry {
   rank: number;
   prevRank: number;
   weeklyChange: number;
+  updatedAt: string;
 }
 
 export interface LeaderboardResult {
   period: LeaderboardPeriod;
-  scope: LeaderboardScope;
+  periodKey: string;
   entries: LeaderboardEntry[];
-  currentUserEntry: LeaderboardEntry | null;
+  myEntry: LeaderboardEntry | null;
+  myRank: number | null;
 }
 
 
@@ -255,8 +258,8 @@ export interface StudyPlanSessionItem {
   topic: string;
   contestId?: string;
   questionCount: number;
-  scheduledTime: string; // "HH:MM"
-  scheduledDate: string; // "YYYY-MM-DD"
+  scheduledTime: string;
+  scheduledDate: string;
   epReward: number;
   status: StudyPlanSessionStatus;
 }
@@ -271,7 +274,6 @@ export interface StudyPlan {
   sessions: StudyPlanSessionItem[];
   generatedBy: 'ai' | 'manual';
 }
-
 export interface GenerateStudyPlanInput {
   examDate: string;
   weakSubjects?: string[];
@@ -290,7 +292,6 @@ export interface ChatRoom {
   lastMessageAt: string;
   isActive: boolean;
 }
-
 export interface ChatMessage {
   messageId: string;
   roomId: string;
@@ -384,13 +385,11 @@ export interface DailyChallenge {
   epReward: number;
   expiresAt: string;
 }
-
 export interface SubjectGridItem {
   subject: string;
   accuracy: number;
   totalAttempted: number;
 }
-
 export interface PerformancePoint {
   date: string;
   accuracy: number;
@@ -409,13 +408,11 @@ export interface SubjectPerformanceEntry {
   totalAttempted: number;
   totalCorrect: number;
 }
-
 export interface ActivityLogEntry {
-  date: string; // YYYY-MM-DD
+  date: string;
   questionsAttempted: number;
   minutesStudied: number;
 }
-
 export interface QuizSessionSummary {
   sessionId: string;
   subject: string;
