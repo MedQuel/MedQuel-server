@@ -10,6 +10,7 @@ export type ApiErrorCode =
   | 'GRAPHQL_ERROR'
   | 'NOT_IMPLEMENTED'
   | 'CONFLICT'
+  | 'RATE_LIMITED'
   | 'UNKNOWN';
 
 
@@ -18,12 +19,7 @@ export class ApiError extends Error {
   statusCode?: number;
   details?: unknown;
 
-  constructor(
-    code: ApiErrorCode,
-    message: string,
-    statusCode?: number,
-    details?: unknown
-  ) {
+  constructor(code: ApiErrorCode, message: string, statusCode?: number, details?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.code = code;
@@ -58,10 +54,7 @@ export class AuthorizationError extends ApiError {
   }
 }
 export class ValidationError extends ApiError {
-  constructor(
-    message = 'Some of the information provided is invalid.',
-    details?: unknown
-  ) {
+  constructor(message = 'Some of the information provided is invalid.', details?: unknown) {
     super('VALIDATION_ERROR', message, 400, details);
     this.name = 'ValidationError';
   }
@@ -79,32 +72,31 @@ export class NotOnboardedError extends ApiError {
   }
 }
 export class ServerError extends ApiError {
-  constructor(
-    message = 'Something went wrong on our end. Please try again.',
-    statusCode = 500
-  ) {
+  constructor(message = 'Something went wrong on our end. Please try again.', statusCode = 500) {
     super('SERVER_ERROR', message, statusCode);
     this.name = 'ServerError';
   }
 }
-/** A field/query/mutation that is documented but not yet deployed on the backend (tracked roadmap gap, not a bug). */
 export class NotImplementedError extends ApiError {
   constructor(message = 'This feature is not available yet.') {
     super('NOT_IMPLEMENTED', message, 501);
     this.name = 'NotImplementedError';
   }
 }
-/** Server-side state conflict — e.g. submitting an already-completed quiz session, duplicate onboarding call racing itself. */
 export class ConflictError extends ApiError {
-  constructor(
-    message = 'This action conflicts with the current state.',
-    details?: unknown
-  ) {
+  constructor(message = 'This action conflicts with the current state.', details?: unknown) {
     super('CONFLICT', message, 409, details);
     this.name = 'ConflictError';
   }
 }
-/** Raw shape of a single error object inside a GraphQL response body. */
+export class RateLimitError extends ApiError {
+  constructor(message = 'Too many requests. Please slow down and try again shortly.') {
+    super('RATE_LIMITED', message, 429);
+    this.name = 'RateLimitError';
+  }
+}
+
+
 export interface GraphQLErrorItem {
   message: string;
   path?: (string | number)[];
@@ -114,14 +106,12 @@ export class GraphQLOperationError extends ApiError {
   graphQLErrors: GraphQLErrorItem[];
 
   constructor(graphQLErrors: GraphQLErrorItem[]) {
-    super(
-      'GRAPHQL_ERROR',
-      graphQLErrors[0]?.message ?? 'GraphQL request failed'
-    );
+    super('GRAPHQL_ERROR', graphQLErrors[0]?.message ?? 'GraphQL request failed');
     this.name = 'GraphQLOperationError';
     this.graphQLErrors = graphQLErrors;
   }
 }
+
 
 /** Apollo Server extension codes we map to specific ApiError subtypes. */
 function fromGraphQLErrors(errors: GraphQLErrorItem[]): ApiError {
@@ -144,23 +134,21 @@ function fromGraphQLErrors(errors: GraphQLErrorItem[]): ApiError {
       return new ConflictError(message, errors);
     case 'NOT_FOUND':
       return new NotFoundError(message);
+    case 'NOT_IMPLEMENTED':
+      return new NotImplementedError(message);
+    case 'RATE_LIMITED':
+      return new RateLimitError(message);
     default:
-      // Apollo's standard message for a field that doesn't exist on the schema yet.
       return new GraphQLOperationError(errors);
   }
 }
 
-/**
- * Normalizes anything thrown during a request (Axios error, GraphQL error
- * array, or an already-typed ApiError) into a single ApiError instance.
- */
+
+/** Normalizes anything thrown during a request into a single ApiError instance. */
 export function normalizeError(error: unknown): ApiError {
   if (error instanceof ApiError) return error;
 
-  if (
-    Array.isArray(error) && error.length > 0 &&
-    typeof (error[0] as any)?.message === 'string'
-  ) {
+  if (Array.isArray(error) && error.length > 0 && typeof (error[0] as any)?.message === 'string') {
     return fromGraphQLErrors(error as GraphQLErrorItem[]);
   }
 
@@ -177,51 +165,39 @@ export function normalizeError(error: unknown): ApiError {
     if (status === 404) return new NotFoundError();
     if (status === 409) return new ConflictError();
     if (status >= 500) return new ServerError(undefined, status);
+
     return new ApiError('UNKNOWN', anyErr.message ?? 'Request failed', status);
   }
 
-  if (error instanceof Error) {
-    return new ApiError('UNKNOWN', error.message);
-  }
+  if (error instanceof Error) return new ApiError('UNKNOWN', error.message);
 
   return new ApiError('UNKNOWN', 'An unexpected error occurred.');
 }
 
-/**
- * True when the GraphQL error is Apollo's standard "field/argument doesn't
- * exist on the schema" message — i.e. this operation is documented in the
- * Backend Architecture doc but genuinely hasn't been deployed yet.
- */
+/** True when the GraphQL error is Apollo's standard "field/argument doesn't exist on the schema" message. */
 function isUndeployedSchemaField(error: ApiError): boolean {
   if (!(error instanceof GraphQLOperationError)) return false;
+
   return error.graphQLErrors.some((e) =>
     /cannot query field|unknown field|unknown argument|unknown type/i.test(e.message)
   );
 }
 
 /**
- * Errors that are safe to silently paper over with mock data: the endpoint
- * doesn't exist on the backend yet, or the network/server is genuinely
- * unreachable. Auth/validation/onboarding/conflict problems are real
- * application states and must always surface to the caller.
+ * Errors that are safe to silently paper over with mock data:
+ * the endpoint doesn't exist on the backend yet, or the network/server is genuinely unreachable.
  */
 export function isFallbackEligible(error: ApiError): boolean {
-  if (
-    error instanceof NetworkError ||
-    error instanceof TimeoutError ||
-    error instanceof ServerError ||
-    error instanceof NotImplementedError
-  ) {
+  if (error instanceof NetworkError || error instanceof TimeoutError || error instanceof ServerError || error instanceof NotImplementedError) {
     return true;
   }
   if (isUndeployedSchemaField(error)) return true;
-  if (error instanceof NotFoundError) return true;
+
   return false;
 }
 
 /**
- * Distinguishes "this whole feature isn't built yet" (expected) from
- * "this feature is built but something broke" (a real bug),
+ * Distinguishes "this whole feature isn't built yet" (expected) from "this feature is built but something broke" (a real bug),
  * purely for the dev-mode warning in api.ts. Production never logs this.
  */
 export function isUnshippedFeature(error: ApiError): boolean {
