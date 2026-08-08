@@ -1,1 +1,1 @@
- export { default } from './Personalchatslist';
+export { default } from './Personalchatslist';
