@@ -5,30 +5,28 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
 
+
 type PersonalChatListHeaderProps = {
   search: string;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
   searchVisible: boolean;
   setSearchVisible: React.Dispatch<React.SetStateAction<boolean>>;
 };
-export function PersonalChatListHeader({
-  search,
-  setSearch,
-  searchVisible,
-  setSearchVisible,
-}: PersonalChatListHeaderProps) {
+
+export function PersonalChatListHeader({ search, setSearch, searchVisible, setSearchVisible }: PersonalChatListHeaderProps) {
   const { theme } = useTheme();
+
   return (
     <>
       <View
         style={{
+          minHeight: theme.space.xxl + theme.space.sm,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingTop: theme.space.md,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
-          minHeight: theme.space.xxl + theme.space.sm,
         }}
       >
         <View style={{ flex: 1, marginRight: theme.space.sm }}>
@@ -69,11 +67,7 @@ export function PersonalChatListHeader({
               backgroundColor: theme.color.card,
             }}
           >
-            <Ionicons
-              name='search'
-              size={theme.fontSize.md}
-              color={theme.color.textSecondary}
-            />
+            <Ionicons name='search' size={theme.fontSize.md} color={theme.color.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
