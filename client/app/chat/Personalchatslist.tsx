@@ -1,13 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
-import type { ChatRoom } from '../../common/types/types';
+
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import { getInitials } from '../../common/utils/getInitials';
+import type { ChatRoom } from '../../common/types/types';
 import { Loading } from '../../components/common/loading';
+import { getInitials } from '../../common/utils/getInitials';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { PersonalChatListHeader } from './Personalchatlistheader';
+
+
+const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
 type PersonalChatSummary = {
   userId: string;
   displayName: string;
@@ -16,27 +20,34 @@ type PersonalChatSummary = {
   lastActive: string;
   unreadCount: number;
 };
-const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
+
 const getContactColor = (theme: ReturnType<typeof useTheme>['theme'], seed: string) => {
   let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (hash << 5) - hash + seed.charCodeAt(i);
-    hash |= 0;
+  for (let i=0; i<seed.length; i++) {
+    hash = (hash+seed.charCodeAt(i) * (i+1)) % 2147483647;
   }
-  const key = CONTACT_COLOR_KEYS[Math.abs(hash) % CONTACT_COLOR_KEYS.length] as keyof typeof theme.color;
+  const key = CONTACT_COLOR_KEYS[
+    Math.abs(hash) % CONTACT_COLOR_KEYS.length
+  ] as keyof typeof theme.color;
+
   return theme.color[key] ?? theme.color.accent;
 };
+
 const formatRelativeTime = (iso: string | null | undefined): string => {
   if (!iso) return '';
+
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMins = Math.max(0, Math.floor(diffMs / 60000));
   if (diffMins < 1) return 'now';
   if (diffMins < 60) return `${diffMins}m`;
+
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h`;
   const diffDays = Math.floor(diffHours / 24);
+
   return `${diffDays}d`;
 };
+
 const toChatRoomSummary = (room: ChatRoom) => ({
   userId: room.roomId,
   displayName: room.name,
@@ -45,24 +56,28 @@ const toChatRoomSummary = (room: ChatRoom) => ({
   lastActive: formatRelativeTime(room.lastMessageAt),
   unreadCount: 0,
 });
+
+
 export default function PersonalChatsListScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [search, setSearch] = useState('');
   const [conversations, setConversations] = useState<PersonalChatSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'chat');
+
   useEffect(() => {
     let isMounted = true;
     async function fetchConversations() {
       try {
         setLoading(true);
         setError(null);
-       const result = await api.chat.getChatRooms();
+        const result = await api.chat.getChatRooms();
         if (!isMounted) return;
-      setConversations(result.map(toChatRoomSummary));
+        setConversations(result.map(toChatRoomSummary));
       } catch (err) {
         console.log('Failed to fetch conversations:', err);
         if (isMounted) setError(theme.i18n.t('Could not load your messages. Pull to retry.'));
@@ -70,6 +85,7 @@ export default function PersonalChatsListScreen() {
         if (isMounted) setLoading(false);
       }
     }
+
     fetchConversations();
     return () => {
       isMounted = false;
@@ -77,15 +93,16 @@ export default function PersonalChatsListScreen() {
   }, [theme.i18n]);
 
   const filteredConversations = conversations.filter((c) =>
-    c.displayName.toLowerCase().includes(search.toLowerCase()),
+    c.displayName.toLowerCase().includes(search.toLowerCase())
   );
+
   const renderConversation = ({ item }: { item: PersonalChatSummary }) => {
     const contactColor = getContactColor(theme, item.userId);
 
     return (
       <TouchableOpacity
         activeOpacity={0.7}
-  onPress={() => router.push(`/chat/dm/${item.userId}`)}
+        onPress={() => router.push(`/chat/dm/${item.userId}`)}
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -128,10 +145,10 @@ export default function PersonalChatsListScreen() {
                 right: 0,
                 width: theme.space.sm + 2,
                 height: theme.space.sm + 2,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.success,
                 borderWidth: 2,
                 borderColor: theme.color.card,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.color.success,
               }}
             />
           )}
@@ -211,6 +228,7 @@ export default function PersonalChatsListScreen() {
       </TouchableOpacity>
     );
   };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
