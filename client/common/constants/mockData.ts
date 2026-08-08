@@ -1,24 +1,12 @@
 import { config } from '../api/config';
-import type {
-  User,
-  HomeData,
-  Contest,
-  ClientQuestion,
-  StartQuizSessionResult,
-  SubmitQuizSessionResult,
-  LeaderboardResult,
-  ChatRoom,
-  ChatMessage,
-  GetChatMessagesResult,
-  Badge,
-  AnalyticsData,
-  StudyPlan,
-  Plan,
-  InitiatePaymentResult,
-} from '../types/types';
+import type { User, HomeData } from '../types/types';
+import type { StudyPlan, Plan, InitiatePaymentResult } from '../types/types';
+import type { Badge, AnalyticsData, LeaderboardResult } from '../types/types';
+import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
+import type { Contest, ClientQuestion, StartQuizSessionResult, SubmitQuizSessionResult } from '../types/types';
 
-export const mockDelay = (ms: number = config.mockDelayMs) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export const mockDelay = (ms: number = config.mockDelayMs) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 
 // -----> User <-----
@@ -43,31 +31,10 @@ export const MOCK_USER: User = {
   totalQuestions: 719,
   totalCorrect: 517,
   studyHours: 172.0,
-  badges: [
-    'gold_medalist',
-    'streak_30',
-    'knowledge_seeker',
-    'speed_demon',
-    'consistent',
-  ],
-  badgeProgress: {
-    gold: 5,
-    silver: 6,
-    bronze: 3,
-    streak_legend: 6,
-    sharpshooter: 2,
-  },
-  notifPrefs: {
-    pushEnabled: true,
-    emailDigest: false,
-    rankAlerts: true,
-    contestReminders: true,
-  },
-  quizPrefs: {
-    defaultDifficulty: 'medium',
-    timerSound: true,
-    autoSubmit: false,
-  },
+  badges: ['streak_30', 'consistent', 'speed_demon', 'gold_medalist', 'knowledge_seeker'],
+  badgeProgress: { gold: 5, silver: 6, bronze: 3, sharpshooter: 2, streak_legend: 6 },
+  notifPrefs: { rankAlerts: true, pushEnabled: true, emailDigest: false, contestReminders: true },
+  quizPrefs: { timerSound: true, autoSubmit: false, defaultDifficulty: 'medium' },
   createdAt: '2026-01-12T08:00:00.000Z',
   updatedAt: new Date().toISOString(),
 };
@@ -119,46 +86,44 @@ const MOCK_QUESTIONS: ClientQuestion[] = [
   },
 ];
 
-export function buildMockQuizSession( questionCount = 3 ): StartQuizSessionResult {
+export function buildMockQuizSession(questionCount = 3): StartQuizSessionResult {
   return {
     sessionId: `mock-session-${Date.now()}`,
-    questions: MOCK_QUESTIONS.slice(0, questionCount),
+    quizType: 'practice',
+    subject: 'Surgery',
+    difficulty: 'medium',
+    topic: null,
     timeLimitSecs: questionCount * 20,
+    totalQuestions: questionCount,
+    questions: MOCK_QUESTIONS.slice(0, questionCount),
+    startedAt: new Date().toISOString(),
   };
 }
 
-export function buildMockSubmitResult( sessionId: string ): SubmitQuizSessionResult {
+export function buildMockSubmitResult(sessionId: string): SubmitQuizSessionResult {
   return {
-    session: {
-      sessionId,
-      userId: MOCK_USER.uid,
-      contestId: null,
-      quizType: 'practice',
-      subject: 'Surgery',
-      totalQuestions: 3,
-      correctCount: 2,
-      wrongCount: 1,
-      score: 7,
-      scorePercent: 66.7,
-      epEarned: 30,
-      xpEarned: 45,
-      timeTaken: 42,
-      status: 'completed',
-      startedAt: new Date(Date.now() - 42000).toISOString(),
-      completedAt: new Date().toISOString(),
-    },
-    gradedAnswers: MOCK_QUESTIONS.map((q, i) => ({
+    sessionId,
+    totalQuestions: 3,
+    correctCount: 2,
+    wrongCount: 1,
+    skippedCount: 0,
+    score: 7,
+    scorePercent: 66.7,
+    epEarned: 30,
+    xpEarned: 45,
+    updatedXpPoints: MOCK_USER.xpPoints + 45,
+    updatedEpPoints: MOCK_USER.epPoints + 30,
+    updatedCurrentLevel: MOCK_USER.currentLevel,
+    updatedCurrentStreak: MOCK_USER.currentStreak + 1,
+    leveledUp: false,
+    isNewLongestStreak: false,
+    results: MOCK_QUESTIONS.map((q, i) => ({
       questionId: q.questionId,
-      selected: i === 1 ? 'A' : 'B',
-      isCorrect: i !== 1,
+      selectedOption: i === 1 ? 'A' : 'B',
       correctAnswer: 'B',
-      timeSpent: 40 + i * 10,
+      isCorrect: i !== 1,
       explanation: 'Serum lipase remains elevated longer and is more specific for pancreatic injury than amylase.',
     })),
-    newStreak: MOCK_USER.currentStreak + 1,
-    newXpTotal: MOCK_USER.xpPoints + 45,
-    newEpTotal: MOCK_USER.epPoints + 30,
-    badgesUnlocked: [],
   };
 }
 
@@ -200,7 +165,7 @@ export const MOCK_CONTESTS: Contest[] = [
     recommendedLevel: 'Postgraduate',
     status: 'active',
     startsAt: new Date().toISOString(),
-    endsAt: new Date(Date.now() + 5 * 86400000).toISOString(),
+    endsAt: new Date(Date.now() + 5*86400000).toISOString(),
     participantCount: 98,
   },
   {
@@ -252,27 +217,30 @@ function cycleLookup<T>(arr: readonly T[], i: number): T {
 
 export const MOCK_LEADERBOARD: LeaderboardResult = {
   period: 'weekly',
-  scope: 'global',
+  periodKey: 'weekly_2026-W32',
   entries: Array.from({ length: 10 }, (_, i) => ({
-    userId: `user-${i + 1}`,
+    userId: `user-${i+1}`,
     displayName: cycleLookup(MOCK_LEADERBOARD_NAMES, i),
     photoURL: undefined,
     specialization: cycleLookup(MOCK_LEADERBOARD_SPECIALIZATIONS, i),
-    epPoints: 3150 - i * 180,
-    rank: i + 1,
-    prevRank: i + 2,
+    epPoints: 3150 - i*180,
+    rank: i+1,
+    prevRank: i+2,
     weeklyChange: 180,
+    updatedAt: new Date().toISOString(),
   })),
-  currentUserEntry: {
+  myEntry: {
     userId: MOCK_USER.uid,
     displayName: MOCK_USER.displayName,
     photoURL: undefined,
     specialization: 'Surgery',
     epPoints: MOCK_USER.epPoints,
-    rank: 47,
-    prevRank: 52,
+    rank: 0,
+    prevRank: 0,
     weeklyChange: 5,
+    updatedAt: new Date().toISOString(),
   },
+  myRank: 47,
 };
 
 
@@ -444,15 +412,15 @@ export const MOCK_HOME_DATA: HomeData = {
     { subject: 'Pharmacology', accuracy: 58, totalAttempted: 150 },
   ],
   performanceTrend: Array.from({ length: 7 }, (_, i) => ({
-    date: new Date(Date.now() - (6 - i) * 86400000).toISOString().slice(0, 10),
-    accuracy: 55 + i * 2,
+    date: new Date(Date.now() - (6-i) * 86400000).toISOString().slice(0, 10),
+    accuracy: 55 + i*2,
   })),
 };
 
 export const MOCK_ANALYTICS: AnalyticsData = {
   overallAccuracy: 70.2,
   heatmap: Array.from({ length: 14 }, (_, i) => ({
-    date: new Date(Date.now() - (13 - i) * 86400000).toISOString().slice(0, 10),
+    date: new Date(Date.now() - (13-i) * 86400000).toISOString().slice(0, 10),
     questionsAttempted: Math.floor(Math.random() * 30),
     minutesStudied: Math.floor(Math.random() * 90),
   })),
@@ -463,7 +431,7 @@ export const MOCK_ANALYTICS: AnalyticsData = {
   ],
   recentAttempts: [
     { sessionId: 'mock-session-1', subject: 'Surgery', scorePercent: 80, completedAt: new Date(Date.now() - 86400000).toISOString() },
-    { sessionId: 'mock-session-2', subject: 'Cardiology', scorePercent: 65, completedAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+    { sessionId: 'mock-session-2', subject: 'Cardiology', scorePercent: 65, completedAt: new Date(Date.now()-2 * 86400000).toISOString() },
   ],
 };
 
