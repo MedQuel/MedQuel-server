@@ -1,128 +1,69 @@
-import React, { useCallback, useRef } from 'react';
-import {
-  View,
-  Animated,
-  Platform,
-  Pressable,
-  ViewStyle,
-  StyleSheet,
-} from 'react-native';
-import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import { router, type Href } from 'expo-router';
+import React, { useCallback, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Animated, Platform, Pressable, ViewStyle, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 import { useLayoutContext } from '../../common/context/LayoutContext';
 
 
+const ICON_SIZE = 22;
+
 interface TabDefs {
   id: string;
-  href: string;
-  label: string;
+  href: Href;
+  labelKey: string;
   icon: (color: string, size: number) => React.ReactNode;
 }
 const TABS: TabDefs[] = [
   {
     id: 'home',
     href: '/home',
-    label: 'Home',
+    labelKey: 'common.tabs.home',
     icon: (c, s) => <Feather name='home' size={s} color={c} />,
   },
   {
     id: 'leaderboard',
     href: '/leaderboard',
-    label: 'Leaderboard',
+    labelKey: 'common.tabs.leaderboard',
     icon: (c, s) => <Feather name='bar-chart-2' size={s} color={c} />,
   },
   {
     id: 'contests',
     href: '/contests',
-    label: 'Contests',
+    labelKey: 'common.tabs.contests',
     icon: (c, s) => <Feather name='zap' size={s} color={c} />,
   },
   {
-    id: 'chat',
-    href: '/chat',
-    label: 'Chat',
-    icon: (c, s) => <Feather name='message-circle' size={s} color={c} />,
+    id: 'analytics',
+    href: '/analytics',
+    labelKey: 'common.tabs.analytics',
+    icon: (c, s) => <Feather name='pie-chart' size={s} color={c} />,
   },
   {
     id: 'profile',
     href: '/profile',
-    label: 'Profile',
+    labelKey: 'common.tabs.profile',
     icon: (c, s) => <Feather name='user' size={s} color={c} />,
   },
 ];
-
-const ICON_SIZE = 22;
-
-
-export function AppBottomBar() {
-  const { layoutData, _setBottomBarHeight } = useLayoutContext();
-  const { theme } = useTheme();
-  const insets = useSafeAreaInsets();
-  const isWeb = Platform.OS === 'web';
-
-  if (!layoutData.bottomBarVisible) return null;
-
-  const safeBottom = isWeb ? 0 : insets.bottom;
-
-  return (
-    <View
-      pointerEvents='box-none'
-      style={{
-        position: isWeb ? ('fixed' as any) : 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-      }}
-    >
-      <View
-        onLayout={(e) => _setBottomBarHeight(e.nativeEvent.layout.height)}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-around',
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: theme.color.border,
-          paddingHorizontal: 0,
-          paddingTop: theme.space.sm,
-          paddingBottom: safeBottom > 0 ? safeBottom : theme.space.sm,
-          backgroundColor: theme.color.card,
-          elevation: 12,
-          boxShadow: theme.isDark
-            ? '0px -2px 8px rgba(0, 0, 0, 0.3)'
-            : '0px -2px 8px rgba(0, 0, 0, 0.06)',
-        }}
-      >
-        {TABS.map((tab) => (
-          <TabItem
-            key={tab.id}
-            tab={tab}
-            isSelected={layoutData.bottomBarSelectedId === tab.id}
-            onPress={() => router.navigate(tab.href as any)}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
 
 interface TabItemProps {
   tab: TabDefs;
   isSelected: boolean;
   onPress: () => void;
 }
-
 function TabItem({ tab, isSelected, onPress }: TabItemProps) {
+  const { theme } = useTheme();
   const { setBottomBarSelectedId } = useLayoutContext();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const { theme } = useTheme();
+
+  const label = theme.i18n.t(tab.labelKey);
 
   const handlePress = useCallback(() => {
+    if (isSelected) return;
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
@@ -142,16 +83,13 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
 
     setBottomBarSelectedId(tab.id);
     onPress();
-  }, [tab.id, onPress, scaleAnim, setBottomBarSelectedId]);
-
-  const iconColor = isSelected ? theme.color.accent : theme.color.textMuted;
-  const labelColor = isSelected ? theme.color.accent : theme.color.textMuted;
+  }, [tab.id, isSelected, onPress, scaleAnim, setBottomBarSelectedId]);
 
   return (
     <Pressable
       onPress={handlePress}
       accessibilityRole='button'
-      accessibilityLabel={tab.label}
+      accessibilityLabel={label}
       accessibilityState={{ selected: isSelected }}
       style={
         {
@@ -170,19 +108,22 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
           transform: [{ scale: scaleAnim }],
         }}
       >
-        {tab.icon(iconColor, ICON_SIZE)}
+        {tab.icon(
+          isSelected ? theme.color.accent : theme.color.textMuted,
+          ICON_SIZE
+        )}
 
         <Animated.Text
           numberOfLines={1}
           style={{
-            color: labelColor,
+            letterSpacing: 0.1,
+            color: isSelected ? theme.color.accent : theme.color.textMuted,
             fontSize: theme.fontSize.xs,
             fontWeight: isSelected ? theme.fontWeight.bold : theme.fontWeight.regular,
             fontFamily: isSelected ? theme.fontFamily.regular : theme.fontFamily.light,
-            letterSpacing: 0.1,
           }}
         >
-          {tab.label}
+          {label}
         </Animated.Text>
 
         <View
@@ -196,5 +137,56 @@ function TabItem({ tab, isSelected, onPress }: TabItemProps) {
         />
       </Animated.View>
     </Pressable>
+  );
+}
+
+
+export function AppBottomBar() {
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { layoutData, _setBottomBarHeight } = useLayoutContext();
+
+  const isWeb = Platform.OS === 'web';
+  const safeBottom = isWeb ? 0 : insets.bottom;
+
+  if (!layoutData.bottomBarVisible) return null;
+
+  return (
+    <View
+      pointerEvents='box-none'
+      style={{
+        position: isWeb ? ('fixed' as any) : 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999,
+      }}
+    >
+      <View
+        onLayout={(e) => _setBottomBarHeight(e.nativeEvent.layout.height)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          justifyContent: 'space-around',
+          paddingTop: theme.space.sm,
+          paddingBottom: safeBottom > 0 ? safeBottom : theme.space.sm,
+          paddingHorizontal: 0,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: theme.color.border,
+          backgroundColor: theme.color.card,
+          elevation: 12,
+          boxShadow: theme.isDark ? '0px -2px 8px rgba(0, 0, 0, 0.3)' : '0px -2px 8px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        {TABS.map((tab) => (
+          <TabItem
+            key={tab.id}
+            tab={tab}
+            isSelected={layoutData.bottomBarSelectedId === tab.id}
+            onPress={() => router.navigate(tab.href)}
+          />
+        ))}
+      </View>
+    </View>
   );
 }
