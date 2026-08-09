@@ -36,7 +36,17 @@
     "min": "min",
     "hour": "hour",
     "this_week": "this week",
-    "unlock_and_start": "Unlock & Start"
+    "unlock_and_start": "Unlock & Start",
+    "tabs": {
+      "home": "Home",
+      "leaderboard": "Leaderboard",
+      "contests": "Contests",
+      "analytics": "Analytics",
+      "profile": "Profile",
+      "chat": "Chat",
+      "studyPlan": "Study Plan",
+      "achievements": "Achievements"
+    }
   },
 
   "splash": {
