@@ -162,7 +162,7 @@ export default function AnalyticsScreen() {
   const { authStatus } = useAppContext();
   const { theme } = useTheme();
   const router = useRouter();
-  useBottomBar(true, 'profile');
+  useBottomBar(true, 'analytics');
 
   React.useEffect(() => {
     if (authStatus !== 'authenticated') return;
