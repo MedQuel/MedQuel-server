@@ -11,8 +11,7 @@ import { QuestionCard } from '../../components/QuestionCard';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuizProgressBar } from '../../components/QuizProgressBar';
 import type { QuizQuestion, ModalType, AnswerRecord } from '../../common/types/contestTypes';
-import type { ClientQuestion, SubmittedAnswer, SelectedOption } from '../../common/types/types';
-
+import type { ClientQuestion, SubmittedAnswer, SelectedOption, StartQuizSessionResult } from '../../common/types/types';
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -25,7 +24,7 @@ function formatTime(seconds: number): string {
 function mapClientQuestion(q: ClientQuestion): QuizQuestion {
   return {
     id: q.questionId,
-    subject: q.subject,
+    subject: q.subject ?? '',
     question: q.questionText,
     image: q.imageUrl ?? undefined,
     options: [
@@ -93,14 +92,14 @@ function QuizTimer({ totalSeconds, paused, currentQuestionId, timeSpentRef, onEx
 }
 
 export default function QuizScreen() {
-  const params = useLocalSearchParams<{ quizId: string; practice?: string; totalQuestions?: string }>();
+  const params = useLocalSearchParams<{ quizId: string; mode?: string; practice?: string; totalQuestions?: string; sessionData?: string }>();
   const { theme } = useTheme();
   useBottomBar(false);
   const router = useRouter();
   const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
 
   const quizId = params.quizId;
-  const isPractice = params.practice === '1';
+  const isPractice = params.practice === '1' || params.mode === 'subject';
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -123,17 +122,44 @@ export default function QuizScreen() {
     async function loadSession() {
       setLoading(true);
       setLoadError(null);
+
       try {
-        const session = await api.contest.joinContest(quizId);
+        let loadedQuestions: QuizQuestion[] = [];
+        let loadedSessionId: string | null = null;
+        let loadedTimeLimit = 0;
+        if (params.sessionData) {
+          let parsedSession: StartQuizSessionResult | null = null;
+          try {
+            parsedSession = JSON.parse(decodeURIComponent(params.sessionData));
+          } catch {
+            parsedSession = JSON.parse(params.sessionData);
+          }
+
+          if (parsedSession) {
+            loadedSessionId = parsedSession.sessionId;
+            loadedQuestions = parsedSession.questions.map(mapClientQuestion);
+            loadedTimeLimit = 1800; 
+          }
+        }
+        if (!loadedSessionId) {
+          const contestSession = await api.contest.joinContest(quizId);
+          if (cancelled) return;
+          loadedSessionId = contestSession.sessionId;
+          loadedQuestions = contestSession.questions.map(mapClientQuestion);
+          loadedTimeLimit = contestSession.timeLimitSecs ?? 1800;
+        }
+
         if (cancelled) return;
 
-        const mapped = session.questions.map(mapClientQuestion);
-        setSessionId(session.sessionId);
-        setSessionTimeLimitSecs(session.timeLimitSecs);
-        setQuestions(mapped);
+        setSessionId(loadedSessionId);
+        setSessionTimeLimitSecs(loadedTimeLimit);
+        setQuestions(loadedQuestions);
         setAnswers(
           Object.fromEntries(
-            mapped.map((q) => [q.id, { questionId: q.id, selectedLabel: null, isBookmarked: false, isFlagged: false }])
+            loadedQuestions.map((q) => [
+              q.id,
+              { questionId: q.id, selectedLabel: null, isBookmarked: false, isFlagged: false },
+            ])
           )
         );
       } catch (err) {
@@ -150,12 +176,12 @@ export default function QuizScreen() {
     return () => {
       cancelled = true;
     };
-  }, [quizId]);
+  }, [quizId, params.sessionData]);
 
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
-  const handleFinish = useCallback(async () => {
+const handleFinish = useCallback(async () => {
     if (submitting || !sessionId) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -163,9 +189,9 @@ export default function QuizScreen() {
     try {
       const answerInputs: SubmittedAnswer[] = Object.values(answers).map((a) => ({
         questionId: a.questionId,
-        selected: (a.selectedLabel ?? 'SKIPPED') as SelectedOption,
-        timeSpent: timeSpentRef.current[a.questionId] ?? 0,
+        selectedOption: (a.selectedLabel && a.selectedLabel !== 'SKIPPED') ? a.selectedLabel : null,
       }));
+
       const result = await api.quiz.submitQuizSession({ sessionId, answers: answerInputs });
 
       router.push({
@@ -187,7 +213,7 @@ export default function QuizScreen() {
       setSubmitting(false);
     }
   }, [answers, currentQuestion?.subject, isPractice, questions, quizId, router, sessionId, submitting, t]);
-
+  
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
     setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId]!, ...patch } }));
   };
@@ -352,7 +378,7 @@ export default function QuizScreen() {
             return (
               <TouchableOpacity
                 key={option.label}
-                onPress={() => handleSelect(option.label)}
+                onPress={() => handleSelect(option.label as SelectedOption)}
                 activeOpacity={0.75}
                 style={{
                   gap: theme.space.md,
