@@ -1,13 +1,14 @@
 import { Feather } from '@expo/vector-icons';
+import { Easing, Animated } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Easing, Animated, Pressable, ScrollView } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { getInitials } from '../../common/utils/getInitials';
 import { TabContainer } from '../../components/TabContainer';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import type { LeaderboardEntry, LeaderboardPeriod, LeaderboardResult, LeaderboardScope } from '../../common/types/types';
-import { getInitials } from '../../common/utils/getInitials';
+import type { LeaderboardEntry, LeaderboardPeriod, LeaderboardResult } from '../../common/types/types';
 
 import { Loading } from '../../components/common/loading';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
@@ -16,7 +17,6 @@ import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumCo
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
 
 
-type LeaderboardTimeFilter = LeaderboardPeriod;
 type LeaderboardPodiumUser = {
   id: string;
   name: string;
@@ -47,13 +47,13 @@ type LeaderboardSnapshot = {
   playersCount: number;
 };
 
-const mapTrendLabel = (timeFilter: LeaderboardTimeFilter) => {
+const mapTrendLabel = (timeFilter: LeaderboardPeriod) => {
   if (timeFilter === 'weekly') return 'this week';
   if (timeFilter === 'monthly') return 'this month';
   return 'all time';
 };
 
-const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: LeaderboardTimeFilter): LeaderboardSnapshot => {
+const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: LeaderboardPeriod): LeaderboardSnapshot => {
   const sorted = [...result.entries].sort((a, b) => a.rank - b.rank);
 
   const podiumUsers = sorted.slice(0, 3).map((entry, index) => ({
@@ -101,7 +101,7 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
   };
 };
 
-const timeTabs: { id: LeaderboardTimeFilter; label: string }[] = [
+const timeTabs: { id: LeaderboardPeriod; label: string }[] = [
   { id: 'weekly', label: 'Weekly' },
   { id: 'monthly', label: 'Monthly' },
   { id: 'allTime', label: 'All Time' },
@@ -110,8 +110,8 @@ const timeTabs: { id: LeaderboardTimeFilter; label: string }[] = [
 
 export default function LeaderboardScreen() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardResult | null>(null);
-  const [timeFilter, setTimeFilter] = useState<LeaderboardTimeFilter>('weekly');
-  const [scopeFilter, setScopeFilter] = useState<LeaderboardScope>('global');
+  const [timeFilter, setTimeFilter] = useState<LeaderboardPeriod>('weekly');
+  const [scopeFilter, setScopeFilter] = useState<'global' | 'friends'>('global');
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -157,9 +157,7 @@ export default function LeaderboardScreen() {
     let isMounted = true;
     if (isMounted) fetchLeaderboard(true);
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false };
   }, [fetchLeaderboard]);
 
   const refreshLeaderboard = useCallback(() => {
@@ -177,8 +175,7 @@ export default function LeaderboardScreen() {
     fetchLeaderboard(false).finally(() => { setRefreshing(false) });
   }, [refreshing, spin, fetchLeaderboard]);
 
-  const switchScope = useCallback((value: LeaderboardScope) => { setScopeFilter(value) }, []);
-
+  const switchScope = useCallback((value: 'global' | 'friends') => { setScopeFilter(value) }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -190,15 +187,8 @@ export default function LeaderboardScreen() {
           backgroundColor: theme.color.background,
         }}
       >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: theme.space.md,
-          }}
-        >
-          <View style={{ flex: 1, paddingRight: theme.space.sm, flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md }}>
+          <View style={{ flex: 1, gap: theme.space.xs * 0.5, flexDirection: 'column', paddingRight: theme.space.sm }}>
             <Text
               style={{
                 color: theme.color.textPrimary,
@@ -312,16 +302,16 @@ export default function LeaderboardScreen() {
             <TabContainer
               tabs={scopeTabs}
               value={scopeFilter}
-              onChange={(value) => switchScope(value as LeaderboardScope)}
+              onChange={(value) => switchScope(value as 'global' | 'friends')}
             />
 
             <View style={{ height: theme.space.md }} />
 
             {scopeFilter === 'friends' || (activeSnapshot.podiumUsers.length === 0 && activeSnapshot.rankings.length === 0) ? (
               <EmptyStateCard
-                icon="users"
-                title={theme.i18n.t('No Friends Data Found')}
-                description={theme.i18n.t('Connect with your medical study peers to compare your performance and climb the leaderboard together!')}
+                icon='users'
+                title={theme.i18n.t('No Friends Connected Yet')}
+                description={theme.i18n.t('Connect with your Medical study Peers!')}
               />
             ) : (
               <>
@@ -368,7 +358,7 @@ export default function LeaderboardScreen() {
 
                 <View>
                   {activeSnapshot.rankings.map((item) => (
-                    <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                    <View key={item.id} style={{ marginBottom: theme.space.sm }} >
                       <LeaderboardRankCard
                         rank={item.rank}
                         name={item.name}
