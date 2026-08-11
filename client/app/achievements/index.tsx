@@ -12,7 +12,6 @@ import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Badge } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { useAppContext } from '../../common/context/AppContext';
 import { MOCK_ACHIEVEMENTS } from '../../common/constants/mockData';
 
 import { Loading } from '../../components/common/loading';
@@ -140,22 +139,16 @@ export default function AchievementsScreen() {
   const [achievements, setAchievements] = useState<Badge[]>(MOCK_ACHIEVEMENTS);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { authStatus } = useAppContext();
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'profile');
 
   useEffect(() => {
-    if (authStatus !== 'authenticated') return;
     let isMounted = true;
     const fetchAchievements = async () => {
       setIsLoading(true);
-      const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 1200));
       try {
-        const [data] = await Promise.all([
-          api.achievement.getAchievements(),
-          minDelay,
-        ]);
+        const data = await api.achievement.getAchievements();
         if (isMounted) setAchievements(data);
       } catch (error) {
         console.error('Error fetching achievements:', error);
@@ -169,7 +162,7 @@ export default function AchievementsScreen() {
     return () => {
       isMounted = false;
     };
-  }, [authStatus]);
+  }, []);
 
   const data = useMemo(
     () => buildAchievementSnapshot(achievements),
