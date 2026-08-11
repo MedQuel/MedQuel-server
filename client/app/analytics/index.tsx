@@ -1,11 +1,8 @@
-import React, { useMemo } from 'react';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, Text, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import type { AnalyticsData, User } from '../../common/types/types';
 
@@ -155,26 +152,21 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
 
 
 export default function AnalyticsScreen() {
-  const [userData, setUserData] = React.useState<User | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [analyticsData, setAnalyticsData] = React.useState<AnalyticsData | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
-  const { authStatus } = useAppContext();
   const { theme } = useTheme();
-  const router = useRouter();
   useBottomBar(true, 'analytics');
 
-  React.useEffect(() => {
-    if (authStatus !== 'authenticated') return;
+  useEffect(() => {
     let isMounted = true;
     const fetchData = async () => {
       setIsLoading(true);
-      const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 600));
       try {
         const [user, analytics] = await Promise.all([
           api.user.getMe(),
           api.analytics.getAnalytics(),
-          minDelay,
         ]);
         if (isMounted) {
           setUserData(user);
@@ -191,7 +183,7 @@ export default function AnalyticsScreen() {
     return () => {
       isMounted = false;
     };
-  }, [authStatus]);
+  }, []);
 
   const data = useMemo(() => {
     if (!userData || !analyticsData) return emptyAnalyticsSnapshot;
@@ -226,49 +218,26 @@ export default function AnalyticsScreen() {
           backgroundColor: theme.color.background,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'flex-start' }}>
-            <Pressable
-              onPress={() => router.push('/profile')}
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: theme.space.xs * 1.25,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.lg,
-                backgroundColor: theme.color.card,
-              }}
-            >
-              <Feather
-                name='chevron-left'
-                size={theme.space.md * 1.5}
-                color={theme.color.textSecondary}
-              />
-            </Pressable>
-
-            <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg + 1,
-                  lineHeight: theme.fontSize.xl,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('analytics.title')}
-              </Text>
-              <Text
-                style={{
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                {theme.i18n.t('analytics.subtitle')}
-              </Text>
-            </View>
-          </View>
+        <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg + 1,
+              lineHeight: theme.fontSize.xl,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {theme.i18n.t('analytics.title')}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
+            {theme.i18n.t('analytics.subtitle')}
+          </Text>
         </View>
       </View>
 
