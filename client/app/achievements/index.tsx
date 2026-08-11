@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import {  ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import {
   achievementCatalog,
@@ -193,62 +193,60 @@ export default function AchievementsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          paddingTop: theme.space.md,
+          gap: theme.space.sm,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'flex-start' }}>
-            <Pressable
-              onPress={() => router.push('/profile')}
-              style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: theme.space.xs * 1.25,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.lg,
-                backgroundColor: theme.color.card,
-              }}
-            >
-              <Feather
-                name='chevron-left'
-                size={theme.space.md * 1.5}
-                color={theme.color.textSecondary}
-              />
-            </Pressable>
+        <TouchableOpacity
+          onPress={() => router.push('/profile')}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: theme.space.xs * 1.75,
+            borderWidth: 1,
+            backgroundColor: theme.color.card,
+            borderRadius: theme.borderRadius.lg,
+            borderColor: theme.color.border,
+          }}
+        >
+          <Feather
+            name='chevron-left'
+            size={theme.fontSize.xl}
+            color={theme.color.textPrimary}
+          />
+        </TouchableOpacity>
 
-            <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg + 1,
-                  lineHeight: theme.fontSize.xl,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('achievements.title')}
-              </Text>
-              <Text
-                style={{
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                {theme.i18n.t('achievements.subtitle')}
-              </Text>
-            </View>
-          </View>
+        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg * 1.1,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {theme.i18n.t('achievements.title')}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.sm * 1.05,
+              fontFamily: theme.fontFamily.light,
+            }}
+          >
+            {theme.i18n.t('achievements.subtitle')}
+          </Text>
         </View>
       </View>
 
       <View style={{ flex: 1 }}>
         {isLoading ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: theme.space.xl }}>
-            <Loading size={150} />
+            <Loading message={theme.i18n.t('achievements.loading')} />
           </View>
         ) : (
           <ScrollView
