@@ -5,18 +5,18 @@ import { View, Text, Easing, Animated, Pressable, ScrollView } from 'react-nativ
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { TabContainer } from '../../components/TabContainer';
-import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import type { LeaderboardEntry, LeaderboardResult } from '../../common/types/types';
+import type { LeaderboardEntry, LeaderboardPeriod, LeaderboardResult, LeaderboardScope } from '../../common/types/types';
+import { getInitials } from '../../common/utils/getInitials';
 
 import { Loading } from '../../components/common/loading';
+import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
 import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
 
 
-type LeaderboardScope = 'global' | 'friends';
-type LeaderboardTimeFilter = 'weekly' | 'monthly' | 'allTime';
+type LeaderboardTimeFilter = LeaderboardPeriod;
 type LeaderboardPodiumUser = {
   id: string;
   name: string;
@@ -47,17 +47,6 @@ type LeaderboardSnapshot = {
   playersCount: number;
 };
 
-const getInitials = (name: string) => {
-  const trimmed = name.trim();
-  if (!trimmed) return '??';
-
-  return trimmed
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word[0] ?? '')
-    .join('')
-    .toUpperCase();
-};
 const mapTrendLabel = (timeFilter: LeaderboardTimeFilter) => {
   if (timeFilter === 'weekly') return 'this week';
   if (timeFilter === 'monthly') return 'this month';
@@ -70,24 +59,24 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
   const podiumUsers = sorted.slice(0, 3).map((entry, index) => ({
     id: entry.userId || `podium-${index}`,
     name: entry.displayName,
-    initials: getInitials(entry.displayName),
+    initials: getInitials(entry.displayName || '') || '??',
     score: entry.epPoints,
   }));
 
   const rankings = sorted.slice(3).map((entry: LeaderboardEntry) => ({
     id: entry.userId,
     rank: entry.rank,
-    initials: getInitials(entry.displayName),
+    initials: getInitials(entry.displayName || '') || '??',
     name: entry.displayName,
     specialty: entry.specialization,
     points: entry.epPoints,
   }));
 
-  const currentUserSource = result.currentUserEntry ?? sorted[0] ?? null;
+  const currentUserSource = result.myEntry ?? (result as any).currentUserEntry ?? sorted[0] ?? null;
   const currentUser = currentUserSource
     ? {
         rank: currentUserSource.rank,
-        initials: getInitials(currentUserSource.displayName),
+        initials: getInitials(currentUserSource.displayName || '') || '??',
         name: currentUserSource.displayName,
         specialty: currentUserSource.specialization,
         points: currentUserSource.epPoints,
@@ -126,7 +115,6 @@ export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { authStatus } = useAppContext();
   const { theme } = useTheme();
   useBottomBar(true, 'leaderboard');
 
@@ -151,15 +139,10 @@ export default function LeaderboardScreen() {
 
   const fetchLeaderboard = useCallback(
     async (showLoader = true) => {
-      if (authStatus !== 'authenticated') return;
       if (showLoader) setIsLoading(true);
-      const minDelay = new Promise((resolve) => setTimeout(() => resolve(true), 1200));
 
       try {
-        const [data] = await Promise.all([
-          api.leaderboard.getLeaderboard(timeFilter, scopeFilter),
-          showLoader ? minDelay : Promise.resolve(),
-        ]);
+        const data = await api.leaderboard.getLeaderboard(timeFilter, scopeFilter);
         setLeaderboardData(data);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
@@ -167,18 +150,17 @@ export default function LeaderboardScreen() {
         if (showLoader) setIsLoading(false);
       }
     },
-    [timeFilter, scopeFilter, authStatus]
+    [timeFilter, scopeFilter]
   );
 
   useEffect(() => {
-    if (authStatus !== 'authenticated') return;
     let isMounted = true;
     if (isMounted) fetchLeaderboard(true);
 
     return () => {
       isMounted = false;
     };
-  }, [fetchLeaderboard, authStatus]);
+  }, [fetchLeaderboard]);
 
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;
@@ -337,59 +319,70 @@ export default function LeaderboardScreen() {
             />
 
             <View style={{ height: theme.space.md }} />
-            <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
 
-            <View style={{ height: theme.space.md }} />
-            <CurrentUserLeaderboardRankCard
-              name={activeSnapshot.currentUser.name.replace('You • ', '')}
-              rank={activeSnapshot.currentUser.rank}
-              points={activeSnapshot.currentUser.points}
-              weeklyGrowth={activeSnapshot.currentUser.trend}
-            />
+            {scopeFilter === 'friends' || (activeSnapshot.podiumUsers.length === 0 && activeSnapshot.rankings.length === 0) ? (
+              <EmptyStateCard
+                icon="users"
+                title={theme.i18n.t('No Friends Data Found')}
+                description={theme.i18n.t('Connect with your medical study peers to compare your performance and climb the leaderboard together!')}
+              />
+            ) : (
+              <>
+                <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
 
-            <View style={{ height: theme.space.lg }} />
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: theme.space.lg,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                {theme.i18n.t('leaderboard.rankings')}
-              </Text>
+                <View style={{ height: theme.space.md }} />
+                <CurrentUserLeaderboardRankCard
+                  name={activeSnapshot.currentUser.name.replace('You • ', '')}
+                  rank={activeSnapshot.currentUser.rank}
+                  points={activeSnapshot.currentUser.points}
+                  weeklyGrowth={activeSnapshot.currentUser.trend}
+                />
 
-              <Text
-                style={{
-                  color: theme.color.textMuted,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
-              </Text>
-            </View>
+                <View style={{ height: theme.space.lg }} />
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: theme.space.lg,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.color.textPrimary,
+                      fontSize: theme.fontSize.lg,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.regular,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.rankings')}
+                  </Text>
 
-            <View>
-              {activeSnapshot.rankings.map((item) => (
-                <View key={item.id} style={{ marginBottom: theme.space.sm }}>
-                  <LeaderboardRankCard
-                    rank={item.rank}
-                    name={item.name}
-                    specialty={item.specialty}
-                    points={item.points}
-                  />
+                  <Text
+                    style={{
+                      color: theme.color.textMuted,
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.fontFamily.regular,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
+                  </Text>
                 </View>
-              ))}
-            </View>
+
+                <View>
+                  {activeSnapshot.rankings.map((item) => (
+                    <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                      <LeaderboardRankCard
+                        rank={item.rank}
+                        name={item.name}
+                        specialty={item.specialty}
+                        points={item.points}
+                      />
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
           </ScrollView>
         )}
       </View>
