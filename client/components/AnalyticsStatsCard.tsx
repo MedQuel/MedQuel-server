@@ -68,36 +68,36 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
 
 
   return (
-    <View style={{ flexDirection: 'row', gap: theme.space.sm }}>
+    <View style={{ flexDirection: 'row', gap: theme.space.xs * 1.5 }}>
       {stats.map(item => (
         <View
           key={item.key}
           style={{
             flex: 1,
-            minHeight: 112,
+            minHeight: 92,
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: theme.space.md,
-            paddingHorizontal: theme.space.sm,
-            borderWidth: 1.5,
+            paddingVertical: theme.space.sm * 1.1,
+            paddingHorizontal: theme.space.xs,
+            borderWidth: 1,
             borderColor: item.border,
-            borderRadius: theme.borderRadius.xl,
-            elevation: 4,
-            boxShadow: `0px 6px 14px ${withAlpha(item.shadowColor, theme.isDark ? 0.12 : 0.05)}`,
+            borderRadius: theme.borderRadius.lg,
+            elevation: 2,
+            boxShadow: `0px 4px 10px ${withAlpha(item.shadowColor, theme.isDark ? 0.12 : 0.05)}`,
             backgroundColor: item.background,
           }}
         >
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-            {icons[item.key](27, item.color)}
+            {icons[item.key](21, item.color)}
           </View>
 
           <Text
             style={{
               color: item.valueColor,
-              fontSize: theme.fontSize.xxl,
+              fontSize: theme.fontSize.lg + 2,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
-              marginTop: theme.space.sm,
+              marginTop: theme.space.xs,
             }}
           >
             {item.value}
@@ -105,7 +105,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
 
           <Text
             style={{
-              marginTop: theme.space.xs * 0.5,
+              marginTop: theme.space.xs * 0.25,
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.xs,
               fontFamily: theme.fontFamily.regular,

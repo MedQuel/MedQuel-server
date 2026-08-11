@@ -212,18 +212,20 @@ export default function AnalyticsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          paddingTop: theme.space.md,
+          gap: theme.space.sm,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
       >
-        <View style={{ gap: theme.space.xs, flexDirection: 'column' }}>
+        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg + 1,
-              lineHeight: theme.fontSize.xl,
+              fontSize: theme.fontSize.lg * 1.1,
               fontFamily: theme.fontFamily.bold,
             }}
           >
@@ -231,9 +233,9 @@ export default function AnalyticsScreen() {
           </Text>
           <Text
             style={{
-              color: theme.color.textSecondary,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.sm * 1.05,
+              fontFamily: theme.fontFamily.light,
             }}
           >
             {theme.i18n.t('analytics.subtitle')}
@@ -244,7 +246,7 @@ export default function AnalyticsScreen() {
       <View style={{ flex: 1 }}>
         {isLoading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: theme.space.xl }}>
-            <Loading size={150} />
+            <Loading message={theme.i18n.t('analytics.loading')} />
           </View>
         ) : (
           <ScrollView
