@@ -184,7 +184,7 @@ export default function LeaderboardScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          paddingTop: theme.space.md,
+          paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
@@ -193,19 +193,17 @@ export default function LeaderboardScreen() {
         <View
           style={{
             flexDirection: 'row',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: theme.space.md,
           }}
         >
-          <View style={{ flex: 1, paddingRight: theme.space.sm }}>
+          <View style={{ flex: 1, paddingRight: theme.space.sm, flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
             <Text
               style={{
                 color: theme.color.textPrimary,
-                fontSize: theme.fontSize.lg + 1,
-                lineHeight: theme.fontSize.xl,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                fontSize: theme.fontSize.lg * 1.1,
+                fontFamily: theme.fontFamily.bold,
               }}
             >
               {theme.i18n.t('leaderboard.title')}
@@ -213,10 +211,9 @@ export default function LeaderboardScreen() {
 
             <Text
               style={{
-                marginTop: theme.space.xs / 2,
-                color: theme.color.textSecondary,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.sm * 1.05,
+                fontFamily: theme.fontFamily.light,
               }}
             >
               {theme.i18n.t('leaderboard.subtitle')}
@@ -301,7 +298,7 @@ export default function LeaderboardScreen() {
       <View style={{ flex: 1 }}>
         {isLoading || !activeSnapshot ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: theme.space.xl }}>
-            <Loading size={150} />
+            <Loading message={theme.i18n.t('leaderboard.loading')} />
           </View>
         ) : (
           <ScrollView
