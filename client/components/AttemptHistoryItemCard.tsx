@@ -34,34 +34,34 @@ function AttemptCard({ item }: { item: Attempt }) {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        padding: theme.space.xs + 4,
+        padding: theme.space.sm + 6,
         borderWidth: 1,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.md + 4,
+        borderRadius: theme.borderRadius.md + 6,
         backgroundColor: theme.color.card,
-        elevation: 1,
       }}
     >
       <View
         style={{
           alignItems: 'center',
           justifyContent: 'center',
-          paddingVertical: theme.space.md * 0.9,
-          paddingHorizontal: theme.space.sm + 2,
+          paddingVertical: theme.space.md * 1.1,
+          paddingHorizontal: theme.space.sm + 6,
           borderWidth: 1,
           borderColor: theme.color.border,
-          borderRadius: theme.borderRadius.md + 4,
+          borderRadius: theme.borderRadius.md + 6,
           backgroundColor: bg,
+          minWidth: 72,
         }}
       >
         <Text
           style={{
             textAlign: 'center',
             color: color,
-            fontSize: theme.fontSize.sm + 2,
+            fontSize: theme.fontSize.md + 2,
             fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.number,
-            lineHeight: theme.fontSize.sm + 2.5,
+            lineHeight: theme.fontSize.md + 4,
             includeFontPadding: false,
           }}
         >
@@ -69,12 +69,12 @@ function AttemptCard({ item }: { item: Attempt }) {
         </Text>
       </View>
 
-      <View style={{ flex: 1, paddingLeft: theme.space.sm + 2 }}>
+      <View style={{ flex: 1, paddingLeft: theme.space.sm + 6 }}>
         <Text
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm * 1.1,
-            fontWeight: theme.fontWeight.medium,
+            fontSize: theme.fontSize.md,
+            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.regular,
           }}
         >
@@ -83,9 +83,9 @@ function AttemptCard({ item }: { item: Attempt }) {
         <Text
           style={{
             color: theme.color.textSecondary,
-            fontSize: theme.fontSize.xs,
+            fontSize: theme.fontSize.sm,
             fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.xs,
+            marginTop: theme.space.xs + 1,
           }}
         >
           {item.time}
@@ -96,8 +96,8 @@ function AttemptCard({ item }: { item: Attempt }) {
         <View
           style={{
             width: 3,
-            height: 20,
-            marginHorizontal: theme.space.sm,
+            height: 24,
+            marginHorizontal: theme.space.sm + 2,
             backgroundColor: theme.color.textMuted,
           }}
         />
@@ -105,7 +105,7 @@ function AttemptCard({ item }: { item: Attempt }) {
           style={{
             textAlign: 'right',
             color: color,
-            fontSize: theme.fontSize.sm + 2,
+            fontSize: theme.fontSize.md + 2,
             fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.number,
           }}
@@ -122,12 +122,31 @@ export function AttemptHistoryItemCard({ attempts }: Props) {
   const { theme } = useTheme();
 
   return (
-    <View>
+    <View
+      style={{
+        gap: theme.space.md,
+        flexDirection: 'column',
+        padding: theme.space.md,
+        borderWidth: 1.5,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.color.card,
+        boxShadow: theme.isDark
+          ? '0 6px 14px rgba(0,0,0,0.2)'
+          : '0 6px 14px rgba(0,0,0,0.05)',
+      }}
+    >
       {attempts.map((item, index) => (
         <View
           key={item.id}
           style={
-            index < attempts.length-1 ? { marginBottom: theme.space.sm } : undefined
+            index < attempts.length - 1
+              ? {
+                  paddingBottom: theme.space.md * 0.8,
+                  borderBottomWidth: 1,
+                  borderBottomColor: theme.color.border,
+                }
+              : undefined
           }
         >
           <AttemptCard item={item} />

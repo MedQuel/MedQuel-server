@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from "../theme/ThemeContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -45,6 +45,7 @@ export function PremiumUpsellCardFull ()  {
               color:theme.color.premium + 'FF',
               fontSize: theme.fontSize.sm,
               fontWeight:theme.fontWeight.bold,
+              fontFamily:theme.fontFamily.regular,
             }}
           >
            MedQuel {theme.i18n.t("common.premium")}
@@ -55,6 +56,8 @@ export function PremiumUpsellCardFull ()  {
               color:theme.color.textSecondary,
               fontSize:theme.fontSize.xs ,
               marginTop:theme.space.xs-3,
+              fontFamily:theme.fontFamily.regular,
+              fontWeight: theme.fontWeight.bold,
             }}
           >
              {theme.i18n.t("common.start_contest")}
@@ -78,6 +81,7 @@ export function PremiumUpsellCardFull ()  {
             color:isDark ?theme.color.textPrimary + 'FF':theme.color.textInverse,
             fontSize:theme.fontSize.sm + 0.2,
             fontWeight: theme.fontWeight.bold,
+            fontFamily:theme.fontFamily.regular,
           }}
         >
           {theme.i18n.t("components.FeatureContestCard.join_now")}→

@@ -27,16 +27,19 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
   return (
     <View
       style={{
-        paddingTop: theme.space.md * 0.75,
-        paddingBottom: theme.space.md * 1.2,
-        paddingHorizontal: theme.space.md * 0.9,
-        borderWidth: 1,
+        gap: theme.space.md,
+        flexDirection: 'column',
+        padding: theme.space.md,
+        borderWidth: 1.5,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.lg + 4,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
+        boxShadow: theme.isDark
+          ? '0 6px 14px rgba(0,0,0,0.2)'
+          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingBottom: theme.space.xs }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
         <MaterialCommunityIcons
           name='pulse'
           size={theme.space.md * 1.5}
@@ -45,9 +48,9 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
         <Text
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm + 2,
-            fontFamily: theme.fontFamily.bold,
-            paddingLeft: theme.space.sm,
+            fontSize: theme.fontSize.lg,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.regular,
           }}
         >
           {theme.i18n.t('profile.performanceBySubject')}
@@ -60,7 +63,7 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
             textAlign: 'center',
             color: theme.color.textSecondary,
             fontSize: theme.fontSize.xs + 2,
-            fontWeight: theme.fontWeight.medium,
+            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.regular,
             paddingVertical: theme.space.sm,
           }}
@@ -68,42 +71,34 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
           {theme.i18n.t('profile.noSubjectData')}
         </Text>
       ) : (
-        subjects.map((item, index) => {
-          const scoreColor = getScoreColor(item.score, theme);
-          return (
-            <View
-              key={`${index}-${item.name}`}
-              style={{ paddingBottom: index === subjects.length-1 ? 0 : theme.space.xs * 1.5, }}
-            >
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingBottom: theme.space.sm,
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme.color.textSecondary,
-                    fontSize: theme.fontSize.xs + 2,
-                    fontFamily: theme.fontFamily.regular,
-                  }}
-                >
-                  {item.name}
-                </Text>
-
+        <View style={{ gap: theme.space.md * 0.8 }}>
+          {subjects.map((item, index) => {
+            const scoreColor = getScoreColor(item.score, theme);
+            return (
+              <View key={`${index}-${item.name}`}>
                 <View
                   style={{
-                    paddingVertical: theme.space.xs,
-                    paddingHorizontal: theme.space.xs + 2,
-                    borderRadius: theme.borderRadius.full,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingBottom: theme.space.sm,
                   }}
                 >
                   <Text
                     style={{
+                      color: theme.color.textSecondary,
+                      fontSize: theme.fontSize.xs + 1,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.regular,
+                    }}
+                  >
+                    {item.name}
+                  </Text>
+
+                  <Text
+                    style={{
                       color: scoreColor,
-                      fontSize: theme.fontSize.xs + 2,
+                      fontSize: theme.fontSize.xs * 1.05,
                       fontWeight: theme.fontWeight.bold,
                       fontFamily: theme.fontFamily.number,
                     }}
@@ -111,28 +106,29 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
                     {item.score}%
                   </Text>
                 </View>
-              </View>
 
-              <View
-                style={{
-                  overflow: 'hidden',
-                  height: theme.space.sm,
-                  borderRadius: theme.borderRadius.full,
-                  backgroundColor: theme.color.border,
-                }}
-              >
                 <View
                   style={{
-                    width: `${item.score}%`,
-                    height: '100%',
+                    overflow: 'hidden',
+                    height: theme.space.sm,
                     borderRadius: theme.borderRadius.full,
-                    backgroundColor: scoreColor,
+                    backgroundColor: theme.color.border,
                   }}
-                />
+                >
+                  <View
+                    style={{
+                      width: `${item.score}%`,
+                      height: '100%',
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: scoreColor,
+                      boxShadow: `0 0 12px ${scoreColor}45`,
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          );
-        })
+            );
+          })}
+        </View>
       )}
     </View>
   );
