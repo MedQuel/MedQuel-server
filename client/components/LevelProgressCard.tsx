@@ -2,19 +2,28 @@ import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeContext';
+import { xpRequiredForLevel } from '../common/utils/computeLevelXP';
 
 
 export type LevelProgressCardProps = {
   currentLevel: number;
   nextLevel: number;
-  currentEP: number;
-  nextLevelEP: number;
-  remainingEP: number;
+  currentXP: number;
+  nextLevelXP: number;
+  remainingXP: number;
 };
 
 export function LevelProgressCard(props: LevelProgressCardProps) {
-  const progress = Math.min(Math.max(props.currentEP / props.nextLevelEP, 0), 1);
   const { theme } = useTheme();
+
+  // XP already required to have reached the CURRENT level (i.e. the start of this level's range)
+  const currentLevelXP = xpRequiredForLevel(props.currentLevel);
+  const levelRange = props.nextLevelXP - currentLevelXP;
+
+  // Progress within THIS level's range, not against total accumulated XP
+  const progress = levelRange > 0
+    ? Math.min(Math.max((props.currentXP - currentLevelXP) / levelRange, 0), 1)
+    : 0;
 
   return (
     <View
@@ -57,8 +66,8 @@ export function LevelProgressCard(props: LevelProgressCardProps) {
             fontFamily: theme.fontFamily.number,
           }}
         >
-          {props.currentEP.toLocaleString()} /{' '}
-          {props.nextLevelEP.toLocaleString()} {theme.i18n.t('common.ep')}
+          {props.currentXP.toLocaleString()} /{' '}
+          {props.nextLevelXP.toLocaleString()} {theme.i18n.t('common.XP')}
         </Text>
       </View>
 
@@ -93,7 +102,7 @@ export function LevelProgressCard(props: LevelProgressCardProps) {
           marginTop: theme.space.sm,
         }}
       >
-        {theme.i18n.t('home.ep_to_next_level', { remainingEP: props.remainingEP.toLocaleString() })}
+        {theme.i18n.t('home.ep_to_next_level', { remainingEP: props.remainingXP.toLocaleString() })}
       </Text>
     </View>
   );
