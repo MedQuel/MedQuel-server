@@ -14,15 +14,34 @@ function getAvatarLabel(fullName: string): string {
   return (words[0]!.charAt(0) + words[words.length - 1]!.charAt(0)).toUpperCase();
 }
 
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
 
-export function HomeHeader({ name, streak, level, onNotificationsPress }: {
+export function HomeHeader({ name, streak, level, lastActiveDate, onNotificationsPress }: {
   name: string;
   streak: number;
   level: number;
+  lastActiveDate?: string | Date | null;
   onNotificationsPress?: () => void;
 }) {
   const { theme } = useTheme();
   const avatarLabel = getAvatarLabel(name);
+
+  // Flame is only "solid"/active-colored when the user has already been
+  // active today. Otherwise it falls back to a muted outline to signal the
+  // streak hasn't been extended yet today.
+  const isActiveToday = lastActiveDate
+    ? isSameDay(new Date(lastActiveDate), new Date())
+    : false;
+
+  const flameIconName = isActiveToday ? 'flame' : 'flame-outline';
+  const flameColor = '#FF6723';
+  const streakTextColor = theme.color.warning;
 
   return (
     <View
@@ -58,7 +77,6 @@ export function HomeHeader({ name, streak, level, onNotificationsPress }: {
             {avatarLabel}
           </Text>
         </LinearGradient>
-
         <View style={{ marginLeft: theme.space.sm }}>
           <Text
             numberOfLines={1}
@@ -70,12 +88,11 @@ export function HomeHeader({ name, streak, level, onNotificationsPress }: {
           >
             {name}
           </Text>
-
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.space.xs * 0.5 }}>
-            <Ionicons name='flame' size={theme.fontSize.md} color='#FF6723' />
+            <Ionicons name={flameIconName} size={theme.fontSize.md} color={flameColor} />
             <Text
               style={{
-                color: theme.color.warning,
+                color: streakTextColor,
                 fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
                 marginLeft: theme.space.xs * 0.5,
@@ -86,7 +103,6 @@ export function HomeHeader({ name, streak, level, onNotificationsPress }: {
           </View>
         </View>
       </View>
-
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TouchableOpacity
           activeOpacity={0.8}
@@ -122,7 +138,6 @@ export function HomeHeader({ name, streak, level, onNotificationsPress }: {
             }}
           />
         </TouchableOpacity>
-
         <UserLevelChip level={level} size='sm' />
       </View>
     </View>
