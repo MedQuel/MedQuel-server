@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { View, ScrollView, Text, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity  } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 
 import { userApi } from '@/common/api/api';
@@ -8,7 +8,8 @@ import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
 import { UserProfileCard } from '../../components/UserProfileCard';
 import { ToggleSwitch } from '../../components/common/ToggleSwitch';
-import { PremiumUpsellCardFull } from '../../components/PremiumUpsellCardFull';
+import { PremiumUpsellCardFull } from '../../components/PremiumUpsellCardFull'; 
+import {signOut} from '../../common/firebase/firebase';
 
 
 function SectionLabel({ text, theme }: any) {
@@ -26,6 +27,7 @@ function SectionLabel({ text, theme }: any) {
     </Text>
   );
 }
+
 function Card({ theme, children }: any) {
   return (
     <View style={{ justifyContent: 'center', paddingVertical: theme.space.sm }}>
@@ -258,10 +260,13 @@ export default function SettingsScreen() {
       >
         <UserProfileCard userData={userData} />
 
-        <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.account')} />
-        <Card theme={theme}>
+       <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.account')}
+         />
+        <Card theme={theme} 
+        >
           <Row
             theme={theme}
+             right={<View />}
             icon='email-outline'
             iconBg='#5B9CF61A'
             iconColor='#5B9CF6'
@@ -271,6 +276,7 @@ export default function SettingsScreen() {
           <Divider theme={theme} />
           <Row
             theme={theme}
+              right={<View />}
             icon='lock-outline'
             iconBg='#5B9CF61A'
             iconColor='#5B9CF6'
@@ -283,6 +289,7 @@ export default function SettingsScreen() {
           <Divider theme={theme} />
           <Row
             theme={theme}
+             right={<View />}
             icon='school-outline'
             iconBg='#F6A0201A'
             iconColor='#F6A020'
@@ -292,18 +299,32 @@ export default function SettingsScreen() {
           <Divider theme={theme} />
           <Row
             theme={theme}
+             right={<View />}
             icon='book-open-outline'
             iconBg='#22C55E1A'
             iconColor='#22C55E'
             title={theme.i18n.t('profile.settings.account.studyLevel')}
             subtitle={userData?.studyLevel}
           />
+          <Divider theme={theme} />
+          <TouchableOpacity onPress={() => router.push('/profile/updateProfileScreen')}>
+            <Row
+              theme={theme}
+              right={<View />}
+              icon='account-edit-outline'
+              iconBg={theme.color.premium + '1A'}
+              iconColor={theme.color.premium}
+              title={theme.i18n.t('profile.settings.account.updateProfile')}
+              titleColor={theme.color.premium}
+            />
+          </TouchableOpacity>
         </Card>
 
         <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.notifications')} />
         <Card theme={theme}>
           <Row
             theme={theme}
+            
             icon='bell-outline'
             iconBg='#5B9CF61A'
             iconColor='#5B9CF6'
@@ -469,6 +490,7 @@ export default function SettingsScreen() {
 
         <Card theme={theme}>
           <Row
+          onPress={signOut}
             theme={theme}
             icon='logout'
             iconBg={theme.color.error + '22'}
@@ -476,15 +498,15 @@ export default function SettingsScreen() {
             title={theme.i18n.t('profile.settings.signOut')}
             titleColor={theme.color.error}
           />
-          <Divider theme={theme} />
-          <Row
+          {/* <Divider theme={theme} /> */}
+          {/* <Row
             theme={theme}
             icon='trash-can-outline'
             iconBg={theme.color.error + '22'}
             iconColor={theme.color.error}
             title={theme.i18n.t('profile.settings.deleteAccount')}
             titleColor={theme.color.error}
-          />
+          /> */}
         </Card>
       </ScrollView>
     </View>

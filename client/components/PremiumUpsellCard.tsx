@@ -12,14 +12,14 @@ export function PremiumUpsellCard({ onPress }: { onPress?: () => void }) {
         gap: theme.space.sm + 2,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: theme.space.sm + 5,
-        paddingHorizontal: theme.space.lg + 2,
+        padding: theme.space.md,
         borderWidth: 1.5,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.lg,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: `0 2px 8px ${theme.color.premium}1F`,
-        elevation: 3,
+        boxShadow: theme.isDark
+          ? '0 6px 14px rgba(0,0,0,0.2)'
+          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
       <View
@@ -39,13 +39,14 @@ export function PremiumUpsellCard({ onPress }: { onPress?: () => void }) {
         />
       </View>
 
-      <View style={{ flex: 1, gap: theme.space.xs * 0.5 }}>
+      <View style={{ flex: 1, gap: theme.space.xs }}>
         <Text
           style={{
             letterSpacing: 0.1,
             color: theme.color.premium + 'FF',
             fontSize: theme.fontSize.sm + 1,
             fontWeight: theme.fontWeight.bold,
+            fontFamily:theme.fontFamily.regular,
           }}
         >
           Upgrade to {theme.i18n.t('common.premium')}
@@ -53,9 +54,10 @@ export function PremiumUpsellCard({ onPress }: { onPress?: () => void }) {
 
         <Text
           style={{
-            color: theme.color.textSecondary,
+            color: theme.color.textMuted,
             fontSize: theme.fontSize.xs + 2,
-            fontWeight: theme.fontWeight.regular,
+            fontFamily: theme.fontFamily.regular,
+            fontWeight:theme.fontWeight.bold,
           }}
         >
           {theme.i18n.t('common.start_contest')}
@@ -79,6 +81,7 @@ export function PremiumUpsellCard({ onPress }: { onPress?: () => void }) {
             color: theme.isDark ? theme.color.textPrimary + 'FF' : theme.color.textInverse,
             fontSize: theme.fontSize.xs + 2,
             fontWeight: theme.fontWeight.bold,
+            fontFamily:theme.fontFamily.regular,
           }}
         >
           {theme.i18n.t('components.FeatureContestCard.join_now')}

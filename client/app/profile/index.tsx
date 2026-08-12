@@ -130,7 +130,9 @@ export default function ChatScreen() {
           style={{
             color: theme.color.textPrimary,
             fontSize: theme.fontSize.lg + 2,
-            fontFamily: theme.fontFamily.bold,
+            fontWeight:theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.regular,
+            
           }}
         >
           {userData?.displayName}
@@ -262,8 +264,9 @@ export default function ChatScreen() {
       <Section theme={theme}>
         <Text style={{
           color: theme.color.textPrimary,
-          fontSize: theme.fontSize.sm + 2,
-          fontFamily: theme.fontFamily.bold,
+          fontSize: theme.fontSize.sm + 4,
+          fontFamily: theme.fontFamily.regular,
+          fontWeight:theme.fontWeight.bold,
           paddingBottom: theme.space.md,
           marginLeft: theme.space.xs,
         }}>

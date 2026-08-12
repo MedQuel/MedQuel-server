@@ -1,8 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ScrollView, View, Text, TouchableOpacity } from "react-native";
-
+import { useRouter } from 'expo-router';
 import { useTheme } from "../../theme/ThemeContext";
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { NotificationType } from "../../common/constants/notification";
 
 function withOpacity(hex: string, opacity: number) {
@@ -13,7 +14,6 @@ function withOpacity(hex: string, opacity: number) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-
 type ColorKey =
   | "accent"
   | "success"
@@ -23,10 +23,9 @@ type ColorKey =
   | "premium";
 
 interface TypeConfig {
-  icon: string; 
+  icon: string;
   colorKey: ColorKey;
 }
-
 
 const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
   streak: { icon: "fire", colorKey: "danger" },
@@ -50,7 +49,7 @@ interface NotificationItem {
   description: string;
   time: string;
   unread: boolean;
-  section: "UNREAD" | "EARLIER";
+  section: "UNREAD" | "READ";
 }
 
 const NOTIFICATIONS: NotificationItem[] = [
@@ -70,7 +69,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "Cardiology Grand Prix has started. 500 EP prize pool!",
     time: "15m",
     unread: true,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "3",
@@ -88,7 +87,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "You climbed from #139 to #127 globally this week.",
     time: "2h",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "5",
@@ -97,7 +96,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "Gold Medalist — scored 95%+ in Grand Medical Championship.",
     time: "3h",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "6",
@@ -106,7 +105,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "Dr. Sarah K. replied to your question in Cardiology Room.",
     time: "4h",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "7",
@@ -115,7 +114,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "Today's Anatomy challenge is available. +150 EP awaits.",
     time: "6h",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "8",
@@ -124,7 +123,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "Try Premium free for 7 days. Access all contests!",
     time: "1d",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
   {
     id: "9",
@@ -133,7 +132,7 @@ const NOTIFICATIONS: NotificationItem[] = [
     description: "You completed 50 questions this week. Keep it up!",
     time: "2d",
     unread: false,
-    section: "EARLIER",
+    section: "READ",
   },
 ];
 
@@ -159,6 +158,8 @@ function NotificationCard({ item }: { item: NotificationItem }) {
         borderRadius: theme.borderRadius.lg,
         padding: theme.space.md - 3,
         flexDirection: "row",
+        alignItems: "center", 
+        gap: 10,
         borderWidth: 1,
         borderColor: colors.border,
       }}
@@ -171,6 +172,7 @@ function NotificationCard({ item }: { item: NotificationItem }) {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: withOpacity(iconColor, 0.15),
+          flexShrink: 0, 
         }}
       >
         <MaterialCommunityIcons
@@ -179,18 +181,19 @@ function NotificationCard({ item }: { item: NotificationItem }) {
           color={iconColor}
         />
       </View>
-      <View style={{ flex: 1, paddingLeft: 10 }}>
+      <View style={{ flex: 1 }}>
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center", 
           }}
         >
           <Text
             style={{
               fontSize: theme.fontSize.sm - 1,
               fontWeight: theme.fontWeight.medium,
+              fontFamily: theme.fontFamily.regular,
               color: colors.textPrimary,
               paddingRight: 6,
               flexShrink: 1,
@@ -207,6 +210,8 @@ function NotificationCard({ item }: { item: NotificationItem }) {
         <Text
           style={{
             fontSize: theme.fontSize.xs - 1,
+            fontFamily: theme.fontFamily.regular,
+            fontWeight:theme.fontWeight.medium,
             color: colors.textSecondary,
             paddingTop: 2,
             lineHeight: 15,
@@ -246,6 +251,7 @@ function Section({
         style={{
           fontSize: theme.fontSize.md,
           fontWeight: theme.fontWeight.medium,
+          fontFamily: theme.fontFamily.regular,
           color: colors.textMuted,
           letterSpacing: 0.5,
           marginTop: label === "UNREAD" ? theme.space.md : theme.space.md + 3,
@@ -267,13 +273,15 @@ function Section({
 export default function NotificationsScreen() {
   const { theme } = useTheme();
   const { isDark } = theme;
+  const router = useRouter();
   const colors = theme.color;
+  useBottomBar(false);
 
   const [notifications, setNotifications] =
     useState<NotificationItem[]>(NOTIFICATIONS);
 
   const unread = notifications.filter((n) => n.unread);
-  const earlier = notifications.filter((n) => !n.unread);
+  const Read = notifications.filter((n) => !n.unread);
 
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
@@ -284,7 +292,7 @@ export default function NotificationsScreen() {
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={{
         paddingHorizontal: theme.space.md,
-        paddingBottom: 70,
+        paddingBottom: 50,
       }}
       showsVerticalScrollIndicator={false}
     >
@@ -298,8 +306,10 @@ export default function NotificationsScreen() {
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
+            onPress={() => router.push('/home')}
             style={{
               paddingVertical: theme.space.sm,
+              paddingTop:theme.space.md-6,
               paddingHorizontal: theme.space.sm,
               borderRadius: theme.borderRadius.lg,
               backgroundColor: isDark ? colors.card : colors.surface,
@@ -319,8 +329,10 @@ export default function NotificationsScreen() {
             <Text
               style={{
                 fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.medium,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.regular,
                 color: colors.textPrimary,
+                paddingTop:theme.space.md-6,
               }}
             >
               Notifications
@@ -328,6 +340,8 @@ export default function NotificationsScreen() {
             <Text
               style={{
                 fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+                fontWeight: theme.fontWeight.bold,
                 color: colors.textMuted,
                 paddingTop: 2,
               }}
@@ -341,6 +355,7 @@ export default function NotificationsScreen() {
             style={{
               fontSize: theme.fontSize.md,
               fontWeight: theme.fontWeight.medium,
+              fontFamily: theme.fontFamily.regular,
               color: colors.accent,
             }}
           >
@@ -350,7 +365,7 @@ export default function NotificationsScreen() {
       </View>
 
       <Section label="UNREAD" items={unread} />
-      <Section label="EARLIER" items={earlier} />
+      <Section label="READ" items={Read} />
     </ScrollView>
   );
 }
