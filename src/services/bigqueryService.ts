@@ -19,6 +19,7 @@ export interface QuestionForQuiz {
   optionC: string;
   optionD: string;
   imageUrl: string | null;
+  difficulty: QuizDifficulty;
   questionType: string;
   marks: number;
 }
@@ -47,7 +48,7 @@ export class BigQueryService {
     const questionCount = Math.min(Math.max(Math.trunc(filters.questionCount), 1), MAX_QUESTION_COUNT);
 
     const query = `
-      SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
+      SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, difficulty, question_type, marks
       FROM \`${this.projectId}.${this.datasetId}.questions\`
       WHERE subject = @subject
         AND (@topic IS NULL OR topic = @topic)
@@ -72,6 +73,7 @@ export class BigQueryService {
       optionC: row.option_c,
       optionD: row.option_d,
       imageUrl: row.image_url ?? null,
+      difficulty: row.difficulty,
       questionType: row.question_type,
       marks: row.marks,
     }));
@@ -81,7 +83,7 @@ export class BigQueryService {
     if (questionIds.length === 0) return [];
 
     const query = `
-      SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, question_type, marks
+      SELECT question_id, question_text, option_a, option_b, option_c, option_d, image_url, difficulty, question_type, marks
       FROM \`${this.projectId}.${this.datasetId}.questions\`
       WHERE question_id IN UNNEST(@questionIds) AND is_active = TRUE
     `;
@@ -100,6 +102,7 @@ export class BigQueryService {
       optionC: row.option_c,
       optionD: row.option_d,
       imageUrl: row.image_url ?? null,
+      difficulty: row.difficulty,
       questionType: row.question_type,
       marks: row.marks,
     }));
