@@ -21,6 +21,12 @@ firebase-debug.log
 # Infrastructure files - not needed inside the Docker build.
 infra/
 
+# Cloud Functions artifacts - not needed inside the Docker build.
+functions/
+
+# Scripts
+scripts/
+
 # Throwaway dev tools, not part of the deployed backend
 get-token-script/
 nginx.local.conf
