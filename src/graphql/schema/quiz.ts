@@ -24,6 +24,7 @@ export const quizTypeDefs = `#graphql
     optionC: String!
     optionD: String!
     imageUrl: String
+    difficulty: QuizDifficulty!
     questionType: String!
     marks: Int!
   }
@@ -93,6 +94,7 @@ export const quizTypeDefs = `#graphql
     skippedCount: Int!
     score: Int!
     scorePercent: Float!
+    timeTaken: Int!
     epEarned: Int!
     xpEarned: Int!
     updatedXpPoints: Int!
