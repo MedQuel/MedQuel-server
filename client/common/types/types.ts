@@ -2,6 +2,9 @@ export type TargetExam = 'USMLE' | 'NEET-PG' | 'INI-CET' | 'PLAB' | 'MRCP' | 'FM
 export type StudyLevel = 'MBBS Year 1-5' | 'Postgraduate' | 'Practitioner' | 'Nursing / Allied';
 export type YearOfStudy = 'Year 1' | 'Year 2' | 'Year 3' | 'Year 4' | 'Final Year' | 'Intern';
 export type DescribesYou = 'MBBS Student' | 'Postgraduate' | 'Practicing Doctor' | 'Nursing / Allied';
+export type BadgeVariant = 'gold' | 'red' | 'purple' | 'blue' | 'green';
+export type BadgeRarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
+export type BadgeStatus = 'earned' | 'in_progress' | 'locked';
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -12,11 +15,21 @@ export interface NotifPrefs {
   emailDigest: boolean;
   rankAlerts: boolean;
   contestReminders: boolean;
+  achievementAlerts: boolean;
 }
 export interface QuizPrefs {
   defaultDifficulty: Difficulty;
   timerSound: boolean;
   autoSubmit: boolean;
+}
+export interface UserStats {
+  contestsPlayed: number;
+  contests90Plus: number;
+  hardContestsDone: number;
+  perfectQuizzes: number;
+  fastCompletions: number;
+  top3Finishes: number;
+  subjects70Plus: number;
 }
 
 export interface User {
@@ -40,8 +53,8 @@ export interface User {
   totalQuestions: number;
   totalCorrect: number;
   studyHours: number;
+  stats: UserStats;
   badges: string[];
-  badgeProgress: Record<string, number>;
   notifPrefs: NotifPrefs;
   quizPrefs: QuizPrefs;
   createdAt: string;
@@ -85,7 +98,7 @@ export interface ClientQuestion {
   imageUrl?: string | null;
   questionType: QuestionType;
   marks: number;
-  difficulty?: Difficulty;
+  difficulty: Difficulty;
   subject?: string;
   topic?: string;
 }
@@ -160,6 +173,7 @@ export interface SubmitQuizSessionResult {
   skippedCount: number;
   score: number;
   scorePercent: number;
+  timeTaken: number;
   epEarned: number;
   xpEarned: number;
   updatedXpPoints: number;
@@ -173,7 +187,7 @@ export interface SubmitQuizSessionResult {
 
 
 // -----> Contests
-export type ContestType = 'daily' | 'weekly' | 'live';
+export type ContestType = 'daily' | 'live' | 'contest' | 'weekly';
 export type ContestStatus = 'draft' | 'scheduled' | 'active' | 'completed';
 export interface MarkingScheme {
   correct: number;
@@ -311,19 +325,18 @@ export interface GetChatMessagesResult {
 
 
 // -----> Achievements
-export type BadgeTier = 'gold' | 'silver' | 'bronze';
-export type BadgeStatus = 'earned' | 'in_progress' | 'locked';
-
 export interface Badge {
   badgeId: string;
   name: string;
   description: string;
-  icon: string;
-  tier: BadgeTier;
+  iconKey: string;
+  variant: BadgeVariant;
+  rarity: BadgeRarity;
+  category: string;
   requirementValue: number;
   currentProgress: number;
   status: BadgeStatus;
-  earnedAt?: string;
+  earnedAt?: string | null;
 }
 
 
