@@ -1,17 +1,23 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+import { computeLevelFromXp } from './xpLevel.js';
 import type { ContestDoc, ContestLeaderboardEntry } from './types.js';
 
 
 const TOP_N_RANK = 100;
-const BONUS_TIERS: ReadonlyArray<{ rank: number; multiplier: number }> = [
+const EP_BONUS_TIERS: ReadonlyArray<{ rank: number; multiplier: number }> = [
   { rank: 1, multiplier: 0.5 },
   { rank: 2, multiplier: 0.3 },
   { rank: 3, multiplier: 0.15 },
 ];
+const XP_BONUS_TIERS: ReadonlyArray<{ rank: number; multiplier: number }> = [
+  { rank: 1, multiplier: 0.25 },
+  { rank: 2, multiplier: 0.15 },
+  { rank: 3, multiplier: 0.08 },
+];
 
-export type FinalizeOutcome = 'finalized' | 'skipped_already_finalized' | 'skipped_not_found';
+export type FinalizeOutcome = 'finalized' | 'skipped_already_finalized' | 'skipped_not_found' | 'skipped_already_completed';
 
 const IST_OFFSET_MS = (5*60 + 30) * 60*1000;
 function getIsoWeekKey(date: Date): string {
@@ -60,8 +66,8 @@ async function fetchUserSnapshot(db: Firestore, userId: string) {
 }
 
 
-async function awardBonusEp(db: Firestore, userId: string, bonusEp: number, contestId: string, rank: number): Promise<void> {
-  if (bonusEp <= 0) return;
+async function awardContestBonus(db: Firestore, userId: string, bonusEp: number, bonusXp: number, contestId: string, rank: number): Promise<void> {
+  if (bonusEp <= 0 && bonusXp <= 0) return;
 
   const userSnapshot = await fetchUserSnapshot(db, userId);
   if (!userSnapshot) {
@@ -81,19 +87,23 @@ async function awardBonusEp(db: Firestore, userId: string, bonusEp: number, cont
     ]);
     if (!userSnap.exists) return;
 
+    const userData = userSnap.data()!;
     const nowTs = Timestamp.now();
+    const updatedXpPoints = (userData.xpPoints ?? 0) + bonusXp;
+    const updatedCurrentLevel = computeLevelFromXp(updatedXpPoints);
+
     tx.update(userRef, {
       epPoints: FieldValue.increment(bonusEp),
+      xpPoints: updatedXpPoints,
+      currentLevel: updatedCurrentLevel,
+      'stats.top3Finishes': FieldValue.increment(1),
       updatedAt: nowTs,
     });
 
     entrySnaps.forEach((snap, i) => {
       const ref = entryRefs[i];
       if (snap.exists) {
-        tx.update(ref, {
-          epPoints: FieldValue.increment(bonusEp),
-          updatedAt: nowTs,
-        });
+        tx.update(ref, { epPoints: FieldValue.increment(bonusEp), updatedAt: nowTs });
       } else {
         tx.set(ref, {
           userId,
@@ -110,7 +120,7 @@ async function awardBonusEp(db: Firestore, userId: string, bonusEp: number, cont
     });
   });
 
-  console.log(`[contestLifecycle] contest ${contestId}: awarded +${bonusEp} EP bonus to rank ${rank} (${userId}).`);
+  console.log(`[contestLifecycle] contest ${contestId}: awarded +${bonusEp} EP / +${bonusXp} XP bonus to rank ${rank} (${userId}).`);
 }
 
 
@@ -118,30 +128,35 @@ export async function finalizeContest(contestId: string, db: Firestore): Promise
   const contestRef = db.collection('contests').doc(contestId);
   const finalizationRef = db.collection('contestFinalizations').doc(contestId);
 
-  const claimed = await db.runTransaction(async (tx) => {
+  type ClaimResult = 'claimed' | 'not_found' | 'already_finalized' | 'already_completed';
+
+  const claimResult = await db.runTransaction<ClaimResult>(async (tx) => {
     const [contestSnap, finalizationSnap] = await Promise.all([
       tx.get(contestRef),
       tx.get(finalizationRef),
     ]);
-    if (!contestSnap.exists) return false;
-    if (finalizationSnap.exists) return false;
+    if (!contestSnap.exists) return 'not_found';
+    if (finalizationSnap.exists) return 'already_finalized';
 
     const data = contestSnap.data() as ContestDoc;
-    if (data.status === 'completed') return false;
+    if (data.status === 'completed') return 'already_completed';
 
     const now = Timestamp.now();
     tx.update(contestRef, { status: 'completed', updatedAt: now });
     tx.set(finalizationRef, { contestId, status: 'ranking', startedAt: now });
-    return true;
+    return 'claimed';
   });
 
-  if (!claimed) return contestId ? 'skipped_already_finalized' : 'skipped_not_found';
+  if (claimResult !== 'claimed') return claimResult === 'not_found' ? 'skipped_not_found' : 'skipped_already_finalized';
 
   const contestSnap = await contestRef.get();
   const contest = contestSnap.data() as ContestDoc;
 
   const leaderboardRef = contestRef.collection('leaderboard');
-  const rankSnap = await leaderboardRef.orderBy('score', 'desc').limit(TOP_N_RANK).get();
+  const rankSnap = await leaderboardRef
+    .orderBy('score', 'desc')
+    .limit(TOP_N_RANK)
+    .get();
 
   if (!rankSnap.empty) {
     const batch = db.batch();
@@ -149,13 +164,23 @@ export async function finalizeContest(contestId: string, db: Firestore): Promise
     await batch.commit();
   }
 
-  for (const tier of BONUS_TIERS) {
+  for (const tier of EP_BONUS_TIERS) {
     const winnerDoc = rankSnap.docs[tier.rank-1];
     if (!winnerDoc) continue;
 
     const entry = winnerDoc.data() as ContestLeaderboardEntry;
     const bonusEp = Math.round(contest.epReward * tier.multiplier);
-    await awardBonusEp(db, entry.userId, bonusEp, contestId, tier.rank);
+    const xpTier = XP_BONUS_TIERS.find((t) => t.rank === tier.rank)!;
+    const bonusXp = Math.round(contest.epReward * xpTier.multiplier);
+
+    await awardContestBonus(
+      db,
+      entry.userId,
+      bonusEp,
+      bonusXp,
+      contestId,
+      tier.rank
+    );
   }
 
   await finalizationRef.update({
