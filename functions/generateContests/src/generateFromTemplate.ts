@@ -49,7 +49,7 @@ export async function generateRotationContest(template: ContestTemplate, db: Fir
   const logPrefix = `[generateContests] "${template.templateId}":`;
 
   const difficulty = weightedRandomKey(template.difficultyWeights) as ContestDifficulty;
-  const contestType = weightedRandomKey(template.contestTypeMix) as 'daily' | 'live';
+  const contestType = weightedRandomKey(template.contestTypeMix) as 'daily' | 'live' | 'contest';
   const questionCount = randomInRange(template.questionCountRange.min, template.questionCountRange.max);
   const timeLimitSecs = randomInRange(template.durationRange.minSecs, template.durationRange.maxSecs);
 
