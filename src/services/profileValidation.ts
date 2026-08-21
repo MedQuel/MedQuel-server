@@ -1,11 +1,6 @@
 import { GraphQLError } from 'graphql';
-import {
-  VALID_TARGET_EXAMS,
-  VALID_STUDY_LEVELS,
-  VALID_YEAR_OPTIONS,
-  type TargetExam,
-  type StudyLevel,
-} from './onboardingValidation.js';
+import { type TargetExam, type StudyLevel } from './onboardingValidation.js';
+import { VALID_TARGET_EXAMS, VALID_STUDY_LEVELS, VALID_YEAR_OPTIONS } from './onboardingValidation.js';
 
 
 export interface UpdateProfileInput {
@@ -25,8 +20,7 @@ export interface ValidatedProfileUpdate {
   institution?: string | null;
 }
 
-// Validates and normalizes updateProfile input. Throws GraphQLError on bad input.
-export function validateUpdateProfileInput( input: UpdateProfileInput ): ValidatedProfileUpdate {
+export function validateUpdateProfileInput(input: UpdateProfileInput): ValidatedProfileUpdate {
   const result: ValidatedProfileUpdate = {};
 
   if (input.displayName !== undefined && input.displayName !== null) {
@@ -48,8 +42,7 @@ export function validateUpdateProfileInput( input: UpdateProfileInput ): Validat
 
   if (input.targetExam !== undefined && input.targetExam !== null) {
     if (!VALID_TARGET_EXAMS.includes(input.targetExam as TargetExam)) {
-      throw new GraphQLError(
-        `Invalid value for targetExam: "${input.targetExam}".`,
+      throw new GraphQLError(`Invalid value for targetExam: "${input.targetExam}".`,
         { extensions: { code: 'BAD_USER_INPUT' } }
       );
     }
@@ -58,8 +51,7 @@ export function validateUpdateProfileInput( input: UpdateProfileInput ): Validat
 
   if (input.studyLevel !== undefined && input.studyLevel !== null) {
     if (!VALID_STUDY_LEVELS.includes(input.studyLevel as StudyLevel)) {
-      throw new GraphQLError(
-        `Invalid value for studyLevel: "${input.studyLevel}".`,
+      throw new GraphQLError(`Invalid value for studyLevel: "${input.studyLevel}".`,
         { extensions: { code: 'BAD_USER_INPUT' } }
       );
     }
@@ -68,8 +60,7 @@ export function validateUpdateProfileInput( input: UpdateProfileInput ): Validat
 
   if (input.yearOfStudy !== undefined) {
     if (input.yearOfStudy !== null && !VALID_YEAR_OPTIONS.includes(input.yearOfStudy as never)) {
-      throw new GraphQLError(
-        `Invalid value for yearOfStudy: "${input.yearOfStudy}".`,
+      throw new GraphQLError(`Invalid value for yearOfStudy: "${input.yearOfStudy}".`,
         { extensions: { code: 'BAD_USER_INPUT' } }
       );
     }
@@ -78,13 +69,92 @@ export function validateUpdateProfileInput( input: UpdateProfileInput ): Validat
 
   if (input.institution !== undefined) {
     const trimmed = input.institution?.trim() || null;
-    
     if (trimmed && trimmed.length > 60) {
       throw new GraphQLError('Institution name is too long.', {
         extensions: { code: 'BAD_USER_INPUT' },
       });
     }
     result.institution = trimmed;
+  }
+
+  return result;
+}
+
+
+export interface NotifPrefsInput {
+  pushEnabled?: boolean | null;
+  emailDigest?: boolean | null;
+  rankAlerts?: boolean | null;
+  contestReminders?: boolean | null;
+  achievementAlerts?: boolean | null;
+}
+export interface ValidatedNotifPrefs {
+  pushEnabled?: boolean;
+  emailDigest?: boolean;
+  rankAlerts?: boolean;
+  contestReminders?: boolean;
+  achievementAlerts?: boolean;
+}
+
+export function validateNotifPrefsInput(input: NotifPrefsInput): Record<string, boolean> {
+  const result: Record<string, boolean> = {};
+  const fields: (keyof NotifPrefsInput)[] = [
+    'pushEnabled',
+    'emailDigest',
+    'rankAlerts',
+    'contestReminders',
+    'achievementAlerts',
+  ];
+
+  for (const field of fields) {
+    const value = input[field];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== 'boolean') {
+      throw new GraphQLError(`notifPrefs.${field} must be a boolean.`, {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+    result[field] = value;
+  }
+  return result;
+}
+
+
+export interface QuizPrefsInput {
+  defaultDifficulty?: string | null;
+  timerSound?: boolean | null;
+  autoSubmit?: boolean | null;
+}
+
+export function validateQuizPrefsInput(input: QuizPrefsInput): Record<string, boolean | string> {
+  const result: Record<string, boolean | string> = {};
+
+  if (input.defaultDifficulty !== undefined && input.defaultDifficulty !== null) {
+    const normalized = input.defaultDifficulty.toLowerCase();
+    if (!['easy', 'medium', 'hard'].includes(normalized)) {
+      throw new GraphQLError(`quizPrefs.defaultDifficulty must be easy/medium/hard, got "${input.defaultDifficulty}".`, {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+    result.defaultDifficulty = normalized;
+  }
+
+  if (input.timerSound !== undefined && input.timerSound !== null) {
+    if (typeof input.timerSound !== 'boolean') {
+      throw new GraphQLError('quizPrefs.timerSound must be a boolean.', {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+    result.timerSound = input.timerSound;
+  }
+
+  if (input.autoSubmit !== undefined && input.autoSubmit !== null) {
+    if (typeof input.autoSubmit !== 'boolean') {
+      throw new GraphQLError('quizPrefs.autoSubmit must be a boolean.', {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+    result.autoSubmit = input.autoSubmit;
   }
 
   return result;
