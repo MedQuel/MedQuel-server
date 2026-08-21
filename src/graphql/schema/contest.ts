@@ -7,8 +7,9 @@ export const contestTypeDefs = `#graphql
   }
   enum ContestKindEnum {
     daily
-    weekly
     live
+    contest
+    weekly
   }
 
   type ContestMarkingScheme {
