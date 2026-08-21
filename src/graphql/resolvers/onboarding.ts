@@ -1,13 +1,10 @@
-import type { Firestore } from 'firebase-admin/firestore';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-import {
-  validateOnboardingInput,
-  assertNotAlreadyOnboarded,
-  type CompleteOnboardingInput,
-} from '../../services/onboardingValidation.js';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
+import { DEFAULT_NOTIF_PREFS, DEFAULT_QUIZ_PREFS } from './user.js';
+import { type CompleteOnboardingInput } from '../../services/onboardingValidation.js';
+import { validateOnboardingInput, assertNotAlreadyOnboarded } from '../../services/onboardingValidation.js';
 
 
 function buildUserDocument(uid: string, email: string, data: ReturnType<typeof validateOnboardingInput>) {
@@ -32,23 +29,28 @@ function buildUserDocument(uid: string, email: string, data: ReturnType<typeof v
     totalQuestions: 0,
     totalCorrect: 0,
     studyHours: 0,
+    stats: {
+      contestsPlayed: 0,
+      contests90Plus: 0,
+      hardContestsDone: 0,
+      perfectQuizzes: 0,
+      fastCompletions: 0,
+      top3Finishes: 0,
+      masteredSubjects: [] as string[],
+      subjectStats: {} as Record<string, { attempted: number; correct: number }>,
+    },
     badges: [] as string[],
     badgeProgress: {},
     notifTokens: [] as string[],
-    notifPrefs: { pushEnabled: true, emailDigest: true, rankAlerts: true, contestReminders: true },
-    quizPrefs: { defaultDifficulty: 'medium', timerSound: true, autoSubmit: false },
+    notifPrefs: DEFAULT_NOTIF_PREFS,
+    quizPrefs: DEFAULT_QUIZ_PREFS,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
 }
 
 
-export async function completeOnboardingResolver(
-  _parent: unknown,
-  args: { input: CompleteOnboardingInput },
-  context: GraphQLContext,
-  db: Firestore
-) {
+export async function completeOnboardingResolver(_parent: unknown, args: { input: CompleteOnboardingInput }, context: GraphQLContext) {
   if (!context.user) throw new AuthenticationError();
 
   const uid = context.user.uid;
@@ -56,7 +58,7 @@ export async function completeOnboardingResolver(
 
   const validated = validateOnboardingInput(args.input);
 
-  const userRef = db.collection('users').doc(uid);
+  const userRef = context.db.collection('users').doc(uid);
   const existingDoc = await userRef.get();
   assertNotAlreadyOnboarded(existingDoc);
 
