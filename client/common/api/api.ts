@@ -19,27 +19,27 @@ const IMPLEMENTED_OPERATIONS = {
   'user.getMe': true,
   'user.completeOnboarding': true,
   'user.updateProfile': true,
-  'user.updateNotifPrefs': false,
-  'user.updateQuizPrefs': false,
-  'home.getHomeData': false,
+  'user.updateNotifPrefs': true,
+  'user.updateQuizPrefs': true,
+  'home.getHomeData': false, //
   'quiz.getTopicsForSubject': true,
   'quiz.startQuizSession': true,
   'quiz.submitQuizSession': true,
   'contest.getContests': true,
   'contest.getContest': true,
   'contest.joinContest': true,
-  'contest.searchContests': false,
+  'contest.searchContests': false, // opted
   'leaderboard.getLeaderboard': true,
-  'studyPlan.getStudyPlan': false,
-  'studyPlan.generateStudyPlan': false,
-  'chat.getChatRooms': false,
-  'chat.getChatMessages': false,
-  'chat.sendMessage': false,
-  'achievement.getAchievements': false,
-  'analytics.getAnalytics': false,
-  'subscription.getPlans': false,
-  'subscription.verifyPayment': false,
-  'subscription.initiatePayment': false,
+  'studyPlan.getStudyPlan': false, // opted Study Plan section
+  'studyPlan.generateStudyPlan': false, // opted Study Plan section
+  'chat.getChatRooms': false, // opted Discussion Room section
+  'chat.getChatMessages': false, // opted Discussion Room section
+  'chat.sendMessage': false, // opted Discussion Room section
+  'achievement.getAchievements': true,
+  'analytics.getAnalytics': false, //
+  'subscription.getPlans': false, //
+  'subscription.verifyPayment': false, //
+  'subscription.initiatePayment': false, //
 } as const;
 type OperationLabel = keyof typeof IMPLEMENTED_OPERATIONS;
 
@@ -111,7 +111,28 @@ const ME_QUERY = gql`
       totalQuestions
       totalCorrect
       studyHours
+      stats {
+        contestsPlayed
+        contests90Plus
+        hardContestsDone
+        perfectQuizzes
+        fastCompletions
+        top3Finishes
+        subjects70Plus
+      }
       badges
+      notifPrefs {
+        pushEnabled
+        emailDigest
+        rankAlerts
+        contestReminders
+        achievementAlerts
+      }
+      quizPrefs {
+        defaultDifficulty
+        timerSound
+        autoSubmit
+      }
       createdAt
       updatedAt
     }
@@ -148,6 +169,7 @@ const UPDATE_NOTIF_PREFS_MUTATION = gql`
       emailDigest
       rankAlerts
       contestReminders
+      achievementAlerts
     }
   }
 `;
@@ -284,8 +306,9 @@ const START_QUIZ_SESSION_MUTATION = gql`
         optionC
         optionD
         imageUrl
-        marks
+        difficulty
         questionType
+        marks
       }
     }
   }
@@ -300,6 +323,7 @@ const SUBMIT_QUIZ_SESSION_MUTATION = gql`
       skippedCount
       score
       scorePercent
+      timeTaken
       epEarned
       xpEarned
       updatedXpPoints
@@ -425,8 +449,9 @@ const JOIN_CONTEST_MUTATION = gql`
         optionC
         optionD
         imageUrl
-        marks
+        difficulty
         questionType
+        marks
       }
     }
   }
@@ -661,8 +686,10 @@ const GET_ACHIEVEMENTS_QUERY = gql`
       badgeId
       name
       description
-      icon
-      tier
+      iconKey
+      variant
+      rarity
+      category
       requirementValue
       currentProgress
       status
