@@ -1,7 +1,7 @@
 import type { Timestamp } from 'firebase-admin/firestore';
 
 
-export type ContestKind = 'daily' | 'weekly' | 'live';
+export type ContestKind = 'daily' | 'live' | 'contest' | 'weekly';
 export type ContestDifficulty = 'easy' | 'medium' | 'hard';
 export type TemplateKind = 'rotation' | 'grand_championship';
 
@@ -13,6 +13,7 @@ export interface DifficultyWeights {
 export interface ContestTypeMix {
   daily: number;
   live: number;
+  contest: number;
 }
 export interface QuestionCountRange {
   min: number;
@@ -43,6 +44,7 @@ export interface ContestTemplate {
   difficultyWeights: DifficultyWeights;
   questionCountRange: QuestionCountRange;
   durationRange: DurationRangeSecs;
+  joinWindowRange: { minHrs: number; maxHrs: number } | null;
   contestTypeMix: ContestTypeMix;
   isPremium: boolean;
   markingScheme: MarkingScheme;
