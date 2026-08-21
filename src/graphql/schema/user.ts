@@ -1,4 +1,40 @@
 export const userTypeDefs = `#graphql
+  type NotifPrefs {
+    pushEnabled: Boolean!
+    emailDigest: Boolean!
+    rankAlerts: Boolean!
+    contestReminders: Boolean!
+    achievementAlerts: Boolean!
+  }
+  input NotifPrefsInput {
+    pushEnabled: Boolean
+    emailDigest: Boolean
+    rankAlerts: Boolean
+    contestReminders: Boolean
+    achievementAlerts: Boolean
+  }
+
+  type QuizPrefs {
+    defaultDifficulty: QuizDifficulty!
+    timerSound: Boolean!
+    autoSubmit: Boolean!
+  }
+  input QuizPrefsInput {
+    defaultDifficulty: QuizDifficulty
+    timerSound: Boolean
+    autoSubmit: Boolean
+  }
+
+  type UserStats {
+    contestsPlayed: Int!
+    contests90Plus: Int!
+    hardContestsDone: Int!
+    perfectQuizzes: Int!
+    fastCompletions: Int!
+    top3Finishes: Int!
+    subjects70Plus: Int!
+  }
+
   type User {
     uid: ID!
     displayName: String!
@@ -20,7 +56,10 @@ export const userTypeDefs = `#graphql
     totalQuestions: Int!
     totalCorrect: Int!
     studyHours: Float!
+    stats: UserStats!
     badges: [String!]!
+    notifPrefs: NotifPrefs!
+    quizPrefs: QuizPrefs!
     createdAt: String!
     updatedAt: String!
   }
@@ -55,5 +94,7 @@ export const userTypeDefs = `#graphql
   extend type Mutation {
     completeOnboarding(input: CompleteOnboardingInput!): OnboardingResult!
     updateProfile(input: UpdateProfileInput!): User!
+    updateNotifPrefs(input: NotifPrefsInput!): NotifPrefs!
+    updateQuizPrefs(input: QuizPrefsInput!): QuizPrefs!
   }
 `;
