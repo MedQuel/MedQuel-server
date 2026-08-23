@@ -32,8 +32,6 @@ export function DiscussionChatView({
 }: DiscussionChatViewProps) {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
-
-  const isTablet = width >= 768;
   const bubbleWidth = Math.min(width * 0.68, 520);
 
   return (

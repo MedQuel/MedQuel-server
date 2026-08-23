@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 import { UserLevelChip } from '../../components/UserLevelChip';
+import { computeLevelFromXp } from '../../common/utils/computeLevelXP';
 
 
 function getAvatarLabel(fullName: string): string {
@@ -22,19 +23,17 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-export function HomeHeader({ name, streak, level, lastActiveDate, onNotificationsPress }: {
+export function HomeHeader({ name, streak, epPoints, lastActiveDate, onNotificationsPress }: {
   name: string;
   streak: number;
-  level: number;
+  epPoints: number;
   lastActiveDate?: string | Date | null;
   onNotificationsPress?: () => void;
 }) {
   const { theme } = useTheme();
   const avatarLabel = getAvatarLabel(name);
+  const level = computeLevelFromXp(epPoints);
 
-  // Flame is only "solid"/active-colored when the user has already been
-  // active today. Otherwise it falls back to a muted outline to signal the
-  // streak hasn't been extended yet today.
   const isActiveToday = lastActiveDate
     ? isSameDay(new Date(lastActiveDate), new Date())
     : false;
@@ -138,7 +137,15 @@ export function HomeHeader({ name, streak, level, lastActiveDate, onNotification
             }}
           />
         </TouchableOpacity>
-        <UserLevelChip level={level} size='sm' />
+        <UserLevelChip
+          level={level}
+          size='sm'
+          style={{
+            height: theme.space.xl + theme.space.xs,
+            borderColor: theme.color.border,
+            backgroundColor: theme.color.card,
+          }}
+        />
       </View>
     </View>
   );

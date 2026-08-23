@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { api } from '../../common/api/api';
@@ -15,159 +15,6 @@ import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
-import { SubjectId, SubjectIcon, subjectCatalog } from '../../common/constants/subject';
-import { xpRequiredForLevel, computeLevelFromXp } from '../../common/utils/computeLevelXP';
-
-type PracticeSubject = { id: SubjectId; label: string };
-
-function PracticeBySubject({ subjects, onPress }: { subjects?: PracticeSubject[], onPress?: (id: SubjectId) => void }) {
-  const { theme } = useTheme();
-  const { width } = useWindowDimensions();
-
-  const allSubjects: PracticeSubject[] = useMemo(() => {
-    const allIds = Object.keys(subjectCatalog) as SubjectId[];
-    return allIds.map((id) => ({ id, label: theme.i18n.t(subjectCatalog[id].title) }));
-  }, [theme.i18n]);
-
-  const iconSize = Math.min(width * 0.13, 58);
-  const iconSizeValue = iconSize * 0.42;
-  const finalSubjects = subjects ?? allSubjects;
-  const getIconSizeValue = (subjectId: SubjectId) => subjectId === 'anatomy' ? iconSizeValue * 1.35 : iconSizeValue;
-
-  // --- horizontal scroll + scrollbar tracking (mirrors ActiveContestsCard) ---
-  const scrollRef = useRef<ScrollView>(null);
-  const [scrollX, setScrollX] = useState(0);
-  const [contentWidth, setContentWidth] = useState(0);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  const maxScroll = Math.max(contentWidth - containerWidth, 1);
-  const thumbWidthRatio = Math.min(containerWidth / Math.max(contentWidth, 1), 1);
-  const thumbPositionRatio = Math.min(Math.max(scrollX / maxScroll, 0), 1);
-
-  const itemWidth = Math.max(76, iconSize + theme.space.md);
-
-  const handleScroll = (e: any) => {
-    setScrollX(e.nativeEvent.contentOffset.x);
-  };
-  const scrollByItem = (direction: 1 | -1) => {
-    const nextX = Math.min(
-      Math.max(scrollX + direction * (itemWidth * 2 + theme.space.md), 0),
-      maxScroll
-    );
-    scrollRef.current?.scrollTo({ x: nextX, animated: true });
-  };
-
-  return (
-    <View>
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={handleScroll}
-        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
-        onContentSizeChange={(w) => setContentWidth(w)}
-        contentContainerStyle={{
-          paddingHorizontal: theme.space.sm,
-          gap: theme.space.md,
-        }}
-      >
-        {finalSubjects.map((subject) => {
-          const definition = subjectCatalog[subject.id];
-          const iconColor = theme.color[definition?.variant ?? 'accent'];
-          return (
-            <TouchableOpacity
-              key={subject.id}
-              activeOpacity={0.8}
-              onPress={() => onPress?.(subject.id)}
-              style={{ alignItems: 'center', width: itemWidth }}
-            >
-              <View
-                style={{
-                  width: iconSize,
-                  height: iconSize,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: theme.space.xs,
-                  borderWidth: 1,
-                  borderRadius: iconSize / 3,
-                  borderColor: `${iconColor}35`,
-                  backgroundColor: `${iconColor}12`,
-                }}
-              >
-                <SubjectIcon
-                  id={subject.id}
-                  color={iconColor}
-                  size={getIconSizeValue(subject.id)}
-                />
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={{
-                  textAlign: 'center',
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.xs,
-                  fontFamily: theme.fontWeight.medium,
-                }}
-              >
-                {subject.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {contentWidth > containerWidth && (
-        <View
-          style={{
-            gap: theme.space.sm,
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginTop: theme.space.sm,
-          }}
-        >
-          <TouchableOpacity activeOpacity={0.7} onPress={() => scrollByItem(-1)} hitSlop={8}>
-            <Feather
-              name='chevron-left'
-              size={theme.fontSize.md}
-              color={theme.color.textSecondary}
-            />
-          </TouchableOpacity>
-
-          <View
-            style={{
-              flex: 1,
-              overflow: 'hidden',
-              height: theme.space.xs,
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.color.border,
-            }}
-          >
-            <View
-              style={{
-                position: 'absolute',
-                left: `${thumbPositionRatio * (1 - thumbWidthRatio) * 100}%`,
-                width: `${thumbWidthRatio * 100}%`,
-                height: '100%',
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.textSecondary,
-              }}
-            />
-          </View>
-
-          <TouchableOpacity activeOpacity={0.7} onPress={() => scrollByItem(1)} hitSlop={8}>
-            <Feather
-              name='chevron-right'
-              size={theme.fontSize.md}
-              color={theme.color.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-}
 
 export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
@@ -217,13 +64,6 @@ export default function HomeScreen() {
 
   const dailyChallenge = homeData?.dailyChallenge ?? null;
 
-  // Always show the full subject catalog here (not just subjects the user
-  // has stats for) so nothing is missing from the horizontal list.
-  const practiceSubjects = useMemo(() => {
-    const allIds = Object.keys(subjectCatalog) as SubjectId[];
-    return allIds.map((id) => ({ id, label: theme.i18n.t(subjectCatalog[id].title) }));
-  }, [theme.i18n]);
-
   const performanceTrend = useMemo(() => {
     const weekDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
     const trend = {} as Record<(typeof weekDays)[number], number>;
@@ -269,15 +109,12 @@ export default function HomeScreen() {
     );
   }
 
-  // Derive level from XP so it can never drift out of sync with epPoints
-  const currentLevel = computeLevelFromXp(user.epPoints);
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <HomeHeader
         name={user.displayName}
         streak={user.currentStreak}
-        level={currentLevel}
+        epPoints={user.epPoints}
         lastActiveDate={user.lastActiveDate}
         onNotificationsPress={() => router.push('/notifications')}
       />
@@ -291,13 +128,7 @@ export default function HomeScreen() {
           paddingHorizontal: theme.space.md,
         }}
       >
-        <LevelProgressCard
-          currentLevel={currentLevel}
-          nextLevel={currentLevel + 1}
-          currentXP={user.epPoints}
-          nextLevelXP={xpRequiredForLevel(currentLevel + 1)}
-          remainingXP={Math.max(0, xpRequiredForLevel(currentLevel + 1) - user.epPoints)}
-        />
+        <LevelProgressCard epPoints={user.epPoints} />
 
         <StatsOverviewCard
           rank={myRank ?? 0}
@@ -371,18 +202,10 @@ export default function HomeScreen() {
             {theme.i18n.t('Practice by Subject')}
           </Text>
 
-          <PracticeBySubject
-            subjects={practiceSubjects}
-            onPress={(subjectId) => {
-              console.log('Selected Subject:', subjectId);
-            }}
-          />
-
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => router.push('/home/practiceBySubject')}
             style={{
-              marginTop: theme.space.md,
               borderRadius: theme.borderRadius.xl,
               overflow: 'hidden',
             }}

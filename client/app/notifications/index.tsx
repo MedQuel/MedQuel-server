@@ -158,26 +158,25 @@ function NotificationCard({ item }: { item: NotificationItem }) {
         borderRadius: theme.borderRadius.lg,
         padding: theme.space.md - 3,
         flexDirection: "row",
-        alignItems: "center", 
-        gap: 10,
+        alignItems: "center",
+        gap: theme.space.sm,
         borderWidth: 1,
         borderColor: colors.border,
       }}
     >
       <View
         style={{
-          width: 38,
-          height: 38,
+          padding: theme.space.sm,
           borderRadius: theme.borderRadius.lg,
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: withOpacity(iconColor, 0.15),
-          flexShrink: 0, 
+          flexShrink: 0,
         }}
       >
         <MaterialCommunityIcons
           name={icon as any}
-          size={theme.fontSize.md + 2}
+          size={theme.fontSize.md}
           color={iconColor}
         />
       </View>
@@ -186,35 +185,33 @@ function NotificationCard({ item }: { item: NotificationItem }) {
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
-            alignItems: "center", 
+            alignItems: "center",
           }}
         >
           <Text
             style={{
-              fontSize: theme.fontSize.sm - 1,
+              fontSize: theme.fontSize.sm,
               fontWeight: theme.fontWeight.medium,
               fontFamily: theme.fontFamily.regular,
               color: colors.textPrimary,
-              paddingRight: 6,
+              paddingRight: theme.space.xs,
               flexShrink: 1,
             }}
           >
             {item.title}
           </Text>
           <Text
-            style={{ fontSize: theme.fontSize.xs - 2, color: colors.textMuted }}
+            style={{ fontSize: theme.fontSize.xs, color: colors.textMuted }}
           >
             {item.time}
           </Text>
         </View>
         <Text
           style={{
-            fontSize: theme.fontSize.xs - 1,
+            fontSize: theme.fontSize.xs,
             fontFamily: theme.fontFamily.regular,
-            fontWeight:theme.fontWeight.medium,
             color: colors.textSecondary,
             paddingTop: 2,
-            lineHeight: 15,
           }}
         >
           {item.description}
@@ -222,11 +219,11 @@ function NotificationCard({ item }: { item: NotificationItem }) {
         {item.unread && (
           <View
             style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
+              width: theme.space.xs,
+              height: theme.space.xs,
+              borderRadius: theme.borderRadius.full,
               backgroundColor: colors.accent,
-              marginTop: 5,
+              marginTop: theme.space.xs,
             }}
           />
         )}
@@ -249,7 +246,7 @@ function Section({
     <>
       <Text
         style={{
-          fontSize: theme.fontSize.md,
+          fontSize: theme.fontSize.sm,
           fontWeight: theme.fontWeight.medium,
           fontFamily: theme.fontFamily.regular,
           color: colors.textMuted,
@@ -261,7 +258,7 @@ function Section({
       >
         {label}
       </Text>
-      <View style={{ gap: 10 }}>
+      <View style={{ gap: theme.space.sm }}>
         {items.map((item) => (
           <NotificationCard key={item.id} item={item} />
         ))}
@@ -301,16 +298,15 @@ export default function NotificationsScreen() {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingVertical: theme.space.sm,
+          paddingTop: theme.space.lg,
+          paddingBottom: theme.space.sm,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
           <TouchableOpacity
             onPress={() => router.push('/home')}
             style={{
-              paddingVertical: theme.space.sm,
-              paddingTop:theme.space.md-6,
-              paddingHorizontal: theme.space.sm,
+              padding: theme.space.xs + 2,
               borderRadius: theme.borderRadius.lg,
               backgroundColor: isDark ? colors.card : colors.surface,
               alignItems: "center",
@@ -321,7 +317,7 @@ export default function NotificationsScreen() {
           >
             <Ionicons
               name="chevron-back"
-              size={theme.space.lg}
+              size={theme.fontSize.lg}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
@@ -330,9 +326,8 @@ export default function NotificationsScreen() {
               style={{
                 fontSize: theme.fontSize.lg,
                 fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                fontFamily: theme.fontFamily.bold,
                 color: colors.textPrimary,
-                paddingTop:theme.space.md-6,
               }}
             >
               Notifications
@@ -341,7 +336,6 @@ export default function NotificationsScreen() {
               style={{
                 fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
-                fontWeight: theme.fontWeight.bold,
                 color: colors.textMuted,
                 paddingTop: 2,
               }}
@@ -353,8 +347,7 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={handleMarkAllRead}>
           <Text
             style={{
-              fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.medium,
+              fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.regular,
               color: colors.accent,
             }}

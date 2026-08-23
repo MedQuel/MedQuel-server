@@ -1,6 +1,5 @@
-import React from 'react';
-import { View, Text } from 'react-native';
 
+import { View, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
 type ProjectionCardProps = {
@@ -62,7 +61,6 @@ export function ProjectionCard({
         <Text
           style={{
             color: theme.color.accent,
-            // TODO: replace with your largest theme.fontSize token (e.g. theme.fontSize['2xl'])
             fontSize: theme.fontSize.xl,
             fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.regular,
