@@ -23,17 +23,16 @@ function isSameDay(a: Date, b: Date): boolean {
   );
 }
 
-export function HomeHeader({ name, streak, epPoints, lastActiveDate, onNotificationsPress }: {
+export function HomeHeader({ name, streak, xpPoints, lastActiveDate, onNotificationsPress }: {
   name: string;
   streak: number;
-  epPoints: number;
+  xpPoints: number;
   lastActiveDate?: string | Date | null;
   onNotificationsPress?: () => void;
 }) {
   const { theme } = useTheme();
   const avatarLabel = getAvatarLabel(name);
-  const level = computeLevelFromXp(epPoints);
-
+  const level = computeLevelFromXp(xpPoints);
   const isActiveToday = lastActiveDate
     ? isSameDay(new Date(lastActiveDate), new Date())
     : false;
