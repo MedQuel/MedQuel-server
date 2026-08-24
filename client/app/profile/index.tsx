@@ -1,25 +1,24 @@
-import { useEffect, useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { api } from '@/common/api/api';
-import { useTheme } from '../../theme/ThemeContext';
-import { Loading } from '../../components/common/loading';
-import { ProfileScreenHeader } from './profileScreenHeader';
-import { useBottomBar } from '../../common/context/useBottomBar';
-import { PremiumUpsellCard } from '../../components/PremiumUpsellCard';
-import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
-import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard';
-
+import { api } from "@/common/api/api";
+import { useTheme } from "../../theme/ThemeContext";
+import { Loading } from "../../components/common/loading";
+import { ProfileScreenHeader } from "./profileScreenHeader";
+import { useBottomBar } from "../../common/context/useBottomBar";
+import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
+import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
+import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
+import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
 
 function Pill({ theme, children, style }: any) {
   return (
     <View
       style={[
         {
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           paddingVertical: theme.space.xs - 5,
           paddingHorizontal: theme.space.sm * 1.1,
           borderRadius: theme.borderRadius.md + 2,
@@ -33,7 +32,13 @@ function Pill({ theme, children, style }: any) {
 }
 function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
-    <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+    <View
+      style={{
+        gap: theme.space.xs,
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
       <MaterialCommunityIcons name={icon} size={theme.space.md} color={color} />
       <Text
         style={{
@@ -60,7 +65,6 @@ function Section({ theme, children, marginTop }: any) {
   );
 }
 
-
 export default function ChatScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -69,7 +73,7 @@ export default function ChatScreen() {
   const [load, setLoad] = useState(true);
 
   const { theme } = useTheme();
-  useBottomBar(true, 'profile');
+  useBottomBar(true, "profile");
 
   useEffect(() => {
     (async () => {
@@ -82,32 +86,34 @@ export default function ChatScreen() {
         ]);
 
         setUserData(user);
+        console.log("userData", user);
         setAnalytics(analyticsData);
         setRecentData(analyticsData.recentAttempts);
       } catch {
-        setError('Could not load profile. Pull to refresh.');
+        setError("Could not load profile. Pull to refresh.");
       } finally {
         setLoad(false);
       }
     })();
   }, []);
 
-  const formatTime = (iso: string) => new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
 
   if (load || error) {
     return (
       <View
         style={{
           flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
@@ -117,7 +123,6 @@ export default function ChatScreen() {
     );
   }
 
-
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
@@ -125,20 +130,25 @@ export default function ChatScreen() {
       style={{ flex: 1, backgroundColor: theme.color.background }}
     >
       <ProfileScreenHeader user={userData} />
-      <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl - 2 }}>
+      <View
+        style={{
+          gap: theme.space.xs * 1.5,
+          alignItems: "center",
+          marginTop: theme.space.xxl - 2,
+        }}
+      >
         <Text
           style={{
             color: theme.color.textPrimary,
             fontSize: theme.fontSize.lg + 2,
-            fontWeight:theme.fontWeight.bold,
+            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.regular,
-            
           }}
         >
           {userData?.displayName}
         </Text>
 
-        <View style={{ gap: theme.space.sm, flexDirection: 'row' }}>
+        <View style={{ gap: theme.space.sm, flexDirection: "row" }}>
           <Pill
             theme={theme}
             style={{
@@ -151,7 +161,7 @@ export default function ChatScreen() {
               style={{
                 color: theme.color.accent,
                 fontSize: theme.fontSize.xs * 1.2,
-                fontFamily: theme.fontFamily.bold
+                fontFamily: theme.fontFamily.bold,
               }}
             >
               {userData?.studyLevel}
@@ -162,18 +172,18 @@ export default function ChatScreen() {
             theme={theme}
             style={{
               gap: 5,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm + 3,
               borderWidth: 0.5,
-              borderColor: theme.color.warning + '22',
-              backgroundColor: theme.color.warning + '22',
+              borderColor: theme.color.warning + "22",
+              backgroundColor: theme.color.warning + "22",
             }}
           >
             <MaterialCommunityIcons
-              name='star'
+              name="star"
               size={theme.space.md}
               color={theme.color.warning}
             />
@@ -185,62 +195,80 @@ export default function ChatScreen() {
                 fontFamily: theme.fontFamily.number,
               }}
             >
-              {theme.i18n.t('profile.level', { level: userData?.currentLevel ?? 0 })}
+              {theme.i18n.t("profile.level", {
+                level: userData?.currentLevel ?? 0,
+              })}
             </Text>
           </Pill>
         </View>
 
-        <View style={{ gap: theme.space.md + 2, flexDirection: 'row', alignItems: 'center' }}>
+        <View
+          style={{
+            gap: theme.space.md + 2,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
           <IconLabel
             theme={theme}
-            icon='target'
+            icon="target"
             color={theme.color.textSecondary}
             text={userData?.targetExam}
           />
           {userData?.institution && (
             <IconLabel
               theme={theme}
-              icon='map-marker-outline'
+              icon="map-marker-outline"
               color={theme.color.textMuted}
               text={userData?.institution}
             />
           )}
           <IconLabel
             theme={theme}
-            icon='lightning-bolt'
+            icon="lightning-bolt"
             color={theme.color.info}
             bold
-            text={theme.i18n.t('profile.xpPoints', { points: userData?.xpPoints ?? 0})}
+            text={theme.i18n.t("profile.xpPoints", {
+              points: userData?.xpPoints ?? 0,
+            })}
           />
         </View>
       </View>
 
-      <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
+      <View
+        style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
+      >
         <ProfileScreenStatsCard
           stats={[
             {
-              label: theme.i18n.t('common.level'),
+              label: theme.i18n.t("common.level"),
               value: String(userData?.currentLevel ?? 0),
-              color: '#F59E0B',
-              icon: 'star',
+              color: "#F59E0B",
+              icon: "star",
             },
             {
-              label: theme.i18n.t('common.quizzes'),
+              label: theme.i18n.t("common.quizzes"),
               value: String(userData?.totalContests ?? 0),
-              color: '#3B82F6',
-              icon: 'lightning-bolt',
+              color: "#3B82F6",
+              icon: "lightning-bolt",
             },
             {
-              label: theme.i18n.t('common.streak'),
+              label: theme.i18n.t("common.streak"),
               value: String(userData?.longestStreak ?? 0),
-              color: '#EF4444',
-              icon: 'fire',
+              color: "#EF4444",
+              icon: "fire",
             },
             {
-              label: theme.i18n.t('common.accuracy'),
-              value: `${Math.floor(userData?.totalCorrect/userData?.totalQuestions * 1000) / 10}%`,
-              color: '#22C55E',
-              icon: 'bullseye',
+              label: theme.i18n.t("common.accuracy"),
+              value: `${
+                userData?.totalQuestions
+                  ? Math.floor(
+                      (userData.totalCorrect / userData.totalQuestions) * 1000,
+                    ) / 10
+                  : 0
+              }%`,
+              color: "#22C55E",
+              icon: "bullseye",
             },
           ]}
         />
@@ -256,21 +284,23 @@ export default function ChatScreen() {
             (s: { subject: string; accuracy: number }) => ({
               name: s.subject,
               score: s.accuracy,
-            })
+            }),
           )}
         />
       </Section>
 
       <Section theme={theme}>
-        <Text style={{
-          color: theme.color.textPrimary,
-          fontSize: theme.fontSize.sm + 4,
-          fontFamily: theme.fontFamily.regular,
-          fontWeight:theme.fontWeight.bold,
-          paddingBottom: theme.space.md,
-          marginLeft: theme.space.xs,
-        }}>
-          {theme.i18n.t('profile.recentAttempts')}
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontSize: theme.fontSize.sm + 4,
+            fontFamily: theme.fontFamily.regular,
+            fontWeight: theme.fontWeight.bold,
+            paddingBottom: theme.space.md,
+            marginLeft: theme.space.xs,
+          }}
+        >
+          {theme.i18n.t("profile.recentAttempts")}
         </Text>
 
         <AttemptHistoryItemCard
@@ -285,7 +315,7 @@ export default function ChatScreen() {
               title: a.subject,
               time: formatTime(a.completedAt),
               score: a.scorePercent,
-            })
+            }),
           )}
         />
       </Section>

@@ -23,7 +23,7 @@ export function ProfileScreenHeader({ user }: Props) {
 
       {/* NEW: Pencil / Edit icon - left side */}
       <TouchableOpacity
-        onPress={() => router.push('/profile/editScreen')} // apna edit route daal dena
+        onPress={() => router.push('/profile/updateProfile')} // apna edit route daal dena
         style={{
           position: 'absolute',
           top: theme.space.md + 4,

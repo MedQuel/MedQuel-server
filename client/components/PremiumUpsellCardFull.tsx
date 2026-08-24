@@ -12,7 +12,7 @@ export function PremiumUpsellCardFull ()  {
       style={{
         backgroundColor: theme.color.card,
         borderRadius: theme.borderRadius.lg + 3,
-        paddingVertical:theme.space.xs +2,
+        paddingVertical:theme.space.xs +4,
         paddingHorizontal:theme.space.md,
         borderWidth: 1,
         borderColor:theme.color.border,
@@ -34,7 +34,7 @@ export function PremiumUpsellCardFull ()  {
         >
           <MaterialCommunityIcons
           name="crown-outline"
-          size={theme.space.md + 5 }
+          size={theme.space.md + 6 }
           color={theme.color.premium}
         />
         </Text>
@@ -43,7 +43,7 @@ export function PremiumUpsellCardFull ()  {
           <Text
             style={{
               color:theme.color.premium + 'FF',
-              fontSize: theme.fontSize.sm,
+              fontSize: theme.fontSize.sm+2,
               fontWeight:theme.fontWeight.bold,
               fontFamily:theme.fontFamily.regular,
             }}
@@ -54,7 +54,7 @@ export function PremiumUpsellCardFull ()  {
           <Text
             style={{
               color:theme.color.textSecondary,
-              fontSize:theme.fontSize.xs ,
+              fontSize:theme.fontSize.xs+2 ,
               marginTop:theme.space.xs-3,
               fontFamily:theme.fontFamily.regular,
               fontWeight: theme.fontWeight.bold,
@@ -79,12 +79,12 @@ export function PremiumUpsellCardFull ()  {
         <Text
           style={{
             color:isDark ?theme.color.textPrimary + 'FF':theme.color.textInverse,
-            fontSize:theme.fontSize.sm + 0.2,
+            fontSize:theme.fontSize.sm + 1.2,
             fontWeight: theme.fontWeight.bold,
             fontFamily:theme.fontFamily.regular,
           }}
         >
-          {theme.i18n.t("components.FeatureContestCard.join_now")}→
+          {theme.i18n.t("components.FeatureContestCard.join_now")}   →
         </Text>
       </TouchableOpacity>
     </View>
