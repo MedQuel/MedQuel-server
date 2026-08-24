@@ -48,7 +48,7 @@ export function ActivityHeatmapCard({ month, year, activity }: Props) {
   const cells = Array.from({ length: daysInMonth }, (_, i) => activity[i] ?? 0);
 
   const levelColor = (level: number) => {
-    const alpha = [0.10, 0.22, 0.38, 0.58, 0.82][Math.max(0, Math.min(level, 4))];
+    const alpha = [0.10, 0.22, 0.38, 0.58, 0.82][Math.max(0, Math.min(level, 4))] ?? 0.82;
 
     return rgba(theme.color.accent, alpha);
   };

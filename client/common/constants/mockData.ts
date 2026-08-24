@@ -361,55 +361,29 @@ export function getMockChatMessages(roomId: string): GetChatMessagesResult {
 
 // -----> Achievements <-----
 export const MOCK_ACHIEVEMENTS: Badge[] = [
-  {
-    badgeId: 'streak_30',
-    name: 'Monthly Master',
-    description: 'Study for 30 consecutive days',
-    iconKey: 'flame',
-    variant: 'red',
-    rarity: 'Rare',
-    category: 'streak',
-    requirementValue: 30,
-    currentProgress: 24,
-    status: 'in_progress',
-  },
-  {
-    badgeId: 'questions_500',
-    name: 'Knowledge Seeker',
-    description: 'Solve 500 questions',
-    iconKey: 'brain',
-    variant: 'purple',
-    rarity: 'Rare',
-    category: 'questions',
-    requirementValue: 500,
-    currentProgress: 500,
-    status: 'earned',
-    earnedAt: '2026-04-02T10:00:00.000Z',
-  },
-  {
-    badgeId: 'speed_20',
-    name: 'Speed Demon',
-    description: 'Finish 20 quizzes in half the time',
-    iconKey: 'zap',
-    variant: 'blue',
-    rarity: 'Rare',
-    category: 'speed',
-    requirementValue: 20,
-    currentProgress: 5,
-    status: 'in_progress',
-  },
-  {
-    badgeId: 'study_100',
-    name: 'Consistent',
-    description: 'Accumulate 100 study hours',
-    iconKey: 'clock',
-    variant: 'green',
-    rarity: 'Epic',
-    category: 'study',
-    requirementValue: 100,
-    currentProgress: 63.5,
-    status: 'in_progress',
-  },
+  { badgeId: 'streak_3', name: 'Getting Started', description: 'Study for 3 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Common', category: 'streak', requirementValue: 3, currentProgress: 3, status: 'earned', earnedAt: '2026-08-20T10:00:00.000Z' },
+  { badgeId: 'streak_7', name: 'Week Warrior', description: 'Study for 7 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Common', category: 'streak', requirementValue: 7, currentProgress: 7, status: 'earned', earnedAt: '2026-08-24T12:00:00.000Z' },
+  { badgeId: 'streak_14', name: 'Two-Week Titan', description: 'Study for 14 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Rare', category: 'streak', requirementValue: 14, currentProgress: 7, status: 'in_progress' },
+  { badgeId: 'streak_30', name: 'Monthly Master', description: 'Study for 30 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Rare', category: 'streak', requirementValue: 30, currentProgress: 7, status: 'in_progress' },
+
+  { badgeId: 'questions_50', name: 'First Steps', description: 'Solve 50 questions', iconKey: 'brain', variant: 'green', rarity: 'Common', category: 'questions', requirementValue: 50, currentProgress: 50, status: 'earned', earnedAt: '2026-08-15T09:30:00.000Z' },
+  { badgeId: 'questions_100', name: 'Question Starter', description: 'Solve 100 questions', iconKey: 'brain', variant: 'green', rarity: 'Common', category: 'questions', requirementValue: 100, currentProgress: 100, status: 'earned', earnedAt: '2026-08-22T14:15:00.000Z' },
+  { badgeId: 'questions_250', name: 'Rising Scholar', description: 'Solve 250 questions', iconKey: 'brain', variant: 'purple', rarity: 'Rare', category: 'questions', requirementValue: 250, currentProgress: 180, status: 'in_progress' },
+
+  { badgeId: 'perfect_quiz_1', name: 'First Perfection', description: 'Score 100% on a quiz', iconKey: 'check', variant: 'blue', rarity: 'Common', category: 'perfect_quiz', requirementValue: 1, currentProgress: 1, status: 'earned', earnedAt: '2026-08-18T16:00:00.000Z' },
+  { badgeId: 'perfect_quiz_5', name: 'Sharp Mind', description: '5 perfect quizzes', iconKey: 'check', variant: 'blue', rarity: 'Rare', category: 'perfect_quiz', requirementValue: 5, currentProgress: 3, status: 'in_progress' },
+
+  { badgeId: 'contests_5', name: 'Contest Rookie', description: 'Play 5 contests', iconKey: 'trophy', variant: 'gold', rarity: 'Common', category: 'contests', requirementValue: 5, currentProgress: 2, status: 'in_progress' },
+  { badgeId: 'contests_15', name: 'Contest Regular', description: 'Play 15 contests', iconKey: 'trophy', variant: 'gold', rarity: 'Rare', category: 'contests', requirementValue: 15, currentProgress: 0, status: 'locked' },
+
+  { badgeId: 'contest_90_3', name: 'Elite Performer', description: 'Score 90%+ in 3 contests', iconKey: 'target', variant: 'gold', rarity: 'Rare', category: 'contest_high_score', requirementValue: 3, currentProgress: 0, status: 'locked' },
+  { badgeId: 'hard_contest_5', name: 'Brave Beginner', description: 'Complete 5 hard contests', iconKey: 'shield', variant: 'red', rarity: 'Common', category: 'hard_contest', requirementValue: 5, currentProgress: 0, status: 'locked' },
+  { badgeId: 'speed_5', name: 'Quick Thinker', description: 'Finish 5 quizzes in half the time', iconKey: 'zap', variant: 'blue', rarity: 'Common', category: 'speed', requirementValue: 5, currentProgress: 1, status: 'in_progress' },
+  { badgeId: 'study_10', name: 'Dedicated Learner', description: 'Accumulate 10 study hours', iconKey: 'clock', variant: 'green', rarity: 'Common', category: 'study', requirementValue: 10, currentProgress: 4.5, status: 'in_progress' },
+  { badgeId: 'level_5', name: 'Rising Star', description: 'Reach level 5', iconKey: 'star', variant: 'green', rarity: 'Common', category: 'level', requirementValue: 5, currentProgress: 3, status: 'in_progress' },
+  { badgeId: 'subject_master_1', name: 'Specialist', description: 'Master 1 subject (70%+ accuracy)', iconKey: 'book', variant: 'green', rarity: 'Common', category: 'subject_mastery', requirementValue: 1, currentProgress: 0, status: 'locked' },
+  { badgeId: 'top3_1', name: 'Podium Finish', description: 'Finish top 3 in a contest', iconKey: 'medal', variant: 'gold', rarity: 'Rare', category: 'rank', requirementValue: 1, currentProgress: 0, status: 'locked' },
+  { badgeId: 'premium_member', name: 'Premium Member', description: 'Unlocked premium tier', iconKey: 'gem', variant: 'purple', rarity: 'Epic', category: 'special', requirementValue: 1, currentProgress: 0, status: 'locked' },
 ];
 
 

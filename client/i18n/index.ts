@@ -44,9 +44,11 @@ export function getLocaleProvider(locale = deviceLocale): I18nEngine {
   };
 
   if (Platform.OS === 'web') {
-    const lang = new URLSearchParams(window.location.search)
-      .get('locale')
-      ?.trim();
+    const search = (globalThis as typeof globalThis & {
+      location?: { search?: string };
+    }).location?.search ?? '';
+
+    const lang = new URLSearchParams(search).get('locale')?.trim();
     if (lang) i18n.locale = lang;
   }
 

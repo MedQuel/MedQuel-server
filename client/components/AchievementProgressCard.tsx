@@ -6,9 +6,8 @@ import { useTheme } from '../theme/ThemeContext';
 type Props = {
   earned: number;
   total: number;
-  gold: number;
-  silver: number;
-  bronze: number;
+  rank?: number | string;
+  level?: number;
   epReward: number;
 };
 
@@ -20,7 +19,7 @@ const alpha = (hex: string, opacity: number) => {
   return `rgba(${(i >> 16) & 255}, ${(i >> 8) & 255}, ${i & 255}, ${opacity})`;
 };
 
-export function AchievementProgressCard({ earned, total, gold, silver, bronze, epReward }: Props) {
+export function AchievementProgressCard({ earned, total, rank, level, epReward }: Props) {
   const { theme } = useTheme();
   const progress = total > 0 ? Math.min(100, Math.max(0, (earned / total) * 100)) : 0;
 
@@ -32,12 +31,6 @@ export function AchievementProgressCard({ earned, total, gold, silver, bronze, e
   const circleColor = alpha(theme.isDark ? theme.color.textPrimary : theme.color.textInverse, 0.08);
   const chipBg = alpha(theme.isDark ? theme.color.textPrimary : theme.color.textInverse, theme.isDark ? 0.08 : 0.14);
   const chipText = theme.isDark ? theme.color.textPrimary : theme.color.textInverse;
-
-  const legend = [
-    { key: 'gold', color: theme.color.warning, value: gold, label: theme.i18n.t('components.AchievementProgressCard.gold') },
-    { key: 'silver', color: theme.color.textMuted, value: silver, label: theme.i18n.t('components.AchievementProgressCard.silver') },
-    { key: 'bronze', color: alpha(theme.color.warning, 0.9), value: bronze, label: theme.i18n.t('components.AchievementProgressCard.bronze') },
-  ];
 
   return (
     <View
@@ -134,17 +127,32 @@ export function AchievementProgressCard({ earned, total, gold, silver, bronze, e
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', flex: 1, gap: theme.space.md }}>
-            {legend.map(item => (
-              <View key={item.key} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: theme.borderRadius.full,
-                    marginRight: 6,
-                    backgroundColor: item.color,
-                  }}
-                />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+              <Feather name="award" size={theme.fontSize.md} color={theme.color.warning} />
+              <Text
+                style={{
+                  color: mutedText,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('Rank') || 'Rank'}:
+              </Text>
+              <Text
+                style={{
+                  color: mainText,
+                  fontSize: theme.fontSize.sm,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.number,
+                }}
+              >
+                {typeof rank === 'number' && rank > 0 ? `#${rank}` : (rank ?? 'Unranked')}
+              </Text>
+            </View>
+
+            {level ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+                <Feather name="star" size={theme.fontSize.md} color={theme.color.info} />
                 <Text
                   style={{
                     color: mutedText,
@@ -152,10 +160,20 @@ export function AchievementProgressCard({ earned, total, gold, silver, bronze, e
                     fontFamily: theme.fontFamily.regular,
                   }}
                 >
-                  {item.value} {item.label}
+                  Lvl:
+                </Text>
+                <Text
+                  style={{
+                    color: mainText,
+                    fontSize: theme.fontSize.sm,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.number,
+                  }}
+                >
+                  {level}
                 </Text>
               </View>
-            ))}
+            ) : null}
           </View>
 
           <View

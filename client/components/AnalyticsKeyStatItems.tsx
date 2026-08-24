@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { formatStudyTime } from '../common/utils/formatStudyTime';
 
 type StatItem = {
   labelKey: string;
@@ -13,7 +14,7 @@ type Props = {
   totalCorrect: number;
   avgScore: number;
   bestSubject: string;
-  studyHours: number;
+  studyHours: number | string;
   longestStreak: number;
   weakSubject: string;
 };
@@ -28,6 +29,8 @@ export function AnalyticsKeyStatItems({
 }: Props) {
   const { theme } = useTheme();
 
+  const formattedStudyHours = typeof studyHours === 'number' ? formatStudyTime(studyHours) : studyHours;
+
   const stats: StatItem[][] = [
     [
       { labelKey: 'components.AnalyticsKeyStatItems.total_correct', value: String(totalCorrect), color: theme.color.accent },
@@ -35,7 +38,7 @@ export function AnalyticsKeyStatItems({
     ],
     [
       { labelKey: 'components.AnalyticsKeyStatItems.best_subject', value: bestSubject, color: theme.color.success },
-      { labelKey: 'components.AnalyticsKeyStatItems.study_hours', value: `${studyHours}h`, color: theme.color.warning },
+      { labelKey: 'components.AnalyticsKeyStatItems.study_hours', value: formattedStudyHours, color: theme.color.warning },
     ],
     [
       { labelKey: 'components.AnalyticsKeyStatItems.longest_streak', value: `${longestStreak} days`, color: theme.color.warning },
