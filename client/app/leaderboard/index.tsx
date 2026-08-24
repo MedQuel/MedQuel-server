@@ -139,6 +139,10 @@ export default function LeaderboardScreen() {
 
   const fetchLeaderboard = useCallback(
     async (showLoader = true) => {
+      if (scopeFilter === 'friends') {
+        if (showLoader) setIsLoading(false);
+        return;
+      }
       if (showLoader) setIsLoading(true);
 
       try {
@@ -155,10 +159,14 @@ export default function LeaderboardScreen() {
 
   useEffect(() => {
     let isMounted = true;
+    if (scopeFilter === 'friends') {
+      setIsLoading(false);
+      return;
+    }
     if (isMounted) fetchLeaderboard(true);
 
     return () => { isMounted = false };
-  }, [fetchLeaderboard]);
+  }, [fetchLeaderboard, scopeFilter]);
 
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;

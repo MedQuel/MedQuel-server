@@ -3,16 +3,31 @@ import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
 import { AchievementIcon } from './achievements/AchievementIcon';
-import { AchievementDefinition, EarnedAchievement, achievementCatalog } from '../common/constants/achievements';
+import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../common/constants/achievements';
+import type { Badge } from '../common/types/types';
 
+type EarnedItemInput = Partial<Badge> & {
+  id?: string;
+  badgeId?: string;
+  earnedAt?: string | null;
+  isNew?: boolean;
+};
 
 type Props = {
-  achievements: EarnedAchievement[];
+  achievements: EarnedItemInput[];
   title?: string;
   onViewAllPress?: () => void;
 };
 
-type BadgeItem = AchievementDefinition & EarnedAchievement & { order: number };
+type DisplayBadgeItem = {
+  id: string;
+  title: string;
+  iconKey: AchievementIconKey;
+  variant: AchievementVariant;
+  earnedAt?: string | null;
+  isNew?: boolean;
+  order: number;
+};
 
 const rgba = (hex: string, alpha: number) => {
   const normalized = hex.replace('#', '');
@@ -31,15 +46,11 @@ const resolveText = (value: string, fallback: string, key: string) => {
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
-const parseEarnedAt = (value?: string) => {
+const parseEarnedAt = (value?: string | null) => {
   if (!value) return -1;
-
   const text = value.trim().toLowerCase();
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
-  const week = 7 * day;
-  const month = 30 * day;
-  const year = 365 * day;
 
   if (text === 'today') return now;
   if (text === 'yesterday') return now - day;
@@ -52,9 +63,9 @@ const parseEarnedAt = (value?: string) => {
     const delta =
       unit?.startsWith('m') && !unit.startsWith('mo') ? 60 * 1000 :
       unit.startsWith('h') ? 60 * 60 * 1000 :
-      unit.startsWith('w') ? week :
-      unit.startsWith('mo') ? month :
-      unit.startsWith('y') ? year :
+      unit.startsWith('w') ? 7 * day :
+      unit.startsWith('mo') ? 30 * day :
+      unit.startsWith('y') ? 365 * day :
       day;
 
     return now - n * delta;
@@ -64,11 +75,9 @@ const parseEarnedAt = (value?: string) => {
   return Number.isNaN(parsed) ? -1 : parsed;
 };
 
-
 export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) {
   const { theme } = useTheme();
   const [cardWidth, setCardWidth] = React.useState<number>(0);
-
 
   const sectionTitle = resolveText(theme.i18n.t('components.EarnedBadgeCard.title'), title ?? 'Earned Badges', 'components.EarnedBadgeCard.title');
   const viewAllText = resolveText(theme.i18n.t('components.EarnedBadgeCard.view_all'), 'View All', 'components.EarnedBadgeCard.view_all');
@@ -77,11 +86,26 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
 
   const items = safeAchievements
-    .map((item, order): BadgeItem | null => {
-      const achievement = achievementCatalog[item.id];
-      return achievement ? { ...achievement, ...item, order } : null;
+    .map((item, order): DisplayBadgeItem | null => {
+      const id = item.badgeId || item.id;
+      if (!id) return null;
+
+      const catalogInfo = BADGE_CATALOG_MAP[id];
+      const name = item.name || catalogInfo?.name || id;
+      const iconKey = (item.iconKey || catalogInfo?.iconKey || 'award') as AchievementIconKey;
+      const variant = (item.variant || catalogInfo?.variant || 'gold') as AchievementVariant;
+
+      return {
+        id,
+        title: name,
+        iconKey,
+        variant,
+        earnedAt: item.earnedAt,
+        isNew: item.isNew,
+        order,
+      };
     })
-    .filter((item): item is BadgeItem => Boolean(item))
+    .filter((item): item is DisplayBadgeItem => Boolean(item))
     .sort((a, b) => {
       const diff = parseEarnedAt(b.earnedAt) - parseEarnedAt(a.earnedAt);
       return diff || a.order - b.order;
@@ -175,28 +199,28 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
                       <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
 
                       {item.isNew ? (
-                     <View
-                      style={{
-                        position: 'absolute',
-                        top: -10,
-                        right: -10,
-                        paddingVertical: theme.space.xs * 0.75,
-                        paddingHorizontal: theme.space.sm,
-                        borderRadius: theme.borderRadius.full,
-                        backgroundColor: theme.color.error,
-                       }}
-                >
-                      <Text
-                        style={{
-                          color: theme.color.textInverse,
-                          fontSize: theme.fontSize.xs,
-                          fontWeight: theme.fontWeight.bold,
-                          fontFamily: theme.fontFamily.number,
-                        }}
-                      >
-                        New
-                      </Text>
-                    </View>
+                        <View
+                          style={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            paddingVertical: theme.space.xs * 0.75,
+                            paddingHorizontal: theme.space.sm,
+                            borderRadius: theme.borderRadius.full,
+                            backgroundColor: theme.color.error,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: theme.color.textInverse,
+                              fontSize: theme.fontSize.xs,
+                              fontWeight: theme.fontWeight.bold,
+                              fontFamily: theme.fontFamily.number,
+                            }}
+                          >
+                            New
+                          </Text>
+                        </View>
                       ) : null}
                     </View>
 

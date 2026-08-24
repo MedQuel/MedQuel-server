@@ -32,7 +32,7 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
     { rank: 2, user: topThree[1] },
     { rank: 1, user: topThree[0] },
     { rank: 3, user: topThree[2] },
-  ].filter((item) => item.user);
+  ].filter((item): item is { rank: 1 | 2 | 3; user: User } => item.user !== undefined);
 
   const rankStyles = {
     1: {
@@ -41,12 +41,12 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
       podiumHeight: theme.space.xxl * 2,
     },
     2: {
-      color: '#94A3B8',
+      color: theme.color.textSecondary,
       avatarSize: theme.space.xxl * 1.25,
       podiumHeight: theme.space.xxl * 1.5,
     },
     3: {
-      color: '#CD7F32',
+      color: theme.color.info,
       avatarSize: theme.space.xxl * 1.2,
       podiumHeight: theme.space.xxl,
     },
@@ -54,9 +54,7 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
 
   return (
     <LinearGradient
-      colors={
-        theme.isDark ? ['#102753', '#0e1d3d', '#070e1d'] : ['#dfeafc', '#e0e8f5', '#eef0f7']
-      }
+      colors={[theme.color.card, theme.color.surface]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
@@ -66,9 +64,6 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
         borderWidth: 2,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl * 2,
-        boxShadow: theme.isDark
-          ? '0px 10px 24px rgba(0,0,0,0.35)'
-          : '0px 8px 20px rgba(15,23,42,0.06)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -103,10 +98,7 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
                       borderWidth: 2.5,
                       borderRadius: theme.borderRadius.full,
                       borderColor: style.color,
-                      backgroundColor: style.color + '88',
-                      boxShadow: isWinner
-                        ? `0px 0px 14px ${theme.color.warning}99`
-                        : undefined,
+                      backgroundColor: theme.color.surface,
                     }}
                   >
                     <Text
