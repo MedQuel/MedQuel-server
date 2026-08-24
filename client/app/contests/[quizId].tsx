@@ -21,7 +21,7 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function mapClientQuestion(q: ClientQuestion): QuizQuestion {
+function mapClientQuestion(q: ClientQuestion, fallbackDifficulty?: string): QuizQuestion {
   return {
     id: q.questionId,
     subject: q.subject ?? '',
@@ -34,6 +34,7 @@ function mapClientQuestion(q: ClientQuestion): QuizQuestion {
       { label: 'D', text: q.optionD },
     ],
     points: q.marks,
+    difficulty: (q.difficulty ?? fallbackDifficulty) as any,
   };
 }
 
@@ -92,16 +93,31 @@ function QuizTimer({ totalSeconds, paused, currentQuestionId, timeSpentRef, onEx
 }
 
 export default function QuizScreen() {
-  const params = useLocalSearchParams<{ quizId: string; mode?: string; practice?: string; totalQuestions?: string; sessionData?: string }>();
+  const params = useLocalSearchParams<{
+    quizId: string;
+    title?: string;
+    subject?: string;
+    difficulty?: string;
+    mode?: string;
+    practice?: string;
+    totalQuestions?: string;
+    sessionData?: string;
+  }>();
   const { theme } = useTheme();
   useBottomBar(false);
   const router = useRouter();
   const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
 
   const quizId = params.quizId;
-  const isPractice = params.practice === '1' || params.mode === 'subject';
+  const isPractice =
+    params.practice === '1' ||
+    params.practice === 'true' ||
+    params.mode === 'practice' ||
+    params.mode === 'subject';
 
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionSubject, setSessionSubject] = useState<string>('');
+  const [sessionDifficulty, setSessionDifficulty] = useState<string>('');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -137,19 +153,56 @@ export default function QuizScreen() {
 
           if (parsedSession) {
             loadedSessionId = parsedSession.sessionId;
-            loadedQuestions = parsedSession.questions.map(mapClientQuestion);
-            loadedTimeLimit = 1800; 
+            const sessionDiff = parsedSession.difficulty || params.difficulty || '';
+            const subj = parsedSession.subject || params.subject || '';
+
+            setSessionSubject(subj);
+            setSessionDifficulty(sessionDiff);
+
+            loadedQuestions = parsedSession.questions.map((q) => mapClientQuestion(q, sessionDiff));
+            loadedTimeLimit = parsedSession.timeLimitSecs ?? 1800;
           }
         }
-        if (!loadedSessionId) {
+
+        if (!loadedSessionId && isPractice && typeof (api.quiz as any)?.startPracticeSession === 'function') {
+          try {
+            const practiceSession = await (api.quiz as any).startPracticeSession({
+              subject: params.subject || 'General',
+              difficulty: params.difficulty || 'medium',
+              count: Number(params.totalQuestions || 10),
+            });
+            if (practiceSession) {
+              loadedSessionId = practiceSession.sessionId;
+              const sessionDiff = practiceSession.difficulty || params.difficulty || '';
+              const subj = practiceSession.subject || params.subject || '';
+              setSessionSubject(subj);
+              setSessionDifficulty(sessionDiff);
+              loadedQuestions = (practiceSession.questions || []).map((q: any) => mapClientQuestion(q, sessionDiff));
+              loadedTimeLimit = practiceSession.timeLimitSecs ?? 1800;
+            }
+          } catch {
+          }
+        }
+
+        if (!loadedSessionId && quizId) {
           const contestSession = await api.contest.joinContest(quizId);
           if (cancelled) return;
           loadedSessionId = contestSession.sessionId;
-          loadedQuestions = contestSession.questions.map(mapClientQuestion);
+
+          const sessionDiff = contestSession.difficulty || params.difficulty || '';
+          const subj = contestSession.subject || params.subject || '';
+
+          setSessionSubject(subj);
+          setSessionDifficulty(sessionDiff);
+
+          loadedQuestions = contestSession.questions.map((q) => mapClientQuestion(q, sessionDiff));
           loadedTimeLimit = contestSession.timeLimitSecs ?? 1800;
         }
 
         if (cancelled) return;
+        if (!loadedSessionId || loadedQuestions.length === 0) {
+          throw new Error(t('contests.quizScreen.load_error'));
+        }
 
         setSessionId(loadedSessionId);
         setSessionTimeLimitSecs(loadedTimeLimit);
@@ -176,12 +229,12 @@ export default function QuizScreen() {
     return () => {
       cancelled = true;
     };
-  }, [quizId, params.sessionData]);
+  }, [quizId, params.sessionData, params.difficulty, params.subject, isPractice, params.totalQuestions]);
 
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
 
-const handleFinish = useCallback(async () => {
+  const handleFinish = useCallback(async () => {
     if (submitting || !sessionId) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -191,19 +244,26 @@ const handleFinish = useCallback(async () => {
         questionId: a.questionId,
         selectedOption: (a.selectedLabel && a.selectedLabel !== 'SKIPPED') ? a.selectedLabel : null,
       }));
+      const totalTimeSpent = Object.values(timeSpentRef.current).reduce((acc, curr) => acc + curr, 0);
 
       const result = await api.quiz.submitQuizSession({ sessionId, answers: answerInputs });
 
       router.push({
         pathname: '/contests/postQuizScreen',
         params: {
-          title: currentQuestion?.subject ?? t('contests.postQuizScreen.default_title'),
+          title: params.title ?? params.subject ?? sessionSubject ?? currentQuestion?.subject ?? t('contests.postQuizScreen.default_title'),
+          subject: sessionSubject || params.subject || '',
+          difficulty: sessionDifficulty || params.difficulty || '',
           questions: JSON.stringify(
             questions.map((q) => ({ id: q.id, subject: q.subject, question: q.question, options: q.options }))
           ),
           submission: JSON.stringify(result),
           practice: isPractice ? '1' : '0',
+          mode: isPractice ? 'practice' : 'contest',
           contestId: quizId,
+          quizId: quizId,
+          totalQuestions: String(questions.length),
+          timeTaken: String(totalTimeSpent),
         },
       });
     } catch (err) {
@@ -212,8 +272,8 @@ const handleFinish = useCallback(async () => {
       setSubmitError(apiErr.message);
       setSubmitting(false);
     }
-  }, [answers, currentQuestion?.subject, isPractice, questions, quizId, router, sessionId, submitting, t]);
-  
+  }, [answers, currentQuestion?.subject, isPractice, params.difficulty, params.subject, params.title, questions, quizId, router, sessionId, sessionDifficulty, sessionSubject, submitting, t]);
+
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
     setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId]!, ...patch } }));
   };
@@ -282,6 +342,8 @@ const handleFinish = useCallback(async () => {
     );
   }
 
+  const displayTitle = params.title || params.subject || sessionSubject || currentQuestion.subject || t('common.quizzes');
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
@@ -315,21 +377,21 @@ const handleFinish = useCallback(async () => {
             paddingHorizontal: theme.space.md,
             borderWidth: 1,
             borderRadius: theme.borderRadius.full,
-            borderColor: isPractice ? theme.color.info + '55' : theme.color.warning + '55',
-            backgroundColor: isPractice ? theme.color.info + '22' : theme.color.warning + '22',
+            borderColor: theme.color.accent + '55',
+            backgroundColor: theme.color.accent + '22',
+            maxWidth: '60%',
           }}
         >
           <Text
+            numberOfLines={1}
             style={{
-              color: isPractice ? theme.color.info : theme.color.warning,
+              color: theme.color.accent,
               fontSize: theme.fontSize.sm,
               fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
-            {isPractice
-              ? t('contests.quizScreen.practice_mode')
-              : t('contests.quizScreen.answered_count', { answered: answeredCount, total: questions.length })}
+            {displayTitle}
           </Text>
         </View>
       </View>
@@ -343,7 +405,7 @@ const handleFinish = useCallback(async () => {
         showsVerticalScrollIndicator={false}
       >
         <QuestionCard
-          subject={currentQuestion.subject}
+          difficulty={(currentQuestion as any).difficulty || sessionDifficulty || params.difficulty}
           question={currentQuestion.question}
           isBookmarked={currentAnswer.isBookmarked}
           isFlagged={currentAnswer.isFlagged}
@@ -539,7 +601,7 @@ const handleFinish = useCallback(async () => {
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setActiveModal(null)}
-          style={{ flex: 1, backgroundColor: theme.color.textPrimary + '80' }}
+          style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
         />
         <View
           style={{
@@ -556,7 +618,14 @@ const handleFinish = useCallback(async () => {
           }}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+            <Text
+              style={{
+                color: theme.color.textPrimary,
+                fontSize: theme.fontSize.lg,
+                fontWeight: theme.fontWeight.bold,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
               {t('common.review')}
             </Text>
             <TouchableOpacity onPress={() => setActiveModal(null)}>
@@ -572,10 +641,23 @@ const handleFinish = useCallback(async () => {
               { label: t('contests.quizScreen.saved'), value: bookmarkedQuestions.length, color: theme.color.accent },
             ].map((stat) => (
               <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-                <Text style={{ color: stat.color, fontSize: theme.fontSize.lg, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.number }}>
+                <Text
+                  style={{
+                    color: stat.color,
+                    fontSize: theme.fontSize.lg,
+                    fontWeight: theme.fontWeight.bold as any,
+                    fontFamily: theme.fontFamily.number,
+                  }}
+                >
                   {stat.value}
                 </Text>
-                <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>
+                <Text
+                  style={{
+                    color: theme.color.textMuted,
+                    fontSize: theme.fontSize.xs,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
                   {stat.label}
                 </Text>
               </View>
@@ -602,7 +684,14 @@ const handleFinish = useCallback(async () => {
                       backgroundColor: status.color + '18',
                     }}
                   >
-                    <Text style={{ color: status.color, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
+                    <Text
+                      style={{
+                        color: status.color,
+                        fontSize: theme.fontSize.sm,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.number,
+                      }}
+                    >
                       {idx + 1}
                     </Text>
                   </TouchableOpacity>
@@ -619,7 +708,15 @@ const handleFinish = useCallback(async () => {
               ].map((item) => (
                 <View key={item.label} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
                   <Feather name={item.icon} size={theme.fontSize.sm} color={item.color} />
-                  <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{item.label}</Text>
+                  <Text
+                    style={{
+                      color: theme.color.textSecondary,
+                      fontSize: theme.fontSize.xs,
+                      fontFamily: theme.fontFamily.regular,
+                    }}
+                  >
+                    {item.label}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -640,7 +737,14 @@ const handleFinish = useCallback(async () => {
             {submitting ? (
               <ActivityIndicator size="small" color={theme.color.textInverse} />
             ) : (
-              <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+              <Text
+                style={{
+                  color: theme.color.textInverse,
+                  fontSize: theme.fontSize.md,
+                  fontWeight: theme.fontWeight.bold as any,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
                 {t('contests.quizScreen.submit_quiz')}
               </Text>
             )}

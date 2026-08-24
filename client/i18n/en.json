@@ -20,6 +20,9 @@
     "error": "Error",
     "share": "Share",
     "back": "Back",
+    "prev": "Prev",
+    "next": "Next",
+    "review": "Review",
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard",
@@ -161,7 +164,12 @@
     "view_all": "View All",
     "practiceBySubject": {
       "title": "Practice by Subject",
-      "subtitle": "Sharpen your skills in specific subjects"
+      "subtitle": "Sharpen your skills in specific subjects",
+      "select_topic": "Select Topic",
+      "all_topics": "All Topics",
+      "question_count": "Question Count",
+      "time_limit": "Time Limit",
+      "start_practice": "Start Practice"
     }
   },
 
@@ -246,6 +254,19 @@
     "filters": {
       "all": "All",
       "premium": "Premium"
+    },
+    "quizScreen": {
+      "loading": "Loading quiz session...",
+      "load_error": "Could not load quiz session.",
+      "practice_mode": "Practice Mode",
+      "answered": "Answered",
+      "skipped": "Skipped",
+      "flagged": "Flagged",
+      "saved": "Saved",
+      "submit_quiz": "Submit Quiz",
+      "finish": "Finish",
+      "figure_label": "Figure",
+      "answered_count": "{{answered}} / {{total}} Answered"
     },
     "postQuizScreen": {
       "quiz_completed": "Quiz Complete!",

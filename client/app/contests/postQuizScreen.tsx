@@ -16,11 +16,21 @@ import type { SubmitQuizSessionResult, SelectedOption } from '../../common/types
 
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
 
+function formatDuration(seconds: number): string {
+  if (!seconds || isNaN(seconds) || seconds <= 0) return '0s';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0 && s > 0) return `${m}m ${s}s`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
+
 function buildQuizResult(
   submission: SubmitQuizSessionResult,
   reviewQuestions: ReviewQuestion[],
   isPractice: boolean,
   title: string,
+  formattedTime: string,
   t: Translate
 ): QuizResultData {
   const total = reviewQuestions.length;
@@ -59,7 +69,7 @@ function buildQuizResult(
     totalQuestions: total,
     scorePercent,
     epEarned,
-    formattedTime: 'N/A',
+    formattedTime,
     percentileMessage: scorePercent >= 80
       ? t('contests.postQuizScreen.percentile_high')
       : t('contests.postQuizScreen.percentile_low'),
@@ -69,8 +79,8 @@ function buildQuizResult(
       : null,
     statBoxes: [
       { key: 'correct', icon: 'check', value: String(correctCount), labelKey: 'contests.postQuizScreen.correct', colorToken: 'success' },
-      { key: 'wrong', icon: 'x', value: String(wrongCount), labelKey: 'contests.postQuizScreen.wrong', colorToken: 'error' },
-      { key: 'time', icon: 'clock', value: `${skippedCount} skipped`, labelKey: 'contests.postQuizScreen.time', colorToken: 'textPrimary' },
+      { key: 'wrong', icon: 'x', value: String(wrongCount), labelKey: 'contests.postQuizScreen.wrong', colorToken: 'error' }, 
+      { key: 'time', icon: 'clock', value: formattedTime, labelKey: 'contests.postQuizScreen.time', colorToken: 'textPrimary' },
       { key: 'xp', icon: 'trending-up', value: `+${submission.xpEarned ?? 0}`, labelKey: 'contests.postQuizScreen.xp_earned', colorToken: 'accent' },
     ],
     reviewItems,
@@ -94,9 +104,19 @@ export default function PostQuizScreen() {
   const [weakTopics, setWeakTopics] = useState<{ name: string; score: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const contestId = params.contestId as string | undefined;
-  const isPractice = params.practice === '1';
+  const contestId = (params.contestId ?? params.quizId) as string | undefined;
+  const isPractice =
+    params.practice === '1' ||
+    params.practice === 'true' ||
+    params.isPractice === '1' ||
+    params.isPractice === 'true' ||
+    params.mode === 'practice' ||
+    params.mode === 'subject';
+
   const title = (params.title as string) ?? t('contests.postQuizScreen.default_title');
+
+  const timeTakenSecs = Number(params.timeTaken ?? 0);
+  const formattedTime = timeTakenSecs > 0 ? formatDuration(timeTakenSecs) : 'N/A';
 
   let submission: SubmitQuizSessionResult | null = null;
   let reviewQuestions: ReviewQuestion[] = [];
@@ -167,7 +187,7 @@ export default function PostQuizScreen() {
     );
   }
 
-  const result = buildQuizResult(submission, reviewQuestions, isPractice, title, t);
+  const result = buildQuizResult(submission, reviewQuestions, isPractice, title, formattedTime, t);
 
   const cardBg = theme.isDark ? theme.color.card : theme.color.accent;
   const subText = theme.color.textSecondary;
@@ -180,6 +200,14 @@ export default function PostQuizScreen() {
     if (token === 'error') return theme.color.error;
     if (token === 'accent') return theme.color.accent;
     return theme.color.textPrimary;
+  };
+
+  const handleBack = () => {
+    if (isPractice) {
+      router.push('/practiceBySubject');
+    } else {
+      router.push('/contests');
+    }
   };
 
   return (
@@ -196,17 +224,25 @@ export default function PostQuizScreen() {
             }}
           >
             <View
-              pointerEvents='none'
+              pointerEvents="none"
               style={{
-                position: 'absolute', top: -60, right: -60, width: 180, height: 180,
+                position: 'absolute',
+                top: -60,
+                right: -60,
+                width: 180,
+                height: 180,
                 borderRadius: theme.borderRadius.full,
                 backgroundColor: theme.isDark ? theme.color.accent + '18' : theme.color.surface + '20',
               }}
             />
             <View
-              pointerEvents='none'
+              pointerEvents="none"
               style={{
-                position: 'absolute', bottom: -40, left: -40, width: 130, height: 130,
+                position: 'absolute',
+                bottom: -40,
+                left: -40,
+                width: 130,
+                height: 130,
                 borderRadius: theme.borderRadius.full,
                 backgroundColor: theme.isDark ? theme.color.accent + '10' : theme.color.surface + '10',
               }}
@@ -215,15 +251,23 @@ export default function PostQuizScreen() {
             <View style={{ gap: theme.space.xs, alignItems: 'center' }}>
               <Text
                 style={{
-                  color: theme.color.textInverse,
+                  color: theme.color.textPrimary,
                   fontSize: theme.fontSize.xxl,
                   fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.bold ?? theme.fontFamily.regular,
+                  textAlign: 'center',
                 }}
               >
                 {t('contests.postQuizScreen.quiz_completed')}
               </Text>
-              <Text style={{ color: subText, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.light }}>
+              <Text
+                style={{
+                  color: subText,
+                  fontSize: theme.fontSize.md,
+                  fontFamily: theme.fontFamily.bold ?? theme.fontFamily.light,
+                  textAlign: 'center',
+                }}
+              >
                 {`${result.title} · ${result.totalQuestions} ${t('contests.questions')}`}
               </Text>
             </View>
@@ -232,9 +276,14 @@ export default function PostQuizScreen() {
 
             <View
               style={{
-                flexDirection: 'row', gap: theme.space.sm, alignItems: 'center',
-                paddingVertical: theme.space.sm + 2, paddingHorizontal: theme.space.xl,
-                borderWidth: 1.5, borderColor: epBorder, borderRadius: theme.borderRadius.full,
+                flexDirection: 'row',
+                gap: theme.space.sm,
+                alignItems: 'center',
+                paddingVertical: theme.space.sm + 2,
+                paddingHorizontal: theme.space.xl,
+                borderWidth: 1.5,
+                borderColor: epBorder,
+                borderRadius: theme.borderRadius.full,
                 backgroundColor: epBg,
               }}
             >
@@ -250,8 +299,13 @@ export default function PostQuizScreen() {
               <View
                 key={stat.key}
                 style={{
-                  flex: 1, gap: theme.space.xs, alignItems: 'center', paddingVertical: theme.space.md,
-                  borderWidth: 1, borderColor: theme.color.border, borderRadius: theme.borderRadius.xl,
+                  flex: 1,
+                  gap: theme.space.xs,
+                  alignItems: 'center',
+                  paddingVertical: theme.space.md,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.xl,
                   backgroundColor: theme.color.card,
                 }}
               >
@@ -268,13 +322,19 @@ export default function PostQuizScreen() {
 
           <View
             style={{
-              flexDirection: 'row', gap: theme.space.sm, alignItems: 'center', padding: theme.space.md,
-              marginTop: theme.space.md, marginHorizontal: theme.space.md,
-              borderWidth: 1, borderRadius: theme.borderRadius.xl,
-              borderColor: theme.color.success + '44', backgroundColor: theme.color.success + '12',
+              flexDirection: 'row',
+              gap: theme.space.sm,
+              alignItems: 'center',
+              padding: theme.space.md,
+              marginTop: theme.space.md,
+              marginHorizontal: theme.space.md,
+              borderWidth: 1,
+              borderRadius: theme.borderRadius.xl,
+              borderColor: theme.color.success + '44',
+              backgroundColor: theme.color.success + '12',
             }}
           >
-            <Feather name='trending-up' size={theme.fontSize.md} color={theme.color.success} />
+            <Feather name="trending-up" size={theme.fontSize.md} color={theme.color.success} />
             <Text style={{ color: theme.color.success, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
               {result.percentileMessage}
             </Text>
@@ -293,69 +353,81 @@ export default function PostQuizScreen() {
 
         <View
           style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            padding: theme.space.md, gap: theme.space.sm,
-            borderTopWidth: 1, borderTopColor: theme.color.border,
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: theme.space.md,
+            gap: theme.space.sm,
+            borderTopWidth: 1,
+            borderTopColor: theme.color.border,
             backgroundColor: theme.color.background,
           }}
         >
           <TouchableOpacity
             onPress={() => setShowReview(true)}
             style={{
-              flexDirection: 'row', gap: theme.space.sm, alignItems: 'center', justifyContent: 'center',
-              paddingVertical: theme.space.md, borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.accent,
+              flexDirection: 'row',
+              gap: theme.space.sm,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: theme.space.md,
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.color.accent,
             }}
           >
-            <Feather name='book-open' size={theme.fontSize.lg} color={theme.color.textInverse} />
+            <Feather name="book-open" size={theme.fontSize.lg} color={theme.color.textInverse} />
             <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
               {t('contests.postQuizScreen.review_answers')}
             </Text>
           </TouchableOpacity>
 
           <View style={{ flexDirection: 'row', gap: theme.space.sm }}>
-            <TouchableOpacity
-              onPress={() => {
-                if (contestId) {
-                  router.push({ pathname: '/contests/preQuizScreen', params: { contestId } });
-                } else {
-                  router.push('/contests');
-                }
-              }}
-              style={{
-                flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
-                paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
-              }}
-            >
-              <Feather name='rotate-ccw' size={theme.fontSize.sm} color={theme.color.textSecondary} />
-              <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
-                {t('common.retry')}
-              </Text>
-            </TouchableOpacity>
+            {!isPractice && (
+              <TouchableOpacity
+                onPress={() => {
+                  if (contestId) {
+                    router.push({ pathname: '/contests/preQuizScreen', params: { contestId } });
+                  } else {
+                    router.push('/contests');
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  gap: theme.space.xs,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: theme.space.sm * 1.5,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.card,
+                }}
+              >
+                <Feather name="rotate-ccw" size={theme.fontSize.sm} color={theme.color.textSecondary} />
+                <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+                  {t('common.retry')}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
-              onPress={() => {}}
+              onPress={handleBack}
               style={{
-                flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
-                paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
+                flex: 1,
+                flexDirection: 'row',
+                gap: theme.space.xs,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: theme.space.sm * 1.5,
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                borderRadius: theme.borderRadius.lg,
+                backgroundColor: theme.color.card,
               }}
             >
-              <Feather name='share-2' size={theme.fontSize.sm} color={theme.color.textSecondary} />
-              <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
-                {t('common.share')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push('/contests')}
-              style={{
-                flex: 1, flexDirection: 'row', gap: theme.space.xs, alignItems: 'center', justifyContent: 'center',
-                paddingVertical: theme.space.sm * 1.5, borderWidth: 1, borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.lg, backgroundColor: theme.color.card,
-              }}
-            >
-              <Feather name='chevron-left' size={theme.fontSize.sm} color={theme.color.textSecondary} />
+              <Feather name="chevron-left" size={theme.fontSize.sm} color={theme.color.textSecondary} />
               <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
                 {t('common.back')}
               </Text>
@@ -363,17 +435,23 @@ export default function PostQuizScreen() {
           </View>
         </View>
 
-        <Modal visible={showReview} transparent animationType='slide'>
+        <Modal visible={showReview} transparent animationType="slide">
           <TouchableOpacity
             activeOpacity={1}
             onPress={() => setShowReview(false)}
-            style={{ flex: 1, backgroundColor: theme.color.textPrimary + '80' }}
+            style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           />
           <View
             style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '80%',
-              gap: theme.space.md, padding: theme.space.lg,
-              borderTopLeftRadius: theme.borderRadius.xl + 4, borderTopRightRadius: theme.borderRadius.xl + 4,
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxHeight: '80%',
+              gap: theme.space.md,
+              padding: theme.space.lg,
+              borderTopLeftRadius: theme.borderRadius.xl + 4,
+              borderTopRightRadius: theme.borderRadius.xl + 4,
               backgroundColor: theme.color.card,
             }}
           >
@@ -382,7 +460,7 @@ export default function PostQuizScreen() {
                 {t('contests.postQuizScreen.review_answers')}
               </Text>
               <TouchableOpacity onPress={() => setShowReview(false)}>
-                <Feather name='x' size={theme.fontSize.xl} color={theme.color.textMuted} />
+                <Feather name="x" size={theme.fontSize.xl} color={theme.color.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -408,8 +486,11 @@ export default function PostQuizScreen() {
                     <View
                       key={item.id}
                       style={{
-                        gap: theme.space.sm, padding: theme.space.md, borderWidth: 1,
-                        borderColor: statusColor + '44', borderRadius: theme.borderRadius.xl,
+                        gap: theme.space.sm,
+                        padding: theme.space.md,
+                        borderWidth: 1,
+                        borderColor: statusColor + '44',
+                        borderRadius: theme.borderRadius.xl,
                         backgroundColor: statusColor + '0C',
                       }}
                     >
@@ -423,8 +504,11 @@ export default function PostQuizScreen() {
                       {item.selectedText && !item.isCorrect && (
                         <View
                           style={{
-                            alignSelf: 'flex-start', paddingVertical: theme.space.xs, paddingHorizontal: theme.space.sm,
-                            borderRadius: theme.borderRadius.md, backgroundColor: theme.color.error + '18',
+                            alignSelf: 'flex-start',
+                            paddingVertical: theme.space.xs,
+                            paddingHorizontal: theme.space.sm,
+                            borderRadius: theme.borderRadius.md,
+                            backgroundColor: theme.color.error + '18',
                           }}
                         >
                           <Text style={{ color: theme.color.error, fontSize: theme.fontSize.xs, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
@@ -435,8 +519,11 @@ export default function PostQuizScreen() {
 
                       <View
                         style={{
-                          alignSelf: 'flex-start', paddingVertical: theme.space.xs, paddingHorizontal: theme.space.sm,
-                          borderRadius: theme.borderRadius.md, backgroundColor: theme.color.success + '18',
+                          alignSelf: 'flex-start',
+                          paddingVertical: theme.space.xs,
+                          paddingHorizontal: theme.space.sm,
+                          borderRadius: theme.borderRadius.md,
+                          backgroundColor: theme.color.success + '18',
                         }}
                       >
                         <Text style={{ color: theme.color.success, fontSize: theme.fontSize.xs, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>

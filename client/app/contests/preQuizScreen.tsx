@@ -11,11 +11,13 @@ import { useBottomBar } from '@/common/context/useBottomBar';
 import { normalizeError } from '../../common/api/api.errors';
 import { ContestDetailCard } from '../../components/ContestDetailCard';
 import { ContestDifficultyCard } from '../../components/ContestDifficultyCard';
-import type { PreQuizData, QuizRule, StatItemProps } from '../../common/types/contestTypes';
+import type { PreQuizData, QuizRule, QuizTopic } from '../../common/types/contestTypes';
 
+function buildRules(markingScheme?: Contest['markingScheme']): QuizRule[] {
+  const correct = markingScheme?.correct ?? 4;
+  const wrong = markingScheme?.wrong ?? -1;
+  const skipped = markingScheme?.skipped ?? 0;
 
-function buildRules(markingScheme: Contest['markingScheme']): QuizRule[] {
-  const { correct, wrong, skipped } = markingScheme;
   return [
     { id: '1', points: correct, description: 'points for correct answer', icon: 'plus-circle', color: 'success' },
     { id: '2', points: wrong, description: 'point for wrong answer', icon: 'minus-circle', color: 'error' },
@@ -24,44 +26,68 @@ function buildRules(markingScheme: Contest['markingScheme']): QuizRule[] {
   ];
 }
 
-function mapDifficulty(difficulty: Contest['difficulty']): PreQuizData['difficulty'] {
-  return difficulty === 'medium' ? 'intermediate' : difficulty;
+function mapDifficulty(difficulty?: Contest['difficulty']): PreQuizData['difficulty'] {
+  if (difficulty === 'medium') return 'intermediate';
+  if (difficulty === 'easy' || difficulty === 'hard') return difficulty;
+  return 'intermediate';
 }
 
-function mapContestToPreQuizData(contest: Contest): PreQuizData {
+function extractTopics(contest: any): QuizTopic[] {
+  const rawList: string[] =
+    (Array.isArray(contest.topics) && contest.topics.length > 0 && contest.topics) ||
+    (Array.isArray(contest.subtopics) && contest.subtopics.length > 0 && contest.subtopics) ||
+    (Array.isArray(contest.topicList) && contest.topicList.length > 0 && contest.topicList) ||
+    (Array.isArray(contest.tags) && contest.tags.length > 0 && contest.tags) ||
+    [];
+
+  if (rawList.length > 0) {
+    return rawList.map((label: string, i: number) => ({ id: String(i), label: String(label) }));
+  }
+
+  if (contest.subject) {
+    return [{ id: '0', label: `${contest.subject} Core Concepts` }];
+  }
+
+  return [{ id: '0', label: 'Clinical Knowledge' }];
+}
+
+function mapContestToPreQuizData(
+  contest: Contest,
+  userStats?: { bestScore?: number; attempts?: number; bestRank?: number }
+): PreQuizData {
   return {
     contestId: contest.contestId,
-    subtitle: contest.contestType.toUpperCase(),
+    subtitle: (contest.contestType ?? 'CONTEST').toUpperCase(),
     title: contest.title,
     creator: 'MedQuel',
     creatorSpecialty: contest.subject,
     qCount: contest.totalQuestions,
-    timeMinutes: Math.round(contest.timeLimitSecs / 60),
+    timeMinutes: Math.round((contest.timeLimitSecs ?? 1200) / 60),
     epReward: contest.epReward,
-    passPercentage: contest.passPercent,
-    bestScore: 0,
-    attempts: 0,
-    bestRank: 0,
+    passPercentage: contest.passPercent ?? 60,
+    bestScore: userStats?.bestScore ?? 0,
+    attempts: userStats?.attempts ?? 0,
+    bestRank: userStats?.bestRank ?? 0,
     difficulty: mapDifficulty(contest.difficulty),
-    recommended: contest.recommendedLevel,
-    topics: contest.topics.map((label, i) => ({ id: String(i), label })),
+    recommended: contest.recommendedLevel ?? 'All Levels',
+    topics: extractTopics(contest),
     rules: buildRules(contest.markingScheme),
   };
 }
 
-function StatItem({ value, label, color }: StatItemProps) {
-  const { theme } = useTheme();
-  return (
-    <View style={{ flex: 1, alignItems: 'center', gap: theme.space.xs }}>
-      <Text style={{ color, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
-        {value}
-      </Text>
-      <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
+// function StatItem({ value, label, color }: StatItemProps) {
+//   const { theme } = useTheme();
+//   return (
+//     <View style={{ flex: 1, alignItems: 'center', gap: theme.space.xs }}>
+//       <Text style={{ color, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
+//         {value}
+//       </Text>
+//       <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light }}>
+//         {label}
+//       </Text>
+//     </View>
+//   );
+// }
 
 export default function PreQuizScreen() {
   const { theme } = useTheme();
@@ -74,7 +100,6 @@ export default function PreQuizScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-
   useEffect(() => {
     if (!contestId) {
       setError('No contest selected.');
@@ -84,14 +109,37 @@ export default function PreQuizScreen() {
 
     let cancelled = false;
 
-    async function fetchContest() {
+    async function fetchContestAndStats() {
       setLoading(true);
       setError(null);
       try {
-        const contest = await api.contest.getContest(contestId!);
+        const [contestRes, analyticsRes] = await Promise.allSettled([
+          api.contest.getContest(contestId!),
+          api.analytics.getAnalytics(),
+        ]);
+
         if (cancelled) return;
-        if (contest) {
-          setData(mapContestToPreQuizData(contest));
+
+        if (contestRes.status === 'fulfilled' && contestRes.value) {
+          const contest = contestRes.value;
+
+          // Accurately filter user attempts for this specific contest
+          let userStats = { bestScore: 0, attempts: 0, bestRank: 0 };
+          if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
+            const analytics = analyticsRes.value;
+            const contestAttempts = (analytics.recentAttempts ?? []).filter(
+              (a: any) => a.contestId === contest.contestId || a.quizId === contest.contestId
+            );
+
+            if (contestAttempts.length > 0) {
+              userStats.attempts = contestAttempts.length;
+              userStats.bestScore = Math.max(...contestAttempts.map((a: any) => a.scorePercent ?? a.score ?? 0));
+            }
+          }
+
+          setData(mapContestToPreQuizData(contest, userStats));
+        } else {
+          throw new Error('Contest details could not be found.');
         }
       } catch (err) {
         if (cancelled) return;
@@ -102,8 +150,7 @@ export default function PreQuizScreen() {
         if (!cancelled) setLoading(false);
       }
     }
-
-    fetchContest();
+    fetchContestAndStats();
     return () => {
       cancelled = true;
     };
@@ -223,7 +270,7 @@ export default function PreQuizScreen() {
           passPercentage={data.passPercentage}
         />
 
-        <View
+        {/* <View
           style={{
             flexDirection: 'row',
             padding: theme.space.md,
@@ -233,12 +280,12 @@ export default function PreQuizScreen() {
             backgroundColor: theme.color.card,
           }}
         >
-          <StatItem value={`${data.bestScore}%`} label="Best Score" color={theme.color.success} />
+          <StatItem value={data.bestScore > 0 ? `${data.bestScore}%` : '0%'} label="Best Score" color={theme.color.success} />
           <View style={{ width: 1, backgroundColor: theme.color.border }} />
           <StatItem label="Attempts" value={String(data.attempts)} color={theme.color.textPrimary} />
           <View style={{ width: 1, backgroundColor: theme.color.border }} />
-          <StatItem label="Best Rank" value={`#${data.bestRank}`} color={theme.color.warning} />
-        </View>
+          <StatItem label="Best Rank" value={data.bestRank > 0 ? `#${data.bestRank}` : '--'} color={theme.color.warning} />
+        </View> */}
 
         <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           <View style={{ flex: 1 }}>
@@ -363,7 +410,12 @@ export default function PreQuizScreen() {
           onPress={() =>
             router.push({
               pathname: '/contests/[quizId]',
-              params: { quizId: data.contestId, totalQuestions: String(data.qCount) },
+              params: {
+                quizId: data.contestId,
+                totalQuestions: String(data.qCount),
+                difficulty: data.difficulty,
+                subject: data.creatorSpecialty,
+              },
             })
           }
           activeOpacity={0.85}
@@ -384,28 +436,6 @@ export default function PreQuizScreen() {
           <Feather name="chevron-right" size={theme.fontSize.lg} color={theme.color.textInverse} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: '/contests/[quizId]',
-              params: { quizId: data.contestId, totalQuestions: String(data.qCount), practice: '1' },
-            })
-          }
-          activeOpacity={0.85}
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: theme.space.md,
-            borderRadius: theme.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.md, fontFamily: theme.fontFamily.regular }}>
-            Practice Mode (No EP)
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
