@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -28,39 +28,39 @@ export default function HomeScreen() {
   const router = useRouter();
   useBottomBar(true, 'home');
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchHomeDashboard = useCallback(async (isMountedRef: { current: boolean }) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [nextHomeData, currentUser, leaderboard] = await Promise.all([
+        api.home.getHomeData(),
+        api.user.getMe(),
+        api.leaderboard.getLeaderboard(),
+      ]);
 
-    async function fetchHomeDashboard() {
-      try {
-        setLoading(true);
-        setError(null);
-        const [nextHomeData, currentUser, leaderboard] = await Promise.all([
-          api.home.getHomeData(),
-          api.user.getMe(),
-          api.leaderboard.getLeaderboard(),
-        ]);
-
-        if (isMounted) {
-          setHomeData(nextHomeData);
-          setUser(currentUser);
-          setMyRank(leaderboard.myRank);
-        }
-        if (nextHomeData.dailyChallenge?.contestId) {
-          const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
-          if (isMounted) setChallengeContest(contest ?? null);
-        }
-      } catch (err) {
-        console.log('Failed to fetch home dashboard:', err);
-        if (isMounted) setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
-      } finally {
-        if (isMounted) setLoading(false);
+      if (isMountedRef.current) {
+        setHomeData(nextHomeData);
+        setUser(currentUser);
+        setMyRank(leaderboard.myRank);
       }
+      if (nextHomeData.dailyChallenge?.contestId) {
+        const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
+        if (isMountedRef.current) setChallengeContest(contest ?? null);
+      }
+    } catch (err) {
+      console.log('Failed to fetch home dashboard:', err);
+      if (isMountedRef.current) setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
+    } finally {
+      if (isMountedRef.current) setLoading(false);
     }
-
-    fetchHomeDashboard();
-    return () => { isMounted = false };
   }, [theme.i18n]);
+  useFocusEffect(
+    useCallback(() => {
+      const isMountedRef = { current: true };
+      fetchHomeDashboard(isMountedRef);
+      return () => { isMountedRef.current = false };
+    }, [fetchHomeDashboard])
+  );
 
   const dailyChallenge = homeData?.dailyChallenge ?? null;
 
@@ -114,7 +114,7 @@ export default function HomeScreen() {
       <HomeHeader
         name={user.displayName}
         streak={user.currentStreak}
-        epPoints={user.epPoints}
+        xpPoints={user.xpPoints}
         lastActiveDate={user.lastActiveDate}
         onNotificationsPress={() => router.push('/notifications')}
       />
@@ -128,7 +128,7 @@ export default function HomeScreen() {
           paddingHorizontal: theme.space.md,
         }}
       >
-        <LevelProgressCard epPoints={user.epPoints} />
+        <LevelProgressCard epPoints={user.xpPoints} />
 
         <StatsOverviewCard
           rank={myRank ?? 0}
