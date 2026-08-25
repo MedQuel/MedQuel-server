@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '../../common/context/useBottomBar';
 import type { Badge, User } from '../../common/types/types';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { CATEGORY_LABELS, BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../../common/constants/achievements';
 
 import { Loading } from '../../components/common/loading';
@@ -45,36 +45,41 @@ export default function EarnedBadgesScreen() {
   const router = useRouter();
   useBottomBar(true, 'profile');
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const [meData, achievementData] = await Promise.all([
-          api.user.getMe().catch(() => null),
-          api.achievement.getAchievements(),
-        ]);
+  const fetchData = useCallback(async (showLoader = true) => {
+    if (showLoader) setIsLoading(true);
+    setError(null);
+    try {
+      const [meData, achievementData] = await Promise.all([
+        api.user.getMe().catch(() => null),
+        api.achievement.getAchievements().catch((err) => {
+          if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
+            console.warn('Could not fetch achievements in earned screen:', err?.message || err);
+          }
+          return [];
+        }),
+      ]);
 
-        if (isMounted) {
-          setUser(meData);
-          setBadges(achievementData);
-        }
-      } catch (err) {
-        console.error('Error fetching earned badges:', err);
-        if (isMounted) {
-          setError(theme.i18n.t('Failed to load earned badges'));
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
+      setUser(meData);
+      setBadges(Array.isArray(achievementData) ? achievementData : []);
+    } catch (err: any) {
+      if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
+        console.warn('Error fetching earned badges:', err?.message || err);
       }
-    };
-
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
+      setError(theme.i18n.t('Failed to load earned badges'));
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
   }, [theme.i18n]);
+
+  useEffect(() => {
+    fetchData(true);
+  }, [fetchData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData(false);
+    }, [fetchData])
+  );
 
   // Separate earned vs locked badges
   const earnedBadges = useMemo(() => {
@@ -102,7 +107,6 @@ export default function EarnedBadgesScreen() {
   const activeEarnedCategories = useMemo(() => {
     const present = Object.keys(earnedByCategory);
     const sorted = CATEGORY_ORDER.filter((cat) => present.includes(cat));
-    // include any unexpected extra categories at the end
     present.forEach((cat) => {
       if (!sorted.includes(cat)) sorted.push(cat);
     });
@@ -278,7 +282,7 @@ export default function EarnedBadgesScreen() {
                 <EmptyStateCard
                   icon="award"
                   title={theme.i18n.t('No Badges Earned')}
-                  description={theme.i18n.t('You have not Earned any badges')}
+                  description={theme.i18n.t('You have not earned any badges yet.')}
                 />
               </View>
             )}

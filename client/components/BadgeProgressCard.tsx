@@ -1,6 +1,5 @@
- 
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -32,6 +31,7 @@ const iconMap: Record<BadgeIcon, (color: string) => React.ReactNode> = {
 
 export function BadgeProgressCard({ items, title }: Props) {
   const { theme } = useTheme();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const colors: Record<BadgeVariant, string> = {
     pink: theme.color.premium,
@@ -39,6 +39,9 @@ export function BadgeProgressCard({ items, title }: Props) {
     blue: theme.color.accent,
     red: theme.color.error,
   };
+
+  const hasMoreThanFive = items.length > 5;
+  const visibleItems = isExpanded || !hasMoreThanFive ? items : items.slice(0, 5);
 
   return (
     <View>
@@ -48,110 +51,179 @@ export function BadgeProgressCard({ items, title }: Props) {
           color: theme.color.textPrimary,
           fontSize: theme.fontSize.lg,
           fontWeight: theme.fontWeight.bold,
-          fontFamily: theme.fontFamily.regular,
+          fontFamily: theme.fontFamily.bold,
         }}
       >
         {title ?? theme.i18n.t('components.BadgeProgressCard.title')}
       </Text>
 
-      <View style={{ gap: theme.space.md }}>
-        {items.map(item => {
-          const accent = colors[item.variant];
-          const progress = item.total > 0 ? Math.min(100, Math.max(0, (item.current / item.total) * 100)) : 0;
+      {items.length > 0 ? (
+        <View>
+          <View style={{ gap: theme.space.md }}>
+            {visibleItems.map(item => {
+              const accent = colors[item.variant];
+              const progress = item.total > 0 ? Math.min(100, Math.max(0, (item.current / item.total) * 100)) : 0;
 
-          return (
-            <View
-              key={item.id}
-              style={{
-                backgroundColor: theme.color.card,
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                borderRadius: theme.borderRadius.xl + 2,
-                padding: theme.space.md,
-                shadowColor: accent,
-                shadowOpacity: theme.isDark ? 0.08 : 0.04,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 2,
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              return (
                 <View
+                  key={item.id}
                   style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: theme.borderRadius.lg,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginRight: theme.space.md,
-                    backgroundColor: theme.isDark ? `${accent}14` : `${accent}10`,
+                    backgroundColor: theme.color.card,
                     borderWidth: 1,
-                    borderColor: theme.isDark ? `${accent}33` : `${accent}22`,
+                    borderColor: theme.color.border,
+                    borderRadius: theme.borderRadius.xl,
+                    padding: theme.space.md,
+                    shadowColor: accent,
+                    shadowOpacity: theme.isDark ? 0.08 : 0.04,
+                    shadowRadius: 10,
+                    shadowOffset: { width: 0, height: 4 },
+                    elevation: 2,
                   }}
                 >
-                  {iconMap[item.icon](accent)}
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text
-                      style={{
-                        color: theme.color.textPrimary,
-                        fontSize: theme.fontSize.lg,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.regular,
-                      }}
-                    >
-                      {item.title}
-                    </Text>
-
-                    <Text
-                      style={{
-                        color: accent,
-                        fontSize: theme.fontSize.md,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.number,
-                      }}
-                    >
-                      {item.current}/{item.total}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={{
-                      marginTop: 4,
-                      color: theme.color.textSecondary,
-                      fontSize: theme.fontSize.sm,
-                      fontFamily: theme.fontFamily.light,
-                    }}
-                  >
-                    {item.subtitle}
-                  </Text>
-
-                  <View
-                    style={{
-                      marginTop: 10,
-                      height: 6,
-                      borderRadius: theme.borderRadius.full,
-                      overflow: 'hidden',
-                      backgroundColor: theme.color.surface,
-                    }}
-                  >
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <View
                       style={{
-                        height: '100%',
-                        width: `${progress}%`,
-                        borderRadius: theme.borderRadius.full,
-                        backgroundColor: accent,
+                        width: 48,
+                        height: 48,
+                        borderRadius: theme.borderRadius.lg,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: theme.space.md,
+                        backgroundColor: theme.isDark ? `${accent}14` : `${accent}10`,
+                        borderWidth: 1,
+                        borderColor: theme.isDark ? `${accent}33` : `${accent}22`,
                       }}
-                    />
+                    >
+                      {iconMap[item.icon](accent)}
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text
+                          numberOfLines={1}
+                          style={{
+                            flex: 1,
+                            marginRight: theme.space.xs,
+                            color: theme.color.textPrimary,
+                            fontSize: theme.fontSize.md,
+                            fontWeight: theme.fontWeight.bold,
+                            fontFamily: theme.fontFamily.bold,
+                          }}
+                        >
+                          {item.title}
+                        </Text>
+
+                        <Text
+                          style={{
+                            color: accent,
+                            fontSize: theme.fontSize.sm,
+                            fontWeight: theme.fontWeight.bold,
+                            fontFamily: theme.fontFamily.number,
+                          }}
+                        >
+                          {item.current}/{item.total}
+                        </Text>
+                      </View>
+
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          marginTop: 2,
+                          color: theme.color.textSecondary,
+                          fontSize: theme.fontSize.xs + 1,
+                          fontFamily: theme.fontFamily.regular,
+                        }}
+                      >
+                        {item.subtitle}
+                      </Text>
+
+                      <View
+                        style={{
+                          marginTop: theme.space.sm,
+                          height: 6,
+                          borderRadius: theme.borderRadius.full,
+                          overflow: 'hidden',
+                          backgroundColor: theme.color.surface,
+                        }}
+                      >
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${progress}%`,
+                            borderRadius: theme.borderRadius.full,
+                            backgroundColor: accent,
+                          }}
+                        />
+                      </View>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </View>
-          );
-        })}
-      </View>
+              );
+            })}
+          </View>
+
+          {/* Show More / Show Less Button at Bottom Center */}
+          {hasMoreThanFive ? (
+            <Pressable
+              onPress={() => setIsExpanded(prev => !prev)}
+              style={({ pressed }) => ({
+                alignSelf: 'center',
+                marginTop: theme.space.md,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme.space.xs,
+                paddingVertical: theme.space.xs * 1.5,
+                paddingHorizontal: theme.space.lg,
+                borderWidth: 1,
+                borderRadius: theme.borderRadius.full,
+                borderColor: theme.color.border,
+                backgroundColor: theme.color.card,
+                opacity: pressed ? 0.85 : 1,
+                elevation: 1,
+              })}
+            >
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.sm,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {isExpanded ? 'Show Less' : 'Show More'}
+              </Text>
+              <Feather
+                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={theme.color.accent}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <View
+          style={{
+            backgroundColor: theme.color.card,
+            borderWidth: 1,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
+            padding: theme.space.lg,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Feather name="activity" size={32} color={theme.color.textMuted} style={{ marginBottom: theme.space.xs, opacity: 0.6 }} />
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
+            {theme.i18n.t('achievements.empty_states.in_progress.title') || 'No badges currently in progress'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }

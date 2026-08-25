@@ -1,20 +1,17 @@
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
-import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../../common/constants/achievements';
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Badge, User } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { MOCK_ACHIEVEMENTS } from '../../common/constants/mockData';
+import { BADGE_CATALOG } from '../../common/constants/achievements';
 
 import { Loading } from '../../components/common/loading';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
 import { BadgeProgressCard } from '../../components/BadgeProgressCard';
-import { LockedBadgeCard } from '../../components/achievements/LockedBadgeCard';
 import { AchievementProgressCard } from '../../components/AchievementProgressCard';
 
 type BadgeVariant = 'pink' | 'orange' | 'blue' | 'red';
@@ -44,8 +41,23 @@ const mapProgressIcon = (iconKey: string): BadgeIcon => {
   return 'people';
 };
 
+const CATEGORIES_IN_ORDER = [
+  'streak',
+  'questions',
+  'perfect_quiz',
+  'contests',
+  'contest_high_score',
+  'hard_contest',
+  'speed',
+  'study',
+  'level',
+  'subject_mastery',
+  'rank',
+  'special',
+];
+
 export default function AchievementsScreen() {
-  const [achievements, setAchievements] = useState<Badge[]>(MOCK_ACHIEVEMENTS);
+  const [achievements, setAchievements] = useState<Badge[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [userRank, setUserRank] = useState<number | string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,67 +66,101 @@ export default function AchievementsScreen() {
   const router = useRouter();
   useBottomBar(true, 'profile');
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [badgeData, meData, leaderboardData] = await Promise.all([
-          api.achievement.getAchievements().catch(() => MOCK_ACHIEVEMENTS),
-          api.user.getMe().catch(() => null),
-          api.leaderboard.getLeaderboard('weekly', 'global').catch(() => null),
-        ]);
-
-        if (isMounted) {
-          setAchievements(badgeData);
-          if (meData) setUser(meData);
-          if (leaderboardData?.myRank) {
-            setUserRank(leaderboardData.myRank);
+  const fetchData = useCallback(async (showLoader = true) => {
+    if (showLoader) setIsLoading(true);
+    try {
+      const [badgeData, meData, leaderboardData] = await Promise.all([
+        api.achievement.getAchievements().catch((err) => {
+          if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
+            console.warn('Could not fetch achievements:', err?.message || err);
           }
-        }
-      } catch (error) {
-        console.error('Error fetching achievements page data:', error);
-        if (isMounted) setAchievements(MOCK_ACHIEVEMENTS);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
+          return [];
+        }),
+        api.user.getMe().catch(() => null),
+        api.leaderboard.getLeaderboard('weekly', 'global').catch(() => null),
+      ]);
 
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
+      setAchievements(Array.isArray(badgeData) ? badgeData : []);
+      if (meData) setUser(meData);
+      if (leaderboardData?.myRank) {
+        setUserRank(leaderboardData.myRank);
+      }
+    } catch (error: any) {
+      if (error?.name !== 'AuthenticationError' && error?.code !== 'UNAUTHENTICATED') {
+        console.warn('Error fetching achievements page data:', error?.message || error);
+      }
+      setAchievements([]);
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData(true);
+  }, [fetchData]);
+
+  // Refetch when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchData(false);
+    }, [fetchData])
+  );
 
   const earnedBadges = useMemo(() => {
     return achievements.filter((b) => b.status === 'earned');
   }, [achievements]);
 
-  const inProgressBadges = useMemo((): BadgeProgressItem[] => {
-    return achievements
-      .filter((b) => b.status === 'in_progress')
-      .map((b) => ({
-        id: b.badgeId,
-        title: b.name,
-        subtitle: b.description,
-        current: Math.round(b.currentProgress),
-        total: Math.round(b.requirementValue),
-        variant: mapVariant(b.variant),
-        icon: mapProgressIcon(b.iconKey),
-      }));
-  }, [achievements]);
-
-  const lockedBadges = useMemo(() => {
-    return achievements.filter((b) => b.status === 'locked');
-  }, [achievements]);
-
-  const lockedRows = useMemo(() => {
-    const rows: Badge[][] = [];
-    for (let i = 0; i < lockedBadges.length; i += 3) {
-      rows.push(lockedBadges.slice(i, i + 3));
+  // Check if user has performed at least 1 contest / practice activity
+  const hasPlayedActivity = useMemo(() => {
+    if (user && ((user.totalQuestions ?? 0) > 0 || (user.stats?.contestsPlayed ?? 0) > 0)) {
+      return true;
     }
-    return rows;
-  }, [lockedBadges]);
+    return achievements.some((b) => b.currentProgress > 0 || b.status === 'earned');
+  }, [user, achievements]);
+
+  // Compute in-progress section by category:
+  // For fresh accounts (hasPlayedActivity === false), returns [] to show clean empty message.
+  // When at least 1 contest is played (hasPlayedActivity === true), populates target badge per category section.
+  // Special rule: hard_contest only shows if user played at least 1 hard contest (currentProgress >= 1).
+  const inProgressBadges = useMemo((): BadgeProgressItem[] => {
+    if (!hasPlayedActivity || !achievements || achievements.length === 0) return [];
+
+    const categoryMap: Record<string, Badge[]> = {};
+    achievements.forEach((b) => {
+      const cat = b.category || 'special';
+      if (!categoryMap[cat]) categoryMap[cat] = [];
+      categoryMap[cat].push(b);
+    });
+
+    const result: BadgeProgressItem[] = [];
+
+    CATEGORIES_IN_ORDER.forEach((catKey) => {
+      const badgesInCat = categoryMap[catKey] ?? [];
+      badgesInCat.sort((a, b) => a.requirementValue - b.requirementValue);
+
+      // Find first badge not earned yet
+      const targetBadge = badgesInCat.find((b) => b.status !== 'earned');
+
+      if (targetBadge) {
+        // Special rule: Hard-difficulty contest progress only starts when playing >= 1 hard contest
+        if (catKey === 'hard_contest' && targetBadge.currentProgress < 1) {
+          return;
+        }
+
+        result.push({
+          id: targetBadge.badgeId,
+          title: targetBadge.name,
+          subtitle: targetBadge.description,
+          current: Math.round(targetBadge.currentProgress),
+          total: Math.round(targetBadge.requirementValue),
+          variant: mapVariant(targetBadge.variant),
+          icon: mapProgressIcon(targetBadge.iconKey),
+        });
+      }
+    });
+
+    return result;
+  }, [achievements, hasPlayedActivity]);
 
   const totalBadges = achievements.length;
   const earnedCount = earnedBadges.length;
@@ -187,93 +233,26 @@ export default function AchievementsScreen() {
               paddingTop: theme.space.sm,
               paddingBottom: theme.space.xxl * 1.75,
               paddingHorizontal: theme.space.md,
-              gap: theme.space.md,
+              gap: theme.space.lg + 4,
             }}
           >
-            {/* Achievement Progress Card (Shows Rank/Level instead of Gold/Silver/Bronze) */}
-            {totalBadges > 0 ? (
-              <AchievementProgressCard
-                earned={earnedCount}
-                total={totalBadges}
-                rank={userRank}
-                level={user?.currentLevel}
-                epReward={epReward}
-              />
-            ) : (
-              <EmptyStateCard
-                icon="bar-chart-2"
-                title={theme.i18n.t('achievements.empty_states.no_progress.title')}
-                description={theme.i18n.t('achievements.empty_states.no_progress.description')}
-              />
-            )}
+            {/* Achievement Progress Card */}
+            <AchievementProgressCard
+              earned={earnedCount}
+              total={totalBadges > 0 ? totalBadges : BADGE_CATALOG.length}
+              rank={userRank}
+              level={user?.currentLevel}
+              epReward={epReward}
+            />
 
-            {/* Earned Badges Card with View All button */}
+            {/* Earned Badges Card with View All button inside card header */}
             <EarnedBadgeCard
               achievements={earnedBadges}
               onViewAllPress={() => router.push('/achievements/earned')}
             />
 
             {/* In Progress Badges Card */}
-            {inProgressBadges.length > 0 ? (
-              <BadgeProgressCard items={inProgressBadges} />
-            ) : (
-              <EmptyStateCard
-                icon="activity"
-                title={theme.i18n.t('achievements.empty_states.in_progress.title')}
-                description={theme.i18n.t('achievements.empty_states.in_progress.description')}
-              />
-            )}
-
-            {/* Locked Badges Section in 3 Columns */}
-            <View style={{ marginTop: theme.space.xs }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
-                  marginBottom: theme.space.sm,
-                }}
-              >
-                {theme.i18n.t('achievements.locked')}
-              </Text>
-
-              {lockedRows.length > 0 ? (
-                <View style={{ gap: theme.space.sm }}>
-                  {lockedRows.map((row, rowIndex) => (
-                    <View key={`locked-row-${rowIndex}`} style={{ flexDirection: 'row', gap: theme.space.sm }}>
-                      {row.map((item) => {
-                        const catalog = BADGE_CATALOG_MAP[item.badgeId];
-                        const iconKey = (item.iconKey || catalog?.iconKey || 'award') as AchievementIconKey;
-                        const variant = (item.variant || catalog?.variant || 'gold') as AchievementVariant;
-
-                        return (
-                          <View key={item.badgeId} style={{ flex: 1, minWidth: 0 }}>
-                            <LockedBadgeCard
-                              title={item.name}
-                              description={item.description}
-                              iconKey={iconKey}
-                              variant={variant}
-                            />
-                          </View>
-                        );
-                      })}
-                      {row.length < 3
-                        ? Array.from({ length: 3 - row.length }).map((_, gapIdx) => (
-                            <View key={`gap-${rowIndex}-${gapIdx}`} style={{ flex: 1 }} />
-                          ))
-                        : null}
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <EmptyStateCard
-                  icon="lock"
-                  title={theme.i18n.t('achievements.empty_states.no_locked.title')}
-                  description={theme.i18n.t('achievements.empty_states.no_locked.description')}
-                />
-              )}
-            </View>
+            <BadgeProgressCard items={inProgressBadges} />
           </ScrollView>
         )}
       </View>
