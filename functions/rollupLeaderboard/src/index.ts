@@ -13,8 +13,9 @@ const db = getFirestore();
 functions.cloudEvent(
   'rollupLeaderboard',
   async (_event: CloudEvent<unknown>) => {
-    const periodKeys = getActivePeriodKeys(new Date());
-    const results = await Promise.allSettled(periodKeys.map((key) => rollupPeriod(db, key)));
+    const now = new Date();
+    const periodKeys = getActivePeriodKeys(now);
+    const results = await Promise.allSettled(periodKeys.map((key) => rollupPeriod(db, key, now)));
 
     results.forEach((r, i) => {
       if (r.status === 'fulfilled') {
