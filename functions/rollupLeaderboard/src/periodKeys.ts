@@ -1,6 +1,5 @@
 const IST_OFFSET_MS = (5*60 + 30) * 60*1000;
 
-
 export function getIsoWeekKey(date: Date): string {
   const istShifted = new Date(date.getTime() + IST_OFFSET_MS);
   const d = new Date(
@@ -34,4 +33,9 @@ export function getActivePeriodKeys(now: Date): string[] {
     `monthly_${getMonthKey(now)}`,
     'allTime',
   ];
+}
+
+export function getPreviousWeeklyPeriodKey(now: Date): string {
+  const sevenDaysAgo = new Date(now.getTime() - 7*24*60*60*1000);
+  return `weekly_${getIsoWeekKey(sevenDaysAgo)}`;
 }
