@@ -1,6 +1,24 @@
 import { PubSub } from '@google-cloud/pubsub';
 
 
+export interface QuizCompletedEvent {
+  sessionId: string;
+  userId: string;
+  quizType: string;
+  contestId: string | null;
+  subject: string;
+  totalQuestions: number;
+  correctCount: number;
+  wrongCount: number;
+  skippedCount: number;
+  score: number;
+  scorePercent: number;
+  timeTaken: number;
+  epEarned: number;
+  xpEarned: number;
+  completedAt: string;
+}
+
 let _pubsub: PubSub | null = null;
 function getPubSub(): PubSub {
   if (!_pubsub) _pubsub = new PubSub({ projectId: process.env.FIREBASE_PROJECT_ID });
@@ -8,22 +26,6 @@ function getPubSub(): PubSub {
 }
 
 
-export interface QuizCompletedEvent {
-  sessionId: string;
-  userId: string;
-  quizType: string;
-  contestId: string | null;
-  subject: string;
-  correctCount: number;
-  wrongCount: number;
-  skippedCount: number;
-  score: number;
-  scorePercent: number;
-  epEarned: number;
-  xpEarned: number;
-  completedAt: string;
-}
-// Publishes the quiz_completed event that onQuizCompleted / evaluateBadges Cloud Functions will subscribe to.
 export async function publishQuizCompleted(event: QuizCompletedEvent): Promise<void> {
   const topicName = process.env.PUBSUB_TOPIC_QUIZ;
   if (!topicName) {
