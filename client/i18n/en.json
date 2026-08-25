@@ -391,6 +391,59 @@
     }
   },
 
+  "premium": {
+    "eyebrow": "Built for serious preparation",
+    "title": "More focus. More progress.",
+    "subtitle": "Choose the plan that fits your preparation journey.",
+    "free_plan": "Free Plan",
+    "premium_plan": "Premium",
+    "free_subtitle": "Get started today",
+    "premium_subtitle": "Unlock your full potential",
+    "active": "ACTIVE",
+    "current_plan": "Current plan",
+    "continue_free": "Continue Free",
+    "switch_to_free": "Switch to Free",
+    "get_premium": "Get Premium",
+    "most_popular": "MOST POPULAR",
+    "per_month": "/ month",
+    "per_year": "/ year",
+    "monthly_plan": "Monthly plan",
+    "annual_plan": "Annual plan",
+    "save_20": "Save 20%",
+    "secure_payment": "Secure payment · Cancel anytime",
+    "billing_unavailable_title": "Payments coming soon",
+    "billing_unavailable_message": "Premium plans are not available for purchase yet. Please check back soon.",
+    "plans": {
+      "free": "Free",
+      "monthly": "Monthly",
+      "annual": "Annual"
+    },
+    "features": {
+      "basic_quizzes": "Access to basic quizzes",
+      "community": "Community chat and discussions",
+      "weekly_contests": "Weekly contests",
+      "basic_analytics": "Basic analytics dashboard",
+      "profile": "Profile and achievements",
+      "leaderboard": "Leaderboard access",
+      "everything_free": "Everything in Free plan",
+      "unlimited_attempts": "Unlimited quiz attempts",
+      "advanced_analytics": "Advanced performance analytics",
+      "exclusive_contests": "Exclusive premium contests",
+      "priority_support": "Priority support",
+      "ad_free": "Ad-free experience",
+      "early_access": "Early access to new quizzes",
+      "recommendations": "Personalized challenge recommendations"
+    },
+    "trust": {
+      "secure": "Secure and safe",
+      "secure_subtitle": "Your data is protected",
+      "cancel": "Cancel anytime",
+      "cancel_subtitle": "No hidden charges",
+      "support": "24/7 support",
+      "support_subtitle": "We are here for you"
+    }
+  },
+
   "components": {
     "FeatureHighlightsCard": {
       "title": "What awaits you",
