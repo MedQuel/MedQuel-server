@@ -8,7 +8,7 @@ type Props = {
   total: number;
   rank?: number | string;
   level?: number;
-  epReward: number;
+  epReward?: number;
 };
 
 const alpha = (hex: string, opacity: number) => {
@@ -19,7 +19,7 @@ const alpha = (hex: string, opacity: number) => {
   return `rgba(${(i >> 16) & 255}, ${(i >> 8) & 255}, ${i & 255}, ${opacity})`;
 };
 
-export function AchievementProgressCard({ earned, total, rank, level, epReward }: Props) {
+export function AchievementProgressCard({ earned, total, rank, level }: Props) {
   const { theme } = useTheme();
   const progress = total > 0 ? Math.min(100, Math.max(0, (earned / total) * 100)) : 0;
 
@@ -29,8 +29,6 @@ export function AchievementProgressCard({ earned, total, rank, level, epReward }
   const trackColor = alpha(theme.isDark ? theme.color.textPrimary : theme.color.textInverse, 0.18);
   const fillColor = theme.isDark ? theme.color.info : theme.color.textInverse;
   const circleColor = alpha(theme.isDark ? theme.color.textPrimary : theme.color.textInverse, 0.08);
-  const chipBg = alpha(theme.isDark ? theme.color.textPrimary : theme.color.textInverse, theme.isDark ? 0.08 : 0.14);
-  const chipText = theme.isDark ? theme.color.textPrimary : theme.color.textInverse;
 
   return (
     <View
@@ -174,33 +172,6 @@ export function AchievementProgressCard({ earned, total, rank, level, epReward }
                 </Text>
               </View>
             ) : null}
-          </View>
-
-          <View
-            style={{
-              marginLeft: theme.space.md,
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: theme.space.md,
-              paddingVertical: theme.space.sm,
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: chipBg,
-              borderWidth: 1,
-              borderColor: theme.isDark ? alpha(theme.color.textPrimary, 0.06) : alpha(theme.color.textInverse, 0.10),
-            }}
-          >
-            <Feather name="zap" size={16} color={chipText} />
-            <Text
-              style={{
-                marginLeft: 6,
-                color: chipText,
-                fontSize: theme.fontSize.sm,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.number,
-              }}
-            >
-              +{epReward} EP
-            </Text>
           </View>
         </View>
       </View>
