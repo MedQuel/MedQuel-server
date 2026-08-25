@@ -1,7 +1,7 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
@@ -11,7 +11,6 @@ import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
-
 function Pill({ theme, children, style }: any) {
   return (
     <View
@@ -73,6 +72,7 @@ export default function ChatScreen() {
   const [load, setLoad] = useState(true);
 
   const { theme } = useTheme();
+  const router = useRouter();
   useBottomBar(true, "profile");
 
   useEffect(() => {
@@ -86,7 +86,6 @@ export default function ChatScreen() {
         ]);
 
         setUserData(user);
-        console.log("userData", user);
         setAnalytics(analyticsData);
         setRecentData(analyticsData.recentAttempts);
       } catch {
@@ -275,7 +274,7 @@ export default function ChatScreen() {
       </View>
 
       <Section theme={theme}>
-        <PremiumUpsellCard />
+        <PremiumUpsellCard onPress={() => router.push('/Premium')} />
       </Section>
 
       <Section theme={theme}>

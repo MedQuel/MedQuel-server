@@ -1,4 +1,4 @@
-
+import { useRouter } from 'expo-router';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from "../theme/ThemeContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 export function PremiumUpsellCardFull ()  {
     const {theme} = useTheme()
     const {isDark} = theme
+    const router = useRouter()
   return (
     <View
       style={{
@@ -68,6 +69,7 @@ export function PremiumUpsellCardFull ()  {
       {/* Button */}
       <TouchableOpacity
         activeOpacity={0.8}
+        onPress={() => router.push('/Premium')}
         style={{
           backgroundColor:theme.color.premium+'AA' ,
           borderRadius: theme.borderRadius.lg -2,
@@ -90,4 +92,3 @@ export function PremiumUpsellCardFull ()  {
     </View>
   );
 };
-
