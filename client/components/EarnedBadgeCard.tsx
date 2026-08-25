@@ -1,5 +1,6 @@
 import React from 'react';
 import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 import { AchievementIcon } from './achievements/AchievementIcon';
@@ -81,7 +82,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
 
   const sectionTitle = resolveText(theme.i18n.t('components.EarnedBadgeCard.title'), title ?? 'Earned Badges', 'components.EarnedBadgeCard.title');
   const viewAllText = resolveText(theme.i18n.t('components.EarnedBadgeCard.view_all'), 'View All', 'components.EarnedBadgeCard.view_all');
-  const emptyText = resolveText(theme.i18n.t('components.EarnedBadgeCard.empty'), 'You have not earned any badge yet', 'components.EarnedBadgeCard.empty');
+  const emptyText = resolveText(theme.i18n.t('components.EarnedBadgeCard.empty'), 'Have not earned any badge yet', 'components.EarnedBadgeCard.empty');
 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
 
@@ -124,7 +125,17 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
   };
 
   return (
-    <View>
+    <View
+      onLayout={onCardLayout}
+      style={{
+        padding: theme.space.md,
+        borderWidth: 1.5,
+        borderRadius: theme.borderRadius.xl,
+        borderColor: rgba(theme.color.accent, theme.isDark ? 0.20 : 0.12),
+        backgroundColor: theme.color.card,
+      }}
+    >
+      {/* Header placed INSIDE the card at top right */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md }}>
         <Text
           style={{
@@ -163,111 +174,101 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
         </Pressable>
       </View>
 
-      <View
-        onLayout={onCardLayout}
-        style={{
-          padding: theme.space.md,
-          borderWidth: 1.5,
-          borderRadius: theme.borderRadius.xl,
-          borderColor: rgba(theme.color.accent, theme.isDark ? 0.20 : 0.12),
-          backgroundColor: theme.color.card,
-        }}
-      >
-        {items.length ? (
-          rows.map((row, rowIndex) => (
-            <View
-              key={`earned-row-${rowIndex}`}
-              style={{
-                gap: theme.space.sm,
-                flexDirection: 'row',
-                marginTop: rowIndex ? theme.space.md : 0,
-              }}
-            >
-              {row.map(item => {
-                return (
-                  <View
-                    key={item.id}
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      alignItems: 'center',
-                      paddingVertical: theme.space.sm,
-                      paddingHorizontal: theme.space.xs,
-                    }}
-                  >
-                    <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                      <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
-
-                      {item.isNew ? (
-                        <View
-                          style={{
-                            position: 'absolute',
-                            top: -10,
-                            right: -10,
-                            paddingVertical: theme.space.xs * 0.75,
-                            paddingHorizontal: theme.space.sm,
-                            borderRadius: theme.borderRadius.full,
-                            backgroundColor: theme.color.error,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: theme.color.textInverse,
-                              fontSize: theme.fontSize.xs,
-                              fontWeight: theme.fontWeight.bold,
-                              fontFamily: theme.fontFamily.number,
-                            }}
-                          >
-                            New
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-
-                    <Text
-                      numberOfLines={2}
-                      style={{
-                        textAlign: 'center',
-                        color: theme.color.textPrimary,
-                        fontSize: theme.fontSize.sm,
-                        lineHeight: theme.fontSize.lg,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.bold,
-                        marginTop: theme.space.md + 2,
-                      }}
-                    >
-                      {item.title}
-                    </Text>
-                  </View>
-                );
-              })}
-
-              {row.length < 3 ? Array.from({ length: 3 - row.length }).map((_, index) => <View key={`gap-${rowIndex}-${index}`} style={{ flex: 1 }} />) : null}
-            </View>
-          ))
-        ) : (
+      {items.length ? (
+        rows.map((row, rowIndex) => (
           <View
+            key={`earned-row-${rowIndex}`}
             style={{
-              minHeight: 132,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.xl,
-              paddingHorizontal: theme.space.md,
+              gap: theme.space.sm,
+              flexDirection: 'row',
+              marginTop: rowIndex ? theme.space.md : 0,
             }}
           >
-            <Text
-              style={{
-                textAlign: 'center',
-                color: theme.color.textSecondary,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
-              }}
-            >
-              {emptyText}
-            </Text>
+            {row.map(item => {
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    alignItems: 'center',
+                    paddingVertical: theme.space.sm,
+                    paddingHorizontal: theme.space.xs,
+                  }}
+                >
+                  <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                    <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
+
+                    {item.isNew ? (
+                      <View
+                        style={{
+                          position: 'absolute',
+                          top: -10,
+                          right: -10,
+                          paddingVertical: theme.space.xs * 0.75,
+                          paddingHorizontal: theme.space.sm,
+                          borderRadius: theme.borderRadius.full,
+                          backgroundColor: theme.color.error,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: theme.color.textInverse,
+                            fontSize: theme.fontSize.xs,
+                            fontWeight: theme.fontWeight.bold,
+                            fontFamily: theme.fontFamily.number,
+                          }}
+                        >
+                          New
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      textAlign: 'center',
+                      color: theme.color.textPrimary,
+                      fontSize: theme.fontSize.sm,
+                      lineHeight: theme.fontSize.lg,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.bold,
+                      marginTop: theme.space.md + 2,
+                    }}
+                  >
+                    {item.title}
+                  </Text>
+                </View>
+              );
+            })}
+
+            {row.length < 3 ? Array.from({ length: 3 - row.length }).map((_, index) => <View key={`gap-${rowIndex}-${index}`} style={{ flex: 1 }} />) : null}
           </View>
-        )}
-      </View>
+        ))
+      ) : (
+        <View
+          style={{
+            minHeight: 120,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: theme.space.lg,
+            paddingHorizontal: theme.space.md,
+          }}
+        >
+          <Feather name="award" size={32} color={theme.color.textMuted} style={{ marginBottom: theme.space.xs, opacity: 0.6 }} />
+          <Text
+            style={{
+              textAlign: 'center',
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
+            {emptyText}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }

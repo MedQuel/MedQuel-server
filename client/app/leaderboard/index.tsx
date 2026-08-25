@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { Easing, Animated } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -167,6 +168,14 @@ export default function LeaderboardScreen() {
 
     return () => { isMounted = false };
   }, [fetchLeaderboard, scopeFilter]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (scopeFilter !== 'friends') {
+        fetchLeaderboard(false);
+      }
+    }, [fetchLeaderboard, scopeFilter])
+  );
 
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;

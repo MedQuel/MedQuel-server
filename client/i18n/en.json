@@ -194,7 +194,7 @@
     "empty_states": {
       "no_progress": {
         "title": "No progress yet",
-        "description": "Your achievement summary will appear here once data is available."
+        "description": "Track your badge progress and milestone achievements."
       },
       "no_badges": {
         "title": "No badges earned yet",
