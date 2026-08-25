@@ -92,6 +92,9 @@ service cloud.firestore {
     match /processedBadgeEvents/{sessionId} {
       allow read, write: if false;
     }
+    match /processedActivityEvents/{sessionId} {
+      allow read, write: if false;
+    }
 
 
     // ─────> Study plans
