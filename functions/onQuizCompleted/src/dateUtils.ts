@@ -1,4 +1,4 @@
-const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+const IST_OFFSET_MS = (5*60 + 30) * 60*1000;
 
 export function getIsoWeekKey(date: Date): string {
   const istShifted = new Date(date.getTime() + IST_OFFSET_MS);
@@ -26,4 +26,13 @@ export function getMonthKey(date: Date): string {
   const m = String(istShifted.getUTCMonth()+1).padStart(2, '0');
 
   return `${y}-${m}`;
+}
+
+export function toISTDateKey(date: Date): string {
+  const shifted = new Date(date.getTime() + IST_OFFSET_MS);
+  const y = shifted.getUTCFullYear();
+  const m = String(shifted.getUTCMonth()+1).padStart(2, '0');
+  const d = String(shifted.getUTCDate()).padStart(2, '0');
+
+  return `${y}-${m}-${d}`;
 }
