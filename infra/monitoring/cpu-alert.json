@@ -1,0 +1,26 @@
+{
+  "displayName": "MedQuel API - Cloud Run CPU > 80%",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "Cloud Run container CPU utilization exceeds 80%",
+      "conditionThreshold": {
+        "filter": "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"medquel-api\" AND metric.type=\"run.googleapis.com/container/cpu/utilizations\"",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_PERCENTILE_99",
+            "crossSeriesReducer": "REDUCE_MAX",
+            "groupByFields": ["resource.label.revision_name"]
+          }
+        ],
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0.8,
+        "duration": "300s",
+        "trigger": { "count": 1 }
+      }
+    }
+  ],
+  "notificationChannels": ["projects/medquel-prod/notificationChannels/1237581298889189850"],
+  "alertStrategy": { "autoClose": "1800s" }
+}
