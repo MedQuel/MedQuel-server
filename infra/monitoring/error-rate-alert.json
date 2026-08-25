@@ -1,0 +1,16 @@
+{
+  "displayName": "MedQuel API - 5xx Error Rate > 1%",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "5xx responses exceed 1% of total requests",
+      "conditionMonitoringQueryLanguage": {
+        "query": "fetch cloud_run_revision\n| metric 'run.googleapis.com/request_count'\n| filter resource.service_name == 'medquel-api'\n| align rate(5m)\n| {\n    errors: filter response_code_class == '5xx'\n            | group_by [resource.revision_name]\n  ; total:  group_by [resource.revision_name]\n  }\n| ratio\n| condition val() > 0.01",
+        "duration": "300s",
+        "trigger": { "count": 1 }
+      }
+    }
+  ],
+  "notificationChannels": ["projects/medquel-prod/notificationChannels/1237581298889189850"],
+  "alertStrategy": { "autoClose": "1800s" }
+}
