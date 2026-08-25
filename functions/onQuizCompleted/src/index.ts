@@ -5,6 +5,7 @@ import type { CloudEvent } from '@google-cloud/functions-framework';
 
 import type { QuizCompletedEvent } from './types.js';
 import { applyQuizCompletedEvent } from './leaderboardUpdate.js';
+import { applyActivityAndStatsUpdate } from './activityStatsUpdate.js';
 
 
 interface PubSubMessage {
@@ -44,11 +45,20 @@ functions.cloudEvent(
       return;
     }
 
-    try {
-      await applyQuizCompletedEvent(db, event);
-    } catch (err) {
-      console.error(`[onQuizCompleted] messageId=${messageId} session=${event.sessionId}: failed, will retry.`, err);
-      throw err;
+    const [leaderboardResult, activityResult] = await Promise.allSettled([
+      applyQuizCompletedEvent(db, event),
+      applyActivityAndStatsUpdate(db, event),
+    ]);
+
+    if (leaderboardResult.status === 'rejected') {
+      console.error(`[onQuizCompleted] messageId=${messageId} session=${event.sessionId}: leaderboard update failed.`, leaderboardResult.reason);
+    }
+    if (activityResult.status === 'rejected') {
+      console.error(`[onQuizCompleted] messageId=${messageId} session=${event.sessionId}: activity/stats update failed.`, activityResult.reason);
+    }
+
+    if (leaderboardResult.status === 'rejected' || activityResult.status === 'rejected') {
+      throw new Error(`[onQuizCompleted] session=${event.sessionId}: one or more updates failed — see logs above. Pub/Sub will retry.`);
     }
   }
 );
