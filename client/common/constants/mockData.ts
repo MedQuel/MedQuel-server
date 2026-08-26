@@ -8,7 +8,6 @@ import type { Contest, ClientQuestion, StartQuizSessionResult, SubmitQuizSession
 
 export const mockDelay = (ms: number = config.mockDelayMs) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-
 // -----> User <-----
 export const MOCK_USER: User = {
   uid: 'mock-uid-001',
@@ -423,19 +422,19 @@ export const MOCK_HOME_DATA: HomeData = {
     expiresAt: new Date(Date.now() + 43200000).toISOString(),
   },
   activeContests: MOCK_CONTESTS.filter((c) => c.status === 'active'),
-  subjectGrid: [
-    { subject: 'Surgery', accuracy: 70, totalAttempted: 240 },
-    { subject: 'Cardiology', accuracy: 64, totalAttempted: 180 },
-    { subject: 'Pharmacology', accuracy: 58, totalAttempted: 150 },
-  ],
-  performanceTrend: Array.from({ length: 7 }, (_, i) => ({
-    date: new Date(Date.now() - (6-i) * 86400000).toISOString().slice(0, 10),
-    accuracy: 55 + i*2,
-  })),
+  performanceTrend: Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(Date.now() - (6-i) * 86400000).toISOString().slice(0, 10);
+    if (i === 2) return { date, accuracy: null };
+    if (i === 4) return { date, accuracy: 0 };
+    return { date, accuracy: 55 + i*3 };
+  }),
 };
 
 export const MOCK_ANALYTICS: AnalyticsData = {
   overallAccuracy: 70.2,
+  avgScore: 68.4,
+  bestSubject: 'Surgery',
+  weakSubject: 'Pharmacology',
   heatmap: Array.from({ length: 14 }, (_, i) => ({
     date: new Date(Date.now() - (13-i) * 86400000).toISOString().slice(0, 10),
     questionsAttempted: Math.floor(Math.random() * 30),
@@ -447,8 +446,28 @@ export const MOCK_ANALYTICS: AnalyticsData = {
     { subject: 'Pharmacology', accuracy: 58, totalAttempted: 150, totalCorrect: 87 },
   ],
   recentAttempts: [
-    { sessionId: 'mock-session-1', subject: 'Surgery', scorePercent: 80, completedAt: new Date(Date.now() - 86400000).toISOString() },
-    { sessionId: 'mock-session-2', subject: 'Cardiology', scorePercent: 65, completedAt: new Date(Date.now()-2 * 86400000).toISOString() },
+    {
+      sessionId: 'mock-session-1',
+      subject: 'Surgery',
+      quizType: 'practice',
+      scorePercent: 80,
+      correctCount: 12,
+      totalQuestions: 15,
+      timeTaken: 640,
+      passed: true,
+      completedAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      sessionId: 'mock-session-2',
+      subject: 'Cardiology',
+      quizType: 'contest',
+      scorePercent: 65,
+      correctCount: 13,
+      totalQuestions: 20,
+      timeTaken: 890,
+      passed: false,
+      completedAt: new Date(Date.now()-2 * 86400000).toISOString(),
+    },
   ],
 };
 
