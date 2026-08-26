@@ -390,7 +390,7 @@ export interface AppNotification {
 }
 
 
-// -----> Home / Analytics
+// -----> Home
 export interface DailyChallenge {
   date: string;
   contestId: string;
@@ -398,23 +398,19 @@ export interface DailyChallenge {
   epReward: number;
   expiresAt: string;
 }
-export interface SubjectGridItem {
-  subject: string;
-  accuracy: number;
-  totalAttempted: number;
-}
-export interface PerformancePoint {
+export interface PerformanceTrendPoint {
   date: string;
-  accuracy: number;
+  accuracy: number | null;
 }
 
 export interface HomeData {
   dailyChallenge: DailyChallenge | null;
   activeContests: Contest[];
-  subjectGrid: SubjectGridItem[];
-  performanceTrend: PerformancePoint[];
+  performanceTrend: PerformanceTrendPoint[];
 }
 
+
+// -----> Analytics
 export interface SubjectPerformanceEntry {
   subject: string;
   accuracy: number;
@@ -426,16 +422,24 @@ export interface ActivityLogEntry {
   questionsAttempted: number;
   minutesStudied: number;
 }
-export interface QuizSessionSummary {
+export interface RecentAttempt {
   sessionId: string;
   subject: string;
+  quizType: QuizType;
   scorePercent: number;
+  correctCount: number;
+  totalQuestions: number;
+  timeTaken: number;
+  passed: boolean;
   completedAt: string;
 }
 
 export interface AnalyticsData {
   overallAccuracy: number;
+  avgScore: number;
+  bestSubject: string | null;
+  weakSubject: string | null;
   heatmap: ActivityLogEntry[];
   subjectPerformance: SubjectPerformanceEntry[];
-  recentAttempts: QuizSessionSummary[];
+  recentAttempts: RecentAttempt[];
 }
