@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { api } from '../../common/api/api';
@@ -13,7 +14,6 @@ import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 import { ActivityHeatmapCard } from '../../components/ActivityHeatmapCard';
 import { AnalyticsKeyStatItems } from '../../components/AnalyticsKeyStatItems';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-
 
 type SubjectPerformanceItem = {
   id: string;
@@ -66,48 +66,52 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
   const daysInMonth = new Date(year, month, 0).getDate();
   const activityArray = Array.from({ length: daysInMonth }, () => 0);
 
-  analytics.heatmap.forEach((entry) => {
-    const date = new Date(entry.date);
-    if (date.getMonth() + 1 === month && date.getFullYear() === year) {
-      const day = date.getDate();
-      let level = 0;
+  if (Array.isArray(analytics?.heatmap)) {
+    analytics.heatmap.forEach((entry) => {
+      const date = new Date(entry.date);
+      if (date.getMonth() + 1 === month && date.getFullYear() === year) {
+        const day = date.getDate();
+        let level = 0;
 
-      if (entry.questionsAttempted > 20) level = 4;
-      else if (entry.questionsAttempted > 10) level = 3;
-      else if (entry.questionsAttempted > 5) level = 2;
-      else if (entry.questionsAttempted > 0) level = 1;
-      activityArray[day - 1] = level;
-    }
-  });
+        if (entry.questionsAttempted > 20) level = 4;
+        else if (entry.questionsAttempted > 10) level = 3;
+        else if (entry.questionsAttempted > 5) level = 2;
+        else if (entry.questionsAttempted > 0) level = 1;
+        activityArray[day - 1] = level;
+      }
+    });
+  }
 
-  const sortedByAccuracy = [...analytics.subjectPerformance].sort((a, b) => b.accuracy - a.accuracy);
-  const bestSubject = sortedByAccuracy[0]?.subject ?? '';
-  const weakSubject = sortedByAccuracy[sortedByAccuracy.length - 1]?.subject ?? '';
+  const sortedByAccuracy = Array.isArray(analytics?.subjectPerformance)
+    ? [...analytics.subjectPerformance].sort((a, b) => b.accuracy - a.accuracy)
+    : [];
+  const bestSubject = analytics?.bestSubject || sortedByAccuracy[0]?.subject || '';
+  const weakSubject = analytics?.weakSubject || sortedByAccuracy[sortedByAccuracy.length - 1]?.subject || '';
 
   return {
     stats: {
       accuracy: user.totalQuestions > 0
         ? Math.round((user.totalCorrect / user.totalQuestions) * 100)
-        : Math.round(analytics.overallAccuracy || 0),
+        : Math.round(analytics?.overallAccuracy || 0),
       streak: user.currentStreak || 0,
       questions: user.totalQuestions || 0,
     },
     keyStats: {
       totalCorrect: user.totalCorrect || 0,
-      avgScore: Math.round(analytics.overallAccuracy) || 0,
+      avgScore: Math.round(analytics?.avgScore || analytics?.overallAccuracy || 0),
       bestSubject,
       studyHours: user.studyHours || 0,
       longestStreak: user.longestStreak || 0,
       weakSubject,
     },
-    subjectPerformance: analytics.subjectPerformance.map((item, index) => ({
+    subjectPerformance: (analytics?.subjectPerformance || []).map((item, index) => ({
       id: `subj-${index}`,
       subject: item.subject,
       correct: item.totalCorrect,
       percentage: item.accuracy,
       colorKey: colorKeys[index % colorKeys.length] ?? 'accent',
     })),
-    attempts: analytics.recentAttempts.map((item) => ({
+    attempts: (analytics?.recentAttempts || []).map((item) => ({
       id: item.sessionId,
       title: `Quiz on ${item.subject}`,
       date: new Date(item.completedAt).toLocaleDateString(undefined, {
@@ -115,9 +119,9 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
         day: 'numeric',
         year: 'numeric',
       }),
-      totalQuestions: 10,
-      correctAnswers: Math.round((item.scorePercent / 100) * 10),
-      timeTaken: '15m',
+      totalQuestions: item.totalQuestions || 10,
+      correctAnswers: item.correctCount || Math.round(((item.scorePercent || 0) / 100) * (item.totalQuestions || 10)),
+      timeTaken: `${Math.max(1, Math.round((item.timeTaken || 0) / 60))}m`,
     })),
     activityHeatmap: {
       month,
@@ -150,7 +154,6 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
   },
 };
 
-
 export default function AnalyticsScreen() {
   const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -159,31 +162,39 @@ export default function AnalyticsScreen() {
   const { theme } = useTheme();
   useBottomBar(true, 'analytics');
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [user, analytics] = await Promise.all([
-          api.user.getMe(),
-          api.analytics.getAnalytics(),
-        ]);
-        if (isMounted) {
-          setUserData(user);
-          setAnalyticsData(analytics);
-        }
-      } catch (error) {
-        console.error('Error fetching analytics data:', error);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
+  const fetchData = useCallback(async (showLoader = true) => {
+    if (showLoader) setIsLoading(true);
+    try {
+      const [user, analytics] = await Promise.all([
+        api.user.getMe().catch(() => null),
+        api.analytics.getAnalytics().catch((err) => {
+          if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
+            console.warn('Could not fetch analytics:', err?.message || err);
+          }
+          return null;
+        }),
+      ]);
 
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
+      if (user) setUserData(user);
+      if (analytics) setAnalyticsData(analytics);
+    } catch (error: any) {
+      if (error?.name !== 'AuthenticationError' && error?.code !== 'UNAUTHENTICATED') {
+        console.warn('Error fetching analytics data:', error?.message || error);
+      }
+    } finally {
+      if (showLoader) setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData(true);
+  }, [fetchData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData(false);
+    }, [fetchData])
+  );
 
   const data = useMemo(() => {
     if (!userData || !analyticsData) return emptyAnalyticsSnapshot;
