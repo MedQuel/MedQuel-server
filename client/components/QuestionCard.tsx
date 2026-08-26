@@ -3,9 +3,9 @@ import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-
-type QuestionCardProps = {
-  subject: string;
+export type QuestionCardProps = {
+  subject?: string;
+  difficulty?: string;
   question: string;
   isBookmarked?: boolean;
   isFlagged?: boolean;
@@ -15,6 +15,7 @@ type QuestionCardProps = {
 
 export function QuestionCard({
   subject,
+  difficulty,
   question,
   isBookmarked = false,
   isFlagged = false,
@@ -22,6 +23,21 @@ export function QuestionCard({
   onFlag,
 }: QuestionCardProps) {
   const { theme } = useTheme();
+
+  const getDifficultyColor = (diff?: string) => {
+    switch (diff?.toLowerCase()) {
+      case 'easy':
+        return theme.color.success;
+      case 'medium':
+        return theme.color.warning;
+      case 'hard':
+        return theme.color.error;
+      default:
+        return theme.color.accent;
+    }
+  };
+
+  const diffColor = getDifficultyColor(difficulty);
 
   return (
     <View
@@ -35,23 +51,51 @@ export function QuestionCard({
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View
-          style={{
-            paddingHorizontal: theme.space.sm,
-            paddingVertical: theme.space.xs,
-            borderRadius: theme.borderRadius.md,
-            backgroundColor: theme.color.surface,
-          }}
-        >
-          <Text
-            style={{
-              color: theme.color.textSecondary,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
-            }}
-          >
-            {subject}
-          </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+          {subject ? (
+            <View
+              style={{
+                paddingHorizontal: theme.space.sm,
+                paddingVertical: theme.space.xs,
+                borderRadius: theme.borderRadius.md,
+                backgroundColor: theme.color.surface,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.color.textSecondary,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {subject}
+              </Text>
+            </View>
+          ) : null}
+
+          {difficulty ? (
+            <View
+              style={{
+                paddingHorizontal: theme.space.sm,
+                paddingVertical: theme.space.xs,
+                borderRadius: theme.borderRadius.full,
+                borderWidth: 1,
+                borderColor: diffColor + '55',
+                backgroundColor: diffColor + '18',
+              }}
+            >
+              <Text
+                style={{
+                  color: diffColor,
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.fontFamily.bold,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {difficulty}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={{ flexDirection: 'row', gap: theme.space.sm }}>

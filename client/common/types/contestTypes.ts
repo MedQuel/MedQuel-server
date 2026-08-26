@@ -1,4 +1,4 @@
-import type { SelectedOption } from './types';
+import type { Difficulty, SelectedOption } from './types';
 
 
 export type ContestFilter = string | 'all' | 'premium';
@@ -67,6 +67,7 @@ export type QuizQuestion = {
   question: string;
   image?: string;
   options: MCQOption[];
+  difficulty: Difficulty;
   points: number;
 };
 

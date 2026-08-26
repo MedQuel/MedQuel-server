@@ -16,8 +16,16 @@ const ALL_TOPICS = null;
 const MIN_QUESTIONS = 2;
 const MAX_QUESTIONS = 50;
 
-const MIN_TIME_MINS = 5;
-const MAX_TIME_MINS = 60;
+const MIN_TIME_MINS = 1;
+const MAX_TIME_MINS = 120;
+
+function calculateDefaultTimeMins(qCount: number): number {
+  if (qCount <= 2) {
+    return 1;
+  }
+  const totalSecs = qCount * 20;
+  return Math.min(MAX_TIME_MINS, Math.max(MIN_TIME_MINS, Math.ceil(totalSecs / 60)));
+}
 
 export default function AllSubjectsScreen() {
   const { theme } = useTheme();
@@ -29,13 +37,12 @@ export default function AllSubjectsScreen() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(ALL_TOPICS);
   const [isTopicDropdownOpen, setIsTopicDropdownOpen] = useState(false);
   const [topicsLoading, setTopicsLoading] = useState(false);
-  const [topicsError, setTopicsError] = useState<string | null>(null);
 
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [questionCount, setQuestionCount] = useState(10);
   const [sliderWidth, setSliderWidth] = useState(0);
 
-  const [timeLimitMins, setTimeLimitMins] = useState(15);
+  const [timeLimitMins, setTimeLimitMins] = useState(calculateDefaultTimeMins(10));
   const [timeSliderWidth, setTimeSliderWidth] = useState(0);
 
   const [starting, setStarting] = useState(false);
@@ -67,37 +74,42 @@ export default function AllSubjectsScreen() {
     setIsTopicDropdownOpen(false);
     setDifficulty('medium');
     setQuestionCount(10);
-    setTimeLimitMins(15);
+    setTimeLimitMins(calculateDefaultTimeMins(10));
     setStartError(null);
 
     const subjectTitle = subjectCatalog[id].title;
     if (topicCacheRef.current[subjectTitle]) {
       setTopics(topicCacheRef.current[subjectTitle]);
-      setTopicsError(null);
       return;
     }
     setTopicsLoading(true);
-    setTopicsError(null);
     try {
       const result = await api.quiz.getTopicsForSubject(subjectTitle);
       const fetchedTopics = result ?? [];
       topicCacheRef.current[subjectTitle] = fetchedTopics;
       setTopics(fetchedTopics);
-    } catch (err) {
-      const apiErr = normalizeError(err);
-      setTopicsError(apiErr.message);
+    } catch {
+      topicCacheRef.current[subjectTitle] = [];
+      setTopics([]);
     } finally {
       setTopicsLoading(false);
     }
   };
 
-  // Question Count Handlers
   const handleDecrementQuestions = () => {
-    setQuestionCount((prev) => Math.max(MIN_QUESTIONS, prev - 1));
+    setQuestionCount((prev) => {
+      const next = Math.max(MIN_QUESTIONS, prev - 1);
+      setTimeLimitMins(calculateDefaultTimeMins(next));
+      return next;
+    });
   };
 
   const handleIncrementQuestions = () => {
-    setQuestionCount((prev) => Math.min(MAX_QUESTIONS, prev + 1));
+    setQuestionCount((prev) => {
+      const next = Math.min(MAX_QUESTIONS, prev + 1);
+      setTimeLimitMins(calculateDefaultTimeMins(next));
+      return next;
+    });
   };
 
   const handleQuestionSliderTouch = (locationX: number) => {
@@ -105,6 +117,7 @@ export default function AllSubjectsScreen() {
     const ratio = Math.max(0, Math.min(1, locationX / sliderWidth));
     const value = Math.round(MIN_QUESTIONS + ratio * (MAX_QUESTIONS - MIN_QUESTIONS));
     setQuestionCount(value);
+    setTimeLimitMins(calculateDefaultTimeMins(value));
   };
 
   const questionPanResponder = PanResponder.create({
@@ -114,13 +127,12 @@ export default function AllSubjectsScreen() {
     onPanResponderMove: (evt) => handleQuestionSliderTouch(evt.nativeEvent.locationX),
   });
 
-  // Time Limit Handlers
   const handleDecrementTime = () => {
-    setTimeLimitMins((prev) => Math.max(MIN_TIME_MINS, prev - 5));
+    setTimeLimitMins((prev) => Math.max(MIN_TIME_MINS, prev - 1));
   };
 
   const handleIncrementTime = () => {
-    setTimeLimitMins((prev) => Math.min(MAX_TIME_MINS, prev + 5));
+    setTimeLimitMins((prev) => Math.min(MAX_TIME_MINS, prev + 1));
   };
 
   const handleTimeSliderTouch = (locationX: number) => {
@@ -138,7 +150,7 @@ export default function AllSubjectsScreen() {
   });
 
   const handleStartPractice = async (subjectId: SubjectId) => {
-    if (starting) return;
+    if (starting || topicsLoading || topics.length === 0) return;
     setStarting(true);
     setStartError(null);
 
@@ -150,7 +162,7 @@ export default function AllSubjectsScreen() {
         ...(selectedTopic ? { topic: selectedTopic } : {}),
         difficulty,
         questionCount,
-        timeLimitSecs: timeLimitMins * 60,
+        timeLimitSecs: Math.min(7200, Math.max(60, timeLimitMins * 60)),
       };
 
       const result = await api.quiz.startQuizSession(input);
@@ -187,9 +199,10 @@ export default function AllSubjectsScreen() {
   const questionSliderPercent = ((questionCount - MIN_QUESTIONS) / (MAX_QUESTIONS - MIN_QUESTIONS)) * 100;
   const timeSliderPercent = ((timeLimitMins - MIN_TIME_MINS) / (MAX_TIME_MINS - MIN_TIME_MINS)) * 100;
 
+  const isStartDisabled = starting || topicsLoading || topics.length === 0;
+
   return (
     <View style={{ flex: 1, paddingHorizontal: theme.space.md, backgroundColor: theme.color.background }}>
-      {/* Header */}
       <View
         style={{
           gap: theme.space.sm,
@@ -314,7 +327,6 @@ export default function AllSubjectsScreen() {
                       borderTopColor: theme.color.border + '60',
                     }}
                   >
-                    {/* Sub-topic Dropdown */}
                     <View style={{ gap: theme.space.xs, zIndex: 10 }}>
                       <Text
                         style={{
@@ -328,23 +340,11 @@ export default function AllSubjectsScreen() {
 
                       {topicsLoading ? (
                         <ActivityIndicator size="small" color={theme.color.accent} />
-                      ) : topicsError ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
-                          <Feather name="alert-circle" size={theme.fontSize.sm} color={theme.color.error} />
-                          <Text
-                            style={{
-                              color: theme.color.error,
-                              fontSize: theme.fontSize.xs,
-                              fontFamily: theme.fontFamily.regular,
-                            }}
-                          >
-                            {topicsError}
-                          </Text>
-                        </View>
                       ) : (
                         <View style={{ position: 'relative' }}>
                           <TouchableOpacity
                             activeOpacity={0.8}
+                            disabled={topics.length === 0}
                             onPress={() => setIsTopicDropdownOpen((prev) => !prev)}
                             style={{
                               flexDirection: 'row',
@@ -356,6 +356,7 @@ export default function AllSubjectsScreen() {
                               borderRadius: theme.borderRadius.md,
                               borderColor: theme.color.border,
                               backgroundColor: theme.color.surface,
+                              opacity: topics.length === 0 ? 0.7 : 1,
                             }}
                           >
                             <Text
@@ -435,7 +436,6 @@ export default function AllSubjectsScreen() {
                       )}
                     </View>
 
-                    {/* Difficulty Selection in One Line (No Heading) */}
                     <View style={{ flexDirection: 'row', gap: theme.space.xs }}>
                       {DIFFICULTY_OPTIONS.map((d) => {
                         const selected = difficulty === d;
@@ -472,7 +472,6 @@ export default function AllSubjectsScreen() {
                       })}
                     </View>
 
-                    {/* Question Count Slider */}
                     <View style={{ gap: theme.space.xs }}>
                       <View
                         style={{
@@ -591,18 +590,8 @@ export default function AllSubjectsScreen() {
                           />
                         </TouchableOpacity>
                       </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
-                          {MIN_QUESTIONS}
-                        </Text>
-                        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
-                          {MAX_QUESTIONS}
-                        </Text>
-                      </View>
                     </View>
 
-                    {/* Time Limit Slider */}
                     <View style={{ gap: theme.space.xs }}>
                       <View
                         style={{
@@ -721,15 +710,6 @@ export default function AllSubjectsScreen() {
                           />
                         </TouchableOpacity>
                       </View>
-
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
-                          {MIN_TIME_MINS} {theme.i18n.t('common.min')}
-                        </Text>
-                        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs }}>
-                          {MAX_TIME_MINS} {theme.i18n.t('common.min')}
-                        </Text>
-                      </View>
                     </View>
 
                     {startError && (
@@ -760,14 +740,14 @@ export default function AllSubjectsScreen() {
 
                     <TouchableOpacity
                       onPress={() => handleStartPractice(id)}
-                      disabled={starting}
+                      disabled={isStartDisabled}
                       style={{
                         alignItems: 'center',
                         justifyContent: 'center',
                         paddingVertical: theme.space.sm,
                         borderRadius: theme.borderRadius.lg,
                         backgroundColor: theme.color.accent,
-                        opacity: starting ? 0.5 : 1,
+                        opacity: isStartDisabled ? 0.4 : 1,
                         marginTop: theme.space.xs,
                       }}
                     >
