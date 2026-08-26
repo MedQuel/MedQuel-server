@@ -477,6 +477,7 @@
     "PerformanceTrendCard": {
       "title": "Performance Trend",
       "subtitle": "7-day accuracy",
+      "noActivity": "Play a quiz to see your weekly trend",
       "days": {
         "mon": "Mon",
         "tue": "Tue",
