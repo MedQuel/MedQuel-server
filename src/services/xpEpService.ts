@@ -1,3 +1,6 @@
+import { toISTDateKey, istDateKeyDaysAgo } from '../utils/istDate.js';
+
+
 const XP_PER_CORRECT_ANSWER = 5;
 const XP_PER_QUESTION_ATTEMPTED = 2;
 const DAILY_FIRST_QUIZ_BONUS_XP = 10;
@@ -62,20 +65,6 @@ export function computeLevelFromXp(totalXp: number): number {
 
 
 // Streak Computation
-const IST_OFFSET_MS = (5 * 60+30) * 60 * 1000;
-
-function toISTDateKey(date: Date): string {
-  const shifted = new Date(date.getTime() + IST_OFFSET_MS);
-  const y = shifted.getUTCFullYear();
-  const m = String(shifted.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(shifted.getUTCDate()).padStart(2, '0');
-
-  return `${y}-${m}-${d}`;
-}
-function istDateKeyMinusOneDay(date: Date): string {
-  return toISTDateKey(new Date(date.getTime() - 24*60*60*1000));
-}
-
 export interface StreakUpdateResult {
   currentStreak: number;
   longestStreak: number;
@@ -89,7 +78,7 @@ export function updateStreak(lastActiveDate: Date | null, now: Date, currentStre
     return { currentStreak, longestStreak, isFirstActivityToday: false };
   }
 
-  const yesterdayKey = istDateKeyMinusOneDay(now);
+  const yesterdayKey = istDateKeyDaysAgo(now, 1);
   if (lastKey === yesterdayKey) {
     const newStreak = currentStreak + 1;
     return {
