@@ -21,22 +21,22 @@ const IMPLEMENTED_OPERATIONS = {
   'user.updateProfile': true,
   'user.updateNotifPrefs': true,
   'user.updateQuizPrefs': true,
-  'home.getHomeData': false, //
+  'home.getHomeData': true,
   'quiz.getTopicsForSubject': true,
   'quiz.startQuizSession': true,
   'quiz.submitQuizSession': true,
   'contest.getContests': true,
   'contest.getContest': true,
   'contest.joinContest': true,
-  'contest.searchContests': false, // opted
+  'contest.searchContests': false, // opted (not required)
   'leaderboard.getLeaderboard': true,
-  'studyPlan.getStudyPlan': false, // opted Study Plan section
-  'studyPlan.generateStudyPlan': false, // opted Study Plan section
-  'chat.getChatRooms': false, // opted Discussion Room section
-  'chat.getChatMessages': false, // opted Discussion Room section
-  'chat.sendMessage': false, // opted Discussion Room section
+  'studyPlan.getStudyPlan': false, // opted Study Plan for now
+  'studyPlan.generateStudyPlan': false, // opted Study Plan for now
+  'chat.getChatRooms': false, // opted Discussion Room for now
+  'chat.getChatMessages': false, // opted Discussion Room for now
+  'chat.sendMessage': false, // opted Discussion Room for now
   'achievement.getAchievements': true,
-  'analytics.getAnalytics': false, //
+  'analytics.getAnalytics': true,
   'subscription.getPlans': false, //
   'subscription.verifyPayment': false, //
   'subscription.initiatePayment': false, //
@@ -260,7 +260,6 @@ const GET_HOME_DATA_QUERY = gql`
         endsAt
         participantCount
       }
-      subjectGrid { subject accuracy totalAttempted }
       performanceTrend { date accuracy }
     }
   }
@@ -717,9 +716,22 @@ const GET_ANALYTICS_QUERY = gql`
   query GetAnalytics {
     getAnalytics {
       overallAccuracy
+      avgScore
+      bestSubject
+      weakSubject
       heatmap { date questionsAttempted minutesStudied }
       subjectPerformance { subject accuracy totalAttempted totalCorrect }
-      recentAttempts { sessionId subject scorePercent completedAt }
+      recentAttempts {
+        sessionId
+        subject
+        quizType
+        scorePercent
+        correctCount
+        totalQuestions
+        timeTaken
+        passed
+        completedAt
+      }
     }
   }
 `;
