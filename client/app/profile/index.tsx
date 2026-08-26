@@ -12,6 +12,7 @@ import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard"
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
 
+
 function Pill({ theme, children, style }: any) {
   return (
     <View
@@ -248,7 +249,7 @@ export default function ChatScreen() {
             },
             {
               label: theme.i18n.t("common.quizzes"),
-              value: String(userData?.totalCorrect ?? 0),
+              value: String(userData?.stats.contestsPlayed ?? 0),
               color: "#3B82F6",
               icon: "lightning-bolt",
             },
