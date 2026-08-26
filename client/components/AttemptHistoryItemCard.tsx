@@ -34,10 +34,10 @@ function AttemptCard({ item }: { item: Attempt }) {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        padding: theme.space.sm + 6,
+        padding: theme.space.sm * 1.1,
         borderWidth: 1,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.md + 6,
+        borderRadius: theme.borderRadius.lg,
         backgroundColor: theme.color.card,
       }}
     >
@@ -45,13 +45,12 @@ function AttemptCard({ item }: { item: Attempt }) {
         style={{
           alignItems: 'center',
           justifyContent: 'center',
-          paddingVertical: theme.space.md * 1.1,
-          paddingHorizontal: theme.space.sm + 6,
+          paddingVertical: theme.space.md,
+          paddingHorizontal: theme.space.md * 0.8,
           borderWidth: 1,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.md + 6,
           backgroundColor: bg,
-          minWidth: 72,
         }}
       >
         <Text
@@ -65,7 +64,7 @@ function AttemptCard({ item }: { item: Attempt }) {
             includeFontPadding: false,
           }}
         >
-          {item.score}%
+          {item.score.toFixed(0)}%
         </Text>
       </View>
 
@@ -110,7 +109,7 @@ function AttemptCard({ item }: { item: Attempt }) {
             fontFamily: theme.fontFamily.number,
           }}
         >
-          {item.score}%
+          {item.score.toFixed(1)}%
         </Text>
       </View>
     </View>
@@ -124,31 +123,15 @@ export function AttemptHistoryItemCard({ attempts }: Props) {
   return (
     <View
       style={{
-        gap: theme.space.md,
+        gap: theme.space.md * 0.8,
         flexDirection: 'column',
-        padding: theme.space.md,
-        borderWidth: 1.5,
-        borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.xl,
-        backgroundColor: theme.color.card,
         boxShadow: theme.isDark
           ? '0 6px 14px rgba(0,0,0,0.2)'
           : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
-      {attempts.map((item, index) => (
-        <View
-          key={item.id}
-          style={
-            index < attempts.length - 1
-              ? {
-                  paddingBottom: theme.space.md * 0.8,
-                  borderBottomWidth: 1,
-                  borderBottomColor: theme.color.border,
-                }
-              : undefined
-          }
-        >
+      {attempts.map((item, _) => (
+        <View key={item.id}>
           <AttemptCard item={item} />
         </View>
       ))}
