@@ -9,11 +9,13 @@ import {
 } from 'react-native';
 import { useRef, useState } from 'react';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { useTheme } from '../theme/ThemeContext';
 
 
 type ActiveContestsCardProps = {
+  contestId: string;
   title: string;
   subject: string;
   difficulty: 'hard' | 'medium' | 'easy';
@@ -29,6 +31,7 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
 
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
+  const router = useRouter();
 
   const scrollRef = useRef<ScrollView>(null);
   const maxScroll = Math.max(contentWidth - containerWidth, 1);
@@ -52,7 +55,12 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
     else return { textColor: theme.color.success };
   };
 
-
+  const handleContestPress = (contestId: string) => {
+    router.push({
+      pathname: '/contests/preQuizScreen',
+      params: { contestId },
+    });
+  };
   return (
     <View>
       <ScrollView
@@ -72,9 +80,9 @@ export function ActiveContestsCard({ contests }: { contests: ActiveContestsCardP
           const diffColor = difficultyColor(contest.difficulty);
           return (
             <TouchableOpacity
-              key={index}
+              key={contest.contestId ?? index}
               activeOpacity={0.75}
-              onPress={() => {}}
+              onPress={() => handleContestPress(contest.contestId)}
               style={{
                 width: cardWidth,
                 minHeight: theme.space.xxl * 2.75,
