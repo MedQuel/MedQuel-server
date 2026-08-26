@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { sendPasswordReset } from "../../common/firebase/firebase";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Modal,
@@ -11,7 +12,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
-
+import { useBottomBar } from "../../common/context/useBottomBar";
 import { userApi } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
@@ -184,13 +185,14 @@ function UpdateButton({ theme, visible, onPress, saving }: any) {
     </TouchableOpacity>
   );
 }
-
+ 
 const DIFFICULTY_OPTIONS: Difficulty[] = ["easy", "medium", "hard"];
-const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-  easy: "Easy",
-  medium: "Medium",
-  hard: "Hard",
-};
+
+// const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+//   easy: theme.i18n.t("common.easy"),
+//   medium: theme.i18n.t("common.medium"),
+//   hard: theme.i18n.t("common.hard"),
+// };
 
 const DEFAULT_NOTIF_TOGGLES = {
   rank: false,
@@ -210,7 +212,17 @@ export default function SettingsScreen() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
+  const DIFFICULTY_LABELS = useMemo<Record<Difficulty, string>>(
+    () => ({
+      easy: theme.i18n.t("common.easy"),
+      medium: theme.i18n.t("common.medium"),
+      hard: theme.i18n.t("common.hard"),
+    }),
+    [theme],
+  );
+
   // usestates
+
   const [userData, setUserData] = useState<any>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -219,6 +231,7 @@ export default function SettingsScreen() {
   const [signOutModalVisible, setSignOutModalVisible] = useState(false);
 
   const [notifToggles, setNotifToggles] = useState(DEFAULT_NOTIF_TOGGLES);
+
   const [quizToggles, setQuizToggles] =
     useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
 
@@ -228,12 +241,21 @@ export default function SettingsScreen() {
   const [savedNotifToggles, setSavedNotifToggles] = useState(
     DEFAULT_NOTIF_TOGGLES,
   );
+  
+  // change password stats
+  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+const [resettingPassword, setResettingPassword] = useState(false);
 
   const [savedQuizToggles, setSavedQuizToggles] =
     useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
+
   const [difficultyModalVisible, setDifficultyModalVisible] = useState(false);
+
   const [savingQuiz, setSavingQuiz] = useState(false);
+
   const [quizError, setQuizError] = useState<string | null>(null);
+
+  useBottomBar(false, "profile");
 
   const setNotif = (key: string) => (val: boolean) =>
     setNotifToggles((t) => ({ ...t, [key]: val }));
@@ -266,8 +288,7 @@ export default function SettingsScreen() {
           email: data?.notifPrefs?.emailDigest ?? DEFAULT_NOTIF_TOGGLES.email,
           rank: data?.notifPrefs?.rankAlerts ?? DEFAULT_NOTIF_TOGGLES.rank,
           contest:
-            data?.notifPrefs?.contestReminders ??
-            DEFAULT_NOTIF_TOGGLES.contest,
+            data?.notifPrefs?.contestReminders ?? DEFAULT_NOTIF_TOGGLES.contest,
           achievement:
             data?.notifPrefs?.achievementAlerts ??
             DEFAULT_NOTIF_TOGGLES.achievement,
@@ -323,6 +344,22 @@ export default function SettingsScreen() {
       setSavingNotif(false);
     }
   };
+
+  // change password function 
+
+  const handleConfirmChangePassword = async () => {
+  setChangePasswordModalVisible(false);
+  if (!userData?.email) return;
+
+  try {
+    setResettingPassword(true);
+    await sendPasswordReset(userData.email);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setResettingPassword(false);
+  }
+};
 
   // confirm signout function
   const handleConfirmSignOut = () => {
@@ -442,7 +479,7 @@ export default function SettingsScreen() {
         contentContainerStyle={{
           flexGrow: 1,
           marginTop: theme.space.sm,
-          paddingBottom: theme.space.xxl * 1.5,
+          paddingBottom: theme.space.md - 2,
         }}
       >
         <UserProfileCard userData={userData} />
@@ -472,13 +509,82 @@ export default function SettingsScreen() {
             iconColor="#5B9CF6"
             title={theme.i18n.t("profile.settings.account.changePassword")}
             subtitle={
-              userData?.updatedAt
-                ? theme.i18n.t("profile.settings.account.lastChanged", {
-                    date: countDays(userData.updatedAt),
-                  })
-                : theme.i18n.t("profile.settings.account.changePassword")
-            }
+    resettingPassword
+      ? "Sending reset link..."
+      : userData?.updatedAt
+      ? theme.i18n.t("profile.settings.account.lastChanged", {
+          date: countDays(userData.updatedAt),
+        })
+      : theme.i18n.t("profile.settings.account.changePassword")
+  }
+            onPress={() => setChangePasswordModalVisible(true)}
           />
+          <Modal
+  visible={changePasswordModalVisible}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setChangePasswordModalVisible(false)}
+>
+  <Pressable
+    style={styles.overlay}
+    onPress={() => setChangePasswordModalVisible(false)}
+  >
+    <View
+      style={[
+        styles.sheet,
+        { backgroundColor: theme.color.background },
+      ]}
+    >
+      <Text
+        style={{
+          fontSize: theme.fontSize.md,
+          fontFamily: theme.fontFamily.bold,
+          color: theme.color.textPrimary,
+          marginBottom: theme.space.xs,
+          paddingHorizontal: 12,
+        }}
+      >
+        {theme.i18n.t("profile.settings.account.changePassword")}
+      </Text>
+      <Text
+        style={{
+          fontSize: theme.fontSize.sm,
+          color: theme.color.textMuted,
+          fontFamily: theme.fontFamily.regular,
+          marginBottom: theme.space.sm,
+          paddingHorizontal: 12,
+        }}
+      >
+        We'll send a password reset link to {userData?.email}. Continue?
+      </Text>
+
+      <Pressable style={styles.option} onPress={handleConfirmChangePassword}>
+        <Text
+          style={{
+            color: theme.color.info ?? "#5B9CF6",
+            fontFamily: theme.fontFamily.bold,
+          }}
+        >
+          {theme.i18n.t("common.continue")}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.option}
+        onPress={() => setChangePasswordModalVisible(false)}
+      >
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
+          {theme.i18n.t("common.cancel")}
+        </Text>
+      </Pressable>
+    </View>
+  </Pressable>
+</Modal>
           <Divider theme={theme} />
           <Row
             theme={theme}
@@ -486,7 +592,7 @@ export default function SettingsScreen() {
             icon="school-outline"
             iconBg="#F6A0201A"
             iconColor="#F6A020"
-            title={theme.i18n.t("profile.settings.account.targetExam")}
+            title={theme.i18n.t("profile.settings.account.Goal")}
             subtitle={userData?.targetExam}
           />
           <Divider theme={theme} />
@@ -527,7 +633,7 @@ export default function SettingsScreen() {
           >
             <Row
               theme={theme}
-              onPress={() => router.push("/profile/updateProfileScreen")}
+              onPress={() => router.push("/profile/updateProfile")}
               right={<View />}
               icon="account-edit-outline"
               iconBg="rgba(255,255,255,0.15)"
@@ -921,7 +1027,8 @@ export default function SettingsScreen() {
                     paddingHorizontal: 12,
                   }}
                 >
-                  Are you sure you want to sign out?
+                  Are you sure you want to{" "}
+                  {theme.i18n.t("profile.settings.signOut")} ?
                 </Text>
 
                 <Pressable style={styles.option} onPress={handleConfirmSignOut}>
@@ -931,7 +1038,7 @@ export default function SettingsScreen() {
                       fontFamily: theme.fontFamily.bold,
                     }}
                   >
-                    Confirm Sign Out
+                    Confirm {theme.i18n.t("profile.settings.signOut")}
                   </Text>
                 </Pressable>
 
