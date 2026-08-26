@@ -1,3 +1,5 @@
+import { getHomeDataResolver } from './home.js';
+import { getAnalyticsResolver } from './analytics.js';
 import { getLeaderboardResolver } from './leaderboard.js';
 import { getAchievementsResolver } from './achievements.js';
 import { completeOnboardingResolver } from './onboarding.js';
@@ -11,11 +13,13 @@ import { getContestsResolver, getContestResolver, joinContestResolver } from './
 export const resolvers = {
   Query: {
     me: meResolver,
+    getHomeData: getHomeDataResolver,
     getTopicsForSubject: getTopicsForSubjectResolver,
     getQuizSession: getQuizSessionResolver,
-    getLeaderboard: getLeaderboardResolver,
     getContests: getContestsResolver,
     getContest: getContestResolver,
+    getLeaderboard: getLeaderboardResolver,
+    getAnalytics: getAnalyticsResolver,
     getAchievements: getAchievementsResolver,
   },
   Mutation: {
