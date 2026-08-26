@@ -248,7 +248,7 @@ export default function ChatScreen() {
             },
             {
               label: theme.i18n.t("common.quizzes"),
-              value: String(userData?.totalContests ?? 0),
+              value: String(userData?.totalCorrect ?? 0),
               color: "#3B82F6",
               icon: "lightning-bolt",
             },
