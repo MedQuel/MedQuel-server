@@ -43,7 +43,7 @@ type CurrentUserLeaderboardRow = {
 };
 type LeaderboardSnapshot = {
   podiumUsers: LeaderboardPodiumUser[];
-  currentUser: CurrentUserLeaderboardRow;
+  currentUser: CurrentUserLeaderboardRow | null;
   rankings: LeaderboardRankRow[];
   playersCount: number;
 };
@@ -64,7 +64,7 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
     score: entry.epPoints,
   }));
 
-  const rankings = sorted.slice(3).map((entry: LeaderboardEntry) => ({
+  const rankings = sorted.map((entry: LeaderboardEntry) => ({
     id: entry.userId,
     rank: entry.rank,
     initials: getInitials(entry.displayName || '') || '??',
@@ -73,26 +73,20 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
     points: entry.epPoints,
   }));
 
-  const currentUserSource = result.myEntry ?? (result as any).currentUserEntry ?? sorted[0] ?? null;
-  const currentUser = currentUserSource
-    ? {
-        rank: currentUserSource.rank,
-        initials: getInitials(currentUserSource.displayName || '') || '??',
-        name: currentUserSource.displayName,
-        specialty: currentUserSource.specialization,
-        points: currentUserSource.epPoints,
-        trend: currentUserSource.weeklyChange,
-        trendLabel: mapTrendLabel(timeFilter),
-      }
-    : {
-        rank: 0,
-        initials: '??',
-        name: '',
-        specialty: '',
-        points: 0,
-        trend: 0,
-        trendLabel: mapTrendLabel(timeFilter),
-      };
+  // Only show Current User card if backend returns a valid myEntry with EP > 0 (user has played at least 1 contest)
+  const currentUserSource = result.myEntry ?? null;
+  const currentUser: CurrentUserLeaderboardRow | null =
+    currentUserSource && currentUserSource.epPoints > 0
+      ? {
+          rank: currentUserSource.rank || result.myRank || 0,
+          initials: getInitials(currentUserSource.displayName || '') || '??',
+          name: currentUserSource.displayName,
+          specialty: currentUserSource.specialization,
+          points: currentUserSource.epPoints,
+          trend: currentUserSource.weeklyChange,
+          trendLabel: mapTrendLabel(timeFilter),
+        }
+      : null;
 
   return {
     podiumUsers,
@@ -149,8 +143,10 @@ export default function LeaderboardScreen() {
       try {
         const data = await api.leaderboard.getLeaderboard(timeFilter, scopeFilter);
         setLeaderboardData(data);
-      } catch (error) {
-        console.error('Error fetching leaderboard:', error);
+      } catch (error: any) {
+        if (error?.name !== 'AuthenticationError' && error?.code !== 'UNAUTHENTICATED') {
+          console.warn('Error fetching leaderboard:', error?.message || error);
+        }
       } finally {
         if (showLoader) setIsLoading(false);
       }
@@ -334,13 +330,17 @@ export default function LeaderboardScreen() {
               <>
                 <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
 
-                <View style={{ height: theme.space.md }} />
-                <CurrentUserLeaderboardRankCard
-                  name={activeSnapshot.currentUser.name.replace('You • ', '')}
-                  rank={activeSnapshot.currentUser.rank}
-                  points={activeSnapshot.currentUser.points}
-                  weeklyGrowth={activeSnapshot.currentUser.trend}
-                />
+                {activeSnapshot.currentUser ? (
+                  <>
+                    <View style={{ height: theme.space.md }} />
+                    <CurrentUserLeaderboardRankCard
+                      name={activeSnapshot.currentUser.name.replace('You • ', '')}
+                      rank={activeSnapshot.currentUser.rank}
+                      points={activeSnapshot.currentUser.points}
+                      weeklyGrowth={activeSnapshot.currentUser.trend}
+                    />
+                  </>
+                ) : null}
 
                 <View style={{ height: theme.space.lg }} />
                 <View
