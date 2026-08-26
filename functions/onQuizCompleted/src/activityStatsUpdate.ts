@@ -35,6 +35,7 @@ export async function applyActivityAndStatsUpdate(db: Firestore, event: QuizComp
       {
         date: dateKey,
         questionsAttempted: FieldValue.increment(event.totalQuestions),
+        questionsCorrect: FieldValue.increment(event.correctCount),
         minutesStudied: FieldValue.increment(minutesStudied),
         updatedAt: nowTs,
       },
