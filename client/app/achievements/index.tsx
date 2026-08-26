@@ -110,20 +110,22 @@ export default function AchievementsScreen() {
     return achievements.filter((b) => b.status === 'earned');
   }, [achievements]);
 
-  // Check if user has performed at least 1 contest / practice activity
-  const hasPlayedActivity = useMemo(() => {
-    if (user && ((user.totalQuestions ?? 0) > 0 || (user.stats?.contestsPlayed ?? 0) > 0)) {
-      return true;
-    }
-    return achievements.some((b) => b.currentProgress > 0 || b.status === 'earned');
+  // Strict fresh account check: In progress cards start showing ONLY after completing at least 1 contest / practice quiz
+  const hasPlayedContest = useMemo(() => {
+    const questions = user?.totalQuestions ?? 0;
+    const contests = user?.stats?.contestsPlayed ?? 0;
+    const sessions = (user?.stats as any)?.completedSessions ?? 0;
+    const earnedCount = achievements.filter((b) => b.status === 'earned').length;
+
+    return questions > 0 || contests > 0 || sessions > 0 || earnedCount > 0;
   }, [user, achievements]);
 
   // Compute in-progress section by category:
-  // For fresh accounts (hasPlayedActivity === false), returns [] to show clean empty message.
-  // When at least 1 contest is played (hasPlayedActivity === true), populates target badge per category section.
+  // For fresh accounts (hasPlayedContest === false), returns [] to show clean empty message.
+  // When at least 1 contest is completed (hasPlayedContest === true), populates target badge per category section.
   // Special rule: hard_contest only shows if user played at least 1 hard contest (currentProgress >= 1).
   const inProgressBadges = useMemo((): BadgeProgressItem[] => {
-    if (!hasPlayedActivity || !achievements || achievements.length === 0) return [];
+    if (!hasPlayedContest || !achievements || achievements.length === 0) return [];
 
     const categoryMap: Record<string, Badge[]> = {};
     achievements.forEach((b) => {
@@ -160,7 +162,7 @@ export default function AchievementsScreen() {
     });
 
     return result;
-  }, [achievements, hasPlayedActivity]);
+  }, [achievements, hasPlayedContest]);
 
   const totalBadges = achievements.length;
   const earnedCount = earnedBadges.length;
