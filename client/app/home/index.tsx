@@ -1,14 +1,13 @@
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-
 import { api } from '../../common/api/api';
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
-import type { HomeData, User, Contest } from '../../common/types/types';
+import type { HomeData, User, Contest, AnalyticsData } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { LevelProgressCard } from '../../components/LevelProgressCard';
 import { StatsOverviewCard } from '../../components/StatsOverviewCard';
@@ -20,8 +19,10 @@ export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [challengeContest, setChallengeContest] = useState<Contest | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { theme } = useTheme();
@@ -30,51 +31,55 @@ export default function HomeScreen() {
 
   const fetchHomeDashboard = useCallback(async (isMountedRef: { current: boolean }) => {
     try {
-      setLoading(true);
       setError(null);
-      const [nextHomeData, currentUser, leaderboard] = await Promise.all([
+      const [nextHomeData, currentUser, leaderboard, analyticsData] = await Promise.all([
         api.home.getHomeData(),
         api.user.getMe(),
         api.leaderboard.getLeaderboard(),
+        api.analytics.getAnalytics(),
       ]);
 
       if (isMountedRef.current) {
         setHomeData(nextHomeData);
         setUser(currentUser);
         setMyRank(leaderboard.myRank);
+        setAnalytics(analyticsData);
       }
+
       if (nextHomeData.dailyChallenge?.contestId) {
-        const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
-        if (isMountedRef.current) setChallengeContest(contest ?? null);
+        try {
+          const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
+          if (isMountedRef.current) setChallengeContest(contest ?? null);
+        } catch (contestErr) {
+          console.log('Failed to fetch challenge contest details:', contestErr);
+        }
       }
     } catch (err) {
       console.log('Failed to fetch home dashboard:', err);
       if (isMountedRef.current) setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
     } finally {
-      if (isMountedRef.current) setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [theme.i18n]);
+
   useFocusEffect(
     useCallback(() => {
       const isMountedRef = { current: true };
+      setLoading(true);
       fetchHomeDashboard(isMountedRef);
       return () => { isMountedRef.current = false };
     }, [fetchHomeDashboard])
   );
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchHomeDashboard({ current: true });
+  }, [fetchHomeDashboard]);
+
   const dailyChallenge = homeData?.dailyChallenge ?? null;
-
-  const performanceTrend = useMemo(() => {
-    const weekDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
-    const trend = {} as Record<(typeof weekDays)[number], number>;
-
-    homeData?.performanceTrend.slice(-7).forEach((point, index) => {
-      const key = weekDays[index];
-      if (key) trend[key] = point.accuracy;
-    });
-
-    return trend;
-  }, [homeData]);
 
   if (loading) {
     return (
@@ -121,6 +126,9 @@ export default function HomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.accent} />
+        }
         contentContainerStyle={{
           gap: theme.space.md,
           paddingTop: theme.space.md,
@@ -132,22 +140,24 @@ export default function HomeScreen() {
 
         <StatsOverviewCard
           rank={myRank ?? 0}
-          accuracy={Math.round(homeData.subjectGrid.reduce((sum, item) => sum + item.accuracy, 0) / homeData.subjectGrid.length)}
-          quizzesTaken={homeData.subjectGrid.reduce((sum, item) => sum + item.totalAttempted, 0)}
+          accuracy={analytics ? Math.round(analytics.overallAccuracy) : 0}
+          quizzesTaken={analytics?.recentAttempts.length ?? 0}
           earnedPoints={user.epPoints}
         />
 
         <DailyChallengeCard
-          title={dailyChallenge?.subject ?? 'Anatomy Essentials'}
+          title={dailyChallenge?.subject ?? ''}
           questions={challengeContest?.totalQuestions ?? 30}
           duration={challengeContest ? Math.round(challengeContest.timeLimitSecs / 60) : 45}
           difficulty={challengeContest?.difficulty ?? 'medium'}
-          endsAt={dailyChallenge?.expiresAt
-            ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
-            : '840'
+          endsAt={
+            dailyChallenge
+              ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
+              : ''
           }
-          epReward={dailyChallenge?.epReward ?? 150}
+          epReward={dailyChallenge?.epReward ?? 0}
           onStart={() => {}}
+          completed={!dailyChallenge}
         />
 
         <View style={{ gap: theme.space.sm }}>
@@ -179,6 +189,7 @@ export default function HomeScreen() {
           <View>
             <ActiveContestsCard
               contests={homeData.activeContests.map((contest) => ({
+                contestId: contest.contestId,
                 title: contest.title,
                 subject: contest.subject,
                 difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
@@ -246,7 +257,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        <PerformanceTrendCard accuracy={performanceTrend} />
+        <PerformanceTrendCard data={homeData.performanceTrend.slice(-7)} />
       </ScrollView>
     </View>
   );
