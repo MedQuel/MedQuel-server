@@ -96,6 +96,13 @@ export class RateLimitError extends ApiError {
   }
 }
 
+export class ProfilePhotoUploadError extends ApiError {
+  constructor(message: string) {
+    super('UNKNOWN', message);
+    this.name = 'ProfilePhotoUploadError';
+  }
+}
+
 
 export interface GraphQLErrorItem {
   message: string;
