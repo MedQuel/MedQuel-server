@@ -3,6 +3,7 @@ import { type TargetExam, type StudyLevel } from './onboardingValidation.js';
 import { VALID_TARGET_EXAMS, VALID_STUDY_LEVELS, VALID_YEAR_OPTIONS } from './onboardingValidation.js';
 
 
+const FIREBASE_STORAGE_PHOTO_URL_PATTERN = /^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/[^/]+\/o\/profilePhotos%2F/;
 export interface UpdateProfileInput {
   displayName?: string | null;
   photoURL?: string | null;
@@ -19,6 +20,15 @@ export interface ValidatedProfileUpdate {
   yearOfStudy?: string | null;
   institution?: string | null;
 }
+
+function validatePhotoURL(photoURL: string): void {
+  if (!FIREBASE_STORAGE_PHOTO_URL_PATTERN.test(photoURL)) {
+    throw new GraphQLError('photoURL must be a valid uploaded profile photo link.', {
+      extensions: { code: 'BAD_USER_INPUT' },
+    });
+  }
+}
+
 
 export function validateUpdateProfileInput(input: UpdateProfileInput): ValidatedProfileUpdate {
   const result: ValidatedProfileUpdate = {};
@@ -38,7 +48,10 @@ export function validateUpdateProfileInput(input: UpdateProfileInput): Validated
     result.displayName = trimmed;
   }
 
-  if (input.photoURL !== undefined) result.photoURL = input.photoURL;
+  if (input.photoURL !== undefined) {
+    if (input.photoURL !== null) validatePhotoURL(input.photoURL);
+    result.photoURL = input.photoURL;
+  }
 
   if (input.targetExam !== undefined && input.targetExam !== null) {
     if (!VALID_TARGET_EXAMS.includes(input.targetExam as TargetExam)) {
