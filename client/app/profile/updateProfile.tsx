@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
-import { useBottomBar } from '../../common/context/useBottomBar';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useBottomBar } from "../../common/context/useBottomBar";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { ProfilePhotoUploadError } from "@/common/api/api.errors";
+import { uploadProfilePhoto } from "@/common/firebase/storage";
 import {
   View,
   Text,
@@ -12,6 +14,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Platform,
 } from "react-native";
 import { userApi } from "@/common/api/api";
 import { Feather } from "@expo/vector-icons";
@@ -23,6 +26,7 @@ import type {
 } from "@/common/types/types";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
+
 const STUDY_LEVELS: StudyLevel[] = [
   "MBBS Year 1-5",
   "Postgraduate",
@@ -69,7 +73,13 @@ const EMPTY_FORM: ProfileFormState = {
   institution: "",
 };
 
-export default function updateProfile() {
+// Ephemeral (local/temporary) URIs jinhe DB mein save nahi karna hai
+function isEphemeralUri(uri?: string | null): boolean {
+  if (!uri) return false;
+  return uri.startsWith("blob:") || uri.startsWith("file:");
+}
+
+export default function UpdateProfile() {
   const [formData, setFormData] = useState<ProfileFormState>(EMPTY_FORM);
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -77,10 +87,28 @@ export default function updateProfile() {
   const [error, setError] = useState<string | null>(null);
   const [examDropdownOpen, setExamDropdownOpen] = useState<boolean>(false);
   const [photoModalVisible, setPhotoModalVisible] = useState<boolean>(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
   const { theme } = useTheme();
   const { isDark } = theme;
   const router = useRouter();
-  useBottomBar(false, 'profile');
+  useBottomBar(false, "profile");
+
+  // Component mount-status track karne ke liye, taaki unmount ke baad
+  // state update ya navigation na ho (setTimeout / async race conditions)
+  const isMountedRef = useRef(true);
+  const navigateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (navigateTimeoutRef.current) {
+        clearTimeout(navigateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = <K extends keyof ProfileFormState>(
     name: K,
@@ -98,48 +126,74 @@ export default function updateProfile() {
     setSaved(false);
   };
 
-  // pick image function
+  const pickImage = useCallback(
+    async (source: "camera" | "gallery") => {
+      setPhotoModalVisible(false);
+      try {
+        let permissionResult;
+        if (source === "camera") {
+          permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+        } else {
+          permissionResult =
+            await ImagePicker.requestMediaLibraryPermissionsAsync();
+        }
 
-  const pickImage = useCallback(async (source: "camera" | "gallery") => {
-    setPhotoModalVisible(false);
-    try {
-      let permissionResult;
-      if (source === "camera") {
-        permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-      } else {
-        permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+          setError(
+            source === "camera"
+              ? "Camera permission is required to take a photo."
+              : "Gallery permission is required to choose a photo.",
+          );
+          return;
+        }
+
+        const pickerOptions = {
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1] as [number, number],
+          quality: 0.8,
+        };
+
+        const result =
+          source === "camera"
+            ? await ImagePicker.launchCameraAsync(pickerOptions)
+            : await ImagePicker.launchImageLibraryAsync(pickerOptions);
+
+        if (!result.canceled && result.assets?.[0]?.uri) {
+          const localUri = result.assets[0].uri;
+          const previousPhotoURL = formData.photoURL; // upload se pehle purana hosted URL save kar lo
+
+          // Turant preview ke liye local URI dikhado (sirf UI ke liye, DB mein nahi jayega)
+          handleChange("photoURL", localUri);
+
+          setUploadingPhoto(true);
+          setError(null);
+          try {
+            const downloadUrl = await uploadProfilePhoto(
+              localUri,
+              previousPhotoURL,
+            );
+            if (!isMountedRef.current) return;
+            handleChange("photoURL", downloadUrl); // ab real hosted URL set ho gaya
+          } catch (uploadErr) {
+            if (!isMountedRef.current) return;
+            const msg =
+              uploadErr instanceof ProfilePhotoUploadError
+                ? uploadErr.message
+                : "Photo upload failed. Please try again.";
+            setError(msg);
+            handleChange("photoURL", previousPhotoURL); // revert local preview
+          } finally {
+            if (isMountedRef.current) setUploadingPhoto(false);
+          }
+        }
+      } catch (e) {
+        console.log("pickImage error:", e);
+        setError("Something went wrong while picking the photo.");
       }
-
-      if (!permissionResult.granted) {
-        console.log(`${source} permission not granted`);
-        return;
-      }
-
-      const result =
-        source === "camera"
-          ? await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            })
-          : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
-              allowsEditing: true,
-              aspect: [1, 1],
-              quality: 0.7,
-            });
-
-      if (!result.canceled && result.assets?.[0]?.uri) {
-        handleChange("photoURL", result.assets[0].uri);
-        // NOTE: ye local URI hai. Agar backend pe upload karna hai
-        // (e.g. userApi.uploadPhoto(uri)) to yahin call karke
-        // returned hosted URL ko handleChange("photoURL", uploadedUrl) me set karo.
-      }
-    } catch (e) {
-      console.log("pickImage error:", e);
-    }
-  }, []);
+    },
+    [formData.photoURL],
+  );
 
   const handlePhotoPress = useCallback(() => {
     setPhotoModalVisible(true);
@@ -155,7 +209,7 @@ export default function updateProfile() {
         setFormData({
           uid: me.uid ?? "",
           displayName: me.displayName ?? "",
-          photoURL: me.photoURL ?? "",
+          photoURL: isEphemeralUri(me.photoURL) ? "" : (me.photoURL ?? ""),
           studyLevel: me.studyLevel ?? "",
           yearOfStudy: me.yearOfStudy ?? "",
           targetExam: me.targetExam ?? "",
@@ -173,6 +227,16 @@ export default function updateProfile() {
   }, []);
 
   const handleSubmit = useCallback(async () => {
+    if (uploadingPhoto) {
+      setError("Please wait for the photo to finish uploading.");
+      return;
+    }
+    // isEphemeralUri consistently use kiya (file:// aur blob: dono cover ho jaate hain)
+    if (isEphemeralUri(formData.photoURL)) {
+      setError("Photo upload didn't complete. Please re-select your photo.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
@@ -185,6 +249,8 @@ export default function updateProfile() {
         institution: formData.institution || undefined,
       };
       const updated = await userApi.updateProfile(input);
+      if (!isMountedRef.current) return;
+
       setFormData((prev) => ({
         ...prev,
         ...updated,
@@ -194,16 +260,19 @@ export default function updateProfile() {
       }));
       setSaved(true);
 
-      setTimeout(() => {
-        router.push("/profile");
+      navigateTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          router.push("/profile");
+        }
       }, 800);
-
     } catch (e) {
-      setError("Could not save your changes. Please try again.");
+      if (isMountedRef.current) {
+        setError("Could not save your changes. Please try again.");
+      }
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) setSaving(false);
     }
-  }, [formData, router]);
+  }, [formData, router, uploadingPhoto]);
 
   if (loading) {
     return (
@@ -222,7 +291,7 @@ export default function updateProfile() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <ScrollView
         style={{
           flex: 1,
@@ -230,21 +299,12 @@ export default function updateProfile() {
             ? theme.color.background
             : theme.color.background,
         }}
-        // contentContainerStyle={{
-        //   padding: theme.space.lg,
-        //   paddingBottom: 75,
-        // }}
       >
         <View
           style={{
             backgroundColor: theme.color.background,
             borderRadius: theme.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: theme.color.border,
             padding: theme.space.lg,
-            boxShadow: theme.isDark
-              ? "0 6px 14px rgba(0,0,0,0.2)"
-              : "0 6px 14px rgba(0,0,0,0.05)",
           }}
         >
           {/* Header row: back button + title */}
@@ -299,17 +359,6 @@ export default function updateProfile() {
               </Text>
             </View>
           </View>
-          <Text
-            style={{
-              fontSize: theme.fontSize.sm,
-              color: theme.color.textMuted,
-              fontFamily: theme.fontFamily.bold,
-              marginTop: 4,
-              marginBottom: theme.space.lg,
-            }}
-          >
-            Update your study details below.
-          </Text>
 
           {/* Photo preview - centered and enlarged */}
           <View
@@ -323,7 +372,7 @@ export default function updateProfile() {
               <Image
                 source={{
                   uri:
-                    formData.photoURL ||
+                    (!isEphemeralUri(formData.photoURL) && formData.photoURL) ||
                     "https://api.dicebear.com/7.x/initials/svg?seed=" +
                       encodeURIComponent(formData.displayName || "U"),
                 }}
@@ -334,10 +383,27 @@ export default function updateProfile() {
                   height: 110,
                   borderRadius: theme.borderRadius.full,
                   backgroundColor: theme.color.border,
+                  opacity: uploadingPhoto ? 0.5 : 1,
                 }}
               />
+              {uploadingPhoto && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ActivityIndicator color={theme.color.accent} />
+                </View>
+              )}
               <TouchableOpacity
                 onPress={handlePhotoPress}
+                disabled={uploadingPhoto}
                 style={{
                   position: "absolute",
                   bottom: 0,
@@ -352,11 +418,7 @@ export default function updateProfile() {
                   borderColor: theme.color.background,
                 }}
               >
-                <Feather
-                  name="camera"
-                  size={16}
-                  color={theme.color.accent}
-                />
+                <Feather name="camera" size={16} color={theme.color.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -575,6 +637,8 @@ export default function updateProfile() {
                   borderRadius: theme.borderRadius.md,
                   backgroundColor: theme.color.card,
                   overflow: "hidden",
+                  // Android par zIndex reliably kaam nahi karta, elevation zaroori hai
+                  ...(Platform.OS === "android" ? { elevation: 6 } : {}),
                 }}
               >
                 {TARGET_EXAMS.map((exam, index) => {
@@ -648,63 +712,73 @@ export default function updateProfile() {
               }}
             />
           </View>
-
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={saving}
-            style={{
-              backgroundColor: theme.color.accent,
-              borderRadius: theme.borderRadius.md,
-              paddingVertical: theme.space.sm + 4,
-              alignItems: "center",
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            {saving ? (
-              <ActivityIndicator color={theme.color.textInverse} />
-            ) : (
-              <Text
-                style={{
-                  color: theme.color.textInverse,
-                  fontSize: theme.fontSize.sm + 1,
-                  fontWeight: theme.fontWeight.medium,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                Save Changes
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {saved && !error && (
-            <Text
-              style={{
-                color: theme.color.success,
-                fontSize: theme.fontSize.sm,
-                textAlign: "center",
-                fontFamily: theme.fontFamily.bold,
-                marginTop: theme.space.sm,
-              }}
-            >
-              Profile updated successfully.
-            </Text>
-          )}
-
-          {error && (
-            <Text
-              style={{
-                color: theme.color.error,
-                fontSize: theme.fontSize.sm,
-                textAlign: "center",
-                fontFamily: theme.fontFamily.bold,
-                marginTop: theme.space.sm,
-              }}
-            >
-              {error}
-            </Text>
-          )}
         </View>
       </ScrollView>
+
+      {/* Bottom pe fixed footer: Save button + saved/error messages */}
+      <View
+        style={{
+          paddingHorizontal: theme.space.lg,
+          paddingTop: theme.space.sm,
+          paddingBottom: theme.space.lg,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={saving || uploadingPhoto}
+          style={{
+            backgroundColor: theme.color.accent,
+            borderRadius: theme.borderRadius.md,
+            paddingVertical: theme.space.sm + 4,
+            alignItems: "center",
+            opacity: saving || uploadingPhoto ? 0.6 : 1,
+          }}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.color.textInverse} />
+          ) : (
+            <Text
+              style={{
+                color: theme.color.textInverse,
+                fontSize: theme.fontSize.sm + 1,
+                fontWeight: theme.fontWeight.medium,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              Save Changes
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {saved && !error && (
+          <Text
+            style={{
+              color: theme.color.success,
+              fontSize: theme.fontSize.sm,
+              textAlign: "center",
+              fontFamily: theme.fontFamily.bold,
+              marginTop: theme.space.sm,
+            }}
+          >
+            Profile updated successfully.
+          </Text>
+        )}
+
+        {error && (
+          <Text
+            style={{
+              color: theme.color.error,
+              fontSize: theme.fontSize.sm,
+              textAlign: "center",
+              fontFamily: theme.fontFamily.bold,
+              marginTop: theme.space.sm,
+            }}
+          >
+            {error}
+          </Text>
+        )}
+      </View>
 
       {/* Photo source picker modal */}
       <Modal
@@ -818,6 +892,6 @@ export default function updateProfile() {
           </Pressable>
         </Pressable>
       </Modal>
-    </>
+    </View>
   );
 }

@@ -87,7 +87,7 @@ export default function ChatScreen() {
         ]);
 
         setUserData(user);
-        console.log("userData", user);
+        
         setAnalytics(analyticsData);
         setRecentData(analyticsData.recentAttempts);
       } catch {

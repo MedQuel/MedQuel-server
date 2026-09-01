@@ -1,21 +1,27 @@
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { View, Text, TouchableOpacity } from 'react-native';
-
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import {hasValidPhoto} from '../../common/utils/imageUrl';
 import { useTheme } from '../../theme/ThemeContext';
-
 
 type User = {
   displayName?: string;
+  photoURL?: string;
   [key: string]: any;
 };
 type Props = {
   user: User | null;
 };
 
+
+
+
 export function ProfileScreenHeader({ user }: Props) {
   const { theme } = useTheme();
   const router = useRouter();
+  const hasPhoto = hasValidPhoto(user?.photoURL);
+
+  // const hasPhoto = !!user?.photoURL && !isEphemeralUri(user.photoURL);
 
   return (
     <View style={{ position: 'relative' }}>
@@ -83,6 +89,7 @@ export function ProfileScreenHeader({ user }: Props) {
           alignSelf: 'center',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
           borderWidth: 4,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.full,
@@ -92,18 +99,30 @@ export function ProfileScreenHeader({ user }: Props) {
             : '0 6px 14px rgba(0,0,0,0.05)',
         }}
       >
-        <Text
-          style={{
-            lineHeight: 82,
-            textAlign: 'center',
-            includeFontPadding: false,
-            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-            fontSize: theme.fontSize.xxl + 20,
-            fontWeight: theme.fontWeight.bold,
-          }}
-        >
-          {user?.displayName?.charAt(0)?.toUpperCase()}
-        </Text>
+        {hasPhoto ? (
+          <Image
+            source={{ uri: user!.photoURL }}
+            style={{
+              width: '100%',
+              height: '100%',
+            }}
+            resizeMode="cover"
+           
+          />
+        ) : (
+          <Text
+            style={{
+              lineHeight: 82,
+              textAlign: 'center',
+              includeFontPadding: false,
+              color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+              fontSize: theme.fontSize.xxl + 20,
+              fontWeight: theme.fontWeight.bold,
+            }}
+          >
+            {user?.displayName?.charAt(0)?.toUpperCase()}
+          </Text>
+        )}
       </View>
     </View>
   );
