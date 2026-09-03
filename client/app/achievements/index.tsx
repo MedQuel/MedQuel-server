@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { api } from '../../common/api/api';
@@ -95,15 +95,14 @@ export default function AchievementsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchData(true);
-  }, [fetchData]);
-
-  // Refetch when screen comes into focus
+  // Single focus effect to load data on initial visit & screen focus cleanly without race condition
   useFocusEffect(
     useCallback(() => {
-      fetchData(false);
-    }, [fetchData])
+      const shouldShowLoader = achievements.length === 0;
+      fetchData(shouldShowLoader);
+      return () => {
+      };
+    }, [fetchData, achievements.length])
   );
 
   const earnedBadges = useMemo(() => {

@@ -5,13 +5,15 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { withAlpha } from '../common/utils/withAlpha';
 
+type StatKey = 'accuracy' | 'streak' | 'correct';
 
-type StatKey = 'accuracy' | 'streak' | 'questions';
 type Props = {
   accuracy: number;
   streak: number;
-  questions: number;
+  questions?: number;
+  totalCorrect?: number;
 };
+
 type StatItem = {
   key: StatKey;
   label: string;
@@ -26,17 +28,18 @@ type StatItem = {
 const icons: Record<StatKey, (size: number, color: string) => React.ReactNode> = {
   accuracy: (size, color) => <Feather name="target" size={size} color={color} />,
   streak: (size, color) => <MaterialCommunityIcons name="fire" size={size} color={color} />,
-  questions: (size, color) => <Feather name="check-square" size={size} color={color} />,
+  correct: (size, color) => <Feather name="check-circle" size={size} color={color} />,
 };
 
-
-export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
+export function AnalyticsStatsCard({ accuracy, streak, questions, totalCorrect }: Props) {
   const { theme } = useTheme();
+
+  const correctValue = totalCorrect ?? questions ?? 0;
 
   const stats: StatItem[] = [
     {
       key: 'accuracy',
-      label: theme.i18n.t('components.AnalyticsStatsCard.accuracy'),
+      label: theme.i18n.t('components.AnalyticsStatsCard.accuracy') || 'Accuracy',
       value: `${accuracy}%`,
       color: theme.color.accent,
       valueColor: theme.color.textPrimary,
@@ -46,7 +49,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
     },
     {
       key: 'streak',
-      label: theme.i18n.t('components.AnalyticsStatsCard.streak'),
+      label: theme.i18n.t('components.AnalyticsStatsCard.streak') || 'Streak',
       value: String(streak),
       color: theme.color.error,
       valueColor: theme.color.success,
@@ -55,9 +58,9 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
       shadowColor: theme.color.success,
     },
     {
-      key: 'questions',
-      label: theme.i18n.t('components.AnalyticsStatsCard.questions'),
-      value: String(questions),
+      key: 'correct',
+      label: theme.i18n.t('components.AnalyticsStatsCard.total_correct') || 'Total Correct',
+      value: String(correctValue),
       color: theme.color.success,
       valueColor: theme.color.textPrimary,
       background: theme.color.card,
@@ -65,7 +68,6 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
       shadowColor: theme.color.success,
     },
   ];
-
 
   return (
     <View style={{ flexDirection: 'row', gap: theme.space.xs * 1.5 }}>
@@ -104,6 +106,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions }: Props) {
           </Text>
 
           <Text
+            numberOfLines={1}
             style={{
               marginTop: theme.space.xs * 0.25,
               color: theme.color.textSecondary,
