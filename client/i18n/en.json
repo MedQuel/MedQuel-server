@@ -13,6 +13,7 @@
     "done": "Done",
     "close": "Close",
     "clear": "Clear",
+    "cancel": "Cancel",
     "live": "LIVE",
     "select": "Select",
     "save": "Save",
@@ -314,6 +315,30 @@
     "performanceBySubject": "Performance by Subject",
     "noSubjectData": "No subject data available",
     "recentAttempts": "Recent Attempts",
+    "updateProfile": {
+      "title": "Update Profile",
+      "subtitle": "Update your study details below",
+      "saveChanges": "Save Changes",
+      "uploadPhoto": "Upload Photo",
+      "takePhoto": "Take Photo",
+      "chooseFromGallery": "Choose from Gallery",
+      "uploadNewPhoto": "Upload New Photo",
+      "previewNotSaved": "Photo Preview is not saved yet",
+      "removePhoto": "Remove Photo",
+      "removePhotoConfirmation": "Are you sure you want to remove your profile photo?",
+      "photoRemoved": "Profile photo removed successfully.",
+      "removePhotoFailed": "Could not remove your profile photo. Please try again.",
+      "updateProfileFields": {
+        "displayName": "Display Name",
+        "yourName": "Your Name",
+        "studyLevel": "Your Study Level",
+        "yearOfStudy": "Year of Study",
+        "yourGoal": "Your Goal",
+        "selectYourGoal": "Select Your Goal",
+        "institution": "Institution",
+        "yourInstitution": "Your Institution / University"
+      }
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Account & Preferences",
