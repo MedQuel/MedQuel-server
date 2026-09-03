@@ -77,7 +77,7 @@ export interface CompleteOnboardingResult {
 }
 export interface UpdateProfileInput {
   displayName?: string;
-  photoURL?: string;
+  photoURL?: string | null;
   targetExam?: TargetExam;
   studyLevel?: StudyLevel;
   yearOfStudy?: YearOfStudy;
