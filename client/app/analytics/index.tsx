@@ -30,18 +30,15 @@ type AttemptItem = {
   correctAnswers: number;
   timeTaken: string;
 };
-const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const formatMonthLabel = (month: number, year: number) => {
-  const index = Math.max(0, Math.min(11, month - 1));
-  return `${monthNames[index]} ${year}`;
-};
 
 const colorKeys = ['success', 'accent', 'premium', 'warning', 'error', 'info'] as const;
+
 type AnalyticsSnapshot = {
   stats: {
     accuracy: number;
     streak: number;
     questions: number;
+    totalCorrect: number;
   };
   keyStats: {
     totalCorrect: number;
@@ -54,50 +51,63 @@ type AnalyticsSnapshot = {
   subjectPerformance: SubjectPerformanceItem[];
   attempts: AttemptItem[];
   activityHeatmap: {
-    month: number;
-    year: number;
-    grid: number[][];
+    activity: number[];
+    label: string;
   };
 };
 
 const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): AnalyticsSnapshot => {
-  const month = new Date().getMonth() + 1;
-  const year = new Date().getFullYear();
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const activityArray = Array.from({ length: daysInMonth }, () => 0);
+  // Rolling last 30 days activity calculation
+  const now = new Date();
+  const activity30Days = Array.from({ length: 30 }, () => 0);
+  const heatmapMap = new Map<string, number>();
 
   if (Array.isArray(analytics?.heatmap)) {
     analytics.heatmap.forEach((entry) => {
-      const date = new Date(entry.date);
-      if (date.getMonth() + 1 === month && date.getFullYear() === year) {
-        const day = date.getDate();
-        let level = 0;
-
-        if (entry.questionsAttempted > 20) level = 4;
-        else if (entry.questionsAttempted > 10) level = 3;
-        else if (entry.questionsAttempted > 5) level = 2;
-        else if (entry.questionsAttempted > 0) level = 1;
-        activityArray[day - 1] = level;
-      }
+      const key = entry.date ? entry.date.split('T')[0] : '';
+      if (key) heatmapMap.set(key, entry.questionsAttempted || 0);
     });
+  }
+
+  for (let i = 0; i < 30; i++) {
+    const dayDate = new Date(now.getTime() - (29 - i) * 86400000);
+    const dayKey = dayDate.toISOString().split('T')[0] ?? '';
+    const qCount = heatmapMap.get(dayKey) ?? 0;
+
+    let level = 0;
+    if (qCount > 20) level = 4;
+    else if (qCount > 10) level = 3;
+    else if (qCount > 5) level = 2;
+    else if (qCount > 0) level = 1;
+
+    activity30Days[i] = level;
   }
 
   const sortedByAccuracy = Array.isArray(analytics?.subjectPerformance)
     ? [...analytics.subjectPerformance].sort((a, b) => b.accuracy - a.accuracy)
     : [];
+
   const bestSubject = analytics?.bestSubject || sortedByAccuracy[0]?.subject || '';
-  const weakSubject = analytics?.weakSubject || sortedByAccuracy[sortedByAccuracy.length - 1]?.subject || '';
+  let weakSubject = analytics?.weakSubject || sortedByAccuracy[sortedByAccuracy.length - 1]?.subject || '';
+
+  // Requirement: If best and weak subject are the same, don't show weak subject, just show a hyphen (-)
+  if (bestSubject && weakSubject && bestSubject.trim().toLowerCase() === weakSubject.trim().toLowerCase()) {
+    weakSubject = '-';
+  }
+
+  const totalCorrectVal = user.totalCorrect || 0;
 
   return {
     stats: {
       accuracy: user.totalQuestions > 0
-        ? Math.round((user.totalCorrect / user.totalQuestions) * 100)
+        ? Math.round((totalCorrectVal / user.totalQuestions) * 100)
         : Math.round(analytics?.overallAccuracy || 0),
       streak: user.currentStreak || 0,
       questions: user.totalQuestions || 0,
+      totalCorrect: totalCorrectVal,
     },
     keyStats: {
-      totalCorrect: user.totalCorrect || 0,
+      totalCorrect: totalCorrectVal,
       avgScore: Math.round(analytics?.avgScore || analytics?.overallAccuracy || 0),
       bestSubject,
       studyHours: user.studyHours || 0,
@@ -124,9 +134,8 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
       timeTaken: `${Math.max(1, Math.round((item.timeTaken || 0) / 60))}m`,
     })),
     activityHeatmap: {
-      month,
-      year,
-      grid: [activityArray],
+      activity: activity30Days,
+      label: 'Last 30 Days',
     },
   };
 };
@@ -136,6 +145,7 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
     accuracy: 0,
     streak: 0,
     questions: 0,
+    totalCorrect: 0,
   },
   keyStats: {
     totalCorrect: 0,
@@ -148,9 +158,8 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
   subjectPerformance: [],
   attempts: [],
   activityHeatmap: {
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear(),
-    grid: [[] as number[]],
+    activity: Array.from({ length: 30 }, () => 0),
+    label: 'Last 30 Days',
   },
 };
 
@@ -201,7 +210,7 @@ export default function AnalyticsScreen() {
     return buildAnalyticsSnapshot(userData, analyticsData);
   }, [userData, analyticsData]);
 
-  const hasStats = data.stats.accuracy > 0 || data.stats.streak > 0 || data.stats.questions > 0;
+  const hasStats = data.stats.accuracy > 0 || data.stats.streak > 0 || data.stats.questions > 0 || data.stats.totalCorrect > 0;
   const hasKeyStats =
     data.keyStats.totalCorrect > 0 ||
     data.keyStats.avgScore > 0 ||
@@ -212,12 +221,9 @@ export default function AnalyticsScreen() {
 
   const hasAttempts = data.attempts.length > 0;
   const hasSubjects = data.subjectPerformance.length > 0;
-  const hasHeatmap = data.activityHeatmap.grid.some((row: number[]) => row.some((level: number) => level > 0));
+  const hasHeatmap = data.activityHeatmap.activity.some((level: number) => level > 0);
 
   const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({ name: item.subject, score: item.percentage }));
-
-  const activity = data.activityHeatmap.grid.flat();
-  const currentMonthLabel = formatMonthLabel(data.activityHeatmap.month, data.activityHeatmap.year);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -273,6 +279,7 @@ export default function AnalyticsScreen() {
                 <AnalyticsStatsCard
                   accuracy={data.stats.accuracy}
                   streak={data.stats.streak}
+                  totalCorrect={data.stats.totalCorrect}
                   questions={data.stats.questions}
                 />
               ) : (
@@ -312,22 +319,9 @@ export default function AnalyticsScreen() {
 
               {hasHeatmap ? (
                 <View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: theme.space.xs }}>
-                    <Text
-                      style={{
-                        color: theme.color.textMuted,
-                        fontSize: theme.fontSize.xs,
-                        fontFamily: theme.fontFamily.regular,
-                      }}
-                    >
-                      {currentMonthLabel}
-                    </Text>
-                  </View>
-
                   <ActivityHeatmapCard
-                    month={data.activityHeatmap.month}
-                    year={data.activityHeatmap.year}
-                    activity={activity}
+                    activity={data.activityHeatmap.activity}
+                    label={data.activityHeatmap.label}
                   />
                 </View>
               ) : (

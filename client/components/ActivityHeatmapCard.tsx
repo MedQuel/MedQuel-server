@@ -3,9 +3,10 @@ import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
 type Props = {
-  month: number;
-  year: number;
+  month?: number;
+  year?: number;
   activity: number[];
+  label?: string;
 };
 
 const resolveText = (translated: string, fallback: string) => {
@@ -22,10 +23,7 @@ const rgba = (hex: string, alpha: number) => {
   return `rgba(${(i >> 16) & 255}, ${(i >> 8) & 255}, ${i & 255}, ${alpha})`;
 };
 
-const monthName = (month: number) =>
-  new Date(2025, month - 1, 1).toLocaleString('default', { month: 'long' });
-
-export function ActivityHeatmapCard({ month, year, activity }: Props) {
+export function ActivityHeatmapCard({ activity, label }: Props) {
   const { theme } = useTheme();
 
   const title = resolveText(
@@ -43,13 +41,11 @@ export function ActivityHeatmapCard({ month, year, activity }: Props) {
     'More',
   );
 
-  const daysInMonth = new Date(year, month, 0).getDate();
-
-  const cells = Array.from({ length: daysInMonth }, (_, i) => activity[i] ?? 0);
+  // Rolling 30 days continuous activity data
+  const cells = Array.from({ length: 30 }, (_, i) => activity[i] ?? 0);
 
   const levelColor = (level: number) => {
     const alpha = [0.10, 0.22, 0.38, 0.58, 0.82][Math.max(0, Math.min(level, 4))] ?? 0.82;
-
     return rgba(theme.color.accent, alpha);
   };
 
@@ -89,7 +85,7 @@ export function ActivityHeatmapCard({ month, year, activity }: Props) {
             fontFamily: theme.fontFamily.regular,
           }}
         >
-          {monthName(month)}
+          {label ?? 'Last 30 Days'}
         </Text>
       </View>
 
@@ -97,16 +93,16 @@ export function ActivityHeatmapCard({ month, year, activity }: Props) {
         style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
-          gap: 4,
+          gap: 6,
         }}
       >
         {cells.map((level, index) => (
           <View
             key={index}
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: 3,
+              width: 22,
+              height: 22,
+              borderRadius: 4,
               backgroundColor: levelColor(level),
             }}
           />
@@ -136,8 +132,8 @@ export function ActivityHeatmapCard({ month, year, activity }: Props) {
           <View
             key={level}
             style={{
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               borderRadius: 3,
               backgroundColor: levelColor(level),
             }}

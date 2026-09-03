@@ -44,7 +44,8 @@ type CurrentUserLeaderboardRow = {
 type LeaderboardSnapshot = {
   podiumUsers: LeaderboardPodiumUser[];
   currentUser: CurrentUserLeaderboardRow | null;
-  rankings: LeaderboardRankRow[];
+  globalRankings: LeaderboardRankRow[];
+  allRankings: LeaderboardRankRow[];
   playersCount: number;
 };
 
@@ -64,7 +65,18 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
     score: entry.epPoints,
   }));
 
-  const rankings = sorted.map((entry: LeaderboardEntry) => ({
+  // Global Rankings list shows remaining participants (rank 4+) without repeating top 3 podium participants
+  const globalRankings = sorted.slice(3).map((entry: LeaderboardEntry) => ({
+    id: entry.userId,
+    rank: entry.rank,
+    initials: getInitials(entry.displayName || '') || '??',
+    name: entry.displayName,
+    specialty: entry.specialization,
+    points: entry.epPoints,
+  }));
+
+  // Friends Rankings list shows all friends starting from rank #1 onwards (without podium)
+  const allRankings = sorted.map((entry: LeaderboardEntry) => ({
     id: entry.userId,
     rank: entry.rank,
     initials: getInitials(entry.displayName || '') || '??',
@@ -91,7 +103,8 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
   return {
     podiumUsers,
     currentUser,
-    rankings,
+    globalRankings,
+    allRankings,
     playersCount: sorted.length,
   };
 };
@@ -308,7 +321,7 @@ export default function LeaderboardScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingTop: theme.space.md,
-              paddingBottom: theme.space.xl,
+              paddingBottom: 140, // Increased bottom padding to ensure participant cards roll clear of AppBottomBar
               paddingHorizontal: theme.space.md,
             }}
           >
@@ -320,72 +333,141 @@ export default function LeaderboardScreen() {
 
             <View style={{ height: theme.space.md }} />
 
-            {scopeFilter === 'friends' || (activeSnapshot.podiumUsers.length === 0 && activeSnapshot.rankings.length === 0) ? (
-              <EmptyStateCard
-                icon='users'
-                title={theme.i18n.t('No Friends Connected Yet')}
-                description={theme.i18n.t('Connect with your Medical study Peers!')}
-              />
-            ) : (
-              <>
-                <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
-
-                {activeSnapshot.currentUser ? (
-                  <>
-                    <View style={{ height: theme.space.md }} />
-                    <CurrentUserLeaderboardRankCard
-                      name={activeSnapshot.currentUser.name.replace('You • ', '')}
-                      rank={activeSnapshot.currentUser.rank}
-                      points={activeSnapshot.currentUser.points}
-                      weeklyGrowth={activeSnapshot.currentUser.trend}
-                    />
-                  </>
-                ) : null}
-
-                <View style={{ height: theme.space.lg }} />
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: theme.space.lg,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.lg,
-                      fontWeight: theme.fontWeight.bold,
-                      fontFamily: theme.fontFamily.regular,
-                    }}
-                  >
-                    {theme.i18n.t('leaderboard.rankings')}
-                  </Text>
-
-                  <Text
-                    style={{
-                      color: theme.color.textMuted,
-                      fontSize: theme.fontSize.sm,
-                      fontFamily: theme.fontFamily.regular,
-                    }}
-                  >
-                    {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
-                  </Text>
-                </View>
-
-                <View>
-                  {activeSnapshot.rankings.map((item) => (
-                    <View key={item.id} style={{ marginBottom: theme.space.sm }} >
-                      <LeaderboardRankCard
-                        rank={item.rank}
-                        name={item.name}
-                        specialty={item.specialty}
-                        points={item.points}
+            {scopeFilter === 'friends' ? (
+              /* Friends Leaderboard: No Podium, shows all friends starting from Rank #1 */
+              activeSnapshot.allRankings.length === 0 ? (
+                <EmptyStateCard
+                  icon='users'
+                  title={theme.i18n.t('No Friends Connected Yet')}
+                  description={theme.i18n.t('Connect with your Medical study Peers!')}
+                />
+              ) : (
+                <>
+                  {activeSnapshot.currentUser ? (
+                    <>
+                      <CurrentUserLeaderboardRankCard
+                        name={activeSnapshot.currentUser.name.replace('You • ', '')}
+                        rank={activeSnapshot.currentUser.rank}
+                        points={activeSnapshot.currentUser.points}
+                        weeklyGrowth={activeSnapshot.currentUser.trend}
                       />
-                    </View>
-                  ))}
-                </View>
-              </>
+                      <View style={{ height: theme.space.md }} />
+                    </>
+                  ) : null}
+
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: theme.space.lg,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.color.textPrimary,
+                        fontSize: theme.fontSize.lg,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.rankings')}
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: theme.color.textMuted,
+                        fontSize: theme.fontSize.sm,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
+                    </Text>
+                  </View>
+
+                  <View>
+                    {activeSnapshot.allRankings.map((item) => (
+                      <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                        <LeaderboardRankCard
+                          rank={item.rank}
+                          name={item.name}
+                          specialty={item.specialty}
+                          points={item.points}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )
+            ) : (
+              /* Global Leaderboard: Podium displays top 3, Rankings section displays remaining (Rank #4+) */
+              activeSnapshot.podiumUsers.length === 0 && activeSnapshot.globalRankings.length === 0 ? (
+                <EmptyStateCard
+                  icon='users'
+                  title={theme.i18n.t('No Rankings Yet')}
+                  description={theme.i18n.t('Be the first to join the leaderboard!')}
+                />
+              ) : (
+                <>
+                  <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
+
+                  {activeSnapshot.currentUser ? (
+                    <>
+                      <View style={{ height: theme.space.md }} />
+                      <CurrentUserLeaderboardRankCard
+                        name={activeSnapshot.currentUser.name.replace('You • ', '')}
+                        rank={activeSnapshot.currentUser.rank}
+                        points={activeSnapshot.currentUser.points}
+                        weeklyGrowth={activeSnapshot.currentUser.trend}
+                      />
+                    </>
+                  ) : null}
+
+                  <View style={{ height: theme.space.lg }} />
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: theme.space.lg,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.color.textPrimary,
+                        fontSize: theme.fontSize.lg,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.rankings')}
+                    </Text>
+
+                    <Text
+                      style={{
+                        color: theme.color.textMuted,
+                        fontSize: theme.fontSize.sm,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
+                    </Text>
+                  </View>
+
+                  <View>
+                    {activeSnapshot.globalRankings.map((item) => (
+                      <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                        <LeaderboardRankCard
+                          rank={item.rank}
+                          name={item.name}
+                          specialty={item.specialty}
+                          points={item.points}
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )
             )}
           </ScrollView>
         )}
