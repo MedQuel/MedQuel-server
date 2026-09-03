@@ -85,3 +85,14 @@ export async function uploadProfilePhoto(localUri: string, previousPhotoURL?: st
 
   return downloadUrl;
 }
+
+export function removeProfilePhoto(photoURL?: string | null): void {
+  if (!photoURL) return;
+
+  const storagePath = extractStoragePath(photoURL);
+  if (!storagePath) return;
+
+  deleteObject(ref(storage, storagePath)).catch(() => {
+    // The profile record is already cleared; an unavailable old object is harmless.
+  });
+}
