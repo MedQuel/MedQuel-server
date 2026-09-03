@@ -80,6 +80,19 @@ export default function HomeScreen() {
   }, [fetchHomeDashboard]);
 
   const dailyChallenge = homeData?.dailyChallenge ?? null;
+  const quizzesTaken = analytics?.recentAttempts.length ?? 0;
+// Played contests IDs from recent attempts (with safe type checking)
+const playedContestIds = new Set(
+  analytics?.recentAttempts
+    ?.map((attempt: any) => attempt?.contestId ?? attempt?.quizId)
+    .filter(Boolean) ?? []
+);
+  // Filter unplayed active contests
+  const availableContests = (homeData?.activeContests ?? []).filter((contest) => {
+    const isActive = contest.status === 'active' && new Date(contest.endsAt).getTime() > Date.now();
+    const isAlreadyPlayed = playedContestIds.has(contest.contestId);
+    return isActive && !isAlreadyPlayed;
+  });
 
   if (loading) {
     return (
@@ -141,24 +154,50 @@ export default function HomeScreen() {
         <StatsOverviewCard
           rank={myRank ?? 0}
           accuracy={analytics ? Math.round(analytics.overallAccuracy) : 0}
-          quizzesTaken={analytics?.recentAttempts.length ?? 0}
+          quizzesTaken={quizzesTaken}
           earnedPoints={user.epPoints}
         />
-
-        <DailyChallengeCard
-          title={dailyChallenge?.subject ?? ''}
-          questions={challengeContest?.totalQuestions ?? 30}
-          duration={challengeContest ? Math.round(challengeContest.timeLimitSecs / 60) : 45}
-          difficulty={challengeContest?.difficulty ?? 'medium'}
-          endsAt={
-            dailyChallenge
-              ? String(Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)))
-              : ''
-          }
-          epReward={dailyChallenge?.epReward ?? 0}
-          onStart={() => {}}
-          completed={!dailyChallenge}
-        />
+        {dailyChallenge ? (
+          <DailyChallengeCard
+            title={dailyChallenge.subject}
+            questions={challengeContest?.totalQuestions ?? 30}
+            duration={challengeContest ? Math.round(challengeContest.timeLimitSecs / 60) : 45}
+            difficulty={challengeContest?.difficulty ?? 'medium'}
+            endsAt={String(
+              Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000))
+            )}
+            epReward={dailyChallenge.epReward}
+            onStart={() => {
+              if (dailyChallenge.contestId) {
+                router.push(`/contests/${dailyChallenge.contestId}`);
+              }
+            }}
+          />
+        ) : (
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: theme.space.lg,
+              borderWidth: 1,
+              borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.xl,
+              backgroundColor: theme.color.card,
+            }}
+          >
+            <Feather name="calendar" size={theme.fontSize.xl} color={theme.color.textMuted} />
+            <Text
+              style={{
+                marginTop: theme.space.sm,
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {theme.i18n.t('No new challenge right now. Check back soon!')}
+            </Text>
+          </View>
+        )}
 
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -186,19 +225,45 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <View>
-            <ActiveContestsCard
-              contests={homeData.activeContests.map((contest) => ({
-                contestId: contest.contestId,
-                title: contest.title,
-                subject: contest.subject,
-                difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
-                isLive: contest.status === 'active',
-                participantsCount: contest.participantCount,
-                epReward: contest.epReward,
-              }))}
-            />
-          </View>
+          {availableContests.length > 0 ? (
+            <View>
+              <ActiveContestsCard
+                contests={availableContests.map((contest) => ({
+                  contestId: contest.contestId,
+                  title: contest.title,
+                  subject: contest.subject,
+                  difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
+                  isLive: contest.status === 'active',
+                  participantsCount: contest.participantCount,
+                  epReward: contest.epReward,
+                }))}
+              />
+            </View>
+          ) : (
+            <View
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: theme.space.lg,
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                borderRadius: theme.borderRadius.xl,
+                backgroundColor: theme.color.card,
+              }}
+            >
+              <Feather name="inbox" size={theme.fontSize.xl} color={theme.color.textMuted} />
+              <Text
+                style={{
+                  marginTop: theme.space.sm,
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('No contest available to play')}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={{ gap: theme.space.sm }}>

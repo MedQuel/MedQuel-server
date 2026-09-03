@@ -235,7 +235,6 @@ export default function ChatScreen() {
           />
         </View>
       </View>
-
       <View
         style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
       >

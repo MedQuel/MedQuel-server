@@ -23,6 +23,7 @@ import type {
 } from "@/common/types/types";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
+
 const STUDY_LEVELS: StudyLevel[] = [
   "MBBS Year 1-5",
   "Postgraduate",
@@ -88,8 +89,6 @@ export default function updateProfile() {
   ) => {
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
-      // Year of Study sirf MBBS Year 1-5 ke liye relevant hai,
-      // isliye kisi aur studyLevel pe switch karte hi ise clear kar do
       if (name === "studyLevel" && value !== "MBBS Year 1-5") {
         next.yearOfStudy = "";
       }
@@ -99,7 +98,6 @@ export default function updateProfile() {
   };
 
   // pick image function
-
   const pickImage = useCallback(async (source: "camera" | "gallery") => {
     setPhotoModalVisible(false);
     try {
@@ -132,9 +130,6 @@ export default function updateProfile() {
 
       if (!result.canceled && result.assets?.[0]?.uri) {
         handleChange("photoURL", result.assets[0].uri);
-        // NOTE: ye local URI hai. Agar backend pe upload karna hai
-        // (e.g. userApi.uploadPhoto(uri)) to yahin call karke
-        // returned hosted URL ko handleChange("photoURL", uploadedUrl) me set karo.
       }
     } catch (e) {
       console.log("pickImage error:", e);
@@ -197,7 +192,6 @@ export default function updateProfile() {
       setTimeout(() => {
         router.push("/profile");
       }, 800);
-
     } catch (e) {
       setError("Could not save your changes. Please try again.");
     } finally {
@@ -222,18 +216,15 @@ export default function updateProfile() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <ScrollView
+        contentContainerStyle={{ paddingBottom: theme.space.xxl + 64 }}
         style={{
           flex: 1,
           backgroundColor: isDark
             ? theme.color.background
             : theme.color.background,
         }}
-        // contentContainerStyle={{
-        //   padding: theme.space.lg,
-        //   paddingBottom: 75,
-        // }}
       >
         <View
           style={{
@@ -252,7 +243,7 @@ export default function updateProfile() {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              marginBottom: theme.space.lg,
+              marginBottom: theme.space.md,
             }}
           >
             <TouchableOpacity
@@ -299,39 +290,30 @@ export default function updateProfile() {
               </Text>
             </View>
           </View>
-          <Text
-            style={{
-              fontSize: theme.fontSize.sm,
-              color: theme.color.textMuted,
-              fontFamily: theme.fontFamily.bold,
-              marginTop: 4,
-              marginBottom: theme.space.lg,
-            }}
-          >
-            Update your study details below.
-          </Text>
 
           {/* Photo preview - centered and enlarged */}
           <View
             style={{
               alignItems: "center",
               justifyContent: "center",
-              marginBottom: theme.space.lg,
+              marginBottom: theme.space.md,
             }}
           >
-            <View style={{ width: 110, height: 110 }}>
+            <View style={{ width: 88, height: 88 }}>
               <Image
                 source={{
                   uri:
                     formData.photoURL ||
                     "https://api.dicebear.com/7.x/initials/svg?seed=" +
-                      encodeURIComponent(formData.displayName || "U"),
+                      encodeURIComponent(formData.displayName || "U") +
+                      "&backgroundColor=" +
+                      encodeURIComponent(theme.color.accent.replace("#", "")),
                 }}
                 style={{
                   borderWidth: 4,
                   borderColor: theme.color.border,
-                  width: 110,
-                  height: 110,
+                  width: 88,
+                  height: 88,
                   borderRadius: theme.borderRadius.full,
                   backgroundColor: theme.color.border,
                 }}
@@ -342,8 +324,8 @@ export default function updateProfile() {
                   position: "absolute",
                   bottom: 0,
                   right: 0,
-                  width: 32,
-                  height: 32,
+                  width: 28,
+                  height: 28,
                   borderRadius: theme.borderRadius.full,
                   backgroundColor: theme.color.card,
                   alignItems: "center",
@@ -354,7 +336,7 @@ export default function updateProfile() {
               >
                 <Feather
                   name="camera"
-                  size={16}
+                  size={14}
                   color={theme.color.accent}
                 />
               </TouchableOpacity>
@@ -454,7 +436,6 @@ export default function updateProfile() {
             </View>
           </View>
 
-          {/* yearOfStudy - sirf MBBS Year 1-5 select hone par dikhana hai */}
           {formData.studyLevel === "MBBS Year 1-5" && (
             <View style={{ marginBottom: theme.space.md }}>
               <Text
@@ -528,7 +509,7 @@ export default function updateProfile() {
                 marginBottom: theme.space.sm,
               }}
             >
-              Goal
+              Target Exam
             </Text>
 
             <TouchableOpacity
@@ -648,63 +629,74 @@ export default function updateProfile() {
               }}
             />
           </View>
-
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={saving}
-            style={{
-              backgroundColor: theme.color.accent,
-              borderRadius: theme.borderRadius.md,
-              paddingVertical: theme.space.sm + 4,
-              alignItems: "center",
-              opacity: saving ? 0.6 : 1,
-            }}
-          >
-            {saving ? (
-              <ActivityIndicator color={theme.color.textInverse} />
-            ) : (
-              <Text
-                style={{
-                  color: theme.color.textInverse,
-                  fontSize: theme.fontSize.sm + 1,
-                  fontWeight: theme.fontWeight.medium,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                Save Changes
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {saved && !error && (
-            <Text
-              style={{
-                color: theme.color.success,
-                fontSize: theme.fontSize.sm,
-                textAlign: "center",
-                fontFamily: theme.fontFamily.bold,
-                marginTop: theme.space.sm,
-              }}
-            >
-              Profile updated successfully.
-            </Text>
-          )}
-
-          {error && (
-            <Text
-              style={{
-                color: theme.color.error,
-                fontSize: theme.fontSize.sm,
-                textAlign: "center",
-                fontFamily: theme.fontFamily.bold,
-                marginTop: theme.space.sm,
-              }}
-            >
-              {error}
-            </Text>
-          )}
         </View>
       </ScrollView>
+
+      <View
+        style={{
+          paddingHorizontal: theme.space.lg,
+          paddingTop: theme.space.sm,
+          paddingBottom: theme.space.md,
+          borderTopWidth: 1,
+          borderTopColor: theme.color.border,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={saving}
+          style={{
+            backgroundColor: theme.color.accent,
+            borderRadius: theme.borderRadius.md,
+            paddingVertical: theme.space.sm + 4,
+            alignItems: "center",
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          {saving ? (
+            <ActivityIndicator color={theme.color.textInverse} />
+          ) : (
+            <Text
+              style={{
+                color: theme.color.textInverse,
+                fontSize: theme.fontSize.sm + 1,
+                fontWeight: theme.fontWeight.medium,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              Save Changes
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        {saved && !error && (
+          <Text
+            style={{
+              color: theme.color.success,
+              fontSize: theme.fontSize.sm,
+              textAlign: "center",
+              fontFamily: theme.fontFamily.bold,
+              marginTop: theme.space.xs,
+            }}
+          >
+            Profile updated successfully.
+          </Text>
+        )}
+
+        {!!error && (
+          <Text
+            style={{
+              color: theme.color.error,
+              fontSize: theme.fontSize.sm,
+              textAlign: "center",
+              fontFamily: theme.fontFamily.bold,
+              marginTop: theme.space.xs,
+            }}
+          >
+            {error}
+          </Text>
+        )}
+      </View>
 
       {/* Photo source picker modal */}
       <Modal
@@ -818,6 +810,6 @@ export default function updateProfile() {
           </Pressable>
         </Pressable>
       </Modal>
-    </>
+    </View>
   );
 }

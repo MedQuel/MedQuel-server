@@ -1,7 +1,5 @@
+import { useState, useEffect, useMemo, ReactNode } from "react";
 import { useRouter } from "expo-router";
-import { useState, useEffect, useMemo } from "react";
-import { sendPasswordReset } from "../../common/firebase/firebase";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   Modal,
   Pressable,
@@ -11,7 +9,9 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { sendPasswordReset, signOut } from "../../common/firebase/firebase";
 import { useBottomBar } from "../../common/context/useBottomBar";
 import { userApi } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
@@ -19,14 +19,51 @@ import { Loading } from "../../components/common/loading";
 import { UserProfileCard } from "../../components/UserProfileCard";
 import { ToggleSwitch } from "../../components/common/ToggleSwitch";
 import { PremiumUpsellCardFull } from "../../components/PremiumUpsellCardFull";
-import { signOut } from "../../common/firebase/firebase";
 import { Difficulty, QuizPrefs, NotifPrefs } from "@/common/types/types";
 
-function SectionLabel({ text, theme }: any) {
+// --- Types ---
+
+interface ComponentThemeProps {
+  theme: any;
+}
+
+interface SectionLabelProps extends ComponentThemeProps {
+  text: string;
+}
+
+interface CardProps extends ComponentThemeProps {
+  children: ReactNode;
+}
+
+interface RowProps extends ComponentThemeProps {
+  icon: string;
+  iconLib?: any;
+  iconBg?: string;
+  iconColor: string;
+  title: string;
+  titleColor?: string;
+  subtitle?: string;
+  onPress?: () => void;
+  right?: ReactNode;
+}
+
+interface ToggleRightProps extends ComponentThemeProps {
+  value: boolean;
+  onChange: (val: boolean) => void;
+}
+
+interface UpdateButtonProps extends ComponentThemeProps {
+  visible: boolean;
+  onPress: () => void;
+  saving: boolean;
+}
+
+// --- Sub-Components ---
+
+function SectionLabel({ text, theme }: SectionLabelProps) {
   return (
     <Text
       style={{
-        textTransform: "capitalize",
         color: theme.color.textMuted,
         fontSize: theme.fontSize.md,
         fontFamily: theme.fontFamily.bold,
@@ -37,7 +74,8 @@ function SectionLabel({ text, theme }: any) {
     </Text>
   );
 }
-function Card({ theme, children }: any) {
+
+function Card({ theme, children }: CardProps) {
   return (
     <View style={{ justifyContent: "center", paddingVertical: theme.space.sm }}>
       <View
@@ -57,7 +95,7 @@ function Card({ theme, children }: any) {
   );
 }
 
-function Divider({ theme }: any) {
+function Divider({ theme }: ComponentThemeProps) {
   return (
     <View
       style={{
@@ -80,7 +118,7 @@ function Row({
   subtitle,
   onPress,
   right,
-}: any) {
+}: RowProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -138,7 +176,7 @@ function Row({
   );
 }
 
-function ToggleRight({ theme, value, onChange }: any) {
+function ToggleRight({ theme, value, onChange }: ToggleRightProps) {
   return (
     <View style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}>
       <ToggleSwitch
@@ -154,12 +192,12 @@ function ToggleRight({ theme, value, onChange }: any) {
   );
 }
 
-function UpdateButton({ theme, visible, onPress, saving }: any) {
+function UpdateButton({ theme, visible, onPress, saving }: UpdateButtonProps) {
   if (!visible) return null;
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      disabled={!!saving}
+      disabled={saving}
       onPress={onPress}
       style={{
         marginTop: theme.space.xs,
@@ -180,19 +218,17 @@ function UpdateButton({ theme, visible, onPress, saving }: any) {
           fontFamily: theme.fontFamily.bold,
         }}
       >
-        {saving ? "Updating..." : "Update"}
+        {saving
+          ? theme.i18n.t("profile.settings.actions.updating")
+          : theme.i18n.t("profile.settings.actions.update")}
       </Text>
     </TouchableOpacity>
   );
 }
- 
-const DIFFICULTY_OPTIONS: Difficulty[] = ["easy", "medium", "hard"];
 
-// const DIFFICULTY_LABELS: Record<Difficulty, string> = {
-//   easy: theme.i18n.t("common.easy"),
-//   medium: theme.i18n.t("common.medium"),
-//   hard: theme.i18n.t("common.hard"),
-// };
+// --- Constants ---
+
+const DIFFICULTY_OPTIONS: Difficulty[] = ["easy", "medium", "hard"];
 
 const DEFAULT_NOTIF_TOGGLES = {
   rank: false,
@@ -208,70 +244,55 @@ const DEFAULT_QUIZ_TOGGLES: QuizPrefs = {
   autoSubmit: false,
 };
 
+// --- Main Screen ---
+
 export default function SettingsScreen() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
-  const DIFFICULTY_LABELS = useMemo<Record<Difficulty, string>>(
+  useBottomBar(false, "profile");
+
+  const DIFFICULTY_TRANSLATION_KEYS: Record<Difficulty, string> = useMemo(
     () => ({
-      easy: theme.i18n.t("common.easy"),
-      medium: theme.i18n.t("common.medium"),
-      hard: theme.i18n.t("common.hard"),
+      easy: "common.easy",
+      medium: "common.medium",
+      hard: "common.hard",
     }),
-    [theme],
+    []
   );
 
-  // usestates
-
   const [userData, setUserData] = useState<any>(null);
-
   const [error, setError] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(true);
-  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
 
+  // Notification states
   const [notifToggles, setNotifToggles] = useState(DEFAULT_NOTIF_TOGGLES);
-
-  const [quizToggles, setQuizToggles] =
-    useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
-
+  const [savedNotifToggles, setSavedNotifToggles] = useState(DEFAULT_NOTIF_TOGGLES);
   const [savingNotif, setSavingNotif] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
 
-  const [savedNotifToggles, setSavedNotifToggles] = useState(
-    DEFAULT_NOTIF_TOGGLES,
-  );
-  
-  // change password stats
-  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
-const [resettingPassword, setResettingPassword] = useState(false);
-
-  const [savedQuizToggles, setSavedQuizToggles] =
-    useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
-
-  const [difficultyModalVisible, setDifficultyModalVisible] = useState(false);
-
+  // Quiz states
+  const [quizToggles, setQuizToggles] = useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
+  const [savedQuizToggles, setSavedQuizToggles] = useState<QuizPrefs>(DEFAULT_QUIZ_TOGGLES);
   const [savingQuiz, setSavingQuiz] = useState(false);
-
   const [quizError, setQuizError] = useState<string | null>(null);
 
-  useBottomBar(false, "profile");
+  // Modal visibility states
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
+  const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+  const [difficultyModalVisible, setDifficultyModalVisible] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+
+  const isNotifDirty =
+    JSON.stringify(notifToggles) !== JSON.stringify(savedNotifToggles);
+  const isQuizDirty =
+    JSON.stringify(quizToggles) !== JSON.stringify(savedQuizToggles);
 
   const setNotif = (key: string) => (val: boolean) =>
     setNotifToggles((t) => ({ ...t, [key]: val }));
 
   const setQuiz = (key: string) => (val: boolean) =>
     setQuizToggles((t) => ({ ...t, [key]: val }));
-
-  const handleSelectDifficulty = (value: Difficulty) => {
-    setQuizToggles((t) => ({ ...t, defaultDifficulty: value }));
-    setDifficultyModalVisible(false);
-  };
-
-  const isNotifDirty =
-    JSON.stringify(notifToggles) !== JSON.stringify(savedNotifToggles);
-  const isQuizDirty =
-    JSON.stringify(quizToggles) !== JSON.stringify(savedQuizToggles);
 
   useEffect(() => {
     (async () => {
@@ -281,26 +302,18 @@ const [resettingPassword, setResettingPassword] = useState(false);
         const data = await userApi.getMe();
         setUserData(data);
 
-        // Hydrate toggles from server response (falls back to defaults if
-        // the API/mock doesn't return notifPrefs / quizPrefs yet)
         const loadedNotif = {
           push: data?.notifPrefs?.pushEnabled ?? DEFAULT_NOTIF_TOGGLES.push,
           email: data?.notifPrefs?.emailDigest ?? DEFAULT_NOTIF_TOGGLES.email,
           rank: data?.notifPrefs?.rankAlerts ?? DEFAULT_NOTIF_TOGGLES.rank,
-          contest:
-            data?.notifPrefs?.contestReminders ?? DEFAULT_NOTIF_TOGGLES.contest,
-          achievement:
-            data?.notifPrefs?.achievementAlerts ??
-            DEFAULT_NOTIF_TOGGLES.achievement,
+          contest: data?.notifPrefs?.contestReminders ?? DEFAULT_NOTIF_TOGGLES.contest,
+          achievement: data?.notifPrefs?.achievementAlerts ?? DEFAULT_NOTIF_TOGGLES.achievement,
         };
+
         const loadedQuiz: QuizPrefs = {
-          defaultDifficulty:
-            data?.quizPrefs?.defaultDifficulty ??
-            DEFAULT_QUIZ_TOGGLES.defaultDifficulty,
-          timerSound:
-            data?.quizPrefs?.timerSound ?? DEFAULT_QUIZ_TOGGLES.timerSound,
-          autoSubmit:
-            data?.quizPrefs?.autoSubmit ?? DEFAULT_QUIZ_TOGGLES.autoSubmit,
+          defaultDifficulty: data?.quizPrefs?.defaultDifficulty ?? DEFAULT_QUIZ_TOGGLES.defaultDifficulty,
+          timerSound: data?.quizPrefs?.timerSound ?? DEFAULT_QUIZ_TOGGLES.timerSound,
+          autoSubmit: data?.quizPrefs?.autoSubmit ?? DEFAULT_QUIZ_TOGGLES.autoSubmit,
         };
 
         setNotifToggles(loadedNotif);
@@ -308,7 +321,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
         setQuizToggles(loadedQuiz);
         setSavedQuizToggles(loadedQuiz);
       } catch {
-        setError("Could not load profile. Pull to refresh.");
+        setError(theme.i18n.t("profile.settings.errors.load"));
       } finally {
         setLoading(false);
       }
@@ -319,15 +332,15 @@ const [resettingPassword, setResettingPassword] = useState(false);
     const now = new Date();
     const past = new Date(iso);
     const diffTime = Math.abs(now.getTime() - past.getTime());
-    return `${Math.floor(diffTime / (1000 * 60 * 60 * 24))} days`;
+    return theme.i18n.t("profile.settings.account.days", {
+      count: Math.floor(diffTime / (1000 * 60 * 60 * 24)),
+    });
   };
 
   const handleSaveNotif = async () => {
     try {
       setSavingNotif(true);
       setNotifError(null);
-
-      // Map local state keys -> API's NotifPrefs shape
       const payload: NotifPrefs = {
         pushEnabled: notifToggles.push,
         emailDigest: notifToggles.email,
@@ -338,30 +351,27 @@ const [resettingPassword, setResettingPassword] = useState(false);
 
       await userApi.updateNotifPrefs(payload);
       setSavedNotifToggles(notifToggles);
-    } catch (err) {
-      setNotifError("Could not save notification settings. Try again.");
+    } catch {
+      setNotifError(theme.i18n.t("profile.settings.errors.saveNotifications"));
     } finally {
       setSavingNotif(false);
     }
   };
 
-  // change password function 
-
   const handleConfirmChangePassword = async () => {
-  setChangePasswordModalVisible(false);
-  if (!userData?.email) return;
+    setChangePasswordModalVisible(false);
+    if (!userData?.email) return;
 
-  try {
-    setResettingPassword(true);
-    await sendPasswordReset(userData.email);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setResettingPassword(false);
-  }
-};
+    try {
+      setResettingPassword(true);
+      await sendPasswordReset(userData.email);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setResettingPassword(false);
+    }
+  };
 
-  // confirm signout function
   const handleConfirmSignOut = () => {
     setSignOutModalVisible(false);
     signOut();
@@ -371,34 +381,19 @@ const [resettingPassword, setResettingPassword] = useState(false);
     try {
       setSavingQuiz(true);
       setQuizError(null);
-
       await userApi.updateQuizPrefs(quizToggles);
       setSavedQuizToggles(quizToggles);
-    } catch (err) {
-      setQuizError("Could not save quiz preferences. Try again.");
+    } catch {
+      setQuizError(theme.i18n.t("profile.settings.errors.saveQuizPreferences"));
     } finally {
       setSavingQuiz(false);
     }
   };
 
-  const styles = StyleSheet.create({
-    overlay: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.4)",
-      justifyContent: "flex-end",
-    },
-    sheet: {
-      padding: 16,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-    },
-    option: {
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      marginBottom: 4,
-    },
-  });
+  const handleSelectDifficulty = (value: Difficulty) => {
+    setQuizToggles((t) => ({ ...t, defaultDifficulty: value }));
+    setDifficultyModalVisible(false);
+  };
 
   if (loading || error) {
     return (
@@ -411,7 +406,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
           backgroundColor: theme.color.background,
         }}
       >
-        {loading ? <Loading /> : <Text>{error}</Text>}
+        {loading ? <Loading /> : <Text style={{ color: theme.color.textPrimary }}>{error}</Text>}
       </View>
     );
   }
@@ -424,6 +419,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
         backgroundColor: theme.color.background,
       }}
     >
+      {/* Header */}
       <View
         style={{
           gap: theme.space.sm,
@@ -484,8 +480,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
       >
         <UserProfileCard userData={userData} />
 
-        {/* Account section */}
-
+        {/* Account Section */}
         <SectionLabel
           theme={theme}
           text={theme.i18n.t("profile.settings.section.account")}
@@ -498,7 +493,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
             iconBg="#5B9CF61A"
             iconColor="#5B9CF6"
             title={theme.i18n.t("profile.settings.account.email")}
-            subtitle={userData?.email}
+            subtitle={userData?.email ?? theme.i18n.t("common.notSpecified")}
           />
           <Divider theme={theme} />
           <Row
@@ -509,82 +504,16 @@ const [resettingPassword, setResettingPassword] = useState(false);
             iconColor="#5B9CF6"
             title={theme.i18n.t("profile.settings.account.changePassword")}
             subtitle={
-    resettingPassword
-      ? "Sending reset link..."
-      : userData?.updatedAt
-      ? theme.i18n.t("profile.settings.account.lastChanged", {
-          date: countDays(userData.updatedAt),
-        })
-      : theme.i18n.t("profile.settings.account.changePassword")
-  }
+              resettingPassword
+                ? theme.i18n.t("profile.settings.account.sendingResetLink")
+                : userData?.updatedAt
+                ? theme.i18n.t("profile.settings.account.lastChanged", {
+                    date: countDays(userData.updatedAt),
+                  })
+                : theme.i18n.t("profile.settings.account.changePasswordSubtitle")
+            }
             onPress={() => setChangePasswordModalVisible(true)}
           />
-          <Modal
-  visible={changePasswordModalVisible}
-  transparent
-  animationType="fade"
-  onRequestClose={() => setChangePasswordModalVisible(false)}
->
-  <Pressable
-    style={styles.overlay}
-    onPress={() => setChangePasswordModalVisible(false)}
-  >
-    <View
-      style={[
-        styles.sheet,
-        { backgroundColor: theme.color.background },
-      ]}
-    >
-      <Text
-        style={{
-          fontSize: theme.fontSize.md,
-          fontFamily: theme.fontFamily.bold,
-          color: theme.color.textPrimary,
-          marginBottom: theme.space.xs,
-          paddingHorizontal: 12,
-        }}
-      >
-        {theme.i18n.t("profile.settings.account.changePassword")}
-      </Text>
-      <Text
-        style={{
-          fontSize: theme.fontSize.sm,
-          color: theme.color.textMuted,
-          fontFamily: theme.fontFamily.regular,
-          marginBottom: theme.space.sm,
-          paddingHorizontal: 12,
-        }}
-      >
-        We'll send a password reset link to {userData?.email}. Continue?
-      </Text>
-
-      <Pressable style={styles.option} onPress={handleConfirmChangePassword}>
-        <Text
-          style={{
-            color: theme.color.info ?? "#5B9CF6",
-            fontFamily: theme.fontFamily.bold,
-          }}
-        >
-          {theme.i18n.t("common.continue")}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        style={styles.option}
-        onPress={() => setChangePasswordModalVisible(false)}
-      >
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontFamily: theme.fontFamily.regular,
-          }}
-        >
-          {theme.i18n.t("common.cancel")}
-        </Text>
-      </Pressable>
-    </View>
-  </Pressable>
-</Modal>
           <Divider theme={theme} />
           <Row
             theme={theme}
@@ -592,8 +521,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="school-outline"
             iconBg="#F6A0201A"
             iconColor="#F6A020"
-            title={theme.i18n.t("profile.settings.account.Goal")}
-            subtitle={userData?.targetExam}
+            title={theme.i18n.t("profile.settings.account.goal")}
+            subtitle={userData?.targetExam ?? theme.i18n.t("common.notSpecified")}
           />
           <Divider theme={theme} />
           <Row
@@ -603,11 +532,11 @@ const [resettingPassword, setResettingPassword] = useState(false);
             iconBg="#22C55E1A"
             iconColor="#22C55E"
             title={theme.i18n.t("profile.settings.account.studyLevel")}
-            subtitle={userData?.studyLevel}
+            subtitle={userData?.studyLevel ?? theme.i18n.t("common.notSpecified")}
           />
-          {/* <Divider theme={theme} /> */}
         </Card>
 
+        {/* Update Profile CTA */}
         <View
           style={{
             marginTop: theme.space.xs,
@@ -640,7 +569,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
               iconColor={
                 theme.isDark ? theme.color.info : theme.color.textInverse
               }
-              title={theme.i18n.t("profile.settings.account.updateProfile")}
+              // Localized title here:
+              title={theme.i18n.t("profile.settings.account.UpdateProfile")}
               titleColor={
                 theme.isDark ? theme.color.textPrimary : theme.color.textInverse
               }
@@ -648,6 +578,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
           </LinearGradient>
         </View>
 
+        {/* Notifications Section */}
         <SectionLabel
           theme={theme}
           text={theme.i18n.t("profile.settings.section.notifications")}
@@ -658,12 +589,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="bell-outline"
             iconBg="#5B9CF61A"
             iconColor="#5B9CF6"
-            title={theme.i18n.t(
-              "profile.settings.notifications.pushNotifications",
-            )}
-            subtitle={theme.i18n.t(
-              "profile.settings.notifications.pushNotificationsSubtitle",
-            )}
+            title={theme.i18n.t("profile.settings.notifications.pushNotifications")}
+            subtitle={theme.i18n.t("profile.settings.notifications.pushNotificationsSubtitle")}
             right={
               <ToggleRight
                 theme={theme}
@@ -679,9 +606,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
             iconBg="#5B9CF61A"
             iconColor="#5B9CF6"
             title={theme.i18n.t("profile.settings.notifications.emailDigest")}
-            subtitle={theme.i18n.t(
-              "profile.settings.notifications.emailDigestSubtitle",
-            )}
+            subtitle={theme.i18n.t("profile.settings.notifications.emailDigestSubtitle")}
             right={
               <ToggleRight
                 theme={theme}
@@ -696,12 +621,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="chart-bar"
             iconBg="#F6A0201A"
             iconColor="#F6A020"
-            title={theme.i18n.t(
-              "profile.settings.notifications.rankChangeAlerts",
-            )}
-            subtitle={theme.i18n.t(
-              "profile.settings.notifications.rankChangeAlertsSubtitle",
-            )}
+            title={theme.i18n.t("profile.settings.notifications.rankChangeAlerts")}
+            subtitle={theme.i18n.t("profile.settings.notifications.rankChangeAlertsSubtitle")}
             right={
               <ToggleRight
                 theme={theme}
@@ -716,12 +637,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="medal-outline"
             iconBg="#22C55E1A"
             iconColor="#22C55E"
-            title={theme.i18n.t(
-              "profile.settings.notifications.achievementAlerts",
-            )}
-            subtitle={theme.i18n.t(
-              "profile.settings.notifications.achievementAlertsSubtitle",
-            )}
+            title={theme.i18n.t("profile.settings.notifications.achievementAlerts")}
+            subtitle={theme.i18n.t("profile.settings.notifications.achievementAlertsSubtitle")}
             right={
               <ToggleRight
                 theme={theme}
@@ -736,12 +653,8 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="trophy-outline"
             iconBg={theme.color.error + "1A"}
             iconColor={theme.color.error}
-            title={theme.i18n.t(
-              "profile.settings.notifications.contestReminders",
-            )}
-            subtitle={theme.i18n.t(
-              "profile.settings.notifications.contestRemindersSubtitle",
-            )}
+            title={theme.i18n.t("profile.settings.notifications.contestReminders")}
+            subtitle={theme.i18n.t("profile.settings.notifications.contestRemindersSubtitle")}
             right={
               <ToggleRight
                 theme={theme}
@@ -764,8 +677,6 @@ const [resettingPassword, setResettingPassword] = useState(false);
               {notifError}
             </Text>
           )}
-
-          {/* Only shows up once a toggle above differs from the last saved value */}
           <UpdateButton
             theme={theme}
             visible={isNotifDirty}
@@ -774,6 +685,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
           />
         </Card>
 
+        {/* Quiz Preferences Section */}
         <SectionLabel
           theme={theme}
           text={theme.i18n.t("profile.settings.section.quizPreferences")}
@@ -784,62 +696,10 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="tune-vertical"
             iconBg={theme.color.warning + "22"}
             iconColor={theme.color.warning}
-            title={theme.i18n.t(
-              "profile.settings.quizPreferences.defaultDifficulty",
-            )}
-            subtitle={theme.i18n.t(
-              DIFFICULTY_LABELS[quizToggles.defaultDifficulty],
-            )}
+            title={theme.i18n.t("profile.settings.quizPreferences.defaultDifficulty")}
+            subtitle={theme.i18n.t(DIFFICULTY_TRANSLATION_KEYS[quizToggles.defaultDifficulty])}
             onPress={() => setDifficultyModalVisible(true)}
           />
-
-          <Modal
-            visible={difficultyModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setDifficultyModalVisible(false)}
-          >
-            <Pressable
-              style={styles.overlay}
-              onPress={() => setDifficultyModalVisible(false)}
-            >
-              <View
-                style={[
-                  styles.sheet,
-                  { backgroundColor: theme.color.background },
-                ]}
-              >
-                {DIFFICULTY_OPTIONS.map((option) => (
-                  <Pressable
-                    key={option}
-                    style={[
-                      styles.option,
-                      quizToggles.defaultDifficulty === option && {
-                        backgroundColor: theme.color.warning + "22",
-                      },
-                    ]}
-                    onPress={() => handleSelectDifficulty(option)}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          quizToggles.defaultDifficulty === option
-                            ? theme.color.warning
-                            : theme.color.textPrimary,
-                        fontWeight:
-                          quizToggles.defaultDifficulty === option
-                            ? "600"
-                            : "400",
-                      }}
-                    >
-                      {theme.i18n.t(DIFFICULTY_LABELS[option])}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </Pressable>
-          </Modal>
-
           <Divider theme={theme} />
           <Row
             theme={theme}
@@ -884,8 +744,6 @@ const [resettingPassword, setResettingPassword] = useState(false);
               {quizError}
             </Text>
           )}
-
-          {/* Only shows up once a toggle (including difficulty) differs from the last saved value */}
           <UpdateButton
             theme={theme}
             visible={isQuizDirty}
@@ -894,6 +752,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
           />
         </Card>
 
+        {/* Appearance Section */}
         <SectionLabel
           theme={theme}
           text={theme.i18n.t("profile.settings.section.appearance")}
@@ -930,7 +789,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
             iconBg={theme.color.success + "22"}
             iconColor={theme.color.success}
             title={theme.i18n.t("profile.settings.appearance.language")}
-            subtitle={theme.i18n.t("profile.settings.appearance.english")}
+            subtitle={theme.i18n.t("profile.settings.appearance.currentLanguage")}
           />
         </Card>
 
@@ -938,6 +797,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
           <PremiumUpsellCardFull />
         </View>
 
+        {/* Help & Support Section */}
         <SectionLabel
           theme={theme}
           text={theme.i18n.t("profile.settings.section.helpAndSupport")}
@@ -956,9 +816,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="message-outline"
             iconBg="#5B9CF61A"
             iconColor={theme.color.accent}
-            title={theme.i18n.t(
-              "profile.settings.helpAndSupport.contactSupport",
-            )}
+            title={theme.i18n.t("profile.settings.helpAndSupport.contactSupport")}
           />
           <Divider theme={theme} />
           <Row
@@ -966,7 +824,7 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="star-outline"
             iconBg={theme.color.warning + "22"}
             iconColor={theme.color.warning}
-            title={theme.i18n.t("profile.settings.helpAndSupport.rateMedQuel")}
+            title={theme.i18n.t("profile.settings.helpAndSupport.RateApp")}
           />
           <Divider theme={theme} />
           <Row
@@ -974,12 +832,11 @@ const [resettingPassword, setResettingPassword] = useState(false);
             icon="file-document-outline"
             iconBg={theme.color.surface}
             iconColor={theme.color.textMuted}
-            title={theme.i18n.t(
-              "profile.settings.helpAndSupport.privacyPolicy",
-            )}
+            title={theme.i18n.t("profile.settings.helpAndSupport.privacyPolicy")}
           />
         </Card>
 
+        {/* Sign Out Card */}
         <Card theme={theme}>
           <Row
             onPress={() => setSignOutModalVisible(true)}
@@ -990,76 +847,197 @@ const [resettingPassword, setResettingPassword] = useState(false);
             title={theme.i18n.t("profile.settings.signOut")}
             titleColor={theme.color.error}
           />
+        </Card>
+      </ScrollView>
 
-          <Modal
-            visible={signOutModalVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setSignOutModalVisible(false)}
-          >
-            <Pressable
-              style={styles.overlay}
-              onPress={() => setSignOutModalVisible(false)}
+      {/* --- Modals --- */}
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={changePasswordModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setChangePasswordModalVisible(false)}
+      >
+        <Pressable
+          style={modalStyles.overlay}
+          onPress={() => setChangePasswordModalVisible(false)}
+        >
+          <View style={[modalStyles.sheet, { backgroundColor: theme.color.background }]}>
+            <Text
+              style={{
+                fontSize: theme.fontSize.md,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.color.textPrimary,
+                marginBottom: theme.space.xs,
+                paddingHorizontal: 12,
+              }}
             >
-              <View
+              {theme.i18n.t("profile.settings.account.changePassword")}
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.color.textMuted,
+                fontFamily: theme.fontFamily.regular,
+                marginBottom: theme.space.sm,
+                paddingHorizontal: 12,
+              }}
+            >
+              {theme.i18n.t("profile.settings.account.resetPasswordDescription", {
+                email: userData?.email ?? "",
+              })}
+            </Text>
+
+            <Pressable style={modalStyles.option} onPress={handleConfirmChangePassword}>
+              <Text
+                style={{
+                  color: theme.color.info ?? "#5B9CF6",
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {theme.i18n.t("common.continue")}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={modalStyles.option}
+              onPress={() => setChangePasswordModalVisible(false)}
+            >
+              <Text
+                style={{
+                  color: theme.color.textPrimary,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t("common.cancel")}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Difficulty Selection Modal */}
+      <Modal
+        visible={difficultyModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDifficultyModalVisible(false)}
+      >
+        <Pressable
+          style={modalStyles.overlay}
+          onPress={() => setDifficultyModalVisible(false)}
+        >
+          <View style={[modalStyles.sheet, { backgroundColor: theme.color.background }]}>
+            {DIFFICULTY_OPTIONS.map((option) => (
+              <Pressable
+                key={option}
                 style={[
-                  styles.sheet,
-                  { backgroundColor: theme.color.background },
+                  modalStyles.option,
+                  quizToggles.defaultDifficulty === option && {
+                    backgroundColor: theme.color.warning + "22",
+                  },
                 ]}
+                onPress={() => handleSelectDifficulty(option)}
               >
                 <Text
                   style={{
-                    fontSize: theme.fontSize.md,
-                    fontFamily: theme.fontFamily.bold,
-                    color: theme.color.textPrimary,
-                    marginBottom: theme.space.xs,
-                    paddingHorizontal: 12,
+                    color:
+                      quizToggles.defaultDifficulty === option
+                        ? theme.color.warning
+                        : theme.color.textPrimary,
+                    fontWeight:
+                      quizToggles.defaultDifficulty === option ? "600" : "400",
                   }}
                 >
-                  {theme.i18n.t("profile.settings.signOutConfirmTitle")}
+                  {theme.i18n.t(DIFFICULTY_TRANSLATION_KEYS[option])}
                 </Text>
-                <Text
-                  style={{
-                    fontSize: theme.fontSize.sm,
-                    color: theme.color.textMuted,
-                    fontFamily: theme.fontFamily.regular,
-                    marginBottom: theme.space.sm,
-                    paddingHorizontal: 12,
-                  }}
-                >
-                  Are you sure you want to{" "}
-                  {theme.i18n.t("profile.settings.signOut")} ?
-                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
 
-                <Pressable style={styles.option} onPress={handleConfirmSignOut}>
-                  <Text
-                    style={{
-                      color: theme.color.error,
-                      fontFamily: theme.fontFamily.bold,
-                    }}
-                  >
-                    Confirm {theme.i18n.t("profile.settings.signOut")}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.option}
-                  onPress={() => setSignOutModalVisible(false)}
-                >
-                  <Text
-                    style={{
-                      color: theme.color.textPrimary,
-                      fontFamily: theme.fontFamily.regular,
-                    }}
-                  >
-                    {theme.i18n.t("common.cancel")}
-                  </Text>
-                </Pressable>
-              </View>
+      {/* Sign Out Modal */}
+      <Modal
+        visible={signOutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSignOutModalVisible(false)}
+      >
+        <Pressable
+          style={modalStyles.overlay}
+          onPress={() => setSignOutModalVisible(false)}
+        >
+          <View style={[modalStyles.sheet, { backgroundColor: theme.color.background }]}>
+            <Text
+              style={{
+                fontSize: theme.fontSize.md,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.color.textPrimary,
+                marginBottom: theme.space.xs,
+                paddingHorizontal: 12,
+              }}
+            >
+              {theme.i18n.t("profile.settings.signOutConfirmTitle")}
+            </Text>
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.color.textMuted,
+                fontFamily: theme.fontFamily.regular,
+                marginBottom: theme.space.sm,
+                paddingHorizontal: 12,
+              }}
+            >
+              {theme.i18n.t("profile.settings.signOutConfirmDescription")}
+            </Text>
+            <Pressable style={modalStyles.option} onPress={handleConfirmSignOut}>
+              <Text
+                style={{
+                  color: theme.color.error,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {theme.i18n.t("profile.settings.confirmSignOut")}
+              </Text>
             </Pressable>
-          </Modal>
-        </Card>
-      </ScrollView>
+
+            <Pressable
+              style={modalStyles.option}
+              onPress={() => setSignOutModalVisible(false)}
+            >
+              <Text
+                style={{
+                  color: theme.color.textPrimary,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t("common.cancel")}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    padding: 16,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  option: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+});

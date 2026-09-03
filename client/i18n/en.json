@@ -4,6 +4,8 @@
     "brand_name": "MedQuel",
     "loading": "Loading...",
     "you": "You",
+    "user": "User",
+    "notSpecified": "Not specified",
     "lv": "Lv",
     "level": "Level",
     "free": "Free",
@@ -314,6 +316,9 @@
     "performanceBySubject": "Performance by Subject",
     "noSubjectData": "No subject data available",
     "recentAttempts": "Recent Attempts",
+    "errors": {
+      "loadProfile": "Could not load profile. Pull to refresh."
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Account & Preferences",
@@ -331,7 +336,9 @@
         "changePassword": "Change Password",
         "lastChanged": "Last changed {{date}} ago",
         "targetExam": "Target Exam",
-        "studyLevel": "Study Level"
+        "studyLevel": "Study Level",
+        "goal": "Goal",
+        "updateProfile": "Update Profile"
       },
       "notifications": {
         "pushNotifications": "Push Notifications",
