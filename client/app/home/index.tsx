@@ -14,7 +14,6 @@ import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
-
 export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -28,7 +27,6 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'home');
-
   const fetchHomeDashboard = useCallback(async (isMountedRef: { current: boolean }) => {
     try {
       setError(null);
