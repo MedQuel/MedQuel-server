@@ -1,26 +1,34 @@
 import { useRouter } from 'expo-router';
-import { Building2 } from 'lucide-react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import type { TargetExam } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { useOnboarding } from '../../common/context/OnboardingContext';
+import { useOnboarding, targetExamsFor } from '../../common/context/OnboardingContext';
 
 import { AuthInput } from '../../components/auth/AuthInput';
 import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
 
-const TARGET_EXAMS: TargetExam[] = [
-  'USMLE',
-  'NEET-PG',
-  'INI-CET',
-  'PLAB',
-  'MRCP',
-  'FMGE',
-  'Clinical Mastery',
-];
+const EXAM_DESCRIPTION_KEYS: Record<string, string> = {
+  USMLE: 'usmle',
+  'NEET-PG': 'neetPg',
+  'INI-CET': 'iniCet',
+  PLAB: 'plab',
+  MRCP: 'mrcp',
+  FMGE: 'fmge',
+  DM: 'dm',
+  MCH: 'mch',
+  'Fellowship Exams': 'fellowshipExams',
+  'Clinical Mastery': 'clinicalMastery',
+};
+
+type OnboardingIconProps = Omit<React.ComponentProps<typeof FontAwesome>, 'name'>;
+const BuildingIcon = (props: OnboardingIconProps) => (
+  <FontAwesome name='institution' {...props} />
+);
+
 
 export default function OnboardingGoalsScreen() {
   const { draft, setTargetExam, setInstitution } = useOnboarding();
@@ -28,14 +36,16 @@ export default function OnboardingGoalsScreen() {
   const router = useRouter();
   useBottomBar(false);
 
+  const targetExams = targetExamsFor(draft.role);
   const canContinue = !!draft.targetExam;
 
   return (
     <ScrollView
       contentContainerStyle={{
         flexGrow: 1,
-        padding: theme.space.lg,
         paddingTop: theme.space.xl,
+        paddingVertical: theme.space.lg,
+        paddingHorizontal: theme.space.md,
         backgroundColor: theme.color.background,
       }}
     >
@@ -45,7 +55,7 @@ export default function OnboardingGoalsScreen() {
         style={{
           color: theme.color.textPrimary,
           fontSize: theme.fontSize.xxl,
-          fontFamily: theme.fontFamily.bold,
+          fontFamily: theme.fontFamily.bold
         }}
       >
         {theme.i18n.t('onboarding.goals.title')}
@@ -68,10 +78,10 @@ export default function OnboardingGoalsScreen() {
           flexWrap: 'wrap',
           gap: theme.space.sm,
           flexDirection: 'row',
-          marginBottom: theme.space.lg,
+          marginBottom: theme.space.lg
         }}
       >
-        {TARGET_EXAMS.map((exam) => {
+        {targetExams.map((exam) => {
           const selected = draft.targetExam === exam;
           return (
             <Pressable
@@ -89,7 +99,7 @@ export default function OnboardingGoalsScreen() {
               <Text
                 style={{
                   color: selected
-                    ? theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+                    ? (theme.isDark ? theme.color.textPrimary : theme.color.textInverse)
                     : theme.color.textSecondary,
                   fontSize: theme.fontSize.sm,
                   fontFamily: theme.fontFamily.bold,
@@ -102,9 +112,41 @@ export default function OnboardingGoalsScreen() {
         })}
       </View>
 
+      {draft.targetExam && (
+        <View
+          style={{
+            padding: theme.space.md,
+            marginBottom: theme.space.lg,
+            borderRadius: theme.borderRadius.md,
+            backgroundColor: theme.color.surface,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.md,
+              fontFamily: theme.fontFamily.bold,
+              marginBottom: theme.space.xs,
+            }}
+          >
+            {theme.i18n.t('onboarding.goals.examOverviewTitle', { exam: draft.targetExam })}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              lineHeight: theme.fontSize.sm * 1.5,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
+            {theme.i18n.t(`onboarding.goals.examDescriptions.${EXAM_DESCRIPTION_KEYS[draft.targetExam]}`)}
+          </Text>
+        </View>
+      )}
+
       <AuthInput
         label={theme.i18n.t('onboarding.goals.institutionLabel')}
-        icon={Building2}
+        icon={BuildingIcon as any}
         value={draft.institution}
         onChangeText={setInstitution}
         placeholder={theme.i18n.t('onboarding.goals.institutionPlaceholder')}
@@ -118,7 +160,7 @@ export default function OnboardingGoalsScreen() {
         currentStep={3}
         disabled={!canContinue}
         onBack={() => router.back()}
-        onContinue={() => router.push('/onboarding/ready')}
+        onContinue={() => router.push('/onboarding/scope')}
       />
     </ScrollView>
   );
