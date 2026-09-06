@@ -14,10 +14,14 @@ function buildUserDocument(uid: string, email: string, data: ReturnType<typeof v
     email,
     photoURL: null,
     role: 'student' as const,
+    describesYou: data.describesYou,
     targetExam: data.targetExam,
     studyLevel: data.studyLevel,
     yearOfStudy: data.yearOfStudy,
+    specialties: data.specialties,
     institution: data.institution,
+    contentScope: data.contentScope,
+    focusSubjects: data.focusSubjects,
     isPremium: false,
     subscriptionId: null,
     xpPoints: 0,
@@ -67,9 +71,12 @@ export async function completeOnboardingResolver(_parent: unknown, args: { input
 
   return {
     displayName: userDoc.displayName,
-    describesYou: args.input.describesYou,
+    describesYou: userDoc.describesYou,
     yearOfStudy: userDoc.yearOfStudy,
+    specialties: userDoc.specialties,
     targetExam: userDoc.targetExam,
     institution: userDoc.institution,
+    contentScope: userDoc.contentScope,
+    focusSubjects: userDoc.focusSubjects,
   };
 }
