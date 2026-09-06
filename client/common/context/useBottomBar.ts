@@ -18,7 +18,5 @@ export function useBottomBar(visible: boolean, selectedId?: string) {
   useEffect(() => {
     setVisibleRef.current(visible);
     if (selectedId !== undefined) setSelectedRef.current(selectedId);
-
-    return () => setVisibleRef.current(true);
   }, [visible, selectedId]);
 }
