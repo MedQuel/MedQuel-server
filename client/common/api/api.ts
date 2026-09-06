@@ -28,13 +28,12 @@ const IMPLEMENTED_OPERATIONS = {
   'contest.getContests': true,
   'contest.getContest': true,
   'contest.joinContest': true,
-  'contest.searchContests': false, // opted (not required)
   'leaderboard.getLeaderboard': true,
-  'studyPlan.getStudyPlan': false, // opted Study Plan for now
-  'studyPlan.generateStudyPlan': false, // opted Study Plan for now
-  'chat.getChatRooms': false, // opted Discussion Room for now
-  'chat.getChatMessages': false, // opted Discussion Room for now
-  'chat.sendMessage': false, // opted Discussion Room for now
+  'studyPlan.getStudyPlan': false, //
+  'studyPlan.generateStudyPlan': false, //
+  'chat.getChatRooms': false, //
+  'chat.getChatMessages': false, //
+  'chat.sendMessage': false, //
   'achievement.getAchievements': true,
   'analytics.getAnalytics': true,
   'subscription.getPlans': false, //
@@ -96,9 +95,11 @@ const ME_QUERY = gql`
       email
       photoURL
       role
+      describesYou
       targetExam
       studyLevel
       yearOfStudy
+      specialties
       institution
       isPremium
       subscriptionId
@@ -133,6 +134,8 @@ const ME_QUERY = gql`
         timerSound
         autoSubmit
       }
+      contentScope
+      focusSubjects
       createdAt
       updatedAt
     }
@@ -144,8 +147,11 @@ const COMPLETE_ONBOARDING_MUTATION = gql`
       displayName
       describesYou
       yearOfStudy
+      specialties
       targetExam
       institution
+      contentScope
+      focusSubjects
     }
   }
 `;
@@ -155,10 +161,14 @@ const UPDATE_PROFILE_MUTATION = gql`
       uid
       displayName
       photoURL
+      describesYou
       studyLevel
       yearOfStudy
+      specialties
       targetExam
       institution
+      contentScope
+      focusSubjects
     }
   }
 `;
@@ -205,8 +215,11 @@ export const userApi = {
       displayName: input.displayName,
       describesYou: input.describesYou,
       yearOfStudy: input.yearOfStudy ?? null,
+      specialties: Mock.MOCK_USER.specialties,
       targetExam: input.targetExam,
       institution: input.institution ?? null,
+      contentScope: Mock.MOCK_USER.contentScope,
+      focusSubjects: Mock.MOCK_USER.focusSubjects,
     })
   ),
 
@@ -455,19 +468,6 @@ const JOIN_CONTEST_MUTATION = gql`
     }
   }
 `;
-const SEARCH_CONTESTS_QUERY = gql`
-  query SearchContests($query: String!) {
-    searchContests(query: $query) {
-      contestId
-      title
-      subject
-      contestType
-      status
-      startsAt
-      endsAt
-    }
-  }
-`;
 
 
 export const contestApi = {
@@ -497,17 +497,6 @@ export const contestApi = {
         { contestId: string }
       >(JOIN_CONTEST_MUTATION, { contestId })
     ).joinContest, () => Mock.buildMockQuizSession()
-  ),
-
-  searchContests: (query: string) => withMockFallback(
-    'contest.searchContests', async () => (
-      await graphqlRequest<
-        { searchContests: Contest[] },
-        { query: string }
-      >(SEARCH_CONTESTS_QUERY, { query }, { idempotent: true })
-    ).searchContests, () => Mock.MOCK_CONTESTS.filter((c) =>
-      c.title.toLowerCase().includes(query.toLowerCase())
-    )
   ),
 };
 
