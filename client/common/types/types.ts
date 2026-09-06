@@ -1,4 +1,4 @@
-export type TargetExam = 'USMLE' | 'NEET-PG' | 'INI-CET' | 'PLAB' | 'MRCP' | 'FMGE' | 'Clinical Mastery';
+export type TargetExam = 'USMLE' | 'NEET-PG' | 'INI-CET' | 'PLAB' | 'MRCP' | 'FMGE' | 'DM' | 'MCH' | 'Fellowship Exams' | 'Clinical Mastery';
 export type StudyLevel = 'MBBS Year 1-5' | 'Postgraduate' | 'Practitioner' | 'Nursing / Allied';
 export type YearOfStudy = 'Year 1' | 'Year 2' | 'Year 3' | 'Year 4' | 'Final Year' | 'Intern';
 export type DescribesYou = 'MBBS Student' | 'Postgraduate' | 'Practicing Doctor' | 'Nursing / Allied';
@@ -7,6 +7,13 @@ export type BadgeRarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 export type BadgeStatus = 'earned' | 'in_progress' | 'locked';
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type ContentScope = 'all' | 'focused';
+
+export type Specialty =
+  | 'Anatomy' | 'Biochemistry' | 'Physiology' | 'Microbiology' | 'Pharmacology'
+  | 'Forensic Medicine' | 'Pathology' | 'Ophthalmology' | 'ENT' | 'Community Medicine'
+  | 'Medicine' | 'Surgery' | 'Pediatrics' | 'Gynaecology' | 'Obstetrics'
+  | 'Orthopedics' | 'Dermatology' | 'Psychiatry' | 'Anesthesia' | 'Radiology';
 
 
 // -----> User
@@ -38,9 +45,11 @@ export interface User {
   email: string;
   photoURL?: string;
   role: UserRole;
+  describesYou: DescribesYou;
   targetExam: TargetExam;
   studyLevel: StudyLevel;
   yearOfStudy?: YearOfStudy | null;
+  specialties: Specialty[];
   institution?: string;
   isPremium: boolean;
   subscriptionId?: string | null;
@@ -57,6 +66,8 @@ export interface User {
   badges: string[];
   notifPrefs: NotifPrefs;
   quizPrefs: QuizPrefs;
+  contentScope: ContentScope;
+  focusSubjects: Specialty[];
   createdAt: string;
   updatedAt: string;
 }
@@ -65,23 +76,32 @@ export interface CompleteOnboardingInput {
   displayName: string;
   describesYou: DescribesYou;
   yearOfStudy?: YearOfStudy;
+  specialties?: Specialty[];
   targetExam: TargetExam;
   institution?: string;
+  contentScope: ContentScope;
+  focusSubjects?: Specialty[];
 }
 export interface CompleteOnboardingResult {
   displayName: string;
   describesYou: DescribesYou;
   yearOfStudy?: YearOfStudy | null;
+  specialties: Specialty[];
   targetExam: TargetExam;
   institution?: string | null;
+  contentScope: ContentScope;
+  focusSubjects: Specialty[];
 }
 export interface UpdateProfileInput {
   displayName?: string;
   photoURL?: string | null;
-  targetExam?: TargetExam;
-  studyLevel?: StudyLevel;
+  describesYou?: DescribesYou;
   yearOfStudy?: YearOfStudy;
+  specialties?: Specialty[];
+  targetExam?: TargetExam;
   institution?: string;
+  contentScope?: ContentScope;
+  focusSubjects?: Specialty[];
 }
 
 
