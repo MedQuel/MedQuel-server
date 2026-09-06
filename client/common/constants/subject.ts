@@ -1,54 +1,20 @@
 import React from 'react';
-import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 
-export type SubjectVariant =
-  | 'error'
-  | 'accent'
-  | 'success'
-  | 'premium'
-  | 'warning';
+
+export type SubjectVariant = 'error' | 'accent' | 'success' | 'premium' | 'warning';
 
 export type SubjectId =
-  | 'anatomy'
-  | 'biochemistry'
-  | 'physiology'
-  | 'microbiology'
-  | 'pharmacology'
-  | 'forensic_medicine'
-  | 'pathology'
-  | 'ophthalmology'
-  | 'ent'
-  | 'community_medicine'
-  | 'medicine'
-  | 'surgery'
-  | 'pediatrics'
-  | 'gynae_obstetrics'
-  | 'orthopedics'
-  | 'dermatology'
-  | 'psychiatry'
-  | 'anesthesia'
-  | 'radiology';
+  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
+  | 'forensic_medicine' | 'pathology' | 'ophthalmology' | 'ent' | 'community_medicine'
+  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology' | 'obstetrics'
+  | 'orthopedics' | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
 
 export type SubjectIconKey =
-  | 'anatomy'
-  | 'biochemistry'
-  | 'physiology'
-  | 'microbiology'
-  | 'pharmacology'
-  | 'forensic'
-  | 'pathology'
-  | 'eye'
-  | 'ear'
-  | 'community'
-  | 'stethoscope'
-  | 'surgery'
-  | 'baby'
-  | 'pregnant'
-  | 'bone'
-  | 'skin'
-  | 'mind'
-  | 'needle'
-  | 'radiology';
+  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology' 
+  | 'forensic' | 'pathology' | 'eye' | 'ear' | 'community' 
+  | 'stethoscope' | 'surgery' | 'baby' | 'girl' | 'pregnant'
+  | 'bone' | 'skin' | 'mind' | 'needle' | 'radiology';
 
 export type SubjectDefinition = {
   id: SubjectId;
@@ -71,7 +37,8 @@ export const subjectCatalog = {
   medicine: { id: 'medicine', title: 'Medicine', variant: 'error', iconKey: 'stethoscope' },
   surgery: { id: 'surgery', title: 'Surgery', variant: 'error', iconKey: 'surgery' },
   pediatrics: { id: 'pediatrics', title: 'Pediatrics', variant: 'accent', iconKey: 'baby' },
-  gynae_obstetrics: { id: 'gynae_obstetrics', title: 'Gynaecology & Obstetrics', variant: 'premium', iconKey: 'pregnant' },
+  gynaecology: { id: 'gynaecology', title: 'Gynaecology', variant: 'premium', iconKey: 'girl' },
+  obstetrics: { id: 'obstetrics', title: 'Obstetrics', variant: 'premium', iconKey: 'pregnant' },
   orthopedics: { id: 'orthopedics', title: 'Orthopedics', variant: 'warning', iconKey: 'bone' },
   dermatology: { id: 'dermatology', title: 'Dermatology', variant: 'success', iconKey: 'skin' },
   psychiatry: { id: 'psychiatry', title: 'Psychiatry', variant: 'premium', iconKey: 'mind' },
@@ -79,9 +46,13 @@ export const subjectCatalog = {
   radiology: { id: 'radiology', title: 'Radiology', variant: 'error', iconKey: 'radiology' },
 } as const satisfies Record<SubjectId, SubjectDefinition>;
 
+
 type IconProps = { size: number; color: string };
 
-export const subjectIcons: Record<SubjectIconKey, (props: IconProps) => React.ReactElement> = {
+export const subjectIcons: Record<
+  SubjectIconKey,
+  (props: IconProps) => React.ReactElement
+> = {
   anatomy: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human', size, color }),
   biochemistry: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'flask-outline', size, color }),
   physiology: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'heart-pulse', size, color }),
@@ -95,6 +66,7 @@ export const subjectIcons: Record<SubjectIconKey, (props: IconProps) => React.Re
   stethoscope: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'stethoscope', size, color }),
   surgery: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'content-cut', size, color }),
   baby: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'baby-face-outline', size, color }),
+  girl: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human-female', size, color }),
   pregnant: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human-pregnant', size, color }),
   bone: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'bone', size, color }),
   skin: ({ size, color }) => React.createElement(FontAwesome5, { name: 'allergies', size: size * 0.85, color }),
@@ -103,11 +75,7 @@ export const subjectIcons: Record<SubjectIconKey, (props: IconProps) => React.Re
   radiology: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'radiology-box-outline', size, color }),
 };
 
-export const SubjectIcon = ({
-  id,
-  color,
-  size,
-}: {
+export const SubjectIcon = ({ id, color, size }: {
   id: SubjectId;
   color: string;
   size: number;
@@ -115,5 +83,6 @@ export const SubjectIcon = ({
   const iconKey = subjectCatalog[id]?.iconKey;
   const IconComponent = iconKey ? subjectIcons[iconKey] : null;
   if (!IconComponent) return null;
+
   return IconComponent({ size, color });
 };
