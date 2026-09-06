@@ -16,13 +16,13 @@ import type { Contest, GetContestsFilter } from '../../common/types/types';
 import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
 import type { ContestFilter, ContestItem, FeaturedContest } from '../../common/types/contestTypes';
 
+
 const filterChips: ContestFilter[] = ['all', 'premium', ...(Object.keys(subjectCatalog) as SubjectId[])];
 
 const SUBJECT_ALIASES: Record<string, SubjectId> = {
   'general medicine': 'medicine',
   'general surgery': 'surgery',
   otorhinolaryngology: 'ent',
-  'obstetrics & gynaecology': 'gynae_obstetrics',
   'preventive & social medicine': 'community_medicine',
   orthopaedics: 'orthopedics',
   anaesthesia: 'anesthesia',
