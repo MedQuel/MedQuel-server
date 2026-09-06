@@ -2,8 +2,9 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
-import { type QuizPrefsInput, type NotifPrefsInput, type UpdateProfileInput } from '../../services/profileValidation.js';
+import { deriveDescribesYouFromStudyLevel } from '../../services/onboardingValidation.js';
 import { validateQuizPrefsInput, validateNotifPrefsInput, validateUpdateProfileInput } from '../../services/profileValidation.js';
+import type { CurrentProfileForUpdate, QuizPrefsInput, NotifPrefsInput, UpdateProfileInput } from '../../services/profileValidation.js';
 
 
 export const DEFAULT_NOTIF_PREFS = {
@@ -25,15 +26,19 @@ function toISOString(value: unknown): string {
 }
 
 export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
+  const describesYou = data.describesYou ?? deriveDescribesYouFromStudyLevel(data.studyLevel);
+
   return {
     uid,
     displayName: data.displayName,
     email: data.email,
     photoURL: data.photoURL ?? null,
     role: data.role,
+    describesYou,
     targetExam: data.targetExam,
     studyLevel: data.studyLevel,
     yearOfStudy: data.yearOfStudy ?? null,
+    specialties: data.specialties ?? [],
     institution: data.institution ?? null,
     isPremium: data.isPremium ?? false,
     subscriptionId: data.subscriptionId ?? null,
@@ -58,6 +63,8 @@ export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
     badges: data.badges ?? [],
     notifPrefs: { ...DEFAULT_NOTIF_PREFS, ...(data.notifPrefs ?? {}) },
     quizPrefs: { ...DEFAULT_QUIZ_PREFS, ...(data.quizPrefs ?? {}) },
+    contentScope: data.contentScope ?? 'all',
+    focusSubjects: data.focusSubjects ?? [],
     createdAt: toISOString(data.createdAt),
     updatedAt: toISOString(data.updatedAt),
   };
@@ -82,8 +89,18 @@ export async function updateProfileResolver(_parent: unknown, args: { input: Upd
   const doc = await userRef.get();
   if (!doc.exists) throw new NotOnboardedError();
 
-  const validated = validateUpdateProfileInput(args.input);
-  if (Object.keys(validated).length === 0) return mapUserDoc(uid, doc.data()!);
+  const data = doc.data()!;
+  const current: CurrentProfileForUpdate = {
+    describesYou: data.describesYou ?? deriveDescribesYouFromStudyLevel(data.studyLevel),
+    yearOfStudy: data.yearOfStudy ?? null,
+    specialties: data.specialties ?? [],
+    targetExam: data.targetExam,
+    contentScope: data.contentScope ?? 'all',
+    focusSubjects: data.focusSubjects ?? [],
+  };
+
+  const validated = validateUpdateProfileInput(args.input, current);
+  if (Object.keys(validated).length === 0) return mapUserDoc(uid, data);
 
   await userRef.update({
     ...validated,
@@ -103,10 +120,7 @@ export async function updateNotifPrefsResolver(_parent: unknown, args: { input: 
   if (!doc.exists) throw new NotOnboardedError();
 
   const validated = validateNotifPrefsInput(args.input);
-  const currentPrefs = {
-    ...DEFAULT_NOTIF_PREFS,
-    ...(doc.data()!.notifPrefs ?? {}),
-  };
+  const currentPrefs = { ...DEFAULT_NOTIF_PREFS, ...(doc.data()!.notifPrefs ?? {}) };
   const mergedPrefs = { ...currentPrefs, ...validated };
 
   if (Object.keys(validated).length > 0) {
@@ -128,10 +142,7 @@ export async function updateQuizPrefsResolver(_parent: unknown, args: { input: Q
   if (!doc.exists) throw new NotOnboardedError();
 
   const validated = validateQuizPrefsInput(args.input);
-  const currentPrefs = {
-    ...DEFAULT_QUIZ_PREFS,
-    ...(doc.data()!.quizPrefs ?? {}),
-  };
+  const currentPrefs = {...DEFAULT_QUIZ_PREFS, ...(doc.data()!.quizPrefs ?? {}) };
   const mergedPrefs = { ...currentPrefs, ...validated };
 
   if (Object.keys(validated).length > 0) {
