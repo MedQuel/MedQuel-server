@@ -17,7 +17,9 @@ service cloud.firestore {
           'currentStreak', 'longestStreak', 'lastActiveDate',
           'totalQuestions', 'totalCorrect', 'studyHours',
           'stats', 'badges', 'badgeProgress', 'badgeEarnedAt',
-          'notifPrefs', 'quizPrefs', 'createdAt'
+          'notifPrefs', 'quizPrefs', 'createdAt',
+          'describesYou', 'studyLevel', 'yearOfStudy', 'specialties',
+          'targetExam', 'contentScope', 'focusSubjects'
         ]);
 
       allow delete: if false;
