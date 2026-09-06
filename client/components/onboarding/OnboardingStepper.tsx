@@ -1,10 +1,10 @@
 import { View, Text } from 'react-native';
-import { Check } from 'lucide-react-native';
+import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/ThemeContext';
 
 
-const STEPS = ['Welcome', 'Profile', 'Goals', 'Ready'] as const;
+const STEPS = ['Welcome', 'Profile', 'Goals', 'Scope', 'Ready'] as const;
 
 export function OnboardingStepper({ currentStep }: { currentStep: number }) {
   const { theme } = useTheme();
@@ -28,8 +28,8 @@ export function OnboardingStepper({ currentStep }: { currentStep: number }) {
           >
             <View
               style={{
-                width: theme.space.md * 1.3,
-                height: theme.space.md * 1.3,
+                width: theme.space.md * 1.25,
+                height: theme.space.md * 1.25,
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: theme.borderRadius.full,
@@ -38,8 +38,9 @@ export function OnboardingStepper({ currentStep }: { currentStep: number }) {
               }}
             >
               {isDone ? (
-                <Check
-                  size={theme.space.md * 0.8}
+                <Feather
+                  name='check'
+                  size={theme.space.md * 0.85}
                   color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
                 />
               ) : (
