@@ -25,6 +25,10 @@ export const userTypeDefs = `#graphql
     autoSubmit: Boolean
   }
 
+  enum ContentScope {
+    all
+    focused
+  }
   type UserStats {
     contestsPlayed: Int!
     contests90Plus: Int!
@@ -41,9 +45,11 @@ export const userTypeDefs = `#graphql
     email: String!
     photoURL: String
     role: String!
+    describesYou: String!
     targetExam: String!
     studyLevel: String!
     yearOfStudy: String
+    specialties: [String!]!
     institution: String
     isPremium: Boolean!
     subscriptionId: String
@@ -60,6 +66,8 @@ export const userTypeDefs = `#graphql
     badges: [String!]!
     notifPrefs: NotifPrefs!
     quizPrefs: QuizPrefs!
+    contentScope: ContentScope!
+    focusSubjects: [String!]!
     createdAt: String!
     updatedAt: String!
   }
@@ -67,25 +75,34 @@ export const userTypeDefs = `#graphql
   input UpdateProfileInput {
     displayName: String
     photoURL: String
-    targetExam: String
-    studyLevel: String
+    describesYou: String
     yearOfStudy: String
+    specialties: [String!]
+    targetExam: String
     institution: String
+    contentScope: ContentScope
+    focusSubjects: [String!]
   }
 
   input CompleteOnboardingInput {
     displayName: String!
     describesYou: String!
     yearOfStudy: String
+    specialties: [String!]
     targetExam: String!
     institution: String
+    contentScope: ContentScope!
+    focusSubjects: [String!]
   }
   type OnboardingResult {
     displayName: String!
     describesYou: String!
     yearOfStudy: String
+    specialties: [String!]!
     targetExam: String!
     institution: String
+    contentScope: ContentScope!
+    focusSubjects: [String!]!
   }
 
   extend type Query {
