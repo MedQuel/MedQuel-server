@@ -127,22 +127,51 @@
     "profile": {
       "title": "What best describes you?",
       "subtitle": "We'll personalize your experience accordingly",
-      "selectYear": "Select your year"
+      "selectYear": "Select your year",
+      "selectSpecialty": "Select your specialties",
+      "selectSpecialtyHint": "Choose up to {{max}} specialties"
     },
     "goals": {
       "title": "What's your goal?",
       "subtitle": "This helps us tailor questions and study plans to your goal",
       "institutionLabel": "Institution (optional)",
-      "institutionPlaceholder": "e.g. AIIMS Delhi"
+      "institutionPlaceholder": "e.g. AIIMS Delhi",
+      "examOverviewTitle": "About {{exam}}",
+      "examDescriptions": {
+        "usmle": "The United States Medical Licensing Examination, a three-step examination for medical licensure in the United States. It assesses foundational science, clinical knowledge and the ability to apply medical concepts in patient care.",
+        "neetPg": "India's national postgraduate medical entrance exam for admission to MD/MS and PG Diploma programs. It tests the complete MBBS curriculum with a strong emphasis on high-yield clinical and factual concepts.",
+        "iniCet": "A competitive postgraduate medical entrance examination for admission to premier Indian medical institutes. It emphasizes integrated concepts, clinical reasoning and application of knowledge across specialties.",
+        "plab": "The UK's licensing assessment for international medical graduates. It tests whether you have the knowledge and skills needed to practise safely as a doctor in the UK.",
+        "mrcp": "The UK postgraduate medicine examination for physicians. It assesses a broad understanding of internal medicine, clinical judgment and the management of patients across specialties.",
+        "fmge": "India's screening examination for foreign medical graduates seeking registration to practise medicine in India. It covers the core subjects of the MBBS curriculum and focuses on essential clinical knowledge.",
+        "dm": "An advanced super-specialty pathway for developing expertise in a focused medical discipline. Prepare to handle complex cases, deepen specialty knowledge and make evidence-based decisions.",
+        "mch": "An advanced super-specialty pathway for surgical expertise. Build depth in complex surgical conditions, operative principles, perioperative care and clinical decision-making.",
+        "fellowshipExams": "Specialized postgraduate assessments that help you advance in a focused area of medicine. Strengthen your subject knowledge, clinical judgment and readiness for higher-level practice.",
+        "clinicalMastery": "Beyond entrance exams. Build the ability to approach a patient, interpret findings, form differentials, choose investigations and make clinical decisions - turning medical knowledge into practical clinical reasoning."
+      }
+    },
+    "scope": {
+      "title": "What would you like to study?",
+      "subtitle": "Choose whether to practise across the full curriculum or focus on selected subjects",
+      "allTitle": "All subjects",
+      "allSubtitle": "Explore the full curriculum",
+      "focusedTitle": "Focus on selected subjects",
+      "focusedSubtitle": "Study your chosen subjects in depth",
+      "pickSubjects": "Choose what you want to focus on",
+      "pickSubjectsHint": "Choose up to {{max}} subjects"
     },
     "ready": {
       "title": "You're all set",
-      "subtitle": "Review your details before we create your profile",
+      "subtitle": "Review your details before we onboard you",
       "name": "Name",
       "role": "Role",
       "year": "Year",
+      "specialty": "Specialties",
       "goal": "Goal",
       "institution": "Institution",
+      "scope": "Study scope",
+      "scopeFocused": "Focused: {{subjects}}",
+      "scopeAll": "All subjects",
       "submit": "Start Learning"
     }
   },
