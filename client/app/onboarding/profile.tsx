@@ -1,13 +1,19 @@
 import { useRouter } from 'expo-router';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 
+import {
+  useOnboarding,
+  MAX_SPECIALTIES,
+  ROLE_HAS_YEAR,
+  ROLE_HAS_SPECIALTY,
+  SPECIALTY_OPTIONS,
+} from '../../common/context/OnboardingContext';
 import { useTheme } from '../../theme/ThemeContext';
 import type { YearOfStudy } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { useOnboarding, ROLE_HAS_YEAR } from '../../common/context/OnboardingContext';
 
+import { MultiSelectChips } from '../../components/common/MultiSelectChips';
 import { OnboardingRolePicker } from '../../components/OnboardingRolePicker';
-import { FeatureHighlightsCard } from '../../components/FeaturesHighlightCard';
 import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
@@ -22,20 +28,27 @@ const YEAR_OPTIONS: YearOfStudy[] = [
 ];
 
 export default function OnboardingProfileScreen() {
-  const { draft, setRole, setYearOfStudy } = useOnboarding();
+  const { draft, setRole, setYearOfStudy, toggleSpecialty } = useOnboarding();
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(false);
 
   const showYearPicker = draft.role ? ROLE_HAS_YEAR[draft.role] : false;
-  const canContinue = !!draft.role && (!showYearPicker || !!draft.yearOfStudy);
+  const showSpecialtyPicker = draft.role
+    ? ROLE_HAS_SPECIALTY[draft.role]
+    : false;
+  const canContinue =
+    !!draft.role &&
+    (!showYearPicker || !!draft.yearOfStudy) &&
+    (!showSpecialtyPicker || draft.specialties.length > 0);
 
   return (
     <ScrollView
       contentContainerStyle={{
         flexGrow: 1,
-        padding: theme.space.lg,
         paddingTop: theme.space.xl,
+        paddingVertical: theme.space.lg,
+        paddingHorizontal: theme.space.md,
         backgroundColor: theme.color.background,
       }}
     >
@@ -125,9 +138,46 @@ export default function OnboardingProfileScreen() {
         </View>
       )}
 
-      <View style={{ marginTop: theme.space.sm * 0.75 }}>
-        <FeatureHighlightsCard />
-      </View>
+      {showSpecialtyPicker && (
+        <View
+          style={{
+            gap: theme.space.sm,
+            padding: theme.space.md,
+            marginTop: theme.space.sm * 0.75,
+            marginBottom: theme.space.sm,
+            borderWidth: 1.5,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
+            backgroundColor: theme.color.card,
+          }}
+        >
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.md,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {theme.i18n.t('onboarding.profile.selectSpecialty')}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.xs,
+              marginBottom: theme.space.sm,
+            }}
+          >
+            {theme.i18n.t('onboarding.profile.selectSpecialtyHint', { max: MAX_SPECIALTIES })}
+          </Text>
+
+          <MultiSelectChips
+            options={SPECIALTY_OPTIONS}
+            selected={draft.specialties}
+            max={MAX_SPECIALTIES}
+            onToggle={toggleSpecialty}
+          />
+        </View>
+      )}
 
       <View style={{ flex: 1 }} />
 
