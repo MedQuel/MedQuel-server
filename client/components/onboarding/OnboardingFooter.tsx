@@ -1,5 +1,5 @@
+import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ChevronRight, ChevronLeft } from 'lucide-react-native';
 import { Pressable, Text, ActivityIndicator, View } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
@@ -20,7 +20,7 @@ export function OnboardingFooter({
   onContinue,
   continueLabel,
   currentStep,
-  totalSteps = 4,
+  totalSteps = 5,
   disabled,
   loading,
 }: OnboardingFooterProps) {
@@ -43,7 +43,11 @@ export function OnboardingFooter({
               borderRadius: theme.borderRadius.lg,
             }}
           >
-            <ChevronLeft size={theme.space.md * 1.1} color={theme.color.textSecondary} />
+            <Feather
+              name='chevron-left'
+              size={theme.space.md * 1.1}
+              color={theme.color.textSecondary}
+            />
             <Text
               style={{
                 color: theme.color.textSecondary,
@@ -90,7 +94,8 @@ export function OnboardingFooter({
                 >
                   {continueLabel}
                 </Text>
-                <ChevronRight
+                <Feather
+                  name='chevron-right'
                   size={theme.space.md * 1.2}
                   color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
                 />
