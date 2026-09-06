@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
+import type { ComponentType } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import type { LucideIcon } from 'lucide-react-native';
-import { CheckCircle2, GraduationCap, Target, Building2, CalendarClock } from 'lucide-react-native';
+import { Feather, Ionicons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
@@ -10,17 +10,46 @@ import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
 
-function SummaryRow({ icon: Icon, label, value }: { icon: LucideIcon, label: string, value: string }) {
+type OnboardingIconProps = { size?: number; color?: string };
+const CheckCircleIcon = (props: OnboardingIconProps) => (
+  <FontAwesome5 name='user-graduate' {...props} />
+);
+const GraduationIcon = (props: OnboardingIconProps) => (
+  <Ionicons name='briefcase-outline' {...props} />
+);
+const TargetIcon = (props: OnboardingIconProps) => (
+  <Feather name='target' {...props} />
+);
+const BuildingIcon = (props: OnboardingIconProps) => (
+  <FontAwesome name='institution' {...props} />
+);
+const CalendarIcon = (props: OnboardingIconProps) => (
+  <Feather name='calendar' {...props} />
+);
+const StethoscopeIcon = (props: OnboardingIconProps) => (
+  <FontAwesome name='stethoscope' {...props} />
+);
+const LayersIcon = (props: OnboardingIconProps) => (
+  <Feather name='layers' {...props} />
+);
+
+function SummaryRow({ icon: Icon, label, value }: {
+  icon: ComponentType<{ size?: number; color?: string }>;
+  label: string;
+  value: string;
+}) {
   const { theme } = useTheme();
 
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.space.sm * 1.25}}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: theme.space.sm * 1.25 }}>
       <View
         style={{
+          height: theme.space.md * 2.75,
+          width: theme.space.md * 2.75,
           alignItems: 'center',
           justifyContent: 'center',
-          marginRight: theme.space.sm * 1.25,
           padding: theme.space.sm * 1.25,
+          marginRight: theme.space.sm * 1.25,
           borderRadius: theme.borderRadius.md,
           backgroundColor: theme.color.surface,
         }}
@@ -41,7 +70,7 @@ function SummaryRow({ icon: Icon, label, value }: { icon: LucideIcon, label: str
         <Text
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm * 1.1,
+            fontSize: theme.fontSize.sm,
             fontFamily: theme.fontFamily.bold,
           }}
         >
@@ -73,7 +102,7 @@ export default function OnboardingReadyScreen() {
         backgroundColor: theme.color.background,
       }}
     >
-      <OnboardingStepper currentStep={4} />
+      <OnboardingStepper currentStep={5} />
 
       <Text
         style={{
@@ -104,34 +133,49 @@ export default function OnboardingReadyScreen() {
         }}
       >
         <SummaryRow
-          icon={CheckCircle2}
+          icon={CheckCircleIcon}
           label={theme.i18n.t('onboarding.ready.name')}
           value={draft.displayName}
         />
         <SummaryRow
-          icon={GraduationCap}
+          icon={GraduationIcon}
           label={theme.i18n.t('onboarding.ready.role')}
           value={draft.role ?? '—'}
         />
         {draft.yearOfStudy && (
           <SummaryRow
-            icon={CalendarClock}
+            icon={CalendarIcon}
             label={theme.i18n.t('onboarding.ready.year')}
             value={draft.yearOfStudy}
           />
         )}
+        {draft.specialties.length > 0 && (
+          <SummaryRow
+            icon={StethoscopeIcon}
+            label={theme.i18n.t('onboarding.ready.specialty')}
+            value={draft.specialties.join(', ')}
+          />
+        )}
         <SummaryRow
-          icon={Target}
+          icon={TargetIcon}
           label={theme.i18n.t('onboarding.ready.goal')}
           value={draft.targetExam ?? '—'}
         />
         {!!draft.institution && (
           <SummaryRow
-            icon={Building2}
+            icon={BuildingIcon}
             label={theme.i18n.t('onboarding.ready.institution')}
             value={draft.institution}
           />
         )}
+        <SummaryRow
+          icon={LayersIcon}
+          label={theme.i18n.t('onboarding.ready.scope')}
+          value={draft.contentScope === 'focused'
+            ? theme.i18n.t('onboarding.ready.scopeFocused', { subjects: draft.focusSubjects.join(', ') })
+            : theme.i18n.t('onboarding.ready.scopeAll')
+          }
+        />
       </View>
 
       {submitError && (
@@ -151,7 +195,7 @@ export default function OnboardingReadyScreen() {
 
       <OnboardingFooter
         continueLabel={theme.i18n.t('onboarding.ready.submit')}
-        currentStep={4}
+        currentStep={5}
         loading={submitting}
         onBack={() => router.back()}
         onContinue={handleFinish}
