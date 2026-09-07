@@ -423,7 +423,13 @@ export default function SettingsScreen() {
           <Divider theme={theme} />
           <Row
             theme={theme}
-            right={<View />}
+            right={
+              <Feather
+                name='edit-3'
+                size={theme.space.md * 1.3}
+                color={theme.color.textMuted}
+              />
+            }
             icon='lock-outline'
             iconBg='#5B9CF61A'
             iconColor='#5B9CF6'
