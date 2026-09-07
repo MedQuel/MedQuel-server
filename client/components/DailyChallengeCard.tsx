@@ -14,6 +14,7 @@ export type DailyChallengeCardProps = {
   epReward: number;
   onStart: () => void;
   completed?: boolean;
+  onDismiss?: () => void;
 };
 
 export function DailyChallengeCard(props: DailyChallengeCardProps) {
@@ -64,6 +65,31 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
 
       {props.completed ? (
         <View style={{ gap: theme.space.md, alignItems: 'center', paddingVertical: theme.space.sm }}>
+          {props.onDismiss ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={props.onDismiss}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: theme.space.xl,
+                height: theme.space.xl,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.isDark ? theme.color.textInverse + '1A' : theme.color.textInverse + '33',
+              }}
+            >
+              <Feather
+                name="x"
+                size={theme.fontSize.md}
+                color={theme.isDark ? theme.color.textSecondary : theme.color.textInverse}
+              />
+            </TouchableOpacity>
+          ) : null}
+
           <View
             style={{
               width: theme.space.xxl * 1.4,
@@ -226,7 +252,7 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
                   fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {theme.i18n.t('common.start')} ⟶
+                {theme.i18n.t('common.start')} 
               </Text>
             </TouchableOpacity>
           </View>
