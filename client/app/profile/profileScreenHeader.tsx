@@ -1,8 +1,10 @@
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
-import {hasValidPhoto} from '../../common/utils/imageUrl';
+
+import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { useTheme } from '../../theme/ThemeContext';
+
 
 type User = {
   displayName?: string;
@@ -13,23 +15,22 @@ type Props = {
   user: User | null;
 };
 
-
-
-
 export function ProfileScreenHeader({ user }: Props) {
   const { theme } = useTheme();
   const router = useRouter();
   const hasPhoto = hasValidPhoto(user?.photoURL);
 
-  // const hasPhoto = !!user?.photoURL && !isEphemeralUri(user.photoURL);
-
   return (
     <View style={{ position: 'relative' }}>
-      <View style={{ paddingVertical: theme.space.xxl, backgroundColor: theme.isDark ? theme.color.card : theme.color.accent }} />
+      <View
+        style={{
+          paddingVertical: theme.space.xxl,
+          backgroundColor: theme.isDark ? theme.color.card : theme.color.accent,
+        }}
+      />
 
-      {/* NEW: Pencil / Edit icon - left side */}
       <TouchableOpacity
-        onPress={() => router.push('/profile/updateProfile')} // apna edit route daal dena
+        onPress={() => router.push('/profile/updateProfile')}
         style={{
           position: 'absolute',
           top: theme.space.md + 4,
@@ -54,7 +55,7 @@ export function ProfileScreenHeader({ user }: Props) {
         />
       </TouchableOpacity>
 
-       <TouchableOpacity
+      <TouchableOpacity
         onPress={() => router.push('/profile/settingsScreen')}
         style={{
           position: 'absolute',
@@ -93,7 +94,7 @@ export function ProfileScreenHeader({ user }: Props) {
           borderWidth: 4,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.color.premium + 'FF',
+          backgroundColor: theme.color.surface, 
           boxShadow: theme.isDark
             ? '0 6px 14px rgba(0,0,0,0.2)'
             : '0 6px 14px rgba(0,0,0,0.05)',
@@ -102,12 +103,8 @@ export function ProfileScreenHeader({ user }: Props) {
         {hasPhoto ? (
           <Image
             source={{ uri: user!.photoURL }}
-            style={{
-              width: '100%',
-              height: '100%',
-            }}
-            resizeMode="cover"
-           
+            style={{ width: '100%', height: '100%' }}
+            resizeMode='cover'
           />
         ) : (
           <Text
