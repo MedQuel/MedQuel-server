@@ -7,9 +7,9 @@ import {
   ROLE_HAS_YEAR,
   ROLE_HAS_SPECIALTY,
   SPECIALTY_OPTIONS,
+  YEAR_OF_STUDY_OPTIONS,
 } from '../../common/context/OnboardingContext';
 import { useTheme } from '../../theme/ThemeContext';
-import type { YearOfStudy } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
 
 import { MultiSelectChips } from '../../components/common/MultiSelectChips';
@@ -17,15 +17,6 @@ import { OnboardingRolePicker } from '../../components/OnboardingRolePicker';
 import { OnboardingFooter } from '../../components/onboarding/OnboardingFooter';
 import { OnboardingStepper } from '../../components/onboarding/OnboardingStepper';
 
-
-const YEAR_OPTIONS: YearOfStudy[] = [
-  'Year 1',
-  'Year 2',
-  'Year 3',
-  'Year 4',
-  'Final Year',
-  'Intern',
-];
 
 export default function OnboardingProfileScreen() {
   const { draft, setRole, setYearOfStudy, toggleSpecialty } = useOnboarding();
@@ -44,6 +35,7 @@ export default function OnboardingProfileScreen() {
 
   return (
     <ScrollView
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={{
         flexGrow: 1,
         paddingTop: theme.space.xl,
@@ -105,7 +97,7 @@ export default function OnboardingProfileScreen() {
           </Text>
 
           <View style={{ flexWrap: 'wrap', gap: theme.space.sm, flexDirection: 'row' }}>
-            {YEAR_OPTIONS.map((year) => {
+            {YEAR_OF_STUDY_OPTIONS.map((year) => {
               const selected = draft.yearOfStudy === year;
               return (
                 <Pressable
