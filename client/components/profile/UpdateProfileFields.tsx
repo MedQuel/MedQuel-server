@@ -1,20 +1,31 @@
 import { Feather } from '@expo/vector-icons';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 
+import {
+  ROLE_HAS_YEAR,
+  ROLE_HAS_SPECIALTY,
+  SPECIALTY_OPTIONS,
+  MAX_SPECIALTIES,
+  MAX_FOCUS_SUBJECTS,
+  YEAR_OF_STUDY_OPTIONS,
+  targetExamsFor,
+} from '../../common/constants/onboardingOptions';
 import { useTheme } from '../../theme/ThemeContext';
-import type { StudyLevel, TargetExam, YearOfStudy } from '../../common/types/types';
+import { MultiSelectChips } from '../common/MultiSelectChips';
+import { OnboardingRolePicker } from '../OnboardingRolePicker';
+import type { Specialty, ContentScope } from '../../common/types/types';
+import type { DescribesYou, TargetExam, YearOfStudy } from '../../common/types/types';
 
-
-const STUDY_LEVELS: StudyLevel[] = ['MBBS Year 1-5', 'Postgraduate', 'Practitioner', 'Nursing / Allied'];
-const YEARS_OF_STUDY: YearOfStudy[] = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Final Year', 'Intern'];
-const TARGET_EXAMS: TargetExam[] = ['USMLE', 'NEET-PG', 'INI-CET', 'PLAB', 'MRCP', 'FMGE', 'Clinical Mastery'];
 
 export interface ProfileFormValues {
   displayName: string;
-  studyLevel: StudyLevel | '';
+  describesYou: DescribesYou | '';
   yearOfStudy: YearOfStudy | '';
+  specialties: Specialty[];
   targetExam: TargetExam | '';
   institution: string;
+  contentScope: ContentScope | '';
+  focusSubjects: Specialty[];
 }
 interface UpdateProfileFieldsProps {
   values: ProfileFormValues;
@@ -25,15 +36,32 @@ interface UpdateProfileFieldsProps {
   ) => void;
   onToggleExam: () => void;
   onSelectExam: (exam: TargetExam) => void;
+  onToggleSpecialty: (specialty: Specialty) => void;
+  onToggleFocusSubject: (subject: Specialty) => void;
 }
 
-function Label({ children }: { children: string }) {
+function SectionTitle({ children }: { children: string }) {
   const { theme } = useTheme();
   return (
     <Text
       style={{
-        fontSize: theme.fontSize.sm,
+        fontSize: theme.fontSize.md * 0.95,
+        color: theme.color.textPrimary,
+        fontFamily: theme.fontFamily.bold,
+        marginBottom: theme.space.sm,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+function SubsectionTitle({ children }: { children: string }) {
+  const { theme } = useTheme();
+  return (
+    <Text
+      style={{
         color: theme.color.textSecondary,
+        fontSize: theme.fontSize.sm,
         fontFamily: theme.fontFamily.bold,
         marginBottom: theme.space.sm,
       }}
@@ -61,7 +89,7 @@ function ChoiceList<T extends string>({ values, selected, onSelect }: {
               paddingVertical: theme.space.sm - 1,
               paddingHorizontal: theme.space.sm * 1.5,
               borderWidth: 1,
-              borderRadius: theme.borderRadius.full,
+              borderRadius: theme.borderRadius.md,
               borderColor: active ? theme.color.accent : theme.color.border,
               backgroundColor: active ? theme.color.accent : theme.color.card,
             }}
@@ -92,7 +120,9 @@ function TextField({ label, value, placeholder, onChangeText }: {
   const { theme } = useTheme();
   return (
     <View style={{ marginBottom: theme.space.md }}>
-      <Label>{label}</Label>
+      <SectionTitle>
+        {label}
+      </SectionTitle>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -102,11 +132,11 @@ function TextField({ label, value, placeholder, onChangeText }: {
           fontSize: theme.fontSize.sm + 1,
           color: theme.color.textPrimary,
           fontFamily: theme.fontFamily.bold,
+          paddingVertical: theme.space.sm,
+          paddingHorizontal: theme.space.sm * 1.5,
           borderWidth: 1,
           borderColor: theme.color.border,
           borderRadius: theme.borderRadius.md,
-          paddingVertical: theme.space.sm,
-          paddingHorizontal: theme.space.sm * 1.5,
           backgroundColor: theme.color.background,
         }}
       />
@@ -115,8 +145,20 @@ function TextField({ label, value, placeholder, onChangeText }: {
 }
 
 
-export function UpdateProfileFields({ values, examDropdownOpen, onChange, onToggleExam, onSelectExam }: UpdateProfileFieldsProps) {
+export function UpdateProfileFields({
+  values,
+  examDropdownOpen,
+  onChange,
+  onToggleExam,
+  onSelectExam,
+  onToggleSpecialty,
+  onToggleFocusSubject,
+}: UpdateProfileFieldsProps) {
   const { theme } = useTheme();
+
+  const showYearPicker = values.describesYou !== '' && ROLE_HAS_YEAR[values.describesYou];
+  const showSpecialtyPicker = values.describesYou !== '' && ROLE_HAS_SPECIALTY[values.describesYou];
+  const targetExamOptions = values.describesYou !== '' ? targetExamsFor(values.describesYou) : [];
 
   return (
     <>
@@ -128,33 +170,50 @@ export function UpdateProfileFields({ values, examDropdownOpen, onChange, onTogg
       />
 
       <View style={{ marginBottom: theme.space.md }}>
-        <Label>
-          {theme.i18n.t('profile.updateProfile.updateProfileFields.studyLevel')}
-        </Label>
-        <ChoiceList
-          values={STUDY_LEVELS}
-          selected={values.studyLevel}
-          onSelect={(value) => onChange('studyLevel', value)}
+        <SectionTitle>
+          {theme.i18n.t('profile.updateProfile.updateProfileFields.describesYou')}
+        </SectionTitle>
+        <OnboardingRolePicker
+          value={values.describesYou as DescribesYou}
+          onChange={(value) => onChange('describesYou', value)}
         />
+
+        {(showYearPicker || showSpecialtyPicker) && (
+          <View style={{ marginTop: theme.space.xs, paddingTop: theme.space.sm, paddingLeft: theme.space.sm }}>
+            {showYearPicker && (
+              <View style={{ marginBottom: showSpecialtyPicker ? theme.space.md : 0 }}>
+                <SubsectionTitle>
+                  {theme.i18n.t('profile.updateProfile.updateProfileFields.yearOfStudy')}
+                </SubsectionTitle>
+                <ChoiceList
+                  values={[...YEAR_OF_STUDY_OPTIONS]}
+                  selected={values.yearOfStudy}
+                  onSelect={(value) => onChange('yearOfStudy', value)}
+                />
+              </View>
+            )}
+
+            {showSpecialtyPicker && (
+              <View>
+                <SubsectionTitle>
+                  {theme.i18n.t('profile.updateProfile.updateProfileFields.specialties')}
+                </SubsectionTitle>
+                <MultiSelectChips
+                  options={SPECIALTY_OPTIONS}
+                  selected={values.specialties}
+                  max={MAX_SPECIALTIES}
+                  onToggle={onToggleSpecialty}
+                />
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
-      {values.studyLevel === 'MBBS Year 1-5' && (
-        <View style={{ marginBottom: theme.space.md }}>
-          <Label>
-            {theme.i18n.t('profile.updateProfile.updateProfileFields.yearOfStudy')}
-          </Label>
-          <ChoiceList
-            values={YEARS_OF_STUDY}
-            selected={values.yearOfStudy}
-            onSelect={(value) => onChange('yearOfStudy', value)}
-          />
-        </View>
-      )}
-
       <View style={{ marginBottom: theme.space.md, zIndex: 10 }}>
-        <Label>
+        <SectionTitle>
           {theme.i18n.t('profile.updateProfile.updateProfileFields.yourGoal')}
-        </Label>
+        </SectionTitle>
         <TouchableOpacity
           onPress={onToggleExam}
           activeOpacity={0.8}
@@ -197,7 +256,7 @@ export function UpdateProfileFields({ values, examDropdownOpen, onChange, onTogg
               backgroundColor: theme.color.card,
             }}
           >
-            {TARGET_EXAMS.map((exam, index) => (
+            {targetExamOptions.map((exam, index) => (
               <TouchableOpacity
                 key={exam}
                 onPress={() => onSelectExam(exam)}
@@ -230,6 +289,59 @@ export function UpdateProfileFields({ values, examDropdownOpen, onChange, onTogg
         placeholder={theme.i18n.t('profile.updateProfile.updateProfileFields.yourInstitution')}
         onChangeText={(value) => onChange('institution', value)}
       />
+
+      <View
+        style={{
+          padding: theme.space.md,
+          marginBottom: theme.space.md,
+          borderWidth: 1,
+          borderColor: theme.color.border,
+          borderRadius: theme.borderRadius.lg,
+          backgroundColor: theme.color.card,
+        }}
+      >
+        <SectionTitle>
+          {theme.i18n.t('profile.updateProfile.updateProfileFields.contentScope')}
+        </SectionTitle>
+        <ChoiceList
+          values={['all', 'focused'] as ContentScope[]}
+          selected={values.contentScope}
+          onSelect={(value) => onChange('contentScope', value)}
+        />
+        <Text
+          style={{
+            color: theme.color.textMuted,
+            fontSize: theme.fontSize.xs,
+            marginTop: theme.space.xs,
+          }}
+        >
+          {values.contentScope === 'focused'
+            ? theme.i18n.t('profile.updateProfile.updateProfileFields.contentScopeFocusedHint')
+            : theme.i18n.t('profile.updateProfile.updateProfileFields.contentScopeAllHint')}
+        </Text>
+
+        {values.contentScope === 'focused' && (
+          <View
+            style={{
+              paddingTop: theme.space.sm,
+              paddingLeft: theme.space.sm,
+              marginTop: theme.space.md,
+              borderLeftWidth: 2,
+              borderLeftColor: theme.color.accent,
+            }}
+          >
+            <SubsectionTitle>
+              {theme.i18n.t('profile.updateProfile.updateProfileFields.focusSubjects')}
+            </SubsectionTitle>
+            <MultiSelectChips
+              options={SPECIALTY_OPTIONS}
+              selected={values.focusSubjects}
+              max={MAX_FOCUS_SUBJECTS}
+              onToggle={onToggleFocusSubject}
+            />
+          </View>
+        )}
+      </View>
     </>
   );
 }
