@@ -341,6 +341,7 @@
   "profile": {
     "level": "Lv {{level}}",
     "xpPoints": "{{points}} XP",
+    "focusedOn": "Focused on {{subjects}}",
     "performanceBySubject": "Performance by Subject",
     "noSubjectData": "No subject data available",
     "recentAttempts": "Recent Attempts",
@@ -360,12 +361,17 @@
       "updateProfileFields": {
         "displayName": "Display Name",
         "yourName": "Your Name",
-        "studyLevel": "Your Study Level",
+        "describesYou": "What best describes you?",
+        "specialties": "Specialties",
         "yearOfStudy": "Year of Study",
         "yourGoal": "Your Goal",
         "selectYourGoal": "Select Your Goal",
         "institution": "Institution",
-        "yourInstitution": "Your Institution / University"
+        "yourInstitution": "Your Institution / University",
+        "contentScope": "Study scope",
+        "contentScopeAllHint": "Explore the full medical curriculum",
+        "contentScopeFocusedHint": "Practise selected subjects in depth",
+        "focusSubjects": "Focus subjects"
       }
     },
     "settings": {
@@ -375,6 +381,7 @@
       "streak": "{{streak}} day streak",
       "section": {
         "account": "Account",
+        "learningFocus": "Learning Focus",
         "notifications": "Notifications",
         "quizPreferences": "Quiz Preferences",
         "appearance": "Appearance",
@@ -383,9 +390,17 @@
       "account": {
         "email": "Email Address",
         "changePassword": "Change Password",
-        "lastChanged": "Last changed {{date}} ago",
-        "targetExam": "Target Exam",
-        "studyLevel": "Study Level"
+        "changePasswordSubtitle": "Send a password reset link to your email",
+        "goal": "Your Goal",
+        "studyLevel": "Study Level",
+        "specialties": "Specialties",
+        "institution": "Your Institution",
+        "updateProfile": "Update Profile"
+      },
+      "learningFocus": {
+        "all": "All Subjects",
+        "focused": "Focused on",
+        "allSubtitle":"Exploring the full curriculum"
       },
       "notifications": {
         "pushNotifications": "Push Notifications",
@@ -423,6 +438,9 @@
         "privacyPolicy": "Privacy Policy"
       },
       "signOut": "Sign Out",
+      "signOutConfirmTitle": "Are you sure you want to sign out?",
+      "signOutConfirmBody": "You will need to sign in again to access your account.",
+      "signOutConfirm": "Confirm Sign Out",
       "deleteAccount": "Delete Account"
     }
   },
