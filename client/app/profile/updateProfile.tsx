@@ -8,13 +8,16 @@ import { ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 import { userApi } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
-import { UpdateProfilePhoto } from './UpdateProfilePhoto';
-import { UpdateProfileStatus } from './UpdateProfileStatus';
+import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import type { UpdateProfileInput } from '../../common/types/types';
 import { ProfilePhotoUploadError } from '../../common/api/api.errors';
-import { UpdateProfileFields, type ProfileFormValues } from './UpdateProfileFields';
+import type { UpdateProfileInput, Specialty } from '../../common/types/types';
+import { UpdateProfilePhoto } from '../../components/profile/UpdateProfilePhoto';
+import { UpdateProfileStatus } from '../../components/profile/UpdateProfileStatus';
 import { removeProfilePhoto, uploadProfilePhoto } from '../../common/firebase/storage';
+import { MAX_SPECIALTIES, MAX_FOCUS_SUBJECTS } from '../../common/constants/onboardingOptions';
+import { UpdateProfileFields, type ProfileFormValues } from '../../components/profile/UpdateProfileFields';
+import { ROLE_HAS_YEAR, ROLE_HAS_SPECIALTY, targetExamsFor } from '../../common/constants/onboardingOptions';
 
 
 interface ProfileFormState extends ProfileFormValues {
@@ -25,10 +28,13 @@ const EMPTY_FORM: ProfileFormState = {
   uid: '',
   displayName: '',
   photoURL: '',
-  studyLevel: '',
+  describesYou: '',
   yearOfStudy: '',
+  specialties: [],
   targetExam: '',
   institution: '',
+  contentScope: '',
+  focusSubjects: [],
 };
 
 function isEphemeralUri(uri?: string | null): boolean {
@@ -37,10 +43,21 @@ function isEphemeralUri(uri?: string | null): boolean {
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
+function sameSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+
+  return sortedA.every((v, i) => v === sortedB[i]);
+}
 
 
 export default function UpdateProfile() {
+  const { user, refreshUser } = useAppContext();
+
   const [formData, setFormData] = useState<ProfileFormState>(EMPTY_FORM);
+  const originalRef = useRef<ProfileFormState>(EMPTY_FORM);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -61,30 +78,7 @@ export default function UpdateProfile() {
   useBottomBar(false, 'profile');
 
   useEffect(() => {
-    (async () => {
-      try {
-        const me = await userApi.getMe();
-        if (!isMountedRef.current) return;
-
-        setFormData({
-          uid: me.uid ?? '',
-          displayName: me.displayName ?? '',
-          photoURL: isEphemeralUri(me.photoURL) ? '' : (me.photoURL ?? ''),
-          studyLevel: me.studyLevel ?? '',
-          yearOfStudy: me.yearOfStudy ?? '',
-          targetExam: me.targetExam ?? '',
-          institution: me.institution ?? '',
-        });
-      } catch (error) {
-        if (isMountedRef.current)
-          setFeedback({
-            message: getErrorMessage(error, 'Could not load your profile.'),
-            tone: 'error',
-          });
-      } finally {
-        if (isMountedRef.current) setLoading(false);
-      }
-    })();
+    isMountedRef.current = true;
 
     return () => {
       isMountedRef.current = false;
@@ -92,20 +86,78 @@ export default function UpdateProfile() {
     };
   }, []);
 
-  const handleChange = useCallback(
-    <K extends keyof ProfileFormValues>(
-      name: K,
-      value: ProfileFormValues[K]
-    ) => {
-      setFormData((previous) => {
-        const next = { ...previous, [name]: value };
-        if (name === 'studyLevel' && value !== 'MBBS Year 1-5') next.yearOfStudy = '';
-        return next;
-      });
-      setFeedback(null);
-    },
-    []
-  );
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      setFeedback({ message: 'Could not load your profile.', tone: 'error' });
+      return;
+    }
+
+    const hydrated: ProfileFormState = {
+      uid: user.uid ?? '',
+      displayName: user.displayName ?? '',
+      photoURL: isEphemeralUri(user.photoURL) ? '' : (user.photoURL ?? ''),
+      describesYou: user.describesYou ?? '',
+      yearOfStudy: user.yearOfStudy ?? '',
+      specialties: user.specialties ?? [],
+      targetExam: user.targetExam ?? '',
+      institution: user.institution ?? '',
+      contentScope: user.contentScope ?? 'all',
+      focusSubjects: user.focusSubjects ?? [],
+    };
+    setFormData(hydrated);
+    originalRef.current = hydrated;
+    setLoading(false);
+  }, [user]);
+
+  const handleChange = useCallback(<K extends keyof ProfileFormValues>(
+    name: K,
+    value: ProfileFormValues[K]
+  ) => {
+    setFormData((previous) => {
+      let next = { ...previous, [name]: value };
+
+      if (name === 'describesYou') {
+        const role = value as ProfileFormValues['describesYou'];
+        const targetStillValid = next.targetExam && role
+          ? targetExamsFor(role).includes(next.targetExam as any)
+          : false;
+        next = {
+          ...next,
+          yearOfStudy: role && ROLE_HAS_YEAR[role] ? next.yearOfStudy : '',
+          specialties: role && ROLE_HAS_SPECIALTY[role] ? next.specialties : [],
+          targetExam: targetStillValid ? next.targetExam : '',
+        };
+      }
+      if (name === 'contentScope' && value !== 'focused') {
+        next = { ...next, focusSubjects: [] };
+      }
+      return next;
+    });
+    setFeedback(null);
+  }, []);
+
+  const handleToggleSpecialty = useCallback((specialty: Specialty) => {
+    setFormData((previous) => {
+      if (previous.specialties.includes(specialty)) {
+        return { ...previous, specialties: previous.specialties.filter((s) => s !== specialty) };
+      }
+      if (previous.specialties.length >= MAX_SPECIALTIES) return previous;
+      return { ...previous, specialties: [...previous.specialties, specialty] };
+    });
+    setFeedback(null);
+  }, []);
+
+  const handleToggleFocusSubject = useCallback((subject: Specialty) => {
+    setFormData((previous) => {
+      if (previous.focusSubjects.includes(subject)) {
+        return { ...previous, focusSubjects: previous.focusSubjects.filter((s) => s !== subject) };
+      }
+      if (previous.focusSubjects.length >= MAX_FOCUS_SUBJECTS) return previous;
+      return { ...previous, focusSubjects: [...previous.focusSubjects, subject] };
+    });
+    setFeedback(null);
+  }, []);
 
   const pickImage = useCallback(async (source: 'camera' | 'gallery') => {
     setPhotoModalVisible(false);
@@ -114,9 +166,10 @@ export default function UpdateProfile() {
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        setFeedback({ message: source === 'camera'
-          ? 'Camera permission is required to take a photo.'
-          : 'Gallery permission is required to choose a photo.',
+        setFeedback({
+          message: source === 'camera'
+            ? 'Camera permission is required to take a photo.'
+            : 'Gallery permission is required to choose a photo.',
           tone: 'error',
         });
         return;
@@ -157,9 +210,9 @@ export default function UpdateProfile() {
         formData.photoURL
       );
       await userApi.updateProfile({ photoURL: downloadUrl });
+      await refreshUser();
 
       if (!isMountedRef.current) return;
-      setFormData((previous) => ({ ...previous, photoURL: downloadUrl }));
       setPendingPhotoUri(null);
       setFeedback({
         message: 'Profile photo updated successfully.',
@@ -174,7 +227,7 @@ export default function UpdateProfile() {
     } finally {
       if (isMountedRef.current) setUploadingPhoto(false);
     }
-  }, [formData.photoURL, pendingPhotoUri, uploadingPhoto]);
+  }, [formData.photoURL, pendingPhotoUri, uploadingPhoto, refreshUser]);
 
   const handleRemovePhoto = useCallback(() => {
     if (!formData.photoURL || uploadingPhoto) return;
@@ -189,18 +242,42 @@ export default function UpdateProfile() {
     try {
       await userApi.updateProfile({ photoURL: null });
       removeProfilePhoto(formData.photoURL);
+      await refreshUser();
       if (!isMountedRef.current) return;
 
-      setFormData((previous) => ({ ...previous, photoURL: '' }));
       setRemoveConfirmationVisible(false);
       setPhotoModalVisible(false);
-      setFeedback({ message: theme.i18n.t('profile.updateProfile.photoRemoved'), tone: 'success' });
+      setFeedback({
+        message: theme.i18n.t('profile.updateProfile.photoRemoved'),
+        tone: 'success',
+      });
     } catch (error) {
-      if (isMountedRef.current) setFeedback({ message: getErrorMessage(error, theme.i18n.t('profile.updateProfile.removePhotoFailed')), tone: 'error' });
+      if (isMountedRef.current)
+        setFeedback({
+          message: getErrorMessage(error, theme.i18n.t('profile.updateProfile.removePhotoFailed')),
+          tone: 'error',
+        });
     } finally {
       if (isMountedRef.current) setUploadingPhoto(false);
     }
-  }, [formData.photoURL, theme, uploadingPhoto]);
+  }, [formData.photoURL, theme, uploadingPhoto, refreshUser]);
+
+  function validate(): string | null {
+    if (formData.displayName.trim().length < 5) return 'Display name must be at least 5 characters.';
+    if (!formData.describesYou) return 'Please select what best describes you.';
+    if (ROLE_HAS_YEAR[formData.describesYou] && !formData.yearOfStudy) {
+      return 'Please select your year of study.';
+    }
+    if (ROLE_HAS_SPECIALTY[formData.describesYou] && formData.specialties.length === 0) {
+      return 'Please select at least one specialty.';
+    }
+    if (!formData.targetExam) return 'Please select your goal.';
+    if (!formData.contentScope) return 'Please choose a content scope.';
+    if (formData.contentScope === 'focused' && formData.focusSubjects.length === 0) {
+      return 'Please select at least one subject to focus on.';
+    }
+    return null;
+  }
 
   const handleSubmit = useCallback(async () => {
     if (pendingPhotoUri) {
@@ -210,29 +287,47 @@ export default function UpdateProfile() {
       });
       return;
     }
+    const validationError = validate();
+    if (validationError) {
+      setFeedback({ message: validationError, tone: 'error' });
+      return;
+    }
+
     setSaving(true);
     setFeedback(null);
 
     try {
-      const input: UpdateProfileInput = {
-        displayName: formData.displayName,
-        studyLevel: formData.studyLevel || undefined,
-        yearOfStudy: formData.yearOfStudy || undefined,
-        targetExam: formData.targetExam || undefined,
-        institution: formData.institution || undefined,
-      };
-      const updated = await userApi.updateProfile(input);
+      const original = originalRef.current;
+      const payload: UpdateProfileInput = {};
+
+      if (formData.displayName.trim() !== original.displayName)
+        payload.displayName = formData.displayName.trim();
+      if (formData.describesYou !== original.describesYou)
+        payload.describesYou = formData.describesYou || undefined;
+      if (formData.yearOfStudy !== original.yearOfStudy)
+        payload.yearOfStudy = formData.yearOfStudy || undefined;
+      if (!sameSet(formData.specialties, original.specialties))
+        payload.specialties = formData.specialties;
+      if (formData.targetExam !== original.targetExam)
+        payload.targetExam = formData.targetExam || undefined;
+      if (formData.institution.trim() !== original.institution)
+        payload.institution = formData.institution.trim() || undefined;
+      if (formData.contentScope !== original.contentScope)
+        payload.contentScope = formData.contentScope || undefined;
+      if (!sameSet(formData.focusSubjects, original.focusSubjects))
+        payload.focusSubjects = formData.focusSubjects;
+
+      if (Object.keys(payload).length === 0) {
+        setFeedback({ message: 'No changes to save.', tone: 'success' });
+        setSaving(false);
+        return;
+      }
+
+      await userApi.updateProfile(payload);
+      await refreshUser();
 
       if (!isMountedRef.current) return;
-      setFormData((previous) => ({
-        ...previous,
-        ...updated,
-        photoURL: updated.photoURL ?? previous.photoURL,
-        studyLevel: updated.studyLevel ?? previous.studyLevel,
-        yearOfStudy: updated.yearOfStudy ?? previous.yearOfStudy,
-        targetExam: updated.targetExam ?? previous.targetExam,
-      }));
-
+      originalRef.current = { ...formData };
       setFeedback({ message: 'Profile updated successfully.', tone: 'success' });
       navigateTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current) router.push('/profile');
@@ -246,9 +341,10 @@ export default function UpdateProfile() {
     } finally {
       if (isMountedRef.current) setSaving(false);
     }
-  }, [formData, pendingPhotoUri, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, pendingPhotoUri, router, refreshUser]);
 
-  if (loading)
+  if (loading) {
     return (
       <View
         style={{
@@ -261,16 +357,14 @@ export default function UpdateProfile() {
         <Loading />
       </View>
     );
+  }
 
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={{
-          flex: 1,
-          backgroundColor: theme.color.background,
-        }}
+        style={{ flex: 1, backgroundColor: theme.color.background }}
         contentContainerStyle={{
           padding: theme.space.lg,
           paddingBottom: theme.space.xl,
@@ -348,6 +442,8 @@ export default function UpdateProfile() {
             handleChange('targetExam', exam);
             setExamDropdownOpen(false);
           }}
+          onToggleSpecialty={handleToggleSpecialty}
+          onToggleFocusSubject={handleToggleFocusSubject}
         />
       </ScrollView>
 
@@ -423,9 +519,7 @@ export default function UpdateProfile() {
                 marginBottom: theme.space.lg,
               }}
             >
-              {removeConfirmationVisible
-                ? theme.i18n.t('profile.updateProfile.removePhoto')
-                : theme.i18n.t('profile.updateProfile.uploadPhoto')}
+              {removeConfirmationVisible ? theme.i18n.t('profile.updateProfile.removePhoto') : theme.i18n.t('profile.updateProfile.uploadPhoto')}
             </Text>
 
             {removeConfirmationVisible ? (
@@ -472,121 +566,123 @@ export default function UpdateProfile() {
                       opacity: uploadingPhoto ? 0.6 : 1,
                     }}
                   >
-                    {uploadingPhoto
-                      ? <ActivityIndicator color={theme.color.textInverse} />
-                      : <Text style={{ color: theme.color.textInverse, fontFamily: theme.fontFamily.bold }}>
+                    {uploadingPhoto ? (
+                      <ActivityIndicator color={theme.color.textInverse} />
+                    ) : (
+                      <Text style={{ color: theme.color.textInverse, fontFamily: theme.fontFamily.bold }}>
                         {theme.i18n.t('profile.updateProfile.removePhoto')}
-                      </Text>}
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </>
-            ) : <>
-            <TouchableOpacity
-              onPress={() => pickImage('camera')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: theme.space.md * 0.75,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.color.border,
-              }}
-            >
-              <Feather
-                name='camera'
-                size={theme.space.md}
-                color={theme.color.accent}
-                style={{ marginRight: theme.space.sm }}
-              />
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm + 1,
-                  color: theme.color.textPrimary,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('profile.updateProfile.takePhoto')}
-              </Text>
-            </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  onPress={() => pickImage('camera')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: theme.space.md * 0.75,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.color.border,
+                  }}
+                >
+                  <Feather
+                    name='camera'
+                    size={theme.space.md}
+                    color={theme.color.accent}
+                    style={{ marginRight: theme.space.sm }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm + 1,
+                      color: theme.color.textPrimary,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    {theme.i18n.t('profile.updateProfile.takePhoto')}
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => pickImage('gallery')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: theme.space.md * 0.75,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.color.border,
-              }}
-            >
-              <Feather
-                name='image'
-                size={theme.space.md}
-                color={theme.color.accent}
-                style={{ marginRight: theme.space.sm }}
-              />
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm + 1,
-                  color: theme.color.textPrimary,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('profile.updateProfile.chooseFromGallery')}
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => pickImage('gallery')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: theme.space.md * 0.75,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.color.border,
+                  }}
+                >
+                  <Feather
+                    name='image'
+                    size={theme.space.md}
+                    color={theme.color.accent}
+                    style={{ marginRight: theme.space.sm }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm + 1,
+                      color: theme.color.textPrimary,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    {theme.i18n.t('profile.updateProfile.chooseFromGallery')}
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                handleRemovePhoto();
-              }}
-              disabled={!formData.photoURL || Boolean(pendingPhotoUri) || uploadingPhoto}
-              accessibilityRole='button'
-              accessibilityLabel={theme.i18n.t('profile.updateProfile.removePhoto')}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: theme.space.md * 0.75,
-                borderBottomWidth: 1,
-                borderBottomColor: theme.color.border,
-                opacity: !formData.photoURL || pendingPhotoUri || uploadingPhoto ? 0.45 : 1,
-              }}
-            >
-              <Feather
-                name='trash-2'
-                size={theme.space.md}
-                color={theme.color.error}
-                style={{ marginRight: theme.space.sm }}
-              />
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm + 1,
-                  color: theme.color.error,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('profile.updateProfile.removePhoto')}
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleRemovePhoto}
+                  disabled={!formData.photoURL || Boolean(pendingPhotoUri) || uploadingPhoto}
+                  accessibilityRole='button'
+                  accessibilityLabel={theme.i18n.t('profile.updateProfile.removePhoto')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingVertical: theme.space.md * 0.75,
+                    borderBottomWidth: 1,
+                    borderBottomColor: theme.color.border,
+                    opacity: !formData.photoURL || pendingPhotoUri || uploadingPhoto ? 0.45 : 1,
+                  }}
+                >
+                  <Feather
+                    name='trash-2'
+                    size={theme.space.md}
+                    color={theme.color.error}
+                    style={{ marginRight: theme.space.sm }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: theme.fontSize.sm + 1,
+                      color: theme.color.error,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    {theme.i18n.t('profile.updateProfile.removePhoto')}
+                  </Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setPhotoModalVisible(false)}
-              style={{
-                alignItems: 'center',
-                marginTop: theme.space.sm,
-                paddingVertical: theme.space.md * 0.75,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: theme.fontSize.sm + 1,
-                  color: theme.color.error,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('common.cancel')}
-              </Text>
-            </TouchableOpacity>
-            </>}
+                <TouchableOpacity
+                  onPress={() => setPhotoModalVisible(false)}
+                  style={{
+                    alignItems: 'center',
+                    marginTop: theme.space.sm,
+                    paddingVertical: theme.space.md * 0.75,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.color.error,
+                      fontSize: theme.fontSize.sm + 1,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    {theme.i18n.t('common.cancel')}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
           </Pressable>
         </Pressable>
       </Modal>
