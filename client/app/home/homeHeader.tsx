@@ -1,9 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
-import {
-  View,
-  Text,
+import {View,Text,
   TouchableOpacity,
   StyleSheet,
   Image,
@@ -48,18 +46,15 @@ export function HomeHeader({
 }) {
   const { theme } = useTheme();
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
-
   const avatarLabel = getAvatarLabel(name);
   const level = computeLevelFromXp(xpPoints);
   const isActiveToday = lastActiveDate
     ? isSameDay(new Date(lastActiveDate), new Date())
     : false;
-
   const flameIconName = isActiveToday ? 'flame' : 'flame-outline';
   const flameColor = '#FF6723';
   const streakTextColor = theme.color.warning;
   const avatarSize = theme.space.xxl;
-
   function handleAvatarPress() {
     if (hasValidPhoto(photoURL)) {
       setPhotoModalVisible(true);
