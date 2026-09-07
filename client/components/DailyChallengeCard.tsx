@@ -231,7 +231,6 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
                 </Text>
               </View>
             </View>
-
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={props.onStart}

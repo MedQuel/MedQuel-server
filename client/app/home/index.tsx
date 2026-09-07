@@ -38,7 +38,6 @@ export default function HomeScreen() {
         api.leaderboard.getLeaderboard(),
         api.analytics.getAnalytics(),
       ]);
-
       if (isMountedRef.current) {
         setHomeData(nextHomeData);
         setUser(currentUser);
