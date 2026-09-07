@@ -1,6 +1,6 @@
 import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { api } from '../../common/api/api';
@@ -14,6 +14,7 @@ import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
+let dismissedChallengeContestId: string | null = null;
 export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [challengeDismissed, setChallengeDismissed] = useState(false);
 
   const { theme } = useTheme();
   const router = useRouter();
@@ -62,7 +64,6 @@ export default function HomeScreen() {
       }
     }
   }, [theme.i18n]);
-
   useFocusEffect(
     useCallback(() => {
       const isMountedRef = { current: true };
@@ -91,6 +92,18 @@ const playedContestIds = new Set(
     const isAlreadyPlayed = playedContestIds.has(contest.contestId);
     return isActive && !isAlreadyPlayed;
   });
+
+  const isChallengeCompleted = Boolean(
+    dailyChallenge?.contestId && playedContestIds.has(dailyChallenge.contestId)
+  );
+  const showChallengeCard = Boolean(dailyChallenge) && !(isChallengeCompleted && challengeDismissed);
+  useEffect(() => {
+    if (dailyChallenge?.contestId && isChallengeCompleted) {
+      setChallengeDismissed(dismissedChallengeContestId === dailyChallenge.contestId);
+    } else {
+      setChallengeDismissed(false);
+    }
+  }, [dailyChallenge?.contestId, isChallengeCompleted]);
 
   if (loading) {
     return (
@@ -132,6 +145,7 @@ const playedContestIds = new Set(
         streak={user.currentStreak}
         xpPoints={user.xpPoints}
         lastActiveDate={user.lastActiveDate}
+        photoURL={user.photoURL}
         onNotificationsPress={() => router.push('/notifications')}
       />
 
@@ -155,7 +169,7 @@ const playedContestIds = new Set(
           quizzesTaken={quizzesTaken}
           earnedPoints={user.epPoints}
         />
-        {dailyChallenge ? (
+        {dailyChallenge && showChallengeCard ? (
           <DailyChallengeCard
             title={dailyChallenge.subject}
             questions={challengeContest?.totalQuestions ?? 30}
@@ -165,13 +179,20 @@ const playedContestIds = new Set(
               Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000))
             )}
             epReward={dailyChallenge.epReward}
+            completed={isChallengeCompleted}
+            onDismiss={() => {
+              setChallengeDismissed(true);
+              if (dailyChallenge.contestId) {
+                dismissedChallengeContestId = dailyChallenge.contestId;
+              }
+            }}
             onStart={() => {
               if (dailyChallenge.contestId) {
                 router.push(`/contests/${dailyChallenge.contestId}`);
               }
             }}
           />
-        ) : (
+        ) : !dailyChallenge ? (
           <View
             style={{
               alignItems: 'center',
@@ -195,7 +216,52 @@ const playedContestIds = new Set(
               {theme.i18n.t('No new challenge right now. Check back soon!')}
             </Text>
           </View>
-        )}
+        ) : null}
+
+        <View style={{ gap: theme.space.sm }}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push('/home/practiceBySubject')}
+            style={{
+              borderRadius: theme.borderRadius.xl,
+              overflow: 'hidden',
+            }}
+          >
+            <LinearGradient
+              colors={
+                theme.isDark
+                  ? ['#05173d', '#071d4d', '#08205a']
+                  : ['#2762f7', '#1a56f0', '#0f49db']
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: theme.space.md,
+                borderWidth: 1.5,
+                borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
+                borderRadius: theme.borderRadius.xl,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                  fontSize: theme.fontSize.md,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {theme.i18n.t('Explore Practice Subjects')}
+              </Text>
+              <Feather
+                name='chevron-right'
+                size={theme.fontSize.lg}
+                color={theme.isDark ? theme.color.info : theme.color.textInverse}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ gap: theme.space.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -262,62 +328,6 @@ const playedContestIds = new Set(
               </Text>
             </View>
           )}
-        </View>
-
-        <View style={{ gap: theme.space.sm }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            {theme.i18n.t('Practice by Subject')}
-          </Text>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/home/practiceBySubject')}
-            style={{
-              borderRadius: theme.borderRadius.xl,
-              overflow: 'hidden',
-            }}
-          >
-            <LinearGradient
-              colors={
-                theme.isDark
-                  ? ['#05173d', '#071d4d', '#08205a']
-                  : ['#2762f7', '#1a56f0', '#0f49db']
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: theme.space.md,
-                borderWidth: 1.5,
-                borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
-                borderRadius: theme.borderRadius.xl,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-                  fontSize: theme.fontSize.md,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('Explore Practice Subjects')}
-              </Text>
-              <Feather
-                name='chevron-right'
-                size={theme.fontSize.lg}
-                color={theme.isDark ? theme.color.info : theme.color.textInverse}
-              />
-            </LinearGradient>
-          </TouchableOpacity>
         </View>
 
         <PerformanceTrendCard data={homeData.performanceTrend.slice(-7)} />
