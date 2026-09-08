@@ -100,6 +100,9 @@ export async function updateProfileResolver(_parent: unknown, args: { input: Upd
   };
 
   const validated = validateUpdateProfileInput(args.input, current);
+  if (validated.displayName) {
+    (validated).displayNameLower = validated.displayName.toLowerCase();
+  }
   if (Object.keys(validated).length === 0) return mapUserDoc(uid, data);
 
   await userRef.update({
