@@ -2,6 +2,7 @@ import { rootTypeDefs } from './root.js';
 import { userTypeDefs } from './user.js';
 import { homeTypeDefs } from './home.js';
 import { quizTypeDefs } from './quiz.js';
+import { friendsTypeDefs } from './friends.js';
 import { contestTypeDefs } from './contest.js';
 import { analyticsTypeDefs } from './analytics.js';
 import { leaderboardTypeDefs } from './leaderboard.js';
@@ -13,6 +14,7 @@ export const typeDefs = [
   userTypeDefs,
   quizTypeDefs,
   homeTypeDefs,
+  friendsTypeDefs,
   contestTypeDefs,
   analyticsTypeDefs,
   leaderboardTypeDefs,
