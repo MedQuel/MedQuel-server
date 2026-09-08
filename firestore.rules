@@ -35,6 +35,18 @@ service cloud.firestore {
     }
 
 
+    // ─────> Friends
+    match /users/{userId}/friends/{friendUid} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.fromUid || request.auth.uid == resource.data.toUid);
+      allow write: if false;
+    }
+
+
     // ─────> Quiz sessions
     match /quizSessions/{sessionId} {
       allow read: if request.auth != null && request.auth.uid == resource.data.userId;
