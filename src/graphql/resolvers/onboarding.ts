@@ -11,6 +11,7 @@ function buildUserDocument(uid: string, email: string, data: ReturnType<typeof v
   return {
     uid,
     displayName: data.displayName,
+    displayNameLower: data.displayName.toLowerCase(),
     email,
     photoURL: null,
     role: 'student' as const,
