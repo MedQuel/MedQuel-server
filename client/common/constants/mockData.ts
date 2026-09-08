@@ -3,6 +3,7 @@ import type { User, HomeData } from '../types/types';
 import type { StudyPlan, Plan, InitiatePaymentResult } from '../types/types';
 import type { Badge, AnalyticsData, LeaderboardResult } from '../types/types';
 import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
+import type { FriendSummary, FriendRequest, PublicProfile, UserSearchResult } from '../types/types';
 import type { Contest, ClientQuestion, StartQuizSessionResult, SubmitQuizSessionResult } from '../types/types';
 
 
@@ -49,6 +50,90 @@ export const MOCK_USER: User = {
   createdAt: '2026-01-12T08:00:00.000Z',
   updatedAt: new Date().toISOString(),
 };
+
+
+// -----> Friends <-----
+export const MOCK_FRIENDS: FriendSummary[] = [
+  {
+    uid: 'user-2',
+    displayName: 'Swapnil Sharma',
+    photoURL: undefined,
+    currentLevel: 9,
+    currentStreak: 14,
+    epPoints: 2680,
+    headToHead: { wins: 3, losses: 1 },
+    addedAt: new Date(Date.now() - 20*86400000).toISOString(),
+  },
+  {
+    uid: 'user-5',
+    displayName: 'Issac Newton',
+    photoURL: undefined,
+    currentLevel: 15,
+    currentStreak: 41,
+    epPoints: 4120,
+    headToHead: { wins: 1, losses: 4 },
+    addedAt: new Date(Date.now() - 5*86400000).toISOString(),
+  },
+];
+
+export const MOCK_PENDING_FRIEND_REQUESTS: FriendRequest[] = [
+  {
+    requestId: 'user-7_mock-uid-001',
+    fromUid: 'user-7',
+    toUid: MOCK_USER.uid,
+    status: 'pending',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    respondedAt: null,
+  },
+];
+
+export function buildMockFriendRequest(toUid: string): FriendRequest {
+  return {
+    requestId: `${MOCK_USER.uid}_${toUid}`,
+    fromUid: MOCK_USER.uid,
+    toUid,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    respondedAt: null,
+  };
+}
+
+export function buildMockPublicProfile(uid: string): PublicProfile {
+  return {
+    uid,
+    displayName: 'Issac Newton',
+    photoURL: undefined,
+    targetExam: 'NEET-PG',
+    studyLevel: 'MBBS Year 1-5',
+    specialties: [],
+    currentLevel: 10,
+    xpPoints: 2450,
+    epPoints: 2890,
+    currentStreak: 18,
+    longestStreak: 22,
+    badges: ['streak_30'],
+    relationshipStatus: 'NONE',
+    headToHead: null,
+    comparison: {
+      xpDelta: MOCK_USER.xpPoints - 2450,
+      epDelta: MOCK_USER.epPoints - 2890,
+      streakDelta: MOCK_USER.currentStreak - 18,
+      levelDelta: MOCK_USER.currentLevel - 10,
+    },
+  };
+}
+
+export function buildMockSearchResults(query: string): UserSearchResult[] {
+  return MOCK_LEADERBOARD_NAMES.filter((name) =>
+    name.toLowerCase().includes(query.toLowerCase())
+  ).map((name, i) => ({
+    uid: `user-${i+1}`,
+    displayName: name,
+    photoURL: undefined,
+    targetExam: 'NEET-PG' as const,
+    relationshipStatus: 'NONE' as const,
+  }));
+}
 
 
 // -----> Questions / quiz sessions <-----
