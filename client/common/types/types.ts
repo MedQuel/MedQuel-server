@@ -2,12 +2,17 @@ export type TargetExam = 'USMLE' | 'NEET-PG' | 'INI-CET' | 'PLAB' | 'MRCP' | 'FM
 export type StudyLevel = 'MBBS Year 1-5' | 'Postgraduate' | 'Practitioner' | 'Nursing / Allied';
 export type YearOfStudy = 'Year 1' | 'Year 2' | 'Year 3' | 'Year 4' | 'Final Year' | 'Intern';
 export type DescribesYou = 'MBBS Student' | 'Postgraduate' | 'Practicing Doctor' | 'Nursing / Allied';
+export type ContentScope = 'all' | 'focused';
+
+export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
+export type FriendRelationshipStatus = 'NONE' | 'FRIENDS' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'SELF';
+
 export type BadgeVariant = 'gold' | 'red' | 'purple' | 'blue' | 'green';
 export type BadgeRarity = 'Common' | 'Rare' | 'Epic' | 'Legendary';
 export type BadgeStatus = 'earned' | 'in_progress' | 'locked';
+
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type ContentScope = 'all' | 'focused';
 
 export type Specialty =
   | 'Anatomy' | 'Biochemistry' | 'Physiology' | 'Microbiology' | 'Pharmacology'
@@ -102,6 +107,64 @@ export interface UpdateProfileInput {
   institution?: string;
   contentScope?: ContentScope;
   focusSubjects?: Specialty[];
+}
+
+
+// -----> Friends
+export interface FriendRequest {
+  requestId: string;
+  fromUid: string;
+  toUid: string;
+  status: FriendRequestStatus;
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export interface HeadToHead {
+  wins: number;
+  losses: number;
+}
+export interface FriendSummary {
+  uid: string;
+  displayName: string;
+  photoURL?: string | null;
+  currentLevel: number;
+  currentStreak: number;
+  epPoints: number;
+  headToHead: HeadToHead;
+  addedAt: string;
+}
+
+export interface ProfileComparison {
+  xpDelta: number;
+  epDelta: number;
+  streakDelta: number;
+  levelDelta: number;
+}
+export interface PublicProfile {
+  uid: string;
+  displayName: string;
+  photoURL?: string | null;
+  targetExam: TargetExam;
+  studyLevel: StudyLevel;
+  specialties: Specialty[];
+  currentLevel: number;
+  xpPoints: number;
+  epPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  badges: string[];
+  relationshipStatus: FriendRelationshipStatus;
+  headToHead: HeadToHead | null;
+  comparison: ProfileComparison;
+}
+
+export interface UserSearchResult {
+  uid: string;
+  displayName: string;
+  photoURL?: string | null;
+  targetExam: TargetExam;
+  relationshipStatus: FriendRelationshipStatus;
 }
 
 
