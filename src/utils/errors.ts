@@ -119,3 +119,70 @@ export class NotImplementedError extends GraphQLError {
     super(message, { extensions: { code: 'NOT_IMPLEMENTED' } });
   }
 }
+
+/**
+ * Throw when a friend/user lookup target doesn't exist or hasn't onboarded.
+ * Distinct from NotOnboardedError, which is about the caller's own account.
+ */
+export class UserNotFoundError extends GraphQLError {
+  constructor(message = 'User not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when a user tries to send a friend request to themselves.
+ */
+export class SelfFriendRequestError extends GraphQLError {
+  constructor(message = 'You cannot send a friend request to yourself.') {
+    super(message, { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+}
+
+/**
+ * Throw when the two users are already friends.
+ */
+export class AlreadyFriendsError extends GraphQLError {
+  constructor(message = 'You are already friends with this user.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a pending friend request already exists between these two users.
+ */
+export class DuplicateFriendRequestError extends GraphQLError {
+  constructor(message = 'A friend request is already pending with this user.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when re-sending a request too soon after the recipient declined it.
+ */
+export class FriendRequestCooldownError extends GraphQLError {
+  constructor(remainingDays: number) {
+    super(`This user declined your last request. You can send another in ${remainingDays} days.`, {
+      extensions: { code: 'FAILED_PRECONDITION' }
+    });
+  }
+}
+
+/**
+ * Throw when a friendRequests/{id} doc doesn't exist, isn't pending, or the
+ * caller isn't its recipient. Intentionally generic — don't leak which case it was.
+ */
+export class FriendRequestNotFoundError extends GraphQLError {
+  constructor(message = 'Friend request not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw from removeFriend when the two users aren't currently friends.
+ */
+export class NotFriendsError extends GraphQLError {
+  constructor(message = 'You are not friends with this user.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
