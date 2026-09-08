@@ -38,6 +38,7 @@ export interface CurrentProfileForUpdate {
 }
 export interface ValidatedProfileUpdate {
   displayName?: string;
+  displayNameLower?: string;
   photoURL?: string | null;
   describesYou?: DescribesYou;
   studyLevel?: StudyLevel;
