@@ -11,6 +11,7 @@ import type { Contest, GetContestsFilter, GetContestsResult } from '../types/typ
 import type { User, QuizPrefs, NotifPrefs, UpdateProfileInput } from '../types/types';
 import type { CompleteOnboardingInput, CompleteOnboardingResult } from '../types/types';
 import type { LeaderboardPeriod, LeaderboardScope, LeaderboardResult } from '../types/types';
+import type { FriendRequest, FriendSummary, PublicProfile, UserSearchResult } from '../types/types';
 import type { Subscription, InitiatePaymentInput, InitiatePaymentResult, VerifyPaymentInput } from '../types/types';
 import type { StartQuizSessionInput, StartQuizSessionResult, SubmitQuizSessionInput, SubmitQuizSessionResult } from '../types/types';
 
@@ -21,6 +22,13 @@ const IMPLEMENTED_OPERATIONS = {
   'user.updateProfile': true,
   'user.updateNotifPrefs': true,
   'user.updateQuizPrefs': true,
+  'friends.sendFriendRequest': true,
+  'friends.respondFriendRequest': true,
+  'friends.removeFriend': true,
+  'friends.getUserProfile': true,
+  'friends.searchUsers': true,
+  'friends.getPendingFriendRequests': true,
+  'friends.getFriends': true,
   'home.getHomeData': true,
   'quiz.getTopicsForSubject': true,
   'quiz.startQuizSession': true,
@@ -251,6 +259,168 @@ export const userApi = {
       >(UPDATE_QUIZ_PREFS_MUTATION, { input })
     ).updateQuizPrefs,
     () => input
+  ),
+};
+
+
+// -----> Friends <-----
+const SEND_FRIEND_REQUEST_MUTATION = gql`
+  mutation SendFriendRequest($toUid: ID!) {
+    sendFriendRequest(toUid: $toUid) {
+      requestId
+      fromUid
+      toUid
+      status
+      createdAt
+      respondedAt
+    }
+  }
+`;
+const RESPOND_FRIEND_REQUEST_MUTATION = gql`
+  mutation RespondFriendRequest($requestId: ID!, $accept: Boolean!) {
+    respondFriendRequest(requestId: $requestId, accept: $accept)
+  }
+`;
+const REMOVE_FRIEND_MUTATION = gql`
+  mutation RemoveFriend($friendUid: ID!) {
+    removeFriend(friendUid: $friendUid)
+  }
+`;
+const GET_USER_PROFILE_QUERY = gql`
+  query GetUserProfile($uid: ID!) {
+    getUserProfile(uid: $uid) {
+      uid
+      displayName
+      photoURL
+      targetExam
+      studyLevel
+      specialties
+      currentLevel
+      xpPoints
+      epPoints
+      currentStreak
+      longestStreak
+      badges
+      relationshipStatus
+      headToHead {
+        wins
+        losses
+      }
+      comparison {
+        xpDelta
+        epDelta
+        streakDelta
+        levelDelta
+      }
+    }
+  }
+`;
+const SEARCH_USERS_QUERY = gql`
+  query SearchUsers($query: String!) {
+    searchUsers(query: $query) {
+      uid
+      displayName
+      photoURL
+      targetExam
+      relationshipStatus
+    }
+  }
+`;
+const GET_PENDING_FRIEND_REQUESTS_QUERY = gql`
+  query GetPendingFriendRequests {
+    getPendingFriendRequests {
+      requestId
+      fromUid
+      toUid
+      status
+      createdAt
+      respondedAt
+    }
+  }
+`;
+const GET_FRIENDS_QUERY = gql`
+  query GetFriends {
+    getFriends {
+      uid
+      displayName
+      photoURL
+      currentLevel
+      currentStreak
+      epPoints
+      headToHead {
+        wins
+        losses
+      }
+      addedAt
+    }
+  }
+`;
+
+
+export const friendsApi = {
+  sendFriendRequest: (toUid: string) =>
+    withMockFallback('friends.sendFriendRequest', async () => (
+      await graphqlRequest<
+        { sendFriendRequest: FriendRequest },
+        { toUid: string }
+      >(SEND_FRIEND_REQUEST_MUTATION, { toUid })
+    ).sendFriendRequest, () => Mock.buildMockFriendRequest(toUid)
+  ),
+
+  respondFriendRequest: (requestId: string, accept: boolean) =>
+    withMockFallback('friends.respondFriendRequest', async () => (
+      await graphqlRequest<
+        { respondFriendRequest: boolean },
+        { requestId: string; accept: boolean }
+      >(RESPOND_FRIEND_REQUEST_MUTATION, { requestId, accept })
+    ).respondFriendRequest, () => true
+  ),
+
+  removeFriend: (friendUid: string) =>
+    withMockFallback('friends.removeFriend', async () => (
+      await graphqlRequest<
+        { removeFriend: boolean },
+        { friendUid: string }
+      >(REMOVE_FRIEND_MUTATION, { friendUid })
+    ).removeFriend, () => true
+  ),
+
+  getUserProfile: (uid: string) =>
+    withMockFallback('friends.getUserProfile', async () => (
+      await graphqlRequest<
+        { getUserProfile: PublicProfile },
+        { uid: string }
+      >(GET_USER_PROFILE_QUERY, { uid }, { idempotent: true })
+    ).getUserProfile, () => Mock.buildMockPublicProfile(uid)
+  ),
+
+  searchUsers: (query: string) =>
+    withMockFallback('friends.searchUsers', async () => (
+      await graphqlRequest<
+        { searchUsers: UserSearchResult[] },
+        { query: string }
+      >(SEARCH_USERS_QUERY, { query }, { idempotent: true })
+    ).searchUsers, () => Mock.buildMockSearchResults(query)
+  ),
+
+  getPendingFriendRequests: () =>
+    withMockFallback('friends.getPendingFriendRequests', async () => (
+      await graphqlRequest<{ getPendingFriendRequests: FriendRequest[] }>(
+        GET_PENDING_FRIEND_REQUESTS_QUERY,
+        undefined,
+        { idempotent: true }
+      )
+    ).getPendingFriendRequests, () => Mock.MOCK_PENDING_FRIEND_REQUESTS
+  ),
+
+  getFriends: () =>
+    withMockFallback('friends.getFriends', async () => (
+      await graphqlRequest<{ getFriends: FriendSummary[] }>(
+        GET_FRIENDS_QUERY,
+        undefined,
+        { idempotent: true }
+      )
+    ).getFriends, () => Mock.MOCK_FRIENDS
   ),
 };
 
@@ -803,6 +973,7 @@ export const subscriptionApi = {
 // -----> Combined export - API
 export const api = {
   user: userApi,
+  friends: friendsApi,
   home: homeApi,
   quiz: quizApi,
   contest: contestApi,
