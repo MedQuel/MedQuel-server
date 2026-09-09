@@ -6,7 +6,7 @@ import { getLeaderboard, type LeaderboardScopeInput } from '../../services/leade
 
 export async function getLeaderboardResolver(
   _parent: unknown,
-  args: { period: LeaderboardPeriodInput; scope?: LeaderboardScopeInput },
+  args: { period: LeaderboardPeriodInput; scope: LeaderboardScopeInput },
   context: GraphQLContext
 ) {
   if (!context.user) throw new AuthenticationError();
