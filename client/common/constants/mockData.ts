@@ -229,6 +229,25 @@ export function buildMockSubmitResult(sessionId: string): SubmitQuizSessionResul
 // -----> Contests <-----
 export const MOCK_CONTESTS: Contest[] = [
   {
+    contestId: 'contest-004',
+    title: 'Grand Medical Championship',
+    subject: 'Medicine',
+    topics: ['Mixed'],
+    contestType: 'weekly',
+    difficulty: 'hard',
+    isPremium: true,
+    totalQuestions: 40,
+    timeLimitSecs: 3600,
+    markingScheme: { correct: 4, wrong: -1, skipped: 0 },
+    epReward: 250,
+    passPercent: 70,
+    recommendedLevel: null,
+    status: 'active',
+    startsAt: new Date().toISOString(),
+    endsAt: new Date(Date.now()+6 * 86400000).toISOString(),
+    participantCount: 512,
+  },
+  {
     contestId: 'contest-001',
     title: 'Cardiology Sprint',
     subject: 'Cardiology',
