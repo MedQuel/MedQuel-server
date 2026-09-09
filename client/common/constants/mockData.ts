@@ -1,7 +1,8 @@
 import { config } from '../api/config';
 import type { User, HomeData } from '../types/types';
+import type { Badge, AnalyticsData } from '../types/types';
+import type { LeaderboardResult, LeaderboardPeriod } from '../types/types';
 import type { StudyPlan, Plan, InitiatePaymentResult } from '../types/types';
-import type { Badge, AnalyticsData, LeaderboardResult } from '../types/types';
 import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
 import type { FriendSummary, FriendRequest, PublicProfile, UserSearchResult } from '../types/types';
 import type { Contest, ClientQuestion, StartQuizSessionResult, SubmitQuizSessionResult } from '../types/types';
@@ -301,7 +302,7 @@ const MOCK_LEADERBOARD_NAMES = [
   'Neha Gupta',
 ] as const;
 const MOCK_LEADERBOARD_SPECIALIZATIONS = [
-  'Cardiology',
+  'Anatomy',
   'Surgery',
   'Pediatrics',
   'Pharmacology',
@@ -310,6 +311,44 @@ const MOCK_LEADERBOARD_SPECIALIZATIONS = [
 
 function cycleLookup<T>(arr: readonly T[], i: number): T {
   return arr[i % arr.length] as T;
+}
+
+export function buildMockFriendsLeaderboard(period: LeaderboardPeriod): LeaderboardResult {
+  const entries = MOCK_FRIENDS
+    .map((f) => ({
+      userId: f.uid,
+      displayName: f.displayName,
+      photoURL: f.photoURL ?? undefined,
+      specialization: 'Medicine',
+      epPoints: f.epPoints,
+      rank: 0,
+      prevRank: 0,
+      weeklyChange: 0,
+      updatedAt: new Date().toISOString(),
+    }))
+    .concat([{
+      userId: MOCK_USER.uid,
+      displayName: MOCK_USER.displayName,
+      photoURL: undefined,
+      specialization: 'Anatomy',
+      epPoints: MOCK_USER.epPoints,
+      rank: 0,
+      prevRank: 0,
+      weeklyChange: 0,
+      updatedAt: new Date().toISOString(),
+    }])
+    .sort((a, b) => b.epPoints - a.epPoints)
+    .map((entry, index) => ({ ...entry, rank: index+1 }));
+
+  const myEntry = entries.find((e) => e.userId === MOCK_USER.uid) ?? null;
+
+  return {
+    period,
+    periodKey: period === 'weekly' ? 'weekly_2026-W32' : 'allTime',
+    entries,
+    myEntry,
+    myRank: myEntry?.rank ?? null,
+  };
 }
 
 export const MOCK_LEADERBOARD: LeaderboardResult = {
