@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutChangeEvent, Pressable, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, Text, View, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -18,6 +18,7 @@ type Props = {
   achievements: EarnedItemInput[];
   title?: string;
   onViewAllPress?: () => void;
+  onBadgePress?: () => void;  // ← new
 };
 
 type DisplayBadgeItem = {
@@ -36,7 +37,6 @@ const rgba = (hex: string, alpha: number) => {
   const red = Number.parseInt(full.slice(0, 2), 16);
   const green = Number.parseInt(full.slice(2, 4), 16);
   const blue = Number.parseInt(full.slice(4, 6), 16);
-
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
@@ -68,7 +68,6 @@ const parseEarnedAt = (value?: string | null) => {
       unit.startsWith('mo') ? 30 * day :
       unit.startsWith('y') ? 365 * day :
       day;
-
     return now - n * delta;
   }
 
@@ -76,7 +75,7 @@ const parseEarnedAt = (value?: string | null) => {
   return Number.isNaN(parsed) ? -1 : parsed;
 };
 
-export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) {
+export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePress }: Props) {
   const { theme } = useTheme();
   const [cardWidth, setCardWidth] = React.useState<number>(0);
 
@@ -96,15 +95,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
       const iconKey = (item.iconKey || catalogInfo?.iconKey || 'award') as AchievementIconKey;
       const variant = (item.variant || catalogInfo?.variant || 'gold') as AchievementVariant;
 
-      return {
-        id,
-        title: name,
-        iconKey,
-        variant,
-        earnedAt: item.earnedAt,
-        isNew: item.isNew,
-        order,
-      };
+      return { id, title: name, iconKey, variant, earnedAt: item.earnedAt, isNew: item.isNew, order };
     })
     .filter((item): item is DisplayBadgeItem => Boolean(item))
     .sort((a, b) => {
@@ -135,7 +126,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
         backgroundColor: theme.color.card,
       }}
     >
-      {/* Header placed INSIDE the card at top right */}
+      {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md }}>
         <Text
           style={{
@@ -184,66 +175,69 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress }: Props) 
               marginTop: rowIndex ? theme.space.md : 0,
             }}
           >
-            {row.map(item => {
-              return (
-                <View
-                  key={item.id}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    alignItems: 'center',
-                    paddingVertical: theme.space.sm,
-                    paddingHorizontal: theme.space.xs,
-                  }}
-                >
-                  <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                    <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
+            {row.map(item => (
+              // ← View → TouchableOpacity
+              <TouchableOpacity
+                key={item.id}
+                activeOpacity={0.7}
+                onPress={onBadgePress}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  alignItems: 'center',
+                  paddingVertical: theme.space.sm,
+                  paddingHorizontal: theme.space.xs,
+                }}
+              >
+                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                  <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
 
-                    {item.isNew ? (
-                      <View
+                  {item.isNew ? (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        paddingVertical: theme.space.xs * 0.75,
+                        paddingHorizontal: theme.space.sm,
+                        borderRadius: theme.borderRadius.full,
+                        backgroundColor: theme.color.error,
+                      }}
+                    >
+                      <Text
                         style={{
-                          position: 'absolute',
-                          top: -10,
-                          right: -10,
-                          paddingVertical: theme.space.xs * 0.75,
-                          paddingHorizontal: theme.space.sm,
-                          borderRadius: theme.borderRadius.full,
-                          backgroundColor: theme.color.error,
+                          color: theme.color.textInverse,
+                          fontSize: theme.fontSize.xs,
+                          fontWeight: theme.fontWeight.bold,
+                          fontFamily: theme.fontFamily.number,
                         }}
                       >
-                        <Text
-                          style={{
-                            color: theme.color.textInverse,
-                            fontSize: theme.fontSize.xs,
-                            fontWeight: theme.fontWeight.bold,
-                            fontFamily: theme.fontFamily.number,
-                          }}
-                        >
-                          New
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-
-                  <Text
-                    numberOfLines={2}
-                    style={{
-                      textAlign: 'center',
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.sm,
-                      lineHeight: theme.fontSize.lg,
-                      fontWeight: theme.fontWeight.bold,
-                      fontFamily: theme.fontFamily.bold,
-                      marginTop: theme.space.md + 2,
-                    }}
-                  >
-                    {item.title}
-                  </Text>
+                        New
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
-              );
-            })}
 
-            {row.length < 3 ? Array.from({ length: 3 - row.length }).map((_, index) => <View key={`gap-${rowIndex}-${index}`} style={{ flex: 1 }} />) : null}
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    textAlign: 'center',
+                    color: theme.color.textPrimary,
+                    fontSize: theme.fontSize.sm,
+                    lineHeight: theme.fontSize.lg,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.bold,
+                    marginTop: theme.space.md + 2,
+                  }}
+                >
+                  {item.title}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            {row.length < 3 ? Array.from({ length: 3 - row.length }).map((_, index) => (
+              <View key={`gap-${rowIndex}-${index}`} style={{ flex: 1 }} />
+            )) : null}
           </View>
         ))
       ) : (

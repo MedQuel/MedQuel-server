@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
+import { useRouter } from "expo-router";
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
 import { ProfileScreenHeader } from "./profileScreenHeader";
 import { useBottomBar } from "../../common/context/useBottomBar";
 import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
+import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
+import type { Badge } from "../../common/types/types";
 
 
 function Pill({ theme, children, style }: any) {
@@ -31,6 +33,7 @@ function Pill({ theme, children, style }: any) {
     </View>
   );
 }
+
 function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
     <View
@@ -53,6 +56,7 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
     </View>
   );
 }
+
 function Section({ theme, children, marginTop }: any) {
   return (
     <View
@@ -70,10 +74,12 @@ export default function ChatScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentData, setRecentData] = useState<any>(null);
+  const [achievements, setAchievements] = useState<Badge[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [load, setLoad] = useState(true);
 
   const { theme } = useTheme();
+  const router = useRouter();
   useBottomBar(true, "profile");
 
   useEffect(() => {
@@ -81,15 +87,16 @@ export default function ChatScreen() {
       try {
         setError(null);
         setLoad(true);
-        const [user, analyticsData] = await Promise.all([
+        const [user, analyticsData, achievementsData] = await Promise.all([
           api.user.getMe(),
           api.analytics.getAnalytics(),
+          api.achievement.getAchievements(),
         ]);
 
         setUserData(user);
-        
         setAnalytics(analyticsData);
         setRecentData(analyticsData.recentAttempts);
+        setAchievements(achievementsData);
       } catch {
         setError("Could not load profile. Pull to refresh.");
       } finally {
@@ -123,6 +130,12 @@ export default function ChatScreen() {
       </View>
     );
   }
+
+  const subjectPerformance = analytics.subjectPerformance ?? [];
+  const hasRecentAttempts = (recentData ?? []).length > 0;
+  const earnedBadges = achievements.filter((b) => b.status === "earned");
+  const inProgressBadges = achievements.filter((b) => b.status === "in_progress");
+  const displayBadges = [...earnedBadges, ...inProgressBadges];
 
   return (
     <ScrollView
@@ -279,9 +292,19 @@ export default function ChatScreen() {
         <PremiumUpsellCard />
       </Section>
 
+      {/* Achievements */}
+      <Section theme={theme}>
+        <EarnedBadgeCard
+          achievements={displayBadges}
+          onViewAllPress={() => router.push("/achievements")}
+          onBadgePress={() => router.push("/achievements")}
+        />
+      </Section>
+
+      {/* Subject Performance */}
       <Section theme={theme}>
         <SubjectPerformanceCard
-          subjects={(analytics.subjectPerformance ?? []).map(
+          subjects={subjectPerformance.map(
             (s: { subject: string; accuracy: number }) => ({
               name: s.subject,
               score: s.accuracy,
@@ -290,36 +313,39 @@ export default function ChatScreen() {
         />
       </Section>
 
-      <Section theme={theme}>
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm + 4,
-            fontFamily: theme.fontFamily.regular,
-            fontWeight: theme.fontWeight.bold,
-            paddingBottom: theme.space.md,
-            marginLeft: theme.space.xs,
-          }}
-        >
-          {theme.i18n.t("profile.recentAttempts")}
-        </Text>
+      {/* Recent Attempts — only show if user has played contests */}
+      {hasRecentAttempts && (
+        <Section theme={theme}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.sm + 4,
+              fontFamily: theme.fontFamily.regular,
+              fontWeight: theme.fontWeight.bold,
+              paddingBottom: theme.space.md,
+              marginLeft: theme.space.xs,
+            }}
+          >
+            {theme.i18n.t("profile.recentAttempts")}
+          </Text>
 
-        <AttemptHistoryItemCard
-          attempts={(recentData ?? []).map(
-            (a: {
-              sessionId: string;
-              subject: string;
-              scorePercent: number;
-              completedAt: string;
-            }) => ({
-              id: a.sessionId,
-              title: a.subject,
-              time: formatTime(a.completedAt),
-              score: a.scorePercent,
-            }),
-          )}
-        />
-      </Section>
+          <AttemptHistoryItemCard
+            attempts={recentData.map(
+              (a: {
+                sessionId: string;
+                subject: string;
+                scorePercent: number;
+                completedAt: string;
+              }) => ({
+                id: a.sessionId,
+                title: a.subject,
+                time: formatTime(a.completedAt),
+                score: a.scorePercent,
+              }),
+            )}
+          />
+        </Section>
+      )}
     </ScrollView>
   );
 }
