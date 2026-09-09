@@ -313,6 +313,7 @@ export interface GetContestsFilter {
   isPremium?: boolean;
   cursor?: string;
   limit?: number;
+  personalized?: boolean;
 }
 
 export interface GetContestsResult {
