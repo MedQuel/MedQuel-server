@@ -673,7 +673,7 @@ export const contestApi = {
 
 // -----> Leaderboard <-----
 const GET_LEADERBOARD_QUERY = gql`
-  query GetLeaderboard($period: LeaderboardPeriod!, $scope: LeaderboardScope) {
+  query GetLeaderboard($period: LeaderboardPeriod!, $scope: LeaderboardScope!) {
     getLeaderboard(period: $period, scope: $scope) {
       period
       periodKey
@@ -692,7 +692,9 @@ export const leaderboardApi = {
         { getLeaderboard: LeaderboardResult },
         { period: LeaderboardPeriod; scope: LeaderboardScope }
       >(GET_LEADERBOARD_QUERY, { period, scope }, { idempotent: true })
-    ).getLeaderboard, () => ({ ...Mock.MOCK_LEADERBOARD, period, scope })
+    ).getLeaderboard, () => scope === 'friends'
+      ? Mock.buildMockFriendsLeaderboard(period)
+      : { ...Mock.MOCK_LEADERBOARD, period, scope }
   ),
 };
 
