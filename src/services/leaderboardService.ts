@@ -1,3 +1,4 @@
+import { FieldPath } from 'firebase-admin/firestore';
 import type { Firestore, DocumentSnapshot, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 import { NotImplementedError } from '../utils/errors.js';
@@ -5,6 +6,7 @@ import { buildPeriodKey, type LeaderboardPeriodInput } from '../utils/leaderboar
 
 
 const TOP_N_DISPLAY = 50;
+const FRIENDS_CHUNK_SIZE = 30;
 
 export type LeaderboardScopeInput = 'global' | 'friends';
 export interface LeaderboardEntryDTO {
@@ -41,18 +43,16 @@ function mapEntry(doc: QueryDocumentSnapshot | DocumentSnapshot): LeaderboardEnt
   };
 }
 
-
-export async function getLeaderboard(
-  uid: string,
-  db: Firestore,
-  scope: LeaderboardScopeInput,
-  period: LeaderboardPeriodInput
-): Promise<LeaderboardResult> {
-  if (scope === 'friends') {
-    throw new NotImplementedError('Friends leaderboard is not available yet — the friend graph does not exist. Use scope: global for now.');
+function chunk<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i=0; i<items.length; i+=size) {
+    result.push(items.slice(i, i+size));
   }
+  return result;
+}
 
-  const periodKey = buildPeriodKey(period, new Date());
+
+async function getGlobalLeaderboard(uid: string, db: Firestore, period: LeaderboardPeriodInput, periodKey: string): Promise<LeaderboardResult> {
   const entriesRef = db.collection('leaderboard').doc(periodKey).collection('entries');
 
   const topSnap = await entriesRef.orderBy('epPoints', 'desc').limit(TOP_N_DISPLAY).get();
@@ -77,4 +77,47 @@ export async function getLeaderboard(
   const myRank = aheadCount.data().count + 1;
 
   return { period, periodKey, entries, myEntry, myRank };
+}
+
+async function getFriendsLeaderboard(uid: string, db: Firestore, period: LeaderboardPeriodInput, periodKey: string): Promise<LeaderboardResult> {
+  const friendsSnap = await db.collection('users').doc(uid).collection('friends').get();
+  const friendIds = friendsSnap.docs.map((doc) => doc.id);
+
+  const targetIds = [uid, ...friendIds];
+
+  const entriesRef = db.collection('leaderboard').doc(periodKey).collection('entries');
+  const idChunks = chunk(targetIds, FRIENDS_CHUNK_SIZE);
+
+  const snaps = await Promise.all(idChunks.map(
+    (ids) => entriesRef.where(FieldPath.documentId(), 'in', ids).get())
+  );
+
+  const entries = snaps
+    .flatMap((snap) => snap.docs)
+    .map(mapEntry)
+    .sort((a, b) => b.epPoints - a.epPoints)
+    .map((entry, index) => ({ ...entry, rank: index+1, prevRank: 0 }));
+
+  const myEntry = entries.find((e) => e.userId === uid) ?? null;
+
+  return { period, periodKey, entries, myEntry, myRank: myEntry?.rank ?? null };
+}
+
+
+export async function getLeaderboard(
+  uid: string,
+  db: Firestore,
+  scope: LeaderboardScopeInput,
+  period: LeaderboardPeriodInput
+): Promise<LeaderboardResult> {
+  const periodKey = buildPeriodKey(period, new Date());
+
+  if (scope === 'friends') {
+    if (period === 'monthly') {
+      throw new NotImplementedError('Friends leaderboard is available for weekly and all-time periods only.');
+    }
+    return getFriendsLeaderboard(uid, db, period, periodKey);
+  }
+
+  return getGlobalLeaderboard(uid, db, period, periodKey);
 }
