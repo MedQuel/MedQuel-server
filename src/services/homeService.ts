@@ -1,14 +1,14 @@
 import { FieldPath } from 'firebase-admin/firestore';
 import type { Firestore, DocumentReference } from 'firebase-admin/firestore';
 
-import { getContests } from './contestService.js';
+import { NotOnboardedError } from '../utils/errors.js';
 import { toISTDateKey, istDateKeyDaysAgo } from '../utils/istDate.js';
+import { getContests, getPersonalizedContests } from './contestService.js';
 
 
+const TREND_WINDOW_DAYS = 7;
 const CANDIDATE_POOL_SIZE = 20;
 const HOME_ACTIVE_CONTESTS_LIMIT = 5;
-const TREND_WINDOW_DAYS = 7;
-
 export interface PerformanceTrendPointDTO {
   date: string;
   accuracy: number | null;
@@ -27,8 +27,12 @@ export interface HomeDataResult {
   performanceTrend: PerformanceTrendPointDTO[];
 }
 
-async function fetchActiveContestsForHome(db: Firestore): Promise<HomeDataResult['activeContests']> {
-  const { contests } = await getContests({ status: 'active', limit: CANDIDATE_POOL_SIZE }, db);
+async function fetchActiveContestsForHome(db: Firestore, focusSubjects: string[]): Promise<HomeDataResult['activeContests']> {
+  const filter = { status: 'active', limit: CANDIDATE_POOL_SIZE };
+
+  const { contests } = focusSubjects.length > 0
+    ? await getPersonalizedContests(filter, focusSubjects, db)
+    : await getContests(filter, db);
 
   return contests
     .slice()
@@ -77,15 +81,22 @@ async function fetchLast7DaysTrend(userRef: DocumentReference, now: Date): Promi
 
 export async function getHomeData(uid: string, db: Firestore): Promise<HomeDataResult> {
   const userRef = db.collection('users').doc(uid);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) throw new NotOnboardedError();
+
+  const userData = userSnap.data()!;
+  const focusSubjects: string[] = userData.contentScope === 'focused'
+    ? (userData.focusSubjects ?? [])
+    : [];
   const now = new Date();
 
   const [activeContests, performanceTrend] = await Promise.all([
-    fetchActiveContestsForHome(db),
+    fetchActiveContestsForHome(db, focusSubjects),
     fetchLast7DaysTrend(userRef, now),
   ]);
 
   return {
-    // dailyChallenges/{date} + scheduleDailyChallenge cron don't exist yet — returning null is the agreed decision.
+    // dailyChallenges/{date} + scheduleDailyChallenge cron don't exist yet
     dailyChallenge: null,
     activeContests,
     performanceTrend,
