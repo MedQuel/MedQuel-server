@@ -46,6 +46,7 @@ export const contestTypeDefs = `#graphql
     isPremium: Boolean
     limit: Int
     cursor: String
+    personalized: Boolean
   }
   type GetContestsResult {
     contests: [Contest!]!
