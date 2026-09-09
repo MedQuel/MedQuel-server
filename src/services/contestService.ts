@@ -6,11 +6,13 @@ import { ContestNotFoundError } from '../utils/errors.js';
 
 const MAX_LIMIT = 50;
 const DEFAULT_LIMIT = 20;
+const MAX_SUBJECTS_IN_FILTER = 20;
 
 export interface GetContestsFilter {
   status?: string | null;
   contestType?: string | null;
   subject?: string | null;
+  subjects?: string[] | null;
   difficulty?: string | null;
   isPremium?: boolean | null;
   limit?: number | null;
@@ -45,7 +47,13 @@ export async function getContests(filter: GetContestsFilter, db: Firestore) {
 
   if (filter.status) query = query.where('status', '==', filter.status);
   if (filter.contestType) query = query.where('contestType', '==', filter.contestType);
-  if (filter.subject) query = query.where('subject', '==', filter.subject);
+
+  if (filter.subjects && filter.subjects.length > 0) {
+    query = query.where('subject', 'in', filter.subjects.slice(0, MAX_SUBJECTS_IN_FILTER));
+  } else if (filter.subject) {
+    query = query.where('subject', '==', filter.subject);
+  }
+
   if (filter.difficulty) query = query.where('difficulty', '==', filter.difficulty);
   if (filter.isPremium !== undefined && filter.isPremium !== null) {
     query = query.where('isPremium', '==', filter.isPremium);
@@ -80,9 +88,42 @@ export async function getContest(contestId: string, db: Firestore) {
   return mapContestDoc(doc.id, doc.data()!);
 }
 
+
 export async function assertContestExists(contestId: string, db: Firestore): Promise<{ contestType: string }> {
   const doc = await db.collection('contests').doc(contestId).get();
   if (!doc.exists) throw new ContestNotFoundError();
 
   return { contestType: doc.data()!.contestType };
+}
+
+export async function getPersonalizedContests(filter: GetContestsFilter, focusSubjects: string[], db: Firestore): Promise<{
+  contests: ReturnType<typeof mapContestDoc>[];
+  nextCursor: string | null;
+}> {
+  const limit = Math.min(Math.max(filter.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+  const baseFilter: GetContestsFilter = {
+    ...filter,
+    subject: null,
+    subjects: null,
+    cursor: null,
+  };
+
+  const { contests: personalized } = await getContests(
+    { ...baseFilter, subjects: focusSubjects, limit }, db
+  );
+
+  if (personalized.length >= limit) {
+    return { contests: personalized.slice(0, limit), nextCursor: null };
+  }
+
+  const { contests: globalPool } = await getContests(
+    { ...baseFilter, limit: MAX_LIMIT }, db
+  );
+  const seen = new Set(personalized.map((c) => c.contestId));
+  const backfill = globalPool.filter((c) => !seen.has(c.contestId));
+
+  return {
+    contests: [...personalized, ...backfill].slice(0, limit),
+    nextCursor: null,
+  };
 }
