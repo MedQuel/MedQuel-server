@@ -28,6 +28,15 @@
       "collectionGroup": "contests",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "subject", "order": "ASCENDING" },
+        { "fieldPath": "startsAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "contests",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "isPremium", "order": "ASCENDING" },
         { "fieldPath": "subject", "order": "ASCENDING" },
         { "fieldPath": "difficulty", "order": "ASCENDING" },
