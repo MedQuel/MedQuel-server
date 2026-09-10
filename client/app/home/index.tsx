@@ -14,7 +14,9 @@ import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
+
 let dismissedChallengeContestId: string | null = null;
+
 export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -29,46 +31,55 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, 'home');
-  const fetchHomeDashboard = useCallback(async (isMountedRef: { current: boolean }) => {
-    try {
-      setError(null);
-      const [nextHomeData, currentUser, leaderboard, analyticsData] = await Promise.all([
-        api.home.getHomeData(),
-        api.user.getMe(),
-        api.leaderboard.getLeaderboard(),
-        api.analytics.getAnalytics(),
-      ]);
-      if (isMountedRef.current) {
-        setHomeData(nextHomeData);
-        setUser(currentUser);
-        setMyRank(leaderboard.myRank);
-        setAnalytics(analyticsData);
-      }
 
-      if (nextHomeData.dailyChallenge?.contestId) {
-        try {
-          const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
-          if (isMountedRef.current) setChallengeContest(contest ?? null);
-        } catch (contestErr) {
-          console.log('Failed to fetch challenge contest details:', contestErr);
+  const fetchHomeDashboard = useCallback(
+    async (isMountedRef: { current: boolean }) => {
+      try {
+        setError(null);
+        const [nextHomeData, currentUser, leaderboard, analyticsData] = await Promise.all([
+          api.home.getHomeData(),
+          api.user.getMe(),
+          api.leaderboard.getLeaderboard(),
+          api.analytics.getAnalytics(),
+        ]);
+
+        if (isMountedRef.current) {
+          setHomeData(nextHomeData);
+          setUser(currentUser);
+          setMyRank(leaderboard.myRank);
+          setAnalytics(analyticsData);
+        }
+
+        if (nextHomeData?.dailyChallenge?.contestId) {
+          try {
+            const contest = await api.contest.getContest(nextHomeData.dailyChallenge.contestId);
+            if (isMountedRef.current) setChallengeContest(contest ?? null);
+          } catch (contestErr) {
+            console.log('Failed to fetch challenge contest details:', contestErr);
+          }
+        }
+      } catch (err) {
+        console.log('Failed to fetch home dashboard:', err);
+        if (isMountedRef.current)
+          setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+          setRefreshing(false);
         }
       }
-    } catch (err) {
-      console.log('Failed to fetch home dashboard:', err);
-      if (isMountedRef.current) setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, [theme.i18n]);
+    },
+    [theme.i18n]
+  );
+
   useFocusEffect(
     useCallback(() => {
       const isMountedRef = { current: true };
       setLoading(true);
       fetchHomeDashboard(isMountedRef);
-      return () => { isMountedRef.current = false };
+      return () => {
+        isMountedRef.current = false;
+      };
     }, [fetchHomeDashboard])
   );
 
@@ -79,15 +90,16 @@ export default function HomeScreen() {
 
   const dailyChallenge = homeData?.dailyChallenge ?? null;
   const quizzesTaken = analytics?.recentAttempts.length ?? 0;
-// Played contests IDs from recent attempts (with safe type checking)
-const playedContestIds = new Set(
-  analytics?.recentAttempts
-    ?.map((attempt: any) => attempt?.contestId ?? attempt?.quizId)
-    .filter(Boolean) ?? []
-);
-  // Filter unplayed active contests
+
+  const playedContestIds = new Set(
+    analytics?.recentAttempts
+      ?.map((attempt: any) => attempt?.contestId ?? attempt?.quizId)
+      .filter(Boolean) ?? []
+  );
+
   const availableContests = (homeData?.activeContests ?? []).filter((contest) => {
-    const isActive = contest.status === 'active' && new Date(contest.endsAt).getTime() > Date.now();
+    const isActive =
+      contest.status === 'active' && new Date(contest.endsAt).getTime() > Date.now();
     const isAlreadyPlayed = playedContestIds.has(contest.contestId);
     return isActive && !isAlreadyPlayed;
   });
@@ -95,7 +107,10 @@ const playedContestIds = new Set(
   const isChallengeCompleted = Boolean(
     dailyChallenge?.contestId && playedContestIds.has(dailyChallenge.contestId)
   );
-  const showChallengeCard = Boolean(dailyChallenge) && !(isChallengeCompleted && challengeDismissed);
+
+  // Cross button dabane par hi hide hoga, warna challenge complete hone par bhi card status ke sath dikhega
+  const showChallengeCard = Boolean(dailyChallenge) && !challengeDismissed;
+
   useEffect(() => {
     if (dailyChallenge?.contestId && isChallengeCompleted) {
       setChallengeDismissed(dismissedChallengeContestId === dailyChallenge.contestId);
@@ -151,7 +166,11 @@ const playedContestIds = new Set(
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.color.accent}
+          />
         }
         contentContainerStyle={{
           gap: theme.space.md,
@@ -168,14 +187,18 @@ const playedContestIds = new Set(
           quizzesTaken={quizzesTaken}
           earnedPoints={user.epPoints}
         />
-        {dailyChallenge && showChallengeCard ? (
+
+        {showChallengeCard && dailyChallenge ? (
           <DailyChallengeCard
             title={dailyChallenge.subject}
             questions={challengeContest?.totalQuestions ?? 30}
             duration={challengeContest ? Math.round(challengeContest.timeLimitSecs / 60) : 45}
             difficulty={challengeContest?.difficulty ?? 'medium'}
             endsAt={String(
-              Math.max(1, Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000))
+              Math.max(
+                1,
+                Math.round((new Date(dailyChallenge.expiresAt).getTime() - Date.now()) / 60000)
+              )
             )}
             epReward={dailyChallenge.epReward}
             completed={isChallengeCompleted}
@@ -254,7 +277,7 @@ const playedContestIds = new Set(
                 {theme.i18n.t('Explore Practice Subjects')}
               </Text>
               <Feather
-                name='chevron-right'
+                name="chevron-right"
                 size={theme.fontSize.lg}
                 color={theme.isDark ? theme.color.info : theme.color.textInverse}
               />
@@ -263,7 +286,13 @@ const playedContestIds = new Set(
         </View>
 
         <View style={{ gap: theme.space.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <Text
               style={{
                 color: theme.color.textPrimary,
