@@ -1,30 +1,27 @@
-import { useCallback, useEffect, useState } from 'react';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
-
-import { api } from '@/common/api/api';
-import { useTheme } from '../../theme/ThemeContext';
-import { ProfileScreenHeader } from './profileScreenHeader';
-import { useAppContext } from '../../common/context/AppContext';
-import { useBottomBar } from '../../common/context/useBottomBar';
-
-import { Loading } from '../../components/common/loading';
-import { EmptyState } from '../../components/common/EmptyState';
-import { PremiumUpsellCard } from '../../components/PremiumUpsellCard';
-import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
-import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
-import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard';
-
+import { useEffect, useState } from "react";
+import { View, Text, ScrollView } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { api } from "@/common/api/api";
+import { useTheme } from "../../theme/ThemeContext";
+import { Loading } from "../../components/common/loading";
+import { ProfileScreenHeader } from "./profileScreenHeader";
+import { useBottomBar } from "../../common/context/useBottomBar";
+import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
+import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
+import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
+import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
+import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
+import type { Badge } from "../../common/types/types";
 
 function Pill({ theme, children, style }: any) {
   return (
     <View
       style={[
         {
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingVertical: theme.space.xs,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingVertical: theme.space.xs - 5,
           paddingHorizontal: theme.space.sm * 1.1,
           borderRadius: theme.borderRadius.md + 2,
         },
@@ -35,16 +32,22 @@ function Pill({ theme, children, style }: any) {
     </View>
   );
 }
+
 function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
-    <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+    <View
+      style={{
+        gap: theme.space.xs,
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
       <MaterialCommunityIcons name={icon} size={theme.space.md} color={color} />
       <Text
         style={{
           color,
           fontSize: theme.fontSize.xs + 2,
           fontWeight: bold ? theme.fontWeight.bold : undefined,
-          fontFamily: bold ? theme.fontFamily.bold : theme.fontFamily.regular,
         }}
       >
         {text}
@@ -52,109 +55,101 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
     </View>
   );
 }
+
 function Section({ theme, children, marginTop }: any) {
   return (
-    <View style={{ marginTop: marginTop ?? theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
+    <View
+      style={{
+        marginTop: marginTop ?? theme.space.sm * 1.5,
+        paddingHorizontal: theme.space.md,
+      }}
+    >
       {children}
     </View>
   );
 }
 
-
-export default function ProfileScreen() {
+export default function ChatScreen() {
+  const [userData, setUserData] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
-  const [analyticsError, setAnalyticsError] = useState(false);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  
-  const { theme } = useTheme();
-  useBottomBar(true, 'profile');
-  const { user, userLoading, userError, refreshUser } = useAppContext();
+  const [recentData, setRecentData] = useState<any>(null);
+  const [achievements, setAchievements] = useState<Badge[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [load, setLoad] = useState(true);
 
-  const loadAnalytics = useCallback(async () => {
-    try {
-      setAnalyticsError(false);
-      const data = await api.analytics.getAnalytics();
-      setAnalytics(data);
-    } catch {
-      setAnalyticsError(true);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  }, []);
+  const { theme } = useTheme();
+  const router = useRouter();
+  useBottomBar(true, "profile");
 
   useEffect(() => {
-    loadAnalytics();
-  }, [loadAnalytics]);
+    (async () => {
+      try {
+        setError(null);
+        setLoad(true);
+        const [user, analyticsData, achievementsData] = await Promise.all([
+          api.user.getMe(),
+          api.analytics.getAnalytics(),
+          api.achievement.getAchievements(),
+        ]);
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await Promise.all([refreshUser(), loadAnalytics()]);
-    setRefreshing(false);
-  }, [refreshUser, loadAnalytics]);
-
-  const recentData = analytics?.recentAttempts ?? [];
-  const subjectPerformance = analytics?.subjectPerformance ?? [];
+        setUserData(user);
+        setAnalytics(analyticsData);
+        setRecentData(analyticsData.recentAttempts);
+        setAchievements(achievementsData);
+      } catch {
+        setError("Could not load profile. Pull to refresh.");
+      } finally {
+        setLoad(false);
+      }
+    })();
+  }, []);
 
   const formatTime = (iso: string) =>
-    new Date(iso).toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    new Date(iso).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: true,
     });
 
-  if (userLoading || analyticsLoading) {
+  if (load || error) {
     return (
       <View
         style={{
           flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
+          alignItems: "center",
+          justifyContent: "center",
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
       >
-        <Loading />
-      </View>
-    );
-  }
-  if (userError || !user) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: theme.space.md,
-          backgroundColor: theme.color.background,
-        }}
-      >
-        <Text style={{ color: theme.color.textSecondary }}>
-          Could not load profile. Pull to refresh.
-        </Text>
+        {load ? <Loading /> : <Text>{error}</Text>}
       </View>
     );
   }
 
+  const subjectPerformance = analytics.subjectPerformance ?? [];
+  const hasRecentAttempts = (recentData ?? []).length > 0;
+  const earnedBadges = achievements.filter((b) => b.status === "earned");
+  const inProgressBadges = achievements.filter((b) => b.status === "in_progress");
+  const displayBadges = [...earnedBadges, ...inProgressBadges];
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 75 }}
       style={{ flex: 1, backgroundColor: theme.color.background }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={theme.color.accent}
-        />
-      }
     >
-      <ProfileScreenHeader user={user} />
-      <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl }}>
+      <ProfileScreenHeader user={userData} />
+      <View
+        style={{
+          gap: theme.space.xs * 1.5,
+          alignItems: "center",
+          marginTop: theme.space.xxl - 2,
+        }}
+      >
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -163,10 +158,10 @@ export default function ProfileScreen() {
             fontFamily: theme.fontFamily.regular,
           }}
         >
-          {user.displayName}
+          {userData?.displayName}
         </Text>
 
-        <View style={{ gap: theme.space.sm, flexDirection: 'row' }}>
+        <View style={{ gap: theme.space.sm, flexDirection: "row" }}>
           <Pill
             theme={theme}
             style={{
@@ -182,47 +177,26 @@ export default function ProfileScreen() {
                 fontFamily: theme.fontFamily.bold,
               }}
             >
-              {user.describesYou}
+              {userData?.studyLevel}
             </Text>
           </Pill>
-
-          {user.yearOfStudy && (
-            <Pill
-              theme={theme}
-              style={{
-                borderWidth: 1,
-                borderColor: theme.color.border,
-                backgroundColor: theme.color.card,
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.xs * 1.2,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {user.yearOfStudy}
-              </Text>
-            </Pill>
-          )}
 
           <Pill
             theme={theme}
             style={{
               gap: 5,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm + 3,
               borderWidth: 0.5,
-              borderColor: theme.color.warning + '22',
-              backgroundColor: theme.color.warning + '22',
+              borderColor: theme.color.warning + "22",
+              backgroundColor: theme.color.warning + "22",
             }}
           >
             <MaterialCommunityIcons
-              name='star'
+              name="star"
               size={theme.space.md}
               color={theme.color.warning}
             />
@@ -234,158 +208,127 @@ export default function ProfileScreen() {
                 fontFamily: theme.fontFamily.number,
               }}
             >
-              {theme.i18n.t('profile.level', { level: user.currentLevel ?? 0 })}
+              {theme.i18n.t("profile.level", {
+                level: userData?.currentLevel ?? 0,
+              })}
             </Text>
           </Pill>
         </View>
 
-        {user.specialties?.length > 0 && (
-          <ProfilePillRow items={user.specialties} variant='accent' />
-        )}
-
         <View
           style={{
-            flexWrap: 'wrap',
             gap: theme.space.md + 2,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
+            flexDirection: "row",
+            alignItems: "center",
           }}
         >
           <IconLabel
             theme={theme}
-            icon='target'
+            icon="target"
             color={theme.color.textSecondary}
-            text={user.targetExam}
+            text={userData?.targetExam}
           />
-          {user.institution && (
+          {userData?.institution && (
             <IconLabel
               theme={theme}
-              icon='map-marker-outline'
+              icon="map-marker-outline"
               color={theme.color.textMuted}
-              text={user.institution}
+              text={userData?.institution}
             />
           )}
           <IconLabel
             theme={theme}
-            icon='lightning-bolt'
+            icon="lightning-bolt"
             color={theme.color.info}
             bold
-            text={theme.i18n.t('profile.xpPoints', { points: user.xpPoints ?? 0 })}
+            text={theme.i18n.t("profile.xpPoints", {
+              points: userData?.xpPoints ?? 0,
+            })}
           />
         </View>
-
-        {/* {user.contentScope === 'focused' && (
-          <View
-            style={{
-              gap: theme.space.xs,
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingVertical: theme.space.xs,
-              paddingHorizontal: theme.space.sm,
-              borderRadius: theme.borderRadius.md,
-              backgroundColor: theme.color.info + '15',
-            }}
-          >
-            <MaterialCommunityIcons
-              name='filter-variant'
-              size={theme.fontSize.sm + 2}
-              color={theme.color.info}
-            />
-            <Text
-              style={{
-                color: theme.color.info,
-                fontSize: theme.fontSize.xs,
-                fontFamily: theme.fontFamily.bold,
-              }}
-            >
-              {theme.i18n.t('profile.focusedOn', { subjects: user.focusSubjects?.join(', ') ?? '' })}
-            </Text>
-          </View>
-        )} */}
       </View>
 
-      <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
+      <View
+        style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
+      >
         <ProfileScreenStatsCard
           stats={[
             {
-              label: theme.i18n.t('common.level'),
-              value: String(user.currentLevel ?? 0),
-              color: '#F59E0B',
-              icon: 'star',
+              label: theme.i18n.t("common.level"),
+              value: String(userData?.currentLevel ?? 0),
+              color: "#F59E0B",
+              icon: "star",
             },
             {
-              label: theme.i18n.t('common.quizzes'),
-              value: String(user.stats?.contestsPlayed ?? 0),
-              color: '#3B82F6',
-              icon: 'lightning-bolt',
+              label: theme.i18n.t("common.quizzes"),
+              value: String(userData?.stats.contestsPlayed ?? 0),
+              color: "#3B82F6",
+              icon: "lightning-bolt",
             },
             {
-              label: theme.i18n.t('common.streak'),
-              value: String(user.longestStreak ?? 0),
-              color: '#EF4444',
-              icon: 'fire',
+              label: theme.i18n.t("common.streak"),
+              value: String(userData?.longestStreak ?? 0),
+              color: "#EF4444",
+              icon: "fire",
             },
             {
-              label: theme.i18n.t('common.accuracy'),
-              value: `${user.totalQuestions ? Math.floor((user.totalCorrect/user.totalQuestions)*1000) / 10 : 0}%`,
-              color: '#22C55E',
-              icon: 'bullseye',
+              label: theme.i18n.t("common.accuracy"),
+              value: `${
+                userData?.totalQuestions
+                  ? Math.floor(
+                      (userData.totalCorrect / userData.totalQuestions) * 1000,
+                    ) / 10
+                  : 0
+              }%`,
+              color: "#22C55E",
+              icon: "bullseye",
             },
           ]}
         />
       </View>
 
+      {/* Premium Upsell Card - Added Navigation */}
       <Section theme={theme}>
-        <PremiumUpsellCard />
+        <PremiumUpsellCard onPress={() => router.push("/premium")} />
       </Section>
 
+      {/* Achievements */}
       <Section theme={theme}>
-        {analyticsError ? (
-          <EmptyState
-            icon='alert-triangle'
-            title="Couldn't load subject performance"
-            subtitle='Pull down to try again.'
-          />
-        ) : subjectPerformance.length === 0 ? (
-          <EmptyState
-            icon='bar-chart-2'
-            title='No subject data yet'
-            subtitle='Complete a few quizzes to see your subject-wise performance here.'
-          />
-        ) : (
-          <SubjectPerformanceCard
-            subjects={subjectPerformance.map(
-              (s: { subject: string; accuracy: number }) => ({
-                name: s.subject,
-                score: s.accuracy,
-              })
-            )}
-          />
-        )}
+        <EarnedBadgeCard
+          achievements={displayBadges}
+          onViewAllPress={() => router.push("/achievements")}
+          onBadgePress={() => router.push("/achievements")}
+        />
       </Section>
 
+      {/* Subject Performance */}
       <Section theme={theme}>
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm + 4,
-            fontFamily: theme.fontFamily.regular,
-            fontWeight: theme.fontWeight.bold,
-            paddingBottom: theme.space.md,
-            marginLeft: theme.space.xs,
-          }}
-        >
-          {theme.i18n.t('profile.recentAttempts')}
-        </Text>
+        <SubjectPerformanceCard
+          subjects={subjectPerformance.map(
+            (s: { subject: string; accuracy: number }) => ({
+              name: s.subject,
+              score: s.accuracy,
+            }),
+          )}
+        />
+      </Section>
 
-        {analyticsError ? null : recentData.length === 0 ? (
-          <EmptyState
-            icon='clock'
-            title='No attempts yet'
-            subtitle='Your recent quiz and contest attempts will show up here.'
-          />
-        ) : (
+      {/* Recent Attempts — only show if user has played contests */}
+      {hasRecentAttempts && (
+        <Section theme={theme}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.sm + 4,
+              fontFamily: theme.fontFamily.regular,
+              fontWeight: theme.fontWeight.bold,
+              paddingBottom: theme.space.md,
+              marginLeft: theme.space.xs,
+            }}
+          >
+            {theme.i18n.t("profile.recentAttempts")}
+          </Text>
+
           <AttemptHistoryItemCard
             attempts={recentData.map(
               (a: {
@@ -398,11 +341,11 @@ export default function ProfileScreen() {
                 title: a.subject,
                 time: formatTime(a.completedAt),
                 score: a.scorePercent,
-              })
+              }),
             )}
           />
-        )}
-      </Section>
+        </Section>
+      )}
     </ScrollView>
   );
 }

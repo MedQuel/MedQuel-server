@@ -1,18 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import {View,Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import { UserLevelChip } from '../../components/UserLevelChip';
 import { computeLevelFromXp } from '../../common/utils/computeLevelXP';
 import { hasValidPhoto } from '../../common/utils/imageUrl';
+
 function getAvatarLabel(fullName: string): string {
   const words = fullName.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '';
@@ -27,6 +20,7 @@ function isSameDay(a: Date, b: Date): boolean {
     a.getDate() === b.getDate()
   );
 }
+
 export function HomeHeader({
   name,
   streak,
@@ -45,7 +39,6 @@ export function HomeHeader({
   onAvatarPress?: () => void;
 }) {
   const { theme } = useTheme();
-  const [photoModalVisible, setPhotoModalVisible] = useState(false);
   const avatarLabel = getAvatarLabel(name);
   const level = computeLevelFromXp(xpPoints);
   const isActiveToday = lastActiveDate
@@ -55,211 +48,131 @@ export function HomeHeader({
   const flameColor = '#FF6723';
   const streakTextColor = theme.color.warning;
   const avatarSize = theme.space.xxl;
-  function handleAvatarPress() {
-    if (hasValidPhoto(photoURL)) {
-      setPhotoModalVisible(true);
-    } else {
-      onAvatarPress?.();
-    }
-  }
+
   return (
-    <>
-      {/* Full Screen Photo Modal */}
-      <Modal
-        visible={photoModalVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={() => setPhotoModalVisible(false)}
-      >
-        <StatusBar backgroundColor="rgba(0,0,0,0.95)" barStyle="light-content" />
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setPhotoModalVisible(false)}
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingBottom: theme.space.sm,
+        paddingVertical: theme.space.md,
+        paddingHorizontal: theme.space.md,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        {/* Avatar — Direct Click Trigger */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onAvatarPress}
         >
-          {/* Close button */}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setPhotoModalVisible(false)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="close" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Pressable onPress={() => {}}>
+          {hasValidPhoto(photoURL) ? (
             <Image
               source={{ uri: photoURL! }}
-              style={styles.fullScreenPhoto}
-              resizeMode="contain"
-            />
-          </Pressable>
-          <View style={styles.modalNameContainer}>
-            <Text style={styles.modalName}>{name}</Text>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Header */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingBottom: theme.space.sm,
-          paddingVertical: theme.space.md,
-          paddingHorizontal: theme.space.md,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          {/* Avatar — tappable */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={handleAvatarPress}
-          >
-            {hasValidPhoto(photoURL) ? (
-              <Image
-                source={{ uri: photoURL! }}
-                style={{
-                  width: avatarSize,
-                  height: avatarSize,
-                  borderRadius: theme.borderRadius.full,
-                }}
-              />
-            ) : (
-              <LinearGradient
-                colors={theme.isDark ? ['#4F7CFF', '#7C3AED'] : ['#5B7FFF', '#6D4CFF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{
-                  width: avatarSize,
-                  height: avatarSize,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: theme.borderRadius.full,
-                }}
-              >
-                <Text
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.lg,
-                    fontFamily: theme.fontFamily.bold,
-                  }}
-                >
-                  {avatarLabel}
-                </Text>
-              </LinearGradient>
-            )}
-          </TouchableOpacity>
-
-          <View style={{ marginLeft: theme.space.sm }}>
-            <Text
-              numberOfLines={1}
               style={{
-                color: theme.color.textPrimary,
-                fontSize: theme.fontSize.lg,
-                fontFamily: theme.fontFamily.bold,
+                width: avatarSize,
+                height: avatarSize,
+                borderRadius: theme.borderRadius.full,
+              }}
+            />
+          ) : (
+            <LinearGradient
+              colors={theme.isDark ? ['#4F7CFF', '#7C3AED'] : ['#5B7FFF', '#6D4CFF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: avatarSize,
+                height: avatarSize,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: theme.borderRadius.full,
               }}
             >
-              {name}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.space.xs * 0.5 }}>
-              <Ionicons name={flameIconName} size={theme.fontSize.md} color={flameColor} />
               <Text
                 style={{
-                  color: streakTextColor,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
-                  marginLeft: theme.space.xs * 0.5,
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {theme.i18n.t('home.dayStreak', { streak: streak })}
+                {avatarLabel}
               </Text>
-            </View>
-          </View>
-        </View>
+            </LinearGradient>
+          )}
+        </TouchableOpacity>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={onNotificationsPress}
+        <View style={{ marginLeft: theme.space.sm }}>
+          <Text
+            numberOfLines={1}
             style={{
-              width: theme.space.xl + theme.space.xs,
-              height: theme.space.xl + theme.space.xs,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: theme.space.sm,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
-            <Ionicons
-              name="notifications-outline"
-              size={theme.fontSize.md}
-              color={theme.color.textSecondary}
-            />
-            <View
+            {name}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.space.xs * 0.5 }}>
+            <Ionicons name={flameIconName} size={theme.fontSize.md} color={flameColor} />
+            <Text
               style={{
-                position: 'absolute',
-                top: -(theme.space.xs * 0.5),
-                right: -(theme.space.xs * 0.5),
-                width: theme.space.sm,
-                height: theme.space.sm,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: theme.color.background,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.error,
+                color: streakTextColor,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+                marginLeft: theme.space.xs * 0.5,
               }}
-            />
-          </TouchableOpacity>
-          <UserLevelChip
-            level={level}
-            size="sm"
-            style={{
-              height: theme.space.xl + theme.space.xs,
-              borderColor: theme.color.border,
-              backgroundColor: theme.color.card,
-            }}
-          />
+            >
+              {theme.i18n.t('home.dayStreak', { streak: streak })}
+            </Text>
+          </View>
         </View>
       </View>
-    </>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onNotificationsPress}
+          style={{
+            width: theme.space.xl + theme.space.xs,
+            height: theme.space.xl + theme.space.xs,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: theme.space.sm,
+            borderWidth: 1,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.color.card,
+          }}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={theme.fontSize.md}
+            color={theme.color.textSecondary}
+          />
+          <View
+            style={{
+              position: 'absolute',
+              top: -(theme.space.xs * 0.5),
+              right: -(theme.space.xs * 0.5),
+              width: theme.space.sm,
+              height: theme.space.sm,
+              borderWidth: 1,
+              borderColor: theme.color.background,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.error,
+            }}
+          />
+        </TouchableOpacity>
+        <UserLevelChip
+          level={level}
+          size="sm"
+          style={{
+            height: theme.space.xl + theme.space.xs,
+            borderColor: theme.color.border,
+            backgroundColor: theme.color.card,
+          }}
+        />
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 52,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  fullScreenPhoto: {
-    width: 320,
-    height: 320,
-    borderRadius: 16,
-  },
-  modalNameContainer: {
-    position: 'absolute',
-    bottom: 60,
-    alignItems: 'center',
-  },
-  modalName: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-});

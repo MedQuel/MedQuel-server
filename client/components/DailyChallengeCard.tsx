@@ -4,7 +4,6 @@ import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
 
-
 export type DailyChallengeCardProps = {
   title: string;
   questions: number;
@@ -20,35 +19,39 @@ export type DailyChallengeCardProps = {
 export function DailyChallengeCard(props: DailyChallengeCardProps) {
   const { theme } = useTheme();
 
+  const t = (key: string, options?: any) => {
+    try {
+      const translation = theme?.i18n?.t ? theme.i18n.t(key, options) : key;
+      return translation || key;
+    } catch {
+      return key;
+    }
+  };
+
   const formattedTimeLeft = (() => {
     const minutes = Number(props.endsAt);
-
-    if (!Number.isFinite(minutes)) return props.endsAt;
-    if (minutes > 60) return `${theme.i18n.t('contests.hour', { hrs: Math.floor(minutes / 60) })}`;
-
-    return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
+    if (!Number.isFinite(minutes)) return props.endsAt ?? '0';
+    if (minutes > 60) return `${Math.floor(minutes / 60)}h`;
+    return `${minutes}m`;
   })();
-
 
   return (
     <LinearGradient
       colors={
-        theme.isDark
+        theme?.isDark
           ? ['#05173d', '#071d4d', '#08205a']
           : ['#2762f7', '#1a56f0', '#0f49db']
       }
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
+        position: 'relative',
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderRadius: theme.borderRadius.xl * 1.25,
-        borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
-        paddingVertical: theme.space.lg,
-        paddingHorizontal: theme.space.md * 1.25,
-        boxShadow: theme.isDark
-          ? '0px 12px 28px rgba(0,0,0,0.25)'
-          : '0px 10px 24px rgba(37,99,235,0.12)',
+        borderRadius: (theme?.borderRadius?.xl ?? 16) * 1.25,
+        borderColor: theme?.isDark ? theme?.color?.border : 'rgba(37,99,235,0.15)',
+        paddingVertical: theme?.space?.lg ?? 16,
+        paddingHorizontal: (theme?.space?.md ?? 12) * 1.25,
       }}
     >
       <View
@@ -58,58 +61,58 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
           right: -35,
           width: 140,
           height: 140,
-          borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.color.textMuted + '33',
+          borderRadius: theme?.borderRadius?.full ?? 999,
+          backgroundColor: (theme?.color?.textMuted ?? '#666666') + '33',
         }}
       />
 
-      {props.completed ? (
-        <View style={{ gap: theme.space.md, alignItems: 'center', paddingVertical: theme.space.sm }}>
-          {props.onDismiss ? (
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={props.onDismiss}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: theme.space.xl,
-                height: theme.space.xl,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.isDark ? theme.color.textInverse + '1A' : theme.color.textInverse + '33',
-              }}
-            >
-              <Feather
-                name="x"
-                size={theme.fontSize.md}
-                color={theme.isDark ? theme.color.textSecondary : theme.color.textInverse}
-              />
-            </TouchableOpacity>
-          ) : null}
+      {/* Cross Button */}
+      {props.completed && props.onDismiss ? (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={props.onDismiss}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={{
+            position: 'absolute',
+            top: theme?.space?.md ?? 12,
+            right: theme?.space?.md ?? 12,
+            zIndex: 20,
+            width: (theme?.space?.xl ?? 20) * 1.1,
+            height: (theme?.space?.xl ?? 20) * 1.1,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: theme?.borderRadius?.full ?? 999,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.35)',
+            backgroundColor: 'rgba(0, 0, 0, 0.25)',
+          }}
+        >
+          <Feather name="x" size={theme?.fontSize?.md ?? 14} color="#FFFFFF" />
+        </TouchableOpacity>
+      ) : null}
 
+      {props.completed ? (
+        <View style={{ gap: theme?.space?.md ?? 12, alignItems: 'center', paddingVertical: theme?.space?.sm ?? 8 }}>
           <View
             style={{
-              width: theme.space.xxl * 1.4,
-              height: theme.space.xxl * 1.4,
+              width: (theme?.space?.xxl ?? 24) * 1.4,
+              height: (theme?.space?.xxl ?? 24) * 1.4,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.color.success + '33',
+              borderRadius: theme?.borderRadius?.full ?? 999,
+              backgroundColor: (theme?.color?.success ?? '#10B981') + '33',
             }}
           >
-            <Feather name="check" size={theme.fontSize.xxl} color={theme.color.success} />
+            <Feather name="check" size={theme?.fontSize?.xxl ?? 24} color={theme?.color?.success ?? '#10B981'} />
           </View>
 
           <View style={{ alignItems: 'center' }}>
             <Text
               style={{
-                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-                fontSize: theme.fontSize.xl * 1.05,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.bold,
+                color: theme?.isDark ? theme?.color?.textPrimary : theme?.color?.textInverse,
+                fontSize: (theme?.fontSize?.xl ?? 18) * 1.05,
+                fontWeight: theme?.fontWeight?.bold ?? '700',
+                fontFamily: theme?.fontFamily?.bold,
                 textAlign: 'center',
               }}
             >
@@ -117,10 +120,10 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
             </Text>
             <Text
               style={{
-                marginTop: theme.space.xs,
-                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '99',
-                fontSize: theme.fontSize.md,
-                fontFamily: theme.fontFamily.regular,
+                marginTop: theme?.space?.xs ?? 4,
+                color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
+                fontSize: theme?.fontSize?.md ?? 14,
+                fontFamily: theme?.fontFamily?.regular,
                 textAlign: 'center',
               }}
             >
@@ -129,42 +132,35 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
           </View>
         </View>
       ) : (
-        <View style={{ gap: theme.space.sm, flexDirection: 'column', justifyContent: 'center' }}>
-          <View
-            style={{
-              gap: theme.space.sm * 0.75,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-            }}
-          >
+        <View style={{ gap: theme?.space?.sm ?? 8, flexDirection: 'column', justifyContent: 'center' }}>
+          <View style={{ gap: (theme?.space?.sm ?? 8) * 0.75, flexDirection: 'row', alignItems: 'center' }}>
             <View
               style={{
-                padding: theme.space.xs * 1.1,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.info,
+                padding: (theme?.space?.xs ?? 4) * 1.1,
+                borderRadius: theme?.borderRadius?.full ?? 999,
+                backgroundColor: theme?.color?.info ?? '#3B82F6',
               }}
             />
             <Text
               style={{
                 letterSpacing: 0.85,
                 textTransform: 'uppercase',
-                color: theme.isDark ? theme.color.info : theme.color.textInverse + '99',
-                fontSize: theme.fontSize.sm * 0.95,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                color: theme?.isDark ? theme?.color?.info : (theme?.color?.textInverse ?? '#FFF') + '99',
+                fontSize: (theme?.fontSize?.sm ?? 12) * 0.95,
+                fontWeight: theme?.fontWeight?.bold ?? '700',
+                fontFamily: theme?.fontFamily?.regular,
               }}
             >
-              {theme.i18n.t('home.daily_challenge')}
+              {t('home.daily_challenge')}
             </Text>
           </View>
 
           <Text
             style={{
-              color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-              fontSize: theme.fontSize.xl * 1.05,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.bold,
+              color: theme?.isDark ? theme?.color?.textPrimary : theme?.color?.textInverse,
+              fontSize: (theme?.fontSize?.xl ?? 18) * 1.05,
+              fontWeight: theme?.fontWeight?.bold ?? '700',
+              fontFamily: theme?.fontFamily?.bold,
             }}
           >
             {props.title}
@@ -172,86 +168,88 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
 
           <Text
             style={{
-              color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '99',
-              fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.medium,
-              fontFamily: theme.fontFamily.regular,
+              color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
+              fontSize: theme?.fontSize?.md ?? 14,
+              fontWeight: theme?.fontWeight?.medium ?? '500',
+              fontFamily: theme?.fontFamily?.regular,
             }}
           >
-            {props.questions} {theme.i18n.t('common.questions')} ·{' '}
-            {props.duration} {theme.i18n.t('common.min')} ·{' '}
-            {theme.i18n.t(`common.${props.difficulty}`)}
+            {props.questions} {t('common.questions')} · {props.duration} {t('common.min')} ·{' '}
+            {t(`common.${props.difficulty}`)}
           </Text>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ gap: theme.space.sm * 1.25, flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ gap: (theme?.space?.sm ?? 8) * 1.25, flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ gap: theme?.space?.xs ?? 4, flexDirection: 'row', alignItems: 'center' }}>
                 <Feather
-                  name='clock'
-                  size={theme.space.md}
-                  color={theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '99'}
+                  name="clock"
+                  size={theme?.space?.md ?? 12}
+                  color={theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99'}
                 />
                 <Text
                   style={{
-                    color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '99',
-                    fontSize: theme.fontSize.sm,
-                    fontWeight: theme.fontWeight.medium,
-                    fontFamily: theme.fontFamily.regular,
+                    color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
+                    fontSize: theme?.fontSize?.sm ?? 12,
+                    fontWeight: theme?.fontWeight?.medium ?? '500',
+                    fontFamily: theme?.fontFamily?.regular,
                   }}
                 >
-                  {formattedTimeLeft} {theme.i18n.t('contests.time_left')}
+                  {formattedTimeLeft} {t('contests.time_left')}
                 </Text>
               </View>
 
               <View
                 style={{
-                  gap: theme.space.sm * 0.5,
+                  gap: (theme?.space?.sm ?? 8) * 0.5,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  paddingVertical: theme.space.xs * 1.5,
-                  paddingHorizontal: theme.space.sm * 1.25,
-                  borderRadius: theme.borderRadius.md,
-                  backgroundColor: theme.isDark ? theme.color.accent + '33' : theme.color.textInverse + '33',
+                  paddingVertical: (theme?.space?.xs ?? 4) * 1.5,
+                  paddingHorizontal: (theme?.space?.sm ?? 8) * 1.25,
+                  borderRadius: theme?.borderRadius?.md ?? 8,
+                  backgroundColor: theme?.isDark ? (theme?.color?.accent ?? '#3B82F6') + '33' : (theme?.color?.textInverse ?? '#FFF') + '33',
                 }}
               >
                 <Feather
-                  name='zap'
-                  size={theme.space.md * 0.95}
-                  color={theme.isDark ? theme.color.info : theme.color.textInverse}
+                  name="zap"
+                  size={(theme?.space?.md ?? 12) * 0.95}
+                  color={theme?.isDark ? theme?.color?.info : theme?.color?.textInverse}
                 />
                 <Text
                   style={{
-                    color: theme.isDark ? theme.color.info : theme.color.textInverse,
-                    fontSize: theme.fontSize.sm,
-                    fontWeight: theme.fontWeight.bold,
-                    fontFamily: theme.fontFamily.number,
+                    color: theme?.isDark ? theme?.color?.info : theme?.color?.textInverse,
+                    fontSize: theme?.fontSize?.sm ?? 12,
+                    fontWeight: theme?.fontWeight?.bold ?? '700',
+                    fontFamily: theme?.fontFamily?.number,
                   }}
                 >
-                  +{props.epReward} {theme.i18n.t('common.ep')}
+                  +{props.epReward} {t('common.ep')}
                 </Text>
               </View>
             </View>
+
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={props.onStart}
               style={{
-                paddingVertical: theme.space.sm,
-                paddingHorizontal: theme.space.md,
-                borderRadius: theme.borderRadius.lg,
-                backgroundColor: theme.isDark ? theme.color.info : theme.color.textInverse,
-                boxShadow: '0px 6px 16px rgba(0,0,0,0.10)',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: theme?.space?.xs ?? 4,
+                paddingVertical: theme?.space?.sm ?? 8,
+                paddingHorizontal: theme?.space?.md ?? 12,
+                borderRadius: theme?.borderRadius?.lg ?? 12,
+                backgroundColor: theme?.isDark ? theme?.color?.info : theme?.color?.textInverse,
               }}
             >
               <Text
                 style={{
                   letterSpacing: 0.2,
-                  color: theme.isDark ? theme.color.background : theme.color.accent,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
+                  color: theme?.isDark ? theme?.color?.background : theme?.color?.accent,
+                  fontSize: theme?.fontSize?.lg ?? 16,
+                  fontWeight: theme?.fontWeight?.bold ?? '700',
+                  fontFamily: theme?.fontFamily?.bold,
                 }}
               >
-                {theme.i18n.t('common.start')} 
+                {t('common.start')} →
               </Text>
             </TouchableOpacity>
           </View>
