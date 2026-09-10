@@ -5,12 +5,13 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeContext';
 import { withAlpha } from '../common/utils/withAlpha';
 
-type StatKey = 'accuracy' | 'streak' | 'correct';
+type StatKey = 'accuracy' | 'streak' | 'questions';
 
 type Props = {
   accuracy: number;
   streak: number;
   questions?: number;
+  totalQuestions?: number;
   totalCorrect?: number;
 };
 
@@ -28,13 +29,13 @@ type StatItem = {
 const icons: Record<StatKey, (size: number, color: string) => React.ReactNode> = {
   accuracy: (size, color) => <Feather name="target" size={size} color={color} />,
   streak: (size, color) => <MaterialCommunityIcons name="fire" size={size} color={color} />,
-  correct: (size, color) => <Feather name="check-circle" size={size} color={color} />,
+  questions: (size, color) => <Feather name="help-circle" size={size} color={color} />,
 };
 
-export function AnalyticsStatsCard({ accuracy, streak, questions, totalCorrect }: Props) {
+export function AnalyticsStatsCard({ accuracy, streak, questions, totalQuestions, totalCorrect }: Props) {
   const { theme } = useTheme();
 
-  const correctValue = totalCorrect ?? questions ?? 0;
+  const questionsValue = questions ?? totalQuestions ?? totalCorrect ?? 0;
 
   const stats: StatItem[] = [
     {
@@ -58,14 +59,14 @@ export function AnalyticsStatsCard({ accuracy, streak, questions, totalCorrect }
       shadowColor: theme.color.success,
     },
     {
-      key: 'correct',
-      label: theme.i18n.t('components.AnalyticsStatsCard.total_correct') || 'Total Correct',
-      value: String(correctValue),
-      color: theme.color.success,
+      key: 'questions',
+      label: theme.i18n.t('components.AnalyticsStatsCard.questions') || 'Total Questions',
+      value: String(questionsValue),
+      color: theme.color.info,
       valueColor: theme.color.textPrimary,
       background: theme.color.card,
       border: theme.color.border,
-      shadowColor: theme.color.success,
+      shadowColor: theme.color.info,
     },
   ];
 

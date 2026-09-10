@@ -7,7 +7,7 @@ import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import type { Badge, User } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { CATEGORY_LABELS, BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../../common/constants/achievements';
+import { CATEGORY_LABELS, BADGE_CATALOG, BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../../common/constants/achievements';
 
 import { Loading } from '../../components/common/loading';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
@@ -60,7 +60,57 @@ export default function EarnedBadgesScreen() {
       ]);
 
       setUser(meData);
-      setBadges(Array.isArray(achievementData) ? achievementData : []);
+      const apiMap = new Map<string, Badge>();
+      if (Array.isArray(achievementData)) {
+        achievementData.forEach((b) => {
+          if (b?.badgeId) apiMap.set(b.badgeId, b);
+        });
+      }
+
+      const merged = BADGE_CATALOG.map((catalog) => {
+        const fromApi = apiMap.get(catalog.badgeId);
+        if (fromApi) return fromApi;
+
+        let currentProgress = 0;
+        if (meData) {
+          if (catalog.category === 'streak') {
+            currentProgress = Math.max(meData.currentStreak ?? 0, meData.longestStreak ?? 0);
+          } else if (catalog.category === 'questions') {
+            currentProgress = meData.totalQuestions ?? 0;
+          } else if (catalog.category === 'study') {
+            currentProgress = meData.studyHours ?? 0;
+          } else if (catalog.category === 'level') {
+            currentProgress = meData.currentLevel ?? 1;
+          } else if (catalog.category === 'contests') {
+            currentProgress = meData.stats?.contestsPlayed ?? 0;
+          } else if (catalog.category === 'contest_high_score') {
+            currentProgress = (meData.stats as any)?.contests90Plus ?? 0;
+          } else if (catalog.category === 'hard_contest') {
+            currentProgress = (meData.stats as any)?.hardContestsDone ?? 0;
+          } else if (catalog.category === 'perfect_quiz') {
+            currentProgress = (meData.stats as any)?.perfectQuizzes ?? 0;
+          } else if (catalog.category === 'speed') {
+            currentProgress = (meData.stats as any)?.fastCompletions ?? 0;
+          }
+        }
+
+        const isEarned = currentProgress >= catalog.requirementValue;
+        return {
+          badgeId: catalog.badgeId,
+          name: catalog.name,
+          description: catalog.description,
+          iconKey: catalog.iconKey,
+          variant: catalog.variant,
+          rarity: catalog.rarity,
+          category: catalog.category,
+          requirementValue: catalog.requirementValue,
+          currentProgress: Math.min(currentProgress, catalog.requirementValue),
+          status: isEarned ? ('earned' as const) : currentProgress > 0 ? ('in_progress' as const) : ('locked' as const),
+          earnedAt: isEarned ? new Date().toISOString() : null,
+        };
+      });
+
+      setBadges(merged);
     } catch (err: any) {
       if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
         console.warn('Error fetching earned badges:', err?.message || err);

@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -56,11 +56,73 @@ const CATEGORIES_IN_ORDER = [
   'special',
 ];
 
+const resolveBadgesWithCatalog = (apiBadges: Badge[], userData: User | null): Badge[] => {
+  const apiMap = new Map<string, Badge>();
+  if (Array.isArray(apiBadges)) {
+    apiBadges.forEach((b) => {
+      if (b?.badgeId) apiMap.set(b.badgeId, b);
+    });
+  }
+
+  return BADGE_CATALOG.map((catalog) => {
+    const fromApi = apiMap.get(catalog.badgeId);
+    if (fromApi) {
+      return fromApi;
+    }
+
+    // Default calculation from user stats if not provided by API
+    let currentProgress = 0;
+    if (userData) {
+      if (catalog.category === 'streak') {
+        currentProgress = Math.max(userData.currentStreak ?? 0, userData.longestStreak ?? 0);
+      } else if (catalog.category === 'questions') {
+        currentProgress = userData.totalQuestions ?? 0;
+      } else if (catalog.category === 'study') {
+        currentProgress = userData.studyHours ?? 0;
+      } else if (catalog.category === 'level') {
+        currentProgress = userData.currentLevel ?? 1;
+      } else if (catalog.category === 'contests') {
+        currentProgress = userData.stats?.contestsPlayed ?? 0;
+      } else if (catalog.category === 'contest_high_score') {
+        currentProgress = (userData.stats as any)?.contests90Plus ?? 0;
+      } else if (catalog.category === 'hard_contest') {
+        currentProgress = (userData.stats as any)?.hardContestsDone ?? 0;
+      } else if (catalog.category === 'perfect_quiz') {
+        currentProgress = (userData.stats as any)?.perfectQuizzes ?? 0;
+      } else if (catalog.category === 'speed') {
+        currentProgress = (userData.stats as any)?.fastCompletions ?? 0;
+      }
+    }
+
+    const isEarned = currentProgress >= catalog.requirementValue;
+    const status: 'earned' | 'in_progress' | 'locked' = isEarned
+      ? 'earned'
+      : currentProgress > 0
+      ? 'in_progress'
+      : 'locked';
+
+    return {
+      badgeId: catalog.badgeId,
+      name: catalog.name,
+      description: catalog.description,
+      iconKey: catalog.iconKey,
+      variant: catalog.variant,
+      rarity: catalog.rarity,
+      category: catalog.category,
+      requirementValue: catalog.requirementValue,
+      currentProgress: Math.min(currentProgress, catalog.requirementValue),
+      status,
+      earnedAt: isEarned ? new Date().toISOString() : null,
+    };
+  });
+};
+
 export default function AchievementsScreen() {
   const [achievements, setAchievements] = useState<Badge[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [userRank, setUserRank] = useState<number | string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const { theme } = useTheme();
   const router = useRouter();
@@ -80,51 +142,52 @@ export default function AchievementsScreen() {
         api.leaderboard.getLeaderboard('weekly', 'global').catch(() => null),
       ]);
 
-      setAchievements(Array.isArray(badgeData) ? badgeData : []);
       if (meData) setUser(meData);
       if (leaderboardData?.myRank) {
         setUserRank(leaderboardData.myRank);
       }
+
+      const mergedBadges = resolveBadgesWithCatalog(
+        Array.isArray(badgeData) ? badgeData : [],
+        meData
+      );
+      setAchievements(mergedBadges);
     } catch (error: any) {
       if (error?.name !== 'AuthenticationError' && error?.code !== 'UNAUTHENTICATED') {
         console.warn('Error fetching achievements page data:', error?.message || error);
       }
-      setAchievements([]);
+      setAchievements(resolveBadgesWithCatalog([], null));
     } finally {
       if (showLoader) setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
-  // Single focus effect to load data on initial visit & screen focus cleanly without race condition
+  // Ensure initial data fetch executes immediately on mount
+  useEffect(() => {
+    fetchData(true);
+  }, [fetchData]);
+
+  // Keep screen updated when returning from earned badges screen
   useFocusEffect(
     useCallback(() => {
-      const shouldShowLoader = achievements.length === 0;
-      fetchData(shouldShowLoader);
-      return () => {
-      };
-    }, [fetchData, achievements.length])
+      fetchData(false);
+    }, [fetchData])
   );
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    fetchData(false);
+  }, [fetchData]);
 
   const earnedBadges = useMemo(() => {
     return achievements.filter((b) => b.status === 'earned');
   }, [achievements]);
 
-  // Strict fresh account check: In progress cards start showing ONLY after completing at least 1 contest / practice quiz
-  const hasPlayedContest = useMemo(() => {
-    const questions = user?.totalQuestions ?? 0;
-    const contests = user?.stats?.contestsPlayed ?? 0;
-    const sessions = (user?.stats as any)?.completedSessions ?? 0;
-    const earnedCount = achievements.filter((b) => b.status === 'earned').length;
-
-    return questions > 0 || contests > 0 || sessions > 0 || earnedCount > 0;
-  }, [user, achievements]);
-
   // Compute in-progress section by category:
-  // For fresh accounts (hasPlayedContest === false), returns [] to show clean empty message.
-  // When at least 1 contest is completed (hasPlayedContest === true), populates target badge per category section.
-  // Special rule: hard_contest only shows if user played at least 1 hard contest (currentProgress >= 1).
+  // Shows next badge target for each category with live progress
   const inProgressBadges = useMemo((): BadgeProgressItem[] => {
-    if (!hasPlayedContest || !achievements || achievements.length === 0) return [];
+    if (!achievements || achievements.length === 0) return [];
 
     const categoryMap: Record<string, Badge[]> = {};
     achievements.forEach((b) => {
@@ -143,11 +206,6 @@ export default function AchievementsScreen() {
       const targetBadge = badgesInCat.find((b) => b.status !== 'earned');
 
       if (targetBadge) {
-        // Special rule: Hard-difficulty contest progress only starts when playing >= 1 hard contest
-        if (catKey === 'hard_contest' && targetBadge.currentProgress < 1) {
-          return;
-        }
-
         result.push({
           id: targetBadge.badgeId,
           title: targetBadge.name,
@@ -161,7 +219,7 @@ export default function AchievementsScreen() {
     });
 
     return result;
-  }, [achievements, hasPlayedContest]);
+  }, [achievements]);
 
   const totalBadges = achievements.length;
   const earnedCount = earnedBadges.length;
@@ -230,6 +288,14 @@ export default function AchievementsScreen() {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={theme.color.accent}
+                colors={[theme.color.accent]}
+              />
+            }
             contentContainerStyle={{
               paddingTop: theme.space.sm,
               paddingBottom: theme.space.xxl * 1.75,

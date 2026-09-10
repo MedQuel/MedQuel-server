@@ -593,7 +593,8 @@
     "AnalyticsStatsCard": {
       "accuracy": "Accuracy",
       "streak": "Streak",
-      "questions": "Questions"
+      "questions": "Total Questions",
+      "total_questions": "Total Questions"
     },
     "AttemptHistoryCard": {
       "questions": "Qs",

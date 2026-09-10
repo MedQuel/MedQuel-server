@@ -113,9 +113,6 @@ export async function getLeaderboard(
   const periodKey = buildPeriodKey(period, new Date());
 
   if (scope === 'friends') {
-    if (period === 'monthly') {
-      throw new NotImplementedError('Friends leaderboard is available for weekly and all-time periods only.');
-    }
     return getFriendsLeaderboard(uid, db, period, periodKey);
   }
 
