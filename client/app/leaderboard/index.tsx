@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Easing, Animated } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../common/api/api';
@@ -55,7 +55,11 @@ const mapTrendLabel = (timeFilter: LeaderboardPeriod) => {
   return 'all time';
 };
 
-const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: LeaderboardPeriod): LeaderboardSnapshot => {
+const mapLeaderboardSnapshot = (
+  result: LeaderboardResult,
+  timeFilter: LeaderboardPeriod,
+  scopeFilter: 'global' | 'friends' = 'global'
+): LeaderboardSnapshot => {
   const sorted = [...result.entries].sort((a, b) => a.rank - b.rank);
 
   const podiumUsers = sorted.slice(0, 3).map((entry, index) => ({
@@ -85,10 +89,10 @@ const mapLeaderboardSnapshot = (result: LeaderboardResult, timeFilter: Leaderboa
     points: entry.epPoints,
   }));
 
-  // Only show Current User card if backend returns a valid myEntry with EP > 0 (user has played at least 1 contest)
+  // Show Current User card if backend returns a valid myEntry with EP > 0, or if viewing friends leaderboard
   const currentUserSource = result.myEntry ?? null;
   const currentUser: CurrentUserLeaderboardRow | null =
-    currentUserSource && currentUserSource.epPoints > 0
+    currentUserSource && (currentUserSource.epPoints > 0 || scopeFilter === 'friends')
       ? {
           rank: currentUserSource.rank || result.myRank || 0,
           initials: getInitials(currentUserSource.displayName || '') || '??',
@@ -142,15 +146,11 @@ export default function LeaderboardScreen() {
 
   const activeSnapshot = useMemo(() => {
     if (!leaderboardData) return null;
-    return mapLeaderboardSnapshot(leaderboardData, timeFilter);
-  }, [leaderboardData, timeFilter]);
+    return mapLeaderboardSnapshot(leaderboardData, timeFilter, scopeFilter);
+  }, [leaderboardData, timeFilter, scopeFilter]);
 
   const fetchLeaderboard = useCallback(
     async (showLoader = true) => {
-      if (scopeFilter === 'friends') {
-        if (showLoader) setIsLoading(false);
-        return;
-      }
       if (showLoader) setIsLoading(true);
 
       try {
@@ -169,21 +169,15 @@ export default function LeaderboardScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    if (scopeFilter === 'friends') {
-      setIsLoading(false);
-      return;
-    }
     if (isMounted) fetchLeaderboard(true);
 
     return () => { isMounted = false };
-  }, [fetchLeaderboard, scopeFilter]);
+  }, [fetchLeaderboard]);
 
   useFocusEffect(
     useCallback(() => {
-      if (scopeFilter !== 'friends') {
-        fetchLeaderboard(false);
-      }
-    }, [fetchLeaderboard, scopeFilter])
+      fetchLeaderboard(false);
+    }, [fetchLeaderboard])
   );
 
   const refreshLeaderboard = useCallback(() => {
@@ -319,6 +313,14 @@ export default function LeaderboardScreen() {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={refreshLeaderboard}
+                tintColor={theme.color.accent}
+                colors={[theme.color.accent]}
+              />
+            }
             contentContainerStyle={{
               paddingTop: theme.space.md,
               paddingBottom: 140, // Increased bottom padding to ensure participant cards roll clear of AppBottomBar
