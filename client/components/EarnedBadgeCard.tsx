@@ -7,7 +7,7 @@ import { AchievementIcon } from './achievements/AchievementIcon';
 import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../common/constants/achievements';
 import type { Badge } from '../common/types/types';
 
-type EarnedItemInput = Partial<Badge> & {
+export type EarnedItemInput = Partial<Badge> & {
   id?: string;
   badgeId?: string;
   earnedAt?: string | null;
