@@ -1,8 +1,9 @@
 import React from 'react';
-import { LayoutChangeEvent, Pressable, Text, View, TouchableOpacity } from 'react-native';
+import { LayoutChangeEvent, Text, View, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 import { AchievementIcon } from './achievements/AchievementIcon';
 import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../common/constants/achievements';
 import type { Badge } from '../common/types/types';
@@ -18,7 +19,7 @@ type Props = {
   achievements: EarnedItemInput[];
   title?: string;
   onViewAllPress?: () => void;
-  onBadgePress?: () => void;  // ← new
+  onBadgePress?: () => void;
 };
 
 type DisplayBadgeItem = {
@@ -29,15 +30,6 @@ type DisplayBadgeItem = {
   earnedAt?: string | null;
   isNew?: boolean;
   order: number;
-};
-
-const rgba = (hex: string, alpha: number) => {
-  const normalized = hex.replace('#', '');
-  const full = normalized.length === 3 ? normalized.split('').map(ch => ch + ch).join('') : normalized.slice(0, 6);
-  const red = Number.parseInt(full.slice(0, 2), 16);
-  const green = Number.parseInt(full.slice(2, 4), 16);
-  const blue = Number.parseInt(full.slice(4, 6), 16);
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
 const resolveText = (value: string, fallback: string, key: string) => {
@@ -80,7 +72,6 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
   const [cardWidth, setCardWidth] = React.useState<number>(0);
 
   const sectionTitle = resolveText(theme.i18n.t('components.EarnedBadgeCard.title'), title ?? 'Earned Badges', 'components.EarnedBadgeCard.title');
-  const viewAllText = resolveText(theme.i18n.t('components.EarnedBadgeCard.view_all'), 'View All', 'components.EarnedBadgeCard.view_all');
   const emptyText = resolveText(theme.i18n.t('components.EarnedBadgeCard.empty'), 'Have not earned any badge yet', 'components.EarnedBadgeCard.empty');
 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
@@ -120,9 +111,9 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
       onLayout={onCardLayout}
       style={{
         padding: theme.space.md,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderRadius: theme.borderRadius.xl,
-        borderColor: rgba(theme.color.accent, theme.isDark ? 0.20 : 0.12),
+        borderColor: theme.color.border,
         backgroundColor: theme.color.card,
       }}
     >
@@ -139,30 +130,25 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
           {sectionTitle}
         </Text>
 
-        <Pressable
-          onPress={onViewAllPress}
-          disabled={!onViewAllPress}
-          style={({ pressed }) => ({
-            paddingVertical: theme.space.xs * 1.25,
-            paddingHorizontal: theme.space.md,
-            borderWidth: 1,
-            borderRadius: theme.borderRadius.full,
-            borderColor: rgba(theme.color.accent, theme.isDark ? 0.28 : 0.18),
-            backgroundColor: rgba(theme.color.accent, theme.isDark ? 0.10 : 0.06),
-            opacity: pressed ? 0.85 : 1,
-          })}
-        >
-          <Text
+        {onViewAllPress && (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onViewAllPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{
-              color: theme.color.accent,
-              fontSize: theme.fontSize.xs,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              width: 32,
+              height: 32,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: withAlpha(theme.color.accent, 0.12),
+              borderWidth: 1,
+              borderColor: withAlpha(theme.color.accent, 0.25),
             }}
           >
-            {viewAllText}
-          </Text>
-        </Pressable>
+            <Feather name="chevron-right" size={18} color={theme.color.accent} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {items.length ? (

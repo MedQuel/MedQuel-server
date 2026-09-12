@@ -87,11 +87,10 @@ export function StatsOverviewCard({ rank, accuracy, quizzesTaken, earnedPoints }
             justifyContent: 'center',
             paddingVertical: theme.space.md,
             paddingHorizontal: theme.space.xs,
-            borderWidth: 1.5,
+            borderWidth: 1,
             borderRadius: theme.borderRadius.xl,
             borderColor: theme.color.border,
             backgroundColor: theme.color.card,
-            boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)',
           }}
         >
           <View>{stat.icon}</View>

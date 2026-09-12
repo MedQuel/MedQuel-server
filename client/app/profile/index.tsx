@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
+import { withAlpha } from "../../common/utils/withAlpha";
 import { Loading } from "../../components/common/loading";
 import { ProfileScreenHeader } from "./profileScreenHeader";
 import { useBottomBar } from "../../common/context/useBottomBar";
@@ -133,8 +134,6 @@ export default function ChatScreen() {
   const subjectPerformance = analytics.subjectPerformance ?? [];
   const hasRecentAttempts = (recentData ?? []).length > 0;
   const earnedBadges = achievements.filter((b) => b.status === "earned");
-  const inProgressBadges = achievements.filter((b) => b.status === "in_progress");
-  const displayBadges = [...earnedBadges, ...inProgressBadges];
 
   return (
     <ScrollView
@@ -191,8 +190,8 @@ export default function ChatScreen() {
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm + 3,
               borderWidth: 0.5,
-              borderColor: theme.color.warning + "22",
-              backgroundColor: theme.color.warning + "22",
+              borderColor: withAlpha(theme.color.warning, 0.25),
+              backgroundColor: withAlpha(theme.color.warning, 0.15),
             }}
           >
             <MaterialCommunityIcons
@@ -256,19 +255,19 @@ export default function ChatScreen() {
             {
               label: theme.i18n.t("common.level"),
               value: String(userData?.currentLevel ?? 0),
-              color: "#F59E0B",
+              color: theme.color.warning,
               icon: "star",
             },
             {
               label: theme.i18n.t("common.quizzes"),
               value: String(userData?.stats.contestsPlayed ?? 0),
-              color: "#3B82F6",
+              color: theme.color.accent,
               icon: "lightning-bolt",
             },
             {
               label: theme.i18n.t("common.streak"),
               value: String(userData?.longestStreak ?? 0),
-              color: "#EF4444",
+              color: theme.color.error,
               icon: "fire",
             },
             {
@@ -280,7 +279,7 @@ export default function ChatScreen() {
                     ) / 10
                   : 0
               }%`,
-              color: "#22C55E",
+              color: theme.color.success,
               icon: "bullseye",
             },
           ]}
@@ -295,7 +294,7 @@ export default function ChatScreen() {
       {/* Achievements */}
       <Section theme={theme}>
         <EarnedBadgeCard
-          achievements={displayBadges}
+          achievements={earnedBadges}
           onViewAllPress={() => router.push("/achievements")}
           onBadgePress={() => router.push("/achievements")}
         />

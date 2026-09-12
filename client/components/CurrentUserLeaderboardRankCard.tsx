@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeContext';
-
+import { withAlpha } from '../common/utils/withAlpha';
 
 type CurrentUserLeaderboardRankCardProps = {
   name: string;
@@ -24,10 +24,10 @@ export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowt
         justifyContent: 'space-between',
         paddingVertical: theme.space.sm * 1.5,
         paddingHorizontal: theme.space.md,
-        borderWidth: 1.5,
-        borderColor: theme.isDark ? theme.color.accent + '44' : theme.color.textMuted + '55',
+        borderWidth: 1,
+        borderColor: withAlpha(theme.color.accent, 0.35),
         borderRadius: theme.borderRadius.xl,
-        backgroundColor: theme.color.surface,
+        backgroundColor: withAlpha(theme.color.accent, theme.isDark ? 0.08 : 0.04),
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -51,7 +51,7 @@ export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowt
           }}
         >
           <LinearGradient
-            colors={[`${theme.color.accent}`, `${theme.color.accent}90`]}
+            colors={[theme.color.accent, withAlpha(theme.color.accent, 0.75)]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{

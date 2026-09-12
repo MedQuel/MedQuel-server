@@ -6,6 +6,7 @@ import { Feather } from '@expo/vector-icons';
 import { api } from '../../common/api/api';
 import { HomeHeader } from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../common/utils/withAlpha';
 import { Loading } from '../../components/common/loading';
 import type { HomeData, User, Contest, AnalyticsData } from '../../common/types/types';
 import { useBottomBar } from '../../common/context/useBottomBar';
@@ -252,8 +253,8 @@ export default function HomeScreen() {
             <LinearGradient
               colors={
                 theme.isDark
-                  ? ['#05173d', '#071d4d', '#08205a']
-                  : ['#2762f7', '#1a56f0', '#0f49db']
+                  ? [theme.color.surface, theme.color.card]
+                  : [theme.color.accent, withAlpha(theme.color.accent, 0.85)]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -262,8 +263,8 @@ export default function HomeScreen() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: theme.space.md,
-                borderWidth: 1.5,
-                borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
+                borderWidth: 1,
+                borderColor: withAlpha(theme.color.accent, theme.isDark ? 0.3 : 0.2),
                 borderRadius: theme.borderRadius.xl,
               }}
             >
@@ -279,7 +280,7 @@ export default function HomeScreen() {
               <Feather
                 name="chevron-right"
                 size={theme.fontSize.lg}
-                color={theme.isDark ? theme.color.info : theme.color.textInverse}
+                color={theme.isDark ? theme.color.accent : theme.color.textInverse}
               />
             </LinearGradient>
           </TouchableOpacity>

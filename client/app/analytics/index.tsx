@@ -1,14 +1,15 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../common/utils/withAlpha';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import type { AnalyticsData, User } from '../../common/types/types';
 
 import { Loading } from '../../components/common/loading';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { AnalyticsStatsCard } from '../../components/AnalyticsStatsCard';
 import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 import { ActivityHeatmapCard, type HeatmapDayItem } from '../../components/ActivityHeatmapCard';
@@ -195,6 +196,7 @@ export default function AnalyticsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
+  const router = useRouter();
   const { theme } = useTheme();
   useBottomBar(true, 'analytics');
 
@@ -243,17 +245,14 @@ export default function AnalyticsScreen() {
     return buildAnalyticsSnapshot(userData, analyticsData);
   }, [userData, analyticsData]);
 
-  const hasStats = data.stats.accuracy > 0 || data.stats.streak > 0 || data.stats.questions > 0 || data.stats.totalCorrect > 0;
-  const hasKeyStats =
-    data.keyStats.totalCorrect > 0 ||
-    data.keyStats.avgScore > 0 ||
-    data.keyStats.bestSubject.trim().length > 0 ||
-    data.keyStats.studyHours > 0 ||
-    data.keyStats.longestStreak > 0 ||
-    data.keyStats.weakSubject.trim().length > 0;
+  const hasCompletedContest =
+    (userData?.totalQuestions || 0) > 0 ||
+    data.attempts.length > 0 ||
+    (analyticsData?.recentAttempts && analyticsData.recentAttempts.length > 0) ||
+    (analyticsData?.heatmap && analyticsData.heatmap.some((h) => (h.questionsAttempted || 0) > 0));
 
-  const hasAttempts = data.attempts.length > 0;
   const hasSubjects = data.subjectPerformance.length > 0;
+  const hasAttempts = data.attempts.length > 0;
 
   const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({ name: item.subject, score: item.percentage }));
 
@@ -314,8 +313,91 @@ export default function AnalyticsScreen() {
               paddingHorizontal: theme.space.md,
             }}
           >
-            <View style={{ gap: theme.space.md }}>
-              {hasStats ? (
+            {!hasCompletedContest ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: theme.space.lg,
+                  paddingHorizontal: theme.space.xl,
+                  paddingVertical: theme.space.xxl,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.xl,
+                  backgroundColor: theme.color.card,
+                }}
+              >
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: theme.space.md,
+                    borderRadius: theme.borderRadius.full,
+                    backgroundColor: withAlpha(theme.color.accent, 0.12),
+                    borderWidth: 1,
+                    borderColor: withAlpha(theme.color.accent, 0.25),
+                  }}
+                >
+                  <Feather name="bar-chart-2" size={28} color={theme.color.accent} />
+                </View>
+
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    color: theme.color.textPrimary,
+                    fontSize: theme.fontSize.lg,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.bold,
+                    marginBottom: theme.space.xs,
+                  }}
+                >
+                  No attempts yet
+                </Text>
+
+                <Text
+                  style={{
+                    textAlign: 'center',
+                    color: theme.color.textMuted,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                    lineHeight: theme.fontSize.sm * 1.5,
+                    marginBottom: theme.space.lg,
+                    paddingHorizontal: theme.space.sm,
+                  }}
+                >
+                  Once you start taking quizzes and contests, your complete performance overview, accuracy trends, and activity calendar will appear here.
+                </Text>
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => router.push('/contests')}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: theme.space.xs,
+                    paddingVertical: theme.space.sm,
+                    paddingHorizontal: theme.space.lg,
+                    borderRadius: theme.borderRadius.full,
+                    backgroundColor: theme.color.accent,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: theme.color.textInverse,
+                      fontSize: theme.fontSize.sm,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.bold,
+                    }}
+                  >
+                    Explore Contests
+                  </Text>
+                  <Feather name="arrow-right" size={14} color={theme.color.textInverse} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ gap: theme.space.md }}>
                 <AnalyticsStatsCard
                   accuracy={data.stats.accuracy}
                   streak={data.stats.streak}
@@ -323,15 +405,7 @@ export default function AnalyticsScreen() {
                   totalQuestions={data.stats.questions}
                   totalCorrect={data.stats.totalCorrect}
                 />
-              ) : (
-                <EmptyStateCard
-                  title={theme.i18n.t('analytics.empty_states.overview.title')}
-                  description={theme.i18n.t('analytics.empty_states.overview.description')}
-                  icon='bar-chart-2'
-                />
-              )}
 
-              {hasKeyStats ? (
                 <AnalyticsKeyStatItems
                   totalCorrect={data.keyStats.totalCorrect}
                   avgScore={data.keyStats.avgScore}
@@ -340,42 +414,21 @@ export default function AnalyticsScreen() {
                   longestStreak={data.keyStats.longestStreak}
                   weakSubject={data.keyStats.weakSubject}
                 />
-              ) : (
-                <EmptyStateCard
-                  icon='grid'
-                  title={theme.i18n.t('analytics.empty_states.key_stats.title')}
-                  description={theme.i18n.t('analytics.empty_states.key_stats.description')}
-                />
-              )}
 
-              {hasSubjects ? (
-                <SubjectPerformanceCard subjects={subjectPerformanceItems} />
-              ) : (
-                <EmptyStateCard
-                  icon='book-open'
-                  title={theme.i18n.t('analytics.empty_states.subject.title')}
-                  description={theme.i18n.t('analytics.empty_states.subject.description')}
-                />
-              )}
-
-              <View>
                 <ActivityHeatmapCard
-                  activity={data.activityHeatmap.activity}
+                  heatmap={analyticsData?.heatmap}
                   days={data.activityHeatmap.days}
-                  label={data.activityHeatmap.label}
                 />
-              </View>
 
-              {hasAttempts ? (
-                <AttemptHistoryCard attempts={data.attempts} />
-              ) : (
-                <EmptyStateCard
-                  title={theme.i18n.t('analytics.empty_states.attempts.title')}
-                  description={theme.i18n.t('analytics.empty_states.attempts.description')}
-                  icon='file-text'
-                />
-              )}
-            </View>
+                {hasSubjects && (
+                  <SubjectPerformanceCard subjects={subjectPerformanceItems} />
+                )}
+
+                {hasAttempts && (
+                  <AttemptHistoryCard attempts={data.attempts} />
+                )}
+              </View>
+            )}
           </ScrollView>
         )}
       </View>

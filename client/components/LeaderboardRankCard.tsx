@@ -3,6 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 
 type LeaderboardRankCardProps = {
   rank: number;
@@ -45,48 +46,43 @@ export function LeaderboardRankCard({
 
   const cardGradientColors: [string, string] = isGold
     ? [
-        theme.isDark ? `${theme.color.warning}2B` : `${theme.color.warning}1A`,
-        theme.isDark ? `${theme.color.warning}0A` : `${theme.color.warning}05`,
+        withAlpha(theme.color.warning, theme.isDark ? 0.16 : 0.08),
+        withAlpha(theme.color.warning, theme.isDark ? 0.04 : 0.02),
       ]
     : isSilver
     ? [
-        theme.isDark ? `${theme.color.info}24` : `${theme.color.info}16`,
-        theme.isDark ? `${theme.color.info}08` : `${theme.color.info}04`,
+        withAlpha(theme.color.info, theme.isDark ? 0.14 : 0.07),
+        withAlpha(theme.color.info, theme.isDark ? 0.03 : 0.02),
       ]
     : isBronze
     ? [
-        theme.isDark ? `${theme.color.premium}24` : `${theme.color.premium}16`,
-        theme.isDark ? `${theme.color.premium}08` : `${theme.color.premium}04`,
+        withAlpha(theme.color.premium, theme.isDark ? 0.14 : 0.07),
+        withAlpha(theme.color.premium, theme.isDark ? 0.03 : 0.02),
       ]
     : [theme.color.card, theme.color.card];
 
   const borderColor = isGold
-    ? `${theme.color.warning}55`
+    ? withAlpha(theme.color.warning, 0.35)
     : isSilver
-    ? `${theme.color.info}44`
+    ? withAlpha(theme.color.info, 0.3)
     : isBronze
-    ? `${theme.color.premium}44`
+    ? withAlpha(theme.color.premium, 0.3)
     : theme.color.border;
 
   const avatarGradientColors: [string, string] = isTop3
-    ? [`${mainColor}45`, `${mainColor}15`]
-    : [`${theme.color.accent}35`, `${theme.color.accent}12`];
+    ? [withAlpha(mainColor, 0.28), withAlpha(mainColor, 0.1)]
+    : [withAlpha(theme.color.accent, 0.2), withAlpha(theme.color.accent, 0.08)];
 
-  const avatarBorderColor = isTop3 ? `${mainColor}88` : `${theme.color.accent}44`;
+  const avatarBorderColor = isTop3 ? withAlpha(mainColor, 0.5) : withAlpha(theme.color.accent, 0.3);
   const avatarTextColor = isTop3 ? mainColor : theme.color.accent;
 
   return (
     <View
       style={{
         borderRadius: theme.borderRadius.xl,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor,
         overflow: 'hidden',
-        shadowColor: isTop3 ? mainColor : 'transparent',
-        shadowOpacity: isTop3 ? (theme.isDark ? 0.12 : 0.08) : 0,
-        shadowRadius: isTop3 ? 8 : 0,
-        shadowOffset: { width: 0, height: 3 },
-        elevation: isTop3 ? 3 : 0,
       }}
     >
       <LinearGradient
