@@ -19,7 +19,8 @@ service cloud.firestore {
           'stats', 'badges', 'badgeProgress', 'badgeEarnedAt',
           'notifPrefs', 'quizPrefs', 'createdAt',
           'describesYou', 'studyLevel', 'yearOfStudy', 'specialties',
-          'targetExam', 'contentScope', 'focusSubjects'
+          'targetExam', 'contentScope', 'focusSubjects',
+          'displayNameLower'
         ]);
 
       allow delete: if false;
