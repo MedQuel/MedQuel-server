@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -11,9 +11,10 @@ import { Loading } from '../../components/common/loading';
 import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { AnalyticsStatsCard } from '../../components/AnalyticsStatsCard';
 import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
-import { ActivityHeatmapCard } from '../../components/ActivityHeatmapCard';
+import { ActivityHeatmapCard, type HeatmapDayItem } from '../../components/ActivityHeatmapCard';
 import { AnalyticsKeyStatItems } from '../../components/AnalyticsKeyStatItems';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
+
 
 type SubjectPerformanceItem = {
   id: string;
@@ -52,27 +53,40 @@ type AnalyticsSnapshot = {
   attempts: AttemptItem[];
   activityHeatmap: {
     activity: number[];
+    days: HeatmapDayItem[];
     label: string;
   };
 };
 
 const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): AnalyticsSnapshot => {
-  // Rolling last 30 days activity calculation
+  // 35 continuous days (5 full weeks: Mon -> Sun) ending on current week's Sunday
   const now = new Date();
-  const activity30Days = Array.from({ length: 30 }, () => 0);
-  const heatmapMap = new Map<string, number>();
+  const currentDayOfWeek = now.getDay();
+  const daysUntilSunday = (7 - (currentDayOfWeek === 0 ? 7 : currentDayOfWeek)) % 7;
+  const endOfWeek = new Date(now.getTime() + daysUntilSunday * 86400000);
 
+  const heatmapMap = new Map<string, { questions: number; minutes: number }>();
   if (Array.isArray(analytics?.heatmap)) {
     analytics.heatmap.forEach((entry) => {
       const key = entry.date ? entry.date.split('T')[0] : '';
-      if (key) heatmapMap.set(key, entry.questionsAttempted || 0);
+      if (key) {
+        heatmapMap.set(key, {
+          questions: entry.questionsAttempted || 0,
+          minutes: entry.minutesStudied || 0,
+        });
+      }
     });
   }
 
-  for (let i = 0; i < 30; i++) {
-    const dayDate = new Date(now.getTime() - (29 - i) * 86400000);
+  const heatmapDays: HeatmapDayItem[] = [];
+  const activityLevels: number[] = [];
+
+  for (let i = 34; i >= 0; i--) {
+    const dayDate = new Date(endOfWeek.getTime() - i * 86400000);
     const dayKey = dayDate.toISOString().split('T')[0] ?? '';
-    const qCount = heatmapMap.get(dayKey) ?? 0;
+    const info = heatmapMap.get(dayKey);
+    const qCount = info?.questions ?? 0;
+    const minutes = info?.minutes ?? 0;
 
     let level = 0;
     if (qCount > 20) level = 4;
@@ -80,7 +94,17 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
     else if (qCount > 5) level = 2;
     else if (qCount > 0) level = 1;
 
-    activity30Days[i] = level;
+    activityLevels.push(level);
+    heatmapDays.push({
+      date: dayKey,
+      dayNumber: dayDate.getDate(),
+      dayOfWeek: dayDate.getDay(),
+      dayName: dayDate.toLocaleDateString('en-US', { weekday: 'short' }),
+      formattedDate: dayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      questionsAttempted: qCount,
+      minutesStudied: minutes,
+      level,
+    });
   }
 
   const sortedByAccuracy = Array.isArray(analytics?.subjectPerformance)
@@ -134,8 +158,9 @@ const buildAnalyticsSnapshot = (user: User, analytics: AnalyticsData): Analytics
       timeTaken: `${Math.max(1, Math.round((item.timeTaken || 0) / 60))}m`,
     })),
     activityHeatmap: {
-      activity: activity30Days,
-      label: 'Last 30 Days',
+      activity: activityLevels,
+      days: heatmapDays,
+      label: 'Last 35 Days',
     },
   };
 };
@@ -158,14 +183,16 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
   subjectPerformance: [],
   attempts: [],
   activityHeatmap: {
-    activity: Array.from({ length: 30 }, () => 0),
-    label: 'Last 30 Days',
+    activity: Array.from({ length: 35 }, () => 0),
+    days: [],
+    label: 'Last 35 Days',
   },
 };
 
 export default function AnalyticsScreen() {
   const [userData, setUserData] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
   const { theme } = useTheme();
@@ -192,6 +219,7 @@ export default function AnalyticsScreen() {
       }
     } finally {
       if (showLoader) setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -204,6 +232,11 @@ export default function AnalyticsScreen() {
       fetchData(false);
     }, [fetchData])
   );
+
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+    fetchData(false);
+  }, [fetchData]);
 
   const data = useMemo(() => {
     if (!userData || !analyticsData) return emptyAnalyticsSnapshot;
@@ -221,7 +254,6 @@ export default function AnalyticsScreen() {
 
   const hasAttempts = data.attempts.length > 0;
   const hasSubjects = data.subjectPerformance.length > 0;
-  const hasHeatmap = data.activityHeatmap.activity.some((level: number) => level > 0);
 
   const subjectPerformanceItems = data.subjectPerformance.map((item: SubjectPerformanceItem) => ({ name: item.subject, score: item.percentage }));
 
@@ -268,6 +300,14 @@ export default function AnalyticsScreen() {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={theme.color.accent}
+                colors={[theme.color.accent]}
+              />
+            }
             contentContainerStyle={{
               paddingTop: theme.space.sm,
               paddingBottom: theme.space.xxl * 1.75,
@@ -279,8 +319,9 @@ export default function AnalyticsScreen() {
                 <AnalyticsStatsCard
                   accuracy={data.stats.accuracy}
                   streak={data.stats.streak}
-                  totalCorrect={data.stats.totalCorrect}
                   questions={data.stats.questions}
+                  totalQuestions={data.stats.questions}
+                  totalCorrect={data.stats.totalCorrect}
                 />
               ) : (
                 <EmptyStateCard
@@ -317,20 +358,13 @@ export default function AnalyticsScreen() {
                 />
               )}
 
-              {hasHeatmap ? (
-                <View>
-                  <ActivityHeatmapCard
-                    activity={data.activityHeatmap.activity}
-                    label={data.activityHeatmap.label}
-                  />
-                </View>
-              ) : (
-                <EmptyStateCard
-                  icon='calendar'
-                  title={theme.i18n.t('analytics.empty_states.activity.title')}
-                  description={theme.i18n.t('analytics.empty_states.activity.description')}
+              <View>
+                <ActivityHeatmapCard
+                  activity={data.activityHeatmap.activity}
+                  days={data.activityHeatmap.days}
+                  label={data.activityHeatmap.label}
                 />
-              )}
+              </View>
 
               {hasAttempts ? (
                 <AttemptHistoryCard attempts={data.attempts} />
