@@ -64,7 +64,7 @@ export default function AchievementsScreen() {
 
   const { theme } = useTheme();
   const router = useRouter();
-  useBottomBar(true, 'profile');
+  useBottomBar(false);
 
   const fetchData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
@@ -166,13 +166,14 @@ export default function AchievementsScreen() {
   const totalBadges = achievements.length;
   const earnedCount = earnedBadges.length;
   const epReward = earnedCount * 100;
+  const isDataEmpty = !hasPlayedContest && earnedCount === 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       {/* Header */}
       <View
         style={{
-          gap: theme.space.sm,
+          gap: theme.space.md,
           flexDirection: 'row',
           alignItems: 'center',
           paddingTop: theme.space.lg,
@@ -186,24 +187,27 @@ export default function AchievementsScreen() {
             if (router.canGoBack()) router.back();
             else router.push('/profile');
           }}
+          activeOpacity={0.8}
           style={{
+            width: 40,
+            height: 40,
             alignItems: 'center',
             justifyContent: 'center',
-            padding: theme.space.xs * 1.75,
             borderWidth: 1,
             backgroundColor: theme.color.card,
             borderRadius: theme.borderRadius.lg,
             borderColor: theme.color.border,
           }}
         >
-          <Feather name="chevron-left" size={theme.fontSize.xl} color={theme.color.textPrimary} />
+          <Feather name="chevron-left" size={20} color={theme.color.textPrimary} />
         </TouchableOpacity>
 
-        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
+        <View style={{ flex: 1, gap: theme.space.xs / 2, flexDirection: 'column' }}>
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg * 1.1,
+              fontSize: theme.fontSize.xxl,
+              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.bold,
             }}
           >
@@ -211,8 +215,8 @@ export default function AchievementsScreen() {
           </Text>
           <Text
             style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm * 1.05,
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.light,
             }}
           >
@@ -230,11 +234,12 @@ export default function AchievementsScreen() {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            scrollEnabled={!isDataEmpty}
             contentContainerStyle={{
               paddingTop: theme.space.sm,
-              paddingBottom: theme.space.xxl * 1.75,
+              paddingBottom: theme.space.xxl,
               paddingHorizontal: theme.space.md,
-              gap: theme.space.lg + 4,
+              gap: theme.space.lg,
             }}
           >
             {/* Achievement Progress Card */}

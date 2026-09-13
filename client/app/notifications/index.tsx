@@ -324,7 +324,7 @@ export default function NotificationsScreen() {
           <View style={{ paddingLeft: theme.space.md }}>
             <Text
               style={{
-                fontSize: theme.fontSize.lg,
+                fontSize: theme.fontSize.xxl,
                 fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.bold,
                 color: colors.textPrimary,
@@ -335,8 +335,8 @@ export default function NotificationsScreen() {
             <Text
               style={{
                 fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
-                color: colors.textMuted,
+                fontFamily: theme.fontFamily.light,
+                color: colors.textSecondary,
                 paddingTop: 2,
               }}
             >

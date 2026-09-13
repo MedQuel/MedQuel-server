@@ -2,6 +2,7 @@ import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 
 
 type TrendPoint = {
@@ -10,6 +11,7 @@ type TrendPoint = {
 };
 type PerformanceTrendCardProps = {
   data: TrendPoint[];
+  hideHeader?: boolean;
 };
 
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
@@ -52,7 +54,7 @@ function calculateTrend(points: TrendPoint[]): number | null {
 }
 
 
-export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
+export function PerformanceTrendCard({ data, hideHeader }: PerformanceTrendCardProps) {
   const { theme } = useTheme();
 
   const knownValues = data
@@ -68,68 +70,67 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
         gap: theme.space.md,
         flexDirection: 'column',
         padding: theme.space.md,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark
-          ? '0 6px 14px rgba(0,0,0,0.2)'
-          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flex: 1, gap: theme.space.xs }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
-            }}
-          >
-            {theme.i18n.t('components.PerformanceTrendCard.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            {theme.i18n.t('components.PerformanceTrendCard.subtitle')}
-          </Text>
-        </View>
-
-        {trend !== null && (
-          <View
-            style={{
-              gap: theme.space.xs * 1.5,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.xs * 1.5,
-              paddingHorizontal: theme.space.md * 0.75,
-              borderRadius: theme.borderRadius.md,
-              backgroundColor: trend >= 0 ? theme.color.success + '22' : theme.color.error + '22',
-            }}
-          >
-            <Feather
-              name={trend >= 0 ? 'trending-up' : 'trending-down'}
-              size={theme.space.md}
-              color={trend >= 0 ? theme.color.success : theme.color.error}
-            />
+      {!hideHeader && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, gap: theme.space.xs }}>
             <Text
               style={{
-                color: trend >= 0 ? theme.color.success : theme.color.error,
+                color: theme.color.textPrimary,
+                fontSize: theme.fontSize.lg,
                 fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.number,
+                fontFamily: theme.fontFamily.bold,
               }}
             >
-              {trend.toFixed(2)}%
+              {theme.i18n.t('components.PerformanceTrendCard.title')}
+            </Text>
+            <Text
+              style={{
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {theme.i18n.t('components.PerformanceTrendCard.subtitle')}
             </Text>
           </View>
-        )}
-      </View>
+
+          {trend !== null && (
+            <View
+              style={{
+                gap: theme.space.xs * 1.5,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: theme.space.xs * 1.5,
+                paddingHorizontal: theme.space.md * 0.75,
+                borderRadius: theme.borderRadius.md,
+                backgroundColor: trend >= 0 ? withAlpha(theme.color.success, 0.15) : withAlpha(theme.color.error, 0.15),
+              }}
+            >
+              <Feather
+                name={trend >= 0 ? 'trending-up' : 'trending-down'}
+                size={theme.space.md}
+                color={trend >= 0 ? theme.color.success : theme.color.error}
+              />
+              <Text
+                style={{
+                  color: trend >= 0 ? theme.color.success : theme.color.error,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.number,
+                }}
+              >
+                {trend.toFixed(2)}%
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {!hasAnyActivity ? (
         <View style={{ gap: theme.space.xs, alignItems: 'center', paddingVertical: theme.space.lg }}>
@@ -202,9 +203,6 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
                     borderWidth: isNoActivity ? 1 : 0,
                     borderStyle: isNoActivity ? 'dashed' : 'solid',
                     borderColor: theme.color.textMuted + '55',
-                    boxShadow: isNoActivity
-                      ? undefined
-                      : isLatest ? `0 0 12px ${theme.color.accent}45` : `0 0 12px ${theme.color.textMuted}45`,
                   }}
                 />
 

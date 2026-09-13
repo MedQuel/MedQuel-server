@@ -232,7 +232,7 @@ console.log(contests, 'contests');
               color: theme.color.textPrimary,
               fontSize: theme.fontSize.xxl,
               fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
             {theme.i18n.t('contests.title')}
@@ -249,7 +249,7 @@ console.log(contests, 'contests');
         </View>
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: theme.space.xl + 55 }}
+          contentContainerStyle={{ paddingBottom: 110 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           refreshControl={
@@ -306,7 +306,7 @@ console.log(contests, 'contests');
                 color: theme.color.textPrimary,
                 fontSize: theme.fontSize.lg,
                 fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                fontFamily: theme.fontFamily.bold,
               }}
             >
               {theme.i18n.t('contests.all_contests')}

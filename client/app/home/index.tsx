@@ -174,9 +174,9 @@ export default function HomeScreen() {
           />
         }
         contentContainerStyle={{
-          gap: theme.space.md,
+          gap: theme.space.lg,
           paddingTop: theme.space.md,
-          paddingBottom: theme.space.xxl * 1.75,
+          paddingBottom: 110,
           paddingHorizontal: theme.space.md,
         }}
       >
@@ -305,23 +305,43 @@ export default function HomeScreen() {
               {theme.i18n.t('Active Contests')}
             </Text>
 
-            <TouchableOpacity onPress={() => router.push('/contests')}>
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => router.push('/contests')}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                paddingVertical: theme.space.xs * 0.75,
+                paddingHorizontal: theme.space.sm + 4,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: withAlpha(theme.color.accent, 0.12),
+                borderWidth: 1,
+                borderColor: withAlpha(theme.color.accent, 0.25),
+              }}
+            >
               <Text
                 style={{
                   color: theme.color.accent,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
+                  fontSize: theme.fontSize.xs,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
                 {theme.i18n.t('View All')}
               </Text>
+              <Feather
+                name="chevron-right"
+                size={theme.fontSize.xs + 2}
+                color={theme.color.accent}
+              />
             </TouchableOpacity>
           </View>
 
           {availableContests.length > 0 ? (
             <View>
               <ActiveContestsCard
-                contests={availableContests.map((contest) => ({
+                contests={availableContests.slice(0, 5).map((contest) => ({
                   contestId: contest.contestId,
                   title: contest.title,
                   subject: contest.subject,
@@ -359,7 +379,42 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <PerformanceTrendCard data={homeData.performanceTrend.slice(-7)} />
+        <View style={{ gap: theme.space.sm }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <View style={{ gap: 2 }}>
+              <Text
+                style={{
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {theme.i18n.t('components.PerformanceTrendCard.title')}
+              </Text>
+              <Text
+                style={{
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('components.PerformanceTrendCard.subtitle')}
+              </Text>
+            </View>
+          </View>
+
+          <PerformanceTrendCard
+            data={homeData.performanceTrend.slice(-7)}
+            hideHeader
+          />
+        </View>
       </ScrollView>
     </View>
   );

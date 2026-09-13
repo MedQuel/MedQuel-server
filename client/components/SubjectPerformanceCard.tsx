@@ -2,6 +2,7 @@ import { View, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 
 
 type SubjectItem = {
@@ -13,10 +14,10 @@ type PerformanceBySubjectProps = {
 };
 
 function getScoreColor(score: number, theme: any): string {
-  if (score >= 90) return theme.color.success + 'FF';
-  if (score > 80 && score < 90) return theme.color.accent;
-  if (score >= 70 && score < 80) return theme.color.warning + 'AA';
-  if (score < 70 && score > 60) return theme.color.premium;
+  if (score >= 90) return theme.color.success;
+  if (score > 80) return theme.color.accent;
+  if (score >= 70) return theme.color.warning;
+  if (score > 60) return theme.color.premium;
   return theme.color.error;
 }
 
@@ -24,25 +25,25 @@ function getScoreColor(score: number, theme: any): string {
 export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) {
   const { theme } = useTheme();
 
+  const titleText = theme.i18n.t('profile.performanceBySubject');
+  const emptyTitle = theme.i18n.t('profile.noSubjectData');
+
   return (
     <View
       style={{
         gap: theme.space.md,
         flexDirection: 'column',
         padding: theme.space.md,
-        borderWidth: 1.5,
+        borderWidth: 1,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark
-          ? '0 6px 14px rgba(0,0,0,0.2)'
-          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
         <MaterialCommunityIcons
           name='pulse'
-          size={theme.space.md * 1.5}
+          size={20}
           color={theme.color.accent}
         />
         <Text
@@ -50,26 +51,54 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
             color: theme.color.textPrimary,
             fontSize: theme.fontSize.lg,
             fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
-          {theme.i18n.t('profile.performanceBySubject')}
+          {titleText === 'performanceBySubject' ? 'Performance by Subject' : titleText}
         </Text>
       </View>
 
       {subjects.length === 0 ? (
-        <Text
+        <View
           style={{
-            textAlign: 'center',
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.xs + 2,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
-            paddingVertical: theme.space.sm,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: theme.space.lg,
+            paddingHorizontal: theme.space.md,
+            gap: theme.space.xs,
           }}
         >
-          {theme.i18n.t('profile.noSubjectData')}
-        </Text>
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: theme.borderRadius.full,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: withAlpha(theme.color.accent, 0.12),
+              borderWidth: 1,
+              borderColor: withAlpha(theme.color.accent, 0.25),
+              marginBottom: theme.space.xs,
+            }}
+          >
+            <MaterialCommunityIcons
+              name="chart-timeline-variant"
+              size={26}
+              color={theme.color.accent}
+            />
+          </View>
+          <Text
+            style={{
+              textAlign: 'center',
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.sm,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {emptyTitle === 'noSubjectData' ? 'No subject data available' : emptyTitle}
+          </Text>
+        </View>
       ) : (
         <View style={{ gap: theme.space.md * 0.8 }}>
           {subjects.map((item, index) => {
@@ -121,7 +150,6 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
                       height: '100%',
                       borderRadius: theme.borderRadius.full,
                       backgroundColor: scoreColor,
-                      boxShadow: `0 0 12px ${scoreColor}45`,
                     }}
                   />
                 </View>

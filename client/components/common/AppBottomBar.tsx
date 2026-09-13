@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, type Href } from 'expo-router';
 import React, { useCallback, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,7 +22,7 @@ const TABS: TabDefs[] = [
     id: 'home',
     href: '/home',
     labelKey: 'common.tabs.home',
-    icon: (c, s) => <Feather name='home' size={s} color={c} />,
+    icon: (c, s) => <Ionicons name='home-outline' size={s} color={c} />,
   },
   {
     id: 'leaderboard',

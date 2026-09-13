@@ -32,11 +32,6 @@ type DisplayBadgeItem = {
   order: number;
 };
 
-const resolveText = (value: string, fallback: string, key: string) => {
-  const text = String(value ?? '').trim();
-  return !text || text === key ? fallback : text;
-};
-
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 const parseEarnedAt = (value?: string | null) => {
@@ -71,8 +66,8 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
   const { theme } = useTheme();
   const [cardWidth, setCardWidth] = React.useState<number>(0);
 
-  const sectionTitle = resolveText(theme.i18n.t('components.EarnedBadgeCard.title'), title ?? 'Earned Badges', 'components.EarnedBadgeCard.title');
-  const emptyText = resolveText(theme.i18n.t('components.EarnedBadgeCard.empty'), 'Have not earned any badge yet', 'components.EarnedBadgeCard.empty');
+  const sectionTitle = title ?? (theme.i18n.t('EarnedBadgeCard.title') === 'title' ? 'Earned Badges' : theme.i18n.t('EarnedBadgeCard.title'));
+  const emptyTitle = theme.i18n.t('EarnedBadgeCard.empty') === 'empty' ? 'No badges earned yet' : theme.i18n.t('EarnedBadgeCard.empty');
 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
 
@@ -229,23 +224,38 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
       ) : (
         <View
           style={{
-            minHeight: 120,
             alignItems: 'center',
             justifyContent: 'center',
             paddingVertical: theme.space.lg,
             paddingHorizontal: theme.space.md,
+            gap: theme.space.xs,
           }}
         >
-          <Feather name="award" size={32} color={theme.color.textMuted} style={{ marginBottom: theme.space.xs, opacity: 0.6 }} />
+          <View
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: theme.borderRadius.full,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: withAlpha(theme.color.warning, 0.12),
+              borderWidth: 1,
+              borderColor: withAlpha(theme.color.warning, 0.25),
+              marginBottom: theme.space.xs,
+            }}
+          >
+            <Feather name="award" size={26} color={theme.color.warning} />
+          </View>
           <Text
             style={{
               textAlign: 'center',
-              color: theme.color.textSecondary,
+              color: theme.color.textPrimary,
               fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.regular,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
-            {emptyText}
+            {emptyTitle}
           </Text>
         </View>
       )}

@@ -22,9 +22,9 @@ function Pill({ theme, children, style }: any) {
         {
           alignItems: "center",
           justifyContent: "center",
-          paddingVertical: theme.space.xs - 5,
-          paddingHorizontal: theme.space.sm * 1.1,
-          borderRadius: theme.borderRadius.md + 2,
+          paddingVertical: 4,
+          paddingHorizontal: theme.space.md,
+          borderRadius: theme.borderRadius.full,
         },
         style,
       ]}
@@ -38,16 +38,17 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
     <View
       style={{
-        gap: theme.space.xs,
+        gap: 5,
         flexDirection: "row",
         alignItems: "center",
       }}
     >
-      <MaterialCommunityIcons name={icon} size={theme.space.md} color={color} />
+      <MaterialCommunityIcons name={icon} size={15} color={color} />
       <Text
         style={{
           color,
-          fontSize: theme.fontSize.xs + 2,
+          fontSize: theme.fontSize.xs,
+          fontFamily: theme.fontFamily.regular,
           fontWeight: bold ? theme.fontWeight.bold : undefined,
         }}
       >
@@ -61,7 +62,7 @@ function Section({ theme, children, marginTop }: any) {
   return (
     <View
       style={{
-        marginTop: marginTop ?? theme.space.sm * 1.5,
+        marginTop: marginTop ?? theme.space.lg,
         paddingHorizontal: theme.space.md,
       }}
     >
@@ -138,71 +139,81 @@ export default function ChatScreen() {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 75 }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 110 }}
       style={{ flex: 1, backgroundColor: theme.color.background }}
     >
       <ProfileScreenHeader user={userData} />
       <View
         style={{
-          gap: theme.space.xs * 1.5,
           alignItems: "center",
-          marginTop: theme.space.xxl - 2,
+          marginTop: theme.space.xxl + 6,
+          gap: 6,
+          paddingHorizontal: theme.space.md,
         }}
       >
         <Text
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.lg + 2,
+            fontSize: theme.fontSize.xl,
             fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
+            fontFamily: theme.fontFamily.bold,
+            textAlign: "center",
           }}
         >
           {userData?.displayName}
         </Text>
 
-        <View style={{ gap: theme.space.sm, flexDirection: "row" }}>
-          <Pill
-            theme={theme}
-            style={{
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              backgroundColor: theme.color.card,
-            }}
-          >
-            <Text
+        <View
+          style={{
+            gap: theme.space.sm,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {userData?.studyLevel ? (
+            <Pill
+              theme={theme}
               style={{
-                color: theme.color.accent,
-                fontSize: theme.fontSize.xs * 1.2,
-                fontFamily: theme.fontFamily.bold,
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                backgroundColor: theme.color.card,
               }}
             >
-              {userData?.studyLevel}
-            </Text>
-          </Pill>
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.fontFamily.bold,
+                  fontWeight: theme.fontWeight.bold,
+                }}
+              >
+                {userData.studyLevel}
+              </Text>
+            </Pill>
+          ) : null}
 
           <Pill
             theme={theme}
             style={{
-              gap: 5,
+              gap: 4,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              paddingVertical: theme.space.xs,
-              paddingHorizontal: theme.space.sm + 3,
-              borderWidth: 0.5,
-              borderColor: withAlpha(theme.color.warning, 0.25),
-              backgroundColor: withAlpha(theme.color.warning, 0.15),
+              borderWidth: 1,
+              borderColor: withAlpha(theme.color.warning, 0.3),
+              backgroundColor: withAlpha(theme.color.warning, 0.12),
             }}
           >
             <MaterialCommunityIcons
               name="star"
-              size={theme.space.md}
+              size={13}
               color={theme.color.warning}
             />
             <Text
               style={{
                 color: theme.color.warning,
-                fontSize: theme.fontSize.xs * 1.15,
+                fontSize: theme.fontSize.xs,
                 fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.number,
               }}
@@ -216,25 +227,30 @@ export default function ChatScreen() {
 
         <View
           style={{
-            gap: theme.space.md + 2,
             flexDirection: "row",
+            flexWrap: "wrap",
             alignItems: "center",
+            justifyContent: "center",
+            columnGap: theme.space.md,
+            rowGap: theme.space.xs,
           }}
         >
-          <IconLabel
-            theme={theme}
-            icon="target"
-            color={theme.color.textSecondary}
-            text={userData?.targetExam}
-          />
-          {userData?.institution && (
+          {userData?.targetExam ? (
+            <IconLabel
+              theme={theme}
+              icon="target"
+              color={theme.color.textSecondary}
+              text={userData.targetExam}
+            />
+          ) : null}
+          {userData?.institution ? (
             <IconLabel
               theme={theme}
               icon="map-marker-outline"
               color={theme.color.textMuted}
-              text={userData?.institution}
+              text={userData.institution}
             />
-          )}
+          ) : null}
           <IconLabel
             theme={theme}
             icon="lightning-bolt"
@@ -248,7 +264,7 @@ export default function ChatScreen() {
       </View>
 
       <View
-        style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
+        style={{ marginTop: theme.space.lg, paddingHorizontal: theme.space.md }}
       >
         <ProfileScreenStatsCard
           stats={[
@@ -318,14 +334,14 @@ export default function ChatScreen() {
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.sm + 4,
-              fontFamily: theme.fontFamily.regular,
+              fontSize: theme.fontSize.lg,
+              fontFamily: theme.fontFamily.bold,
               fontWeight: theme.fontWeight.bold,
-              paddingBottom: theme.space.md,
+              paddingBottom: theme.space.sm,
               marginLeft: theme.space.xs,
             }}
           >
-            {theme.i18n.t("profile.recentAttempts")}
+            {theme.i18n.t("profile.recentAttempts") === "recentAttempts" ? "Recent Attempts" : theme.i18n.t("profile.recentAttempts")}
           </Text>
 
           <AttemptHistoryItemCard

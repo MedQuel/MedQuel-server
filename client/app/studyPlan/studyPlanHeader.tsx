@@ -44,7 +44,8 @@ export function StudyHeader({ onBack, onEdit }: { onBack?: () => void, onEdit?: 
           numberOfLines={1}
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.xl,
+            fontSize: theme.fontSize.xxl,
+            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.bold,
           }}
         >

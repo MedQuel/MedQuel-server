@@ -613,6 +613,8 @@
       "summary": "{{count}} earned · {{newCount}} new",
       "new": "New",
       "earned": "Earned",
+      "empty": "No badges earned yet",
+      "empty_subtitle": "Complete contests & quizzes to earn badges",
       "rarity": {
         "legendary": "Legendary",
         "epic": "Epic",
@@ -642,6 +644,17 @@
     "QuizResultCard": {
       "score": "Score",
       "earned": "Earned"
+    },
+    "profile": {
+      "level": "Level {{level}}",
+      "xpPoints": "{{points}} XP",
+      "recentAttempts": "Recent Attempts",
+      "performanceBySubject": "Performance by Subject",
+      "noSubjectData": "No subject data available",
+      "noSubjectDataSub": "Participate in tests to analyze your subject performance",
+      "noRecentAttempts": "No recent quiz attempts",
+      "upgradePremium": "Upgrade to Premium",
+      "premiumSubtitle": "Unlock unlimited tests & in-depth analytics"
     }
   }
 }

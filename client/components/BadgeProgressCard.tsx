@@ -203,24 +203,22 @@ export function BadgeProgressCard({ items, title }: Props) {
       ) : (
         <View
           style={{
-            backgroundColor: theme.color.card,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.xl,
-            padding: theme.space.lg,
             alignItems: 'center',
             justifyContent: 'center',
+            paddingVertical: theme.space.xl,
+            gap: theme.space.xs,
           }}
         >
-          <Feather name="activity" size={32} color={theme.color.textMuted} style={{ marginBottom: theme.space.xs, opacity: 0.6 }} />
+          <Feather name="activity" size={28} color={theme.color.textMuted} style={{ opacity: 0.7 }} />
           <Text
             style={{
+              textAlign: 'center',
               color: theme.color.textSecondary,
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.regular,
             }}
           >
-            {theme.i18n.t('achievements.empty_states.in_progress.title') || 'No badges currently in progress'}
+            No badges currently in progress
           </Text>
         </View>
       )}

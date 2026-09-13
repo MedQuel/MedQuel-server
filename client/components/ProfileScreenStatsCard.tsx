@@ -25,25 +25,27 @@ export function ProfileScreenStatsCard({ stats }: Props) {
           style={{
             flex: 1,
             alignItems: 'center',
-            paddingVertical: theme.space.sm * 1.5,
-            borderWidth: 1.5,
+            justifyContent: 'center',
+            paddingVertical: theme.space.md,
+            paddingHorizontal: theme.space.xs,
+            borderWidth: 1,
             borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.isDark ? theme.color.card : theme.color.card,
+            borderRadius: theme.borderRadius.xl,
+            backgroundColor: theme.color.card,
+            gap: 4,
           }}
         >
           <MaterialCommunityIcons
             name={item.icon as any}
-            size={theme.space.lg * 0.9}
+            size={theme.space.md * 1.3}
             color={item.color}
           />
           <Text
             style={{
               color: item.color,
-              fontSize: theme.fontSize.md + 1,
+              fontSize: theme.fontSize.md,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
-              marginTop: theme.space.xs * 0.5,
             }}
           >
             {item.value}
@@ -52,9 +54,8 @@ export function ProfileScreenStatsCard({ stats }: Props) {
           <Text
             style={{
               color: theme.color.textMuted,
-              fontSize: theme.fontSize.xs + 2,
+              fontSize: theme.fontSize.xs,
               fontFamily: theme.fontFamily.regular,
-              marginTop: theme.space.xs * 0.5,
             }}
           >
             {item.label}

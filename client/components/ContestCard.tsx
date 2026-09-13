@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-
+import { withAlpha } from '../common/utils/withAlpha';
 
 type ContestCardProps = {
   title: string;
@@ -36,7 +36,6 @@ export function ContestCard(props: ContestCardProps) {
     return `${theme.i18n.t('contests.minute', { mins: minutes })}`;
   })();
 
-
   return (
     <View
       style={{
@@ -44,10 +43,9 @@ export function ContestCard(props: ContestCardProps) {
         flexDirection: 'column',
         padding: theme.space.md,
         borderWidth: 1.5,
-        borderColor: props.isPro ? theme.color.premium + '55' : theme.color.border,
+        borderColor: props.isPro ? withAlpha(theme.color.premium, 0.4) : theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark ? '0px 4px 20px rgba(0,0,0,0.4)' : '0px 2px 12px rgba(0,0,0,0.08)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -61,7 +59,7 @@ export function ContestCard(props: ContestCardProps) {
                 paddingVertical: theme.space.xs,
                 paddingHorizontal: theme.space.sm,
                 borderRadius: theme.borderRadius.sm * 1.25,
-                backgroundColor: theme.color.premium + '18',
+                backgroundColor: withAlpha(theme.color.premium, 0.12),
               }}
             >
               <MaterialCommunityIcons name='crown-outline' size={theme.fontSize.xs + 2} color={theme.color.premium} />
@@ -70,7 +68,7 @@ export function ContestCard(props: ContestCardProps) {
                   color: theme.color.premium,
                   fontSize: theme.fontSize.xs,
                   fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
                 {theme.i18n.t('common.pro')}
@@ -87,7 +85,7 @@ export function ContestCard(props: ContestCardProps) {
                 paddingVertical: theme.space.xs,
                 paddingHorizontal: theme.space.sm,
                 borderRadius: theme.borderRadius.sm * 1.25,
-                backgroundColor: theme.color.error + '18',
+                backgroundColor: withAlpha(theme.color.error, 0.12),
               }}
             >
               <Feather name='radio' size={theme.fontSize.xs + 2} color={theme.color.error} />
@@ -96,7 +94,7 @@ export function ContestCard(props: ContestCardProps) {
                   color: theme.color.error,
                   fontSize: theme.fontSize.xs,
                   fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
                 {theme.i18n.t('common.live')}
@@ -109,7 +107,7 @@ export function ContestCard(props: ContestCardProps) {
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm * 1.25,
               borderRadius: theme.borderRadius.sm * 1.25,
-              backgroundColor: theme.color.accent + '18',
+              backgroundColor: withAlpha(theme.color.accent, 0.12),
             }}
           >
             <Text
@@ -129,7 +127,7 @@ export function ContestCard(props: ContestCardProps) {
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm,
               borderRadius: theme.borderRadius.sm * 1.25,
-              backgroundColor: difficultyColor(props.difficulty).textColor + '18',
+              backgroundColor: withAlpha(difficultyColor(props.difficulty).textColor, 0.12),
             }}
           >
             <Text
@@ -319,7 +317,7 @@ export function ContestCard(props: ContestCardProps) {
             color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
             fontSize: theme.fontSize.md,
             fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
           {props.isPro ? theme.i18n.t('common.unlock_and_start') : theme.i18n.t('common.start_contest')}

@@ -260,35 +260,32 @@ export default function AnalyticsScreen() {
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
-          gap: theme.space.sm,
-          flexDirection: 'row',
-          alignItems: 'center',
+          gap: theme.space.xs / 2,
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
       >
-        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg * 1.1,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            {theme.i18n.t('analytics.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm * 1.05,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            {theme.i18n.t('analytics.subtitle')}
-          </Text>
-        </View>
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontSize: theme.fontSize.xxl,
+            fontWeight: theme.fontWeight.bold,
+            fontFamily: theme.fontFamily.bold,
+          }}
+        >
+          {theme.i18n.t('analytics.title')}
+        </Text>
+        <Text
+          style={{
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.sm,
+            fontFamily: theme.fontFamily.light,
+          }}
+        >
+          {theme.i18n.t('analytics.subtitle')}
+        </Text>
       </View>
 
       <View style={{ flex: 1 }}>
@@ -308,23 +305,20 @@ export default function AnalyticsScreen() {
               />
             }
             contentContainerStyle={{
+              flexGrow: 1,
               paddingTop: theme.space.sm,
-              paddingBottom: theme.space.xxl * 1.75,
+              paddingBottom: 110,
               paddingHorizontal: theme.space.md,
             }}
           >
             {!hasCompletedContest ? (
               <View
                 style={{
+                  flex: 1,
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginTop: theme.space.lg,
-                  paddingHorizontal: theme.space.xl,
-                  paddingVertical: theme.space.xxl,
-                  borderWidth: 1,
-                  borderColor: theme.color.border,
-                  borderRadius: theme.borderRadius.xl,
-                  backgroundColor: theme.color.card,
+                  paddingHorizontal: theme.space.lg,
+                  paddingVertical: theme.space.xl,
                 }}
               >
                 <View
@@ -365,6 +359,7 @@ export default function AnalyticsScreen() {
                     lineHeight: theme.fontSize.sm * 1.5,
                     marginBottom: theme.space.lg,
                     paddingHorizontal: theme.space.sm,
+                    maxWidth: 320,
                   }}
                 >
                   Once you start taking quizzes and contests, your complete performance overview, accuracy trends, and activity calendar will appear here.
@@ -377,8 +372,8 @@ export default function AnalyticsScreen() {
                     flexDirection: 'row',
                     alignItems: 'center',
                     gap: theme.space.xs,
-                    paddingVertical: theme.space.sm,
-                    paddingHorizontal: theme.space.lg,
+                    paddingVertical: theme.space.sm + 2,
+                    paddingHorizontal: theme.space.xl,
                     borderRadius: theme.borderRadius.full,
                     backgroundColor: theme.color.accent,
                   }}

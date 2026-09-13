@@ -13,6 +13,7 @@ import {
 
 import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../common/utils/withAlpha';
 
 type User = {
   displayName?: string;
@@ -128,58 +129,50 @@ export function ProfileScreenHeader({ user }: Props) {
         {/* Edit button - left */}
         <TouchableOpacity
           onPress={() => router.push('/profile/updateProfile')}
+          activeOpacity={0.8}
           style={{
             position: 'absolute',
-            top: theme.space.md + 4,
-            left: theme.space.md + 4,
+            top: theme.space.md,
+            left: theme.space.md,
+            width: 38,
+            height: 38,
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: theme.space.sm + 4,
-            paddingHorizontal: theme.space.sm + 4,
             borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.lg + 2,
-            backgroundColor: theme.isDark
-              ? theme.color.card
-              : theme.color.textMuted + '33',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            borderColor: withAlpha(theme.color.border, 0.4),
+            borderRadius: theme.borderRadius.full,
+            backgroundColor: withAlpha(theme.color.background, 0.85),
           }}
         >
           <Feather
             name="edit-2"
-            size={theme.space.md + 2}
-            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            size={17}
+            color={theme.color.textPrimary}
           />
         </TouchableOpacity>
 
         {/* Settings button - right */}
         <TouchableOpacity
           onPress={() => router.push('/profile/settingsScreen')}
+          activeOpacity={0.8}
           style={{
             position: 'absolute',
-            top: theme.space.md + 4,
-            right: theme.space.md + 4,
+            top: theme.space.md,
+            right: theme.space.md,
+            width: 38,
+            height: 38,
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: theme.space.sm + 4,
-            paddingHorizontal: theme.space.sm + 4,
             borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.lg + 2,
-            backgroundColor: theme.isDark
-              ? theme.color.card
-              : theme.color.textMuted + '33',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            borderColor: withAlpha(theme.color.border, 0.4),
+            borderRadius: theme.borderRadius.full,
+            backgroundColor: withAlpha(theme.color.background, 0.85),
           }}
         >
           <Feather
             name="settings"
-            size={theme.space.md + 2}
-            color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            size={18}
+            color={theme.color.textPrimary}
           />
         </TouchableOpacity>
 
@@ -191,18 +184,15 @@ export function ProfileScreenHeader({ user }: Props) {
             position: 'absolute',
             bottom: -48,
             alignSelf: 'center',
-            width: theme.space.xxl + 64,
-            height: theme.space.xxl + 64,
+            width: 96,
+            height: 96,
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
             borderWidth: 4,
-            borderColor: theme.color.border,
+            borderColor: theme.color.background,
             borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.premium + 'FF',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            backgroundColor: theme.color.card,
           }}
         >
           {hasPhoto ? (
@@ -212,20 +202,28 @@ export function ProfileScreenHeader({ user }: Props) {
               resizeMode="cover"
             />
           ) : (
-            <Text
+            <View
               style={{
-                lineHeight: 82,
-                textAlign: 'center',
-                includeFontPadding: false,
-                color: theme.isDark
-                  ? theme.color.textPrimary
-                  : theme.color.textInverse,
-                fontSize: theme.fontSize.xxl + 20,
-                fontWeight: theme.fontWeight.bold,
+                width: '100%',
+                height: '100%',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: withAlpha(theme.color.accent, 0.15),
               }}
             >
-              {user?.displayName?.charAt(0)?.toUpperCase()}
-            </Text>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.xxxl,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {user?.displayName?.charAt(0)?.toUpperCase() ?? 'U'}
+              </Text>
+            </View>
           )}
         </TouchableOpacity>
       </View>

@@ -33,7 +33,7 @@ export function PersonalChatListHeader({ search, setSearch, searchVisible, setSe
           <Text
             style={{
               color: theme.color.textPrimary,
-              fontSize: theme.fontSize.xl,
+              fontSize: theme.fontSize.xxl,
               fontFamily: theme.fontFamily.bold,
             }}
           >

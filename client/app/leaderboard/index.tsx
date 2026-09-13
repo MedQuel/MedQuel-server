@@ -180,19 +180,30 @@ export default function LeaderboardScreen() {
     }, [fetchLeaderboard])
   );
 
+  const refreshAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+
   const refreshLeaderboard = useCallback(() => {
     if (refreshing) return;
     setRefreshing(true);
     spin.setValue(0);
 
-    Animated.timing(spin, {
-      toValue: 1,
-      duration: 650,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
+    refreshAnimRef.current = Animated.loop(
+      Animated.timing(spin, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    refreshAnimRef.current.start();
 
-    fetchLeaderboard(false).finally(() => { setRefreshing(false) });
+    fetchLeaderboard(true).finally(() => {
+      if (refreshAnimRef.current) {
+        refreshAnimRef.current.stop();
+      }
+      spin.setValue(0);
+      setRefreshing(false);
+    });
   }, [refreshing, spin, fetchLeaderboard]);
 
   const switchScope = useCallback((value: 'global' | 'friends') => { setScopeFilter(value) }, []);
@@ -208,11 +219,12 @@ export default function LeaderboardScreen() {
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md }}>
-          <View style={{ flex: 1, gap: theme.space.xs * 0.5, flexDirection: 'column', paddingRight: theme.space.sm }}>
+          <View style={{ flex: 1, gap: theme.space.xs / 2, flexDirection: 'column', paddingRight: theme.space.sm }}>
             <Text
               style={{
                 color: theme.color.textPrimary,
-                fontSize: theme.fontSize.lg * 1.1,
+                fontSize: theme.fontSize.xxl,
+                fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.bold,
               }}
             >
@@ -221,8 +233,8 @@ export default function LeaderboardScreen() {
 
             <Text
               style={{
-                color: theme.color.textMuted,
-                fontSize: theme.fontSize.sm * 1.05,
+                color: theme.color.textSecondary,
+                fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.light,
               }}
             >
@@ -421,49 +433,53 @@ export default function LeaderboardScreen() {
                     </>
                   ) : null}
 
-                  <View style={{ height: theme.space.lg }} />
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: theme.space.lg,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: theme.color.textPrimary,
-                        fontSize: theme.fontSize.lg,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.regular,
-                      }}
-                    >
-                      {theme.i18n.t('leaderboard.rankings')}
-                    </Text>
+                  {activeSnapshot.globalRankings.length > 0 && (
+                    <>
+                      <View style={{ height: theme.space.lg }} />
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: theme.space.lg,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: theme.color.textPrimary,
+                            fontSize: theme.fontSize.lg,
+                            fontWeight: theme.fontWeight.bold,
+                            fontFamily: theme.fontFamily.regular,
+                          }}
+                        >
+                          {theme.i18n.t('leaderboard.rankings')}
+                        </Text>
 
-                    <Text
-                      style={{
-                        color: theme.color.textMuted,
-                        fontSize: theme.fontSize.sm,
-                        fontFamily: theme.fontFamily.regular,
-                      }}
-                    >
-                      {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
-                    </Text>
-                  </View>
-
-                  <View>
-                    {activeSnapshot.globalRankings.map((item) => (
-                      <View key={item.id} style={{ marginBottom: theme.space.sm }}>
-                        <LeaderboardRankCard
-                          rank={item.rank}
-                          name={item.name}
-                          specialty={item.specialty}
-                          points={item.points}
-                        />
+                        <Text
+                          style={{
+                            color: theme.color.textMuted,
+                            fontSize: theme.fontSize.sm,
+                            fontFamily: theme.fontFamily.regular,
+                          }}
+                        >
+                          {theme.i18n.t('leaderboard.players_count', { count: activeSnapshot.playersCount })}
+                        </Text>
                       </View>
-                    ))}
-                  </View>
+
+                      <View>
+                        {activeSnapshot.globalRankings.map((item) => (
+                          <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                            <LeaderboardRankCard
+                              rank={item.rank}
+                              name={item.name}
+                              specialty={item.specialty}
+                              points={item.points}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  )}
                 </>
               )
             )}

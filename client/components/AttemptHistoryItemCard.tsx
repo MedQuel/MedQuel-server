@@ -1,6 +1,6 @@
 import { View, Text } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-
+import { withAlpha } from '../common/utils/withAlpha';
 
 type Attempt = {
   id: string;
@@ -13,16 +13,16 @@ type Props = {
 };
 
 function getScoreColor(score: number, theme: any): string {
-  if (score >= 80) return theme.color.success + 'FF';
-  if (score >= 70) return theme.color.warning + 'AA';
+  if (score >= 80) return theme.color.success;
+  if (score >= 70) return theme.color.warning;
   return theme.color.error;
 }
-function getScoreBg(score: number, theme: any): string {
-  if (score >= 80) return theme.color.success + '22';
-  if (score >= 70) return theme.color.warning + '22';
-  return theme.color.error + '22';
-}
 
+function getScoreBg(score: number, theme: any): string {
+  if (score >= 80) return withAlpha(theme.color.success, 0.12);
+  if (score >= 70) return withAlpha(theme.color.warning, 0.12);
+  return withAlpha(theme.color.error, 0.12);
+}
 
 function AttemptCard({ item }: { item: Attempt }) {
   const { theme } = useTheme();
@@ -34,22 +34,23 @@ function AttemptCard({ item }: { item: Attempt }) {
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        padding: theme.space.sm * 1.1,
+        padding: theme.space.md,
         borderWidth: 1,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.lg,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
+        gap: theme.space.md,
       }}
     >
       <View
         style={{
+          width: 50,
+          height: 50,
           alignItems: 'center',
           justifyContent: 'center',
-          paddingVertical: theme.space.md,
-          paddingHorizontal: theme.space.md * 0.8,
           borderWidth: 1,
-          borderColor: theme.color.border,
-          borderRadius: theme.borderRadius.md + 6,
+          borderColor: withAlpha(color, 0.25),
+          borderRadius: theme.borderRadius.lg,
           backgroundColor: bg,
         }}
       >
@@ -57,10 +58,9 @@ function AttemptCard({ item }: { item: Attempt }) {
           style={{
             textAlign: 'center',
             color: color,
-            fontSize: theme.fontSize.md + 2,
+            fontSize: theme.fontSize.md,
             fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.number,
-            lineHeight: theme.fontSize.md + 4,
             includeFontPadding: false,
           }}
         >
@@ -68,54 +68,53 @@ function AttemptCard({ item }: { item: Attempt }) {
         </Text>
       </View>
 
-      <View style={{ flex: 1, paddingLeft: theme.space.sm + 6 }}>
+      <View style={{ flex: 1, gap: 2 }}>
         <Text
+          numberOfLines={1}
           style={{
             color: theme.color.textPrimary,
             fontSize: theme.fontSize.md,
             fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
           {item.title}
         </Text>
         <Text
           style={{
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm,
+            color: theme.color.textMuted,
+            fontSize: theme.fontSize.xs,
             fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.xs + 1,
           }}
         >
           {item.time}
         </Text>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View
-          style={{
-            width: 3,
-            height: 24,
-            marginHorizontal: theme.space.sm + 2,
-            backgroundColor: theme.color.textMuted,
-          }}
-        />
+      <View
+        style={{
+          paddingVertical: theme.space.xs * 0.75,
+          paddingHorizontal: theme.space.sm,
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: bg,
+          borderWidth: 1,
+          borderColor: withAlpha(color, 0.25),
+        }}
+      >
         <Text
           style={{
-            textAlign: 'right',
             color: color,
-            fontSize: theme.fontSize.md + 2,
+            fontSize: theme.fontSize.xs,
             fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.number,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
-          {item.score.toFixed(1)}%
+          {item.score >= 70 ? 'Passed' : 'Review'}
         </Text>
       </View>
     </View>
   );
 }
-
 
 export function AttemptHistoryItemCard({ attempts }: Props) {
   const { theme } = useTheme();
@@ -123,17 +122,12 @@ export function AttemptHistoryItemCard({ attempts }: Props) {
   return (
     <View
       style={{
-        gap: theme.space.md * 0.8,
+        gap: theme.space.sm,
         flexDirection: 'column',
-        boxShadow: theme.isDark
-          ? '0 6px 14px rgba(0,0,0,0.2)'
-          : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
-      {attempts.map((item, _) => (
-        <View key={item.id}>
-          <AttemptCard item={item} />
-        </View>
+      {attempts.map((item) => (
+        <AttemptCard key={item.id} item={item} />
       ))}
     </View>
   );
