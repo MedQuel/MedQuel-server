@@ -1,11 +1,12 @@
 import { config } from '../api/config';
 import type { User, HomeData } from '../types/types';
 import type { Badge, AnalyticsData } from '../types/types';
+import type { Plan, InitiatePaymentResult } from '../types/types';
 import type { LeaderboardResult, LeaderboardPeriod } from '../types/types';
-import type { StudyPlan, Plan, InitiatePaymentResult } from '../types/types';
+import type { StudyPlan, MarkStudySessionCompleteResult } from '../types/types';
 import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
 import type { FriendSummary, FriendRequest, PublicProfile, UserSearchResult } from '../types/types';
-import type { Contest, ClientQuestion, StartQuizSessionResult, SubmitQuizSessionResult } from '../types/types';
+import type { ClientQuestion, Contest, StartQuizSessionResult, SubmitQuizSessionResult } from '../types/types';
 
 
 export const mockDelay = (ms: number = config.mockDelayMs) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -404,43 +405,93 @@ export const MOCK_STUDY_PLAN: StudyPlan = {
   userId: MOCK_USER.uid,
   targetExam: 'NEET-PG',
   examDate: '2027-05-03T00:00:00.000Z',
+  dailyCommitment: 'moderate',
+  daysPerWeek: ['mon', 'wed', 'fri'],
+  subjectPriority: ['Surgery', 'Pharmacology'],
+  milestones: [
+    {
+      label: 'Weeks 1-2',
+      phase: 'Foundations',
+      description: 'Build core knowledge across your weaker subjects.',
+      startWeek: 1,
+      endWeek: 2,
+    },
+    {
+      label: 'Weeks 3-4',
+      phase: 'Systems Review',
+      description: 'Systematic review across all subjects, tracking your accuracy trend.',
+      startWeek: 3,
+      endWeek: 4,
+    },
+    {
+      label: 'Weeks 5',
+      phase: 'Rapid Revision',
+      description: 'High-frequency mixed practice and timed contests to simulate exam conditions.',
+      startWeek: 5,
+      endWeek: 5,
+    },
+  ],
+  weeklyXpTarget: 55,
   preparationPercent: 38,
-  weeklyEpTarget: 3150,
-  currentWeekProgress: { daysCompleted: 2, totalDays: 7 },
+  currentWeekNumber: 2,
+  currentWeekStartDate: new Date().toISOString().slice(0, 10),
   generatedBy: 'ai',
   sessions: [
     {
-      sessionId: 'sp-1',
+      sessionId: 'w-mock-0',
+      sessionType: 'quiz',
       subject: 'Surgery',
       topic: 'Acute Abdomen',
-      questionCount: 20,
-      scheduledTime: '07:30',
       scheduledDate: new Date().toISOString().slice(0, 10),
-      epReward: 40,
       status: 'completed',
+      xpReward: 25,
+      completedAt: new Date(Date.now() - 3600000).toISOString(),
+      questionCount: 15,
+      difficulty: 'medium',
+      linkedQuizSessionId: 'mock-session-1',
     },
     {
-      sessionId: 'sp-2',
+      sessionId: 'w-mock-1',
+      sessionType: 'read',
       subject: 'Pharmacology',
       topic: 'Autonomic Drugs',
-      questionCount: 15,
-      scheduledTime: '20:00',
       scheduledDate: new Date().toISOString().slice(0, 10),
-      epReward: 30,
       status: 'pending',
+      xpReward: 5,
+      completedAt: null,
+      title: 'Autonomic Drugs — Quick Review',
+      content: 'Cholinergic agonists mimic acetylcholine at muscarinic/nicotinic receptors. Atropine is the classic antimuscarinic used in organophosphate poisoning. Remember: SLUDGE symptoms indicate cholinergic excess, treated with atropine + pralidoxime.',
+      disclaimer: 'Quick revision summary — always verify against your textbook or faculty before relying on this for exam prep.',
+      estimatedMinutes: 5,
     },
     {
-      sessionId: 'sp-3',
-      subject: 'Cardiology',
-      topic: 'ECG Interpretation',
-      questionCount: 20,
-      scheduledTime: '07:30',
+      sessionId: 'w-mock-2',
+      sessionType: 'quiz',
+      subject: 'Surgery',
+      topic: 'Wound Management',
       scheduledDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-      epReward: 40,
       status: 'pending',
+      xpReward: 25,
+      completedAt: null,
+      questionCount: 15,
+      difficulty: 'medium',
+      linkedQuizSessionId: null,
     },
   ],
 };
+
+export function buildMockMarkSessionCompleteResult(sessionId: string): MarkStudySessionCompleteResult {
+  const completedSession = MOCK_STUDY_PLAN.sessions.find((s) => s.sessionId === sessionId);
+  const updatedSessions = MOCK_STUDY_PLAN.sessions.map((s) => s.sessionId === sessionId
+    ? { ...s, status: 'completed' as const, completedAt: new Date().toISOString() }
+    : s
+  );
+
+  return {
+    xpEarned: completedSession?.sessionType === 'read' ? completedSession.xpReward : 0,
+    plan: { ...MOCK_STUDY_PLAN, sessions: updatedSessions },
+  };
+}
 
 
 // -----> Chat <-----
