@@ -1,925 +1,350 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Platform, SectionList, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { CustomSearchBar } from '../../components/CustomSearchBar';
-import { FriendActionButton as SharedFriendActionButton } from '../../components/FriendActionButton';
+import { useRouter } from 'expo-router';
+
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import type { UserSearchResult } from '../../common/types/types';
-import { UserProfileData, UserProfileScreen } from './UserProfileScreen';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import { CustomSearchBar } from '../../components/CustomSearchBar';
+import { ActionSheet, ActionSheetOption } from '../../components/Actionsheet';
+import { QuickActionList } from '../../components/QuickActionRow';
+import { FriendListItem } from '../../components/FriendListItem';
+import { SearchResultItem } from '../../components/SearchResultItem';
+import { FriendRequestItem } from '../../components/FriendRequestItem';
+import type { FriendRequest, FriendSummary, UserSearchResult } from '../../common/types/types';
 
-type TabType = 'my_friends' | 'requests' | 'search';
+type SectionItem =
+  | { type: 'friend'; data: FriendSummary }
+  | { type: 'search'; data: UserSearchResult }
+  | { type: 'request'; data: FriendRequest & { displayName: string; photoURL?: string | null } };
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
+const SEARCH_MIN_LENGTH = 2;
+const DEBOUNCE_MS = 350;
 
-// Dynamic Theme-Aware User Avatar Component
-const UserAvatar = ({
-  photoURL,
-  theme,
-}: {
-  photoURL?: string | null;
-  theme: any;
-}) => {
-  const [imageLoading, setImageLoading] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    setImageError(false);
-  }, [photoURL]);
-
-  const isValidUrl = Boolean(
-    photoURL && photoURL.trim().length > 0 && !imageError
-  );
-
-  const borderColor = theme?.color?.border || 'rgba(255, 255, 255, 0.08)';
-  const accentColor = theme?.color?.accent || '#38BDF8';
-  const fallbackBg = `${accentColor}20`;
-
-  return (
-    <View style={[styles.avatarWrapper, { backgroundColor: borderColor }]}>
-      {isValidUrl ? (
-        <Image
-          source={{ uri: photoURL as string }}
-          style={styles.avatar}
-          resizeMode='cover'
-          onLoadStart={() => setImageLoading(true)}
-          onLoadEnd={() => setImageLoading(false)}
-          onError={() => {
-            setImageError(true);
-            setImageLoading(false);
-          }}
-        />
-      ) : (
-        <View
-          style={[
-            styles.avatar,
-            styles.fallbackAvatar,
-            { backgroundColor: fallbackBg },
-          ]}
-        >
-          <MaterialCommunityIcons
-            name='account'
-            size={26}
-            color={accentColor}
-          />
-        </View>
-      )}
-
-      {imageLoading && isValidUrl && (
-        <View style={styles.avatarLoader}>
-          <ActivityIndicator size='small' color={accentColor} />
-        </View>
-      )}
-    </View>
-  );
-};
-
-// Context & Type-Safe Action Button Component
-const FriendListAction = ({
-  item,
-  activeTab,
-  isLoading,
-  onSendRequest,
-  onRemoveFriend,
-}: {
-  item: UserSearchResult & { displayNameFormatted: string };
-  activeTab: TabType;
-  isLoading: boolean;
-  onSendRequest: (uid: string) => void;
-  onRemoveFriend: (uid: string) => void;
-}) => {
+export default function FriendsScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
+  const [focusTrigger] = useState(0);
 
-  // 1. My Friends Tab -> Red "Remove" Button
-  if (activeTab === 'my_friends') {
-    return (
-      <TouchableOpacity
-        style={[styles.actionBtn, styles.removeBtn]}
-        onPress={() => onRemoveFriend(item.uid)}
-        disabled={isLoading}
-        activeOpacity={0.7}
-      >
-        {isLoading ? (
-          <ActivityIndicator size='small' color='#EF4444' />
-        ) : (
-          <>
-            <MaterialCommunityIcons
-              name='account-minus-outline'
-              size={16}
-              color='#EF4444'
-            />
-            <Text
-              style={[
-                styles.actionBtnText,
-                { color: theme.color.error, fontFamily: theme.fontFamily.bold },
-              ]}
-            >
-              {theme.i18n.t('friends.actions.remove')}
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
-    );
-  }
+  useBottomBar(true, 'friends');
 
-  return (
-    <SharedFriendActionButton
-      item={item}
-      isLoading={isLoading}
-      onSendRequest={onSendRequest}
-    />
-  );
-};
+  const [myUid, setMyUid] = useState<string | null>(null);
+  const [friends, setFriends] = useState<FriendSummary[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<(FriendRequest & { displayName: string; photoURL?: string | null })[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-// Animated Card Component
-const AnimatedUserCard = React.memo(
-  ({
-    item,
-    activeTab,
-    isLoading,
-    onSendRequest,
-    onRemoveFriend,
-    onPressCard,
-    theme,
-  }: {
-    item: UserSearchResult & { displayNameFormatted: string };
-    activeTab: TabType;
-    isLoading: boolean;
-    onSendRequest: (uid: string) => void;
-    onRemoveFriend: (uid: string) => void;
-    onPressCard: (user: UserSearchResult) => void;
-    theme: any;
-  }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const slideAnim = useRef(new Animated.Value(10)).current;
-
-    useEffect(() => {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, [fadeAnim, slideAnim]);
-
-    return (
-      <Animated.View
-        style={[
-          styles.userCard,
-          {
-            backgroundColor: '#0A1220',
-            borderColor: 'rgba(255, 255, 255, 0.08)',
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.cardClickableArea}
-          onPress={() => onPressCard(item)}
-          activeOpacity={0.7}
-        >
-          <UserAvatar photoURL={item.photoURL} theme={theme} />
-
-          <View style={styles.userInfo}>
-            <Text
-              style={[
-                styles.displayName,
-                {
-                  color: theme?.color?.textPrimary || '#F8FAFC',
-                  fontFamily:
-                    theme?.fontFamily?.bold || theme?.fontFamily?.regular,
-                  fontSize: theme?.fontSize?.sm || 15,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {item.displayNameFormatted}
-            </Text>
-
-            {item.targetExam ? (
-              <View style={styles.examBadgeContainer}>
-                <MaterialCommunityIcons
-                  name='school-outline'
-                  size={13}
-                  color='#64748B'
-                />
-                <Text
-                  style={[
-                    styles.targetExam,
-                    {
-                      color: theme?.color?.textSecondary || '#94A3B8',
-                      fontFamily: theme?.fontFamily?.regular,
-                      fontSize: theme?.fontSize?.xs || 12,
-                    },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.targetExam}
-                </Text>
-              </View>
-            ) : (
-              <Text
-                style={[
-                  styles.targetExam,
-                  {
-                    color: '#64748B',
-                    fontFamily:
-                      theme?.fontFamily?.light || theme?.fontFamily?.regular,
-                    fontSize: theme?.fontSize?.xs || 12,
-                  },
-                ]}
-              >
-                {theme.i18n.t('friends.profile.student')}
-              </Text>
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <FriendListAction
-          item={item}
-          activeTab={activeTab}
-          isLoading={isLoading}
-          onSendRequest={onSendRequest}
-          onRemoveFriend={onRemoveFriend}
-        />
-      </Animated.View>
-    );
-  }
-);
-
-export const SearchFriendsScreen = () => {
-  const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState<TabType>('my_friends');
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebounce(query.trim(), 350);
+  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
 
-  const [rawResults, setRawResults] = useState<UserSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [busyUid, setBusyUid] = useState<string | null>(null);
+  const [sheetTarget, setSheetTarget] = useState<{ uid: string; displayName: string; status: string } | null>(null);
 
-  const [selectedUser, setSelectedUser] = useState<UserProfileData | null>(
-    null
-  );
-  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const loadAll = useCallback(async () => {
+    const [me, friendsList, pending] = await Promise.all([
+      api.user.getMe(),
+      api.friends.getFriends(),
+      api.friends.getPendingFriendRequests(),
+    ]);
+    setMyUid(me.uid);
+    setFriends(friendsList);
 
-  const isMountedRef = useRef(true);
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
+    const enriched = await Promise.all(
+      pending
+        .filter((r) => r.status === 'pending')
+        .map(async (r) => {
+          try {
+            const profile = await api.friends.getUserProfile(r.fromUid);
+            return { ...r, displayName: profile.displayName, photoURL: profile.photoURL };
+          } catch {
+            return { ...r, displayName: 'Unknown', photoURL: null };
+          }
+        })
+    );
+    setPendingRequests(enriched);
   }, []);
 
-  const searchRequestIdRef = useRef(0);
-  const profileRequestIdRef = useRef(0);
-
-  // Tab switch handler to reset search state and prevent infinite loop
-  const handleTabChange = useCallback((newTab: TabType) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setQuery('');
-    setActiveTab(newTab);
-  }, []);
-
   useEffect(() => {
-    if (activeTab === 'search' && !debouncedQuery) {
-      setRawResults([]);
-      setLoading(false);
+    (async () => {
+      setLoading(true);
+      try {
+        await loadAll();
+      } catch {
+        Alert.alert('Could not load friends', 'Please check your connection and try again.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [loadAll]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadAll();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadAll]);
+
+  // Debounced live search
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < SEARCH_MIN_LENGTH) {
+      setSearchResults([]);
+      setSearching(false);
       return;
     }
-
-    const requestId = ++searchRequestIdRef.current;
-    setLoading(true);
-
-    const apiCall =
-      activeTab === 'my_friends'
-        ? api.friends.getFriends()
-        : activeTab === 'requests'
-          ? api.friends.getPendingFriendRequests()
-          : api.friends.searchUsers(debouncedQuery);
-
-    apiCall
-      .then(async (data: any) => {
-        if (!isMountedRef.current || requestId !== searchRequestIdRef.current)
-          return;
-
-        if (activeTab !== 'requests') {
-          setRawResults(Array.isArray(data) ? data : []);
-          return;
-        }
-
-        const requests = Array.isArray(data) ? data : [];
-        const requestProfiles = await Promise.all(
-          requests.map(async (request: { fromUid?: string }) => {
-            if (!request.fromUid) return null;
-            try {
-              const profile = await api.friends.getUserProfile(request.fromUid);
-              return {
-                uid: profile.uid,
-                displayName: profile.displayName,
-                photoURL: profile.photoURL,
-                targetExam: profile.targetExam,
-                relationshipStatus: 'REQUEST_RECEIVED' as const,
-              };
-            } catch {
-              return null;
-            }
-          })
-        );
-
-        if (!isMountedRef.current || requestId !== searchRequestIdRef.current)
-          return;
-        setRawResults(requestProfiles.filter(Boolean) as UserSearchResult[]);
-      })
-      .catch((err: any) => {
-        console.error('API Error:', err);
-        if (isMountedRef.current && requestId === searchRequestIdRef.current) {
-          setRawResults([]);
-        }
-      })
-      .finally(() => {
-        if (isMountedRef.current && requestId === searchRequestIdRef.current) {
-          setLoading(false);
-        }
-      });
-  }, [activeTab, debouncedQuery]);
-
-  const results = useMemo(() => {
-    return rawResults.map((user) => ({
-      ...user,
-      displayNameFormatted: user.displayName
-        ? user.displayName.trim()
-        : theme.i18n.t('friends.profile.notAvailable'),
-    }));
-  }, [rawResults, theme]);
-
-  const handleSendRequest = useCallback(async (toUid: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActionLoadingId(toUid);
-    try {
-      await api.friends.sendFriendRequest(toUid);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      if (isMountedRef.current) {
-        setRawResults((prev) =>
-          prev.map((user) =>
-            user.uid === toUid
-              ? { ...user, relationshipStatus: 'REQUEST_SENT' }
-              : user
-          )
-        );
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const results = await api.friends.searchUsers(trimmed);
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
       }
-    } catch (error: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        'Request Failed',
-        error.message || 'Could not send friend request'
-      );
-    } finally {
-      if (isMountedRef.current) {
-        setActionLoadingId(null);
+    }, DEBOUNCE_MS);
+
+    return () => clearTimeout(handle);
+  }, [query]);
+
+  const isSearchMode = query.trim().length >= SEARCH_MIN_LENGTH;
+
+  const filteredFriends = useMemo(() => {
+    if (!isSearchMode) return friends;
+    const lower = query.trim().toLowerCase();
+    return friends.filter((f) => f.displayName.toLowerCase().includes(lower));
+  }, [friends, isSearchMode, query]);
+
+  const sections = useMemo(() => {
+    if (isSearchMode) {
+      const list: { title: string; data: SectionItem[] }[] = [];
+      if (filteredFriends.length) {
+        list.push({ title: `Friends (${filteredFriends.length})`, data: filteredFriends.map((f) => ({ type: 'friend' as const, data: f })) });
       }
+      list.push({ title: 'Suggestions', data: searchResults.map((r) => ({ type: 'search' as const, data: r })) });
+      return list;
     }
-  }, []);
 
-  const handleRemoveFriend = useCallback(async (targetUid: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'Remove Friend',
-      'Are you sure you want to remove this friend?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoadingId(targetUid);
-            try {
-              await api.friends.removeFriend(targetUid);
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
-              if (isMountedRef.current) {
-                setRawResults((prev) =>
-                  prev.filter((user) => user.uid !== targetUid)
-                );
-              }
-            } catch (error: any) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert('Error', error.message || 'Failed to remove friend');
-            } finally {
-              if (isMountedRef.current) {
-                setActionLoadingId(null);
-              }
-            }
-          },
-        },
-      ]
-    );
-  }, []);
+    const list: { title: string; data: SectionItem[] }[] = [];
+    if (pendingRequests.length) {
+      list.push({ title: `Friend Requests (${pendingRequests.length})`, data: pendingRequests.map((r) => ({ type: 'request' as const, data: r })) });
+    }
+    list.push({ title: `Your Friends (${friends.length})`, data: friends.map((f) => ({ type: 'friend' as const, data: f })) });
+    return list;
+  }, [isSearchMode, filteredFriends, searchResults, pendingRequests, friends]);
 
-  const handlePressCard = useCallback(async (user: UserSearchResult) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const requestId = ++profileRequestIdRef.current;
-
-    setSelectedUser({
-      uid: user.uid,
-      displayName: user.displayName,
-      photoURL: user.photoURL ?? undefined,
-      targetExam: user.targetExam,
+    const goToProfile = (uid: string) => {
+    if (uid === myUid) return;
+    router.push({
+      pathname: '/friends/UserProfileScreen',
+      params: { uid },
     });
-    setProfileModalVisible(true);
+  };
 
+  const handleChallenge = (_uid: string) => {
+    Alert.alert('Challenge', 'Challenge flow coming soon!');
+  };
+
+  const handleAddFriend = async (uid: string) => {
+    setBusyUid(uid);
     try {
-      const fullProfile = await api.friends.getUserProfile(user.uid);
-      if (!isMountedRef.current || requestId !== profileRequestIdRef.current)
-        return;
-
-      const formattedBadges = (fullProfile.badges ?? []).map(
-        (badge: any, index: number) => {
-          if (typeof badge === 'string') {
-            return {
-              id: badge,
-              badgeId: badge,
-              title: badge,
-              icon: 'shield-star',
-            };
-          }
-          return {
-            id: badge.id || badge.badgeId || `badge-${index}`,
-            badgeId: badge.badgeId || badge.id || `badge-${index}`,
-            title: badge.title || badge.name,
-            icon: badge.icon,
-            imageUrl: badge.imageUrl,
-          };
-        }
-      );
-
-      setSelectedUser({
-        uid: fullProfile.uid,
-        displayName: fullProfile.displayName,
-        photoURL: fullProfile.photoURL ?? undefined,
-        targetExam: fullProfile.targetExam,
-        studyLevel: fullProfile.studyLevel,
-        specialties: fullProfile.specialties,
-        level: fullProfile.currentLevel,
-        xp: fullProfile.xpPoints,
-        epPoints: fullProfile.epPoints,
-        streak: fullProfile.currentStreak,
-        relationshipStatus: fullProfile.relationshipStatus,
-        headToHead: fullProfile.headToHead,
-        comparison: fullProfile.comparison,
-        badges: formattedBadges,
-      });
-    } catch (err) {
-      console.error('Failed to load full profile:', err);
+      await api.friends.sendFriendRequest(uid);
+      setSearchResults((prev) => prev.map((r) => (r.uid === uid ? { ...r, relationshipStatus: 'REQUEST_SENT' } : r)));
+    } catch (err: any) {
+      Alert.alert('Could not send request', err?.message ?? 'Please try again.');
+    } finally {
+      setBusyUid(null);
     }
-  }, []);
+  };
 
-  const RenderSkeleton = () => (
-    <View style={{ gap: 10 }}>
-      {[1, 2, 3].map((i) => (
-        <View
-          key={i}
-          style={[
-            styles.userCard,
-            {
-              backgroundColor: '#0A1220',
-              borderColor: 'rgba(255, 255, 255, 0.06)',
-              opacity: 0.5,
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.avatar,
-              { backgroundColor: 'rgba(255, 255, 255, 0.08)' },
-            ]}
-          />
-          <View style={{ flex: 1, gap: 6 }}>
-            <View
-              style={{
-                width: '40%',
-                height: 14,
-                borderRadius: 4,
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              }}
-            />
-            <View
-              style={{
-                width: '25%',
-                height: 10,
-                borderRadius: 4,
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              }}
-            />
-          </View>
-          <View
-            style={{
-              width: 64,
-              height: 32,
-              borderRadius: 8,
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }}
-          />
-        </View>
-      ))}
-    </View>
-  );
+  const handleRespond = async (requestId: string, accept: boolean) => {
+    setBusyUid(requestId);
+    try {
+      await api.friends.respondFriendRequest(requestId, accept);
+      await loadAll();
+    } catch (err: any) {
+      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
+    } finally {
+      setBusyUid(null);
+    }
+  };
 
-  return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: theme?.color?.background || '#050B14' },
-      ]}
-    >
-      <View style={styles.screenHeader}>
-        <Text
-          style={[
-            styles.screenTitle,
-            {
-              color: theme.color.textPrimary,
-              fontFamily: theme.fontFamily.bold,
-            },
-          ]}
-        >
-          {theme.i18n.t('friends.title')}
+  const handleRemoveFriend = async (uid: string) => {
+    setBusyUid(uid);
+    try {
+      await api.friends.removeFriend(uid);
+      setFriends((prev) => prev.filter((f) => f.uid !== uid));
+    } catch (err: any) {
+      Alert.alert('Could not remove friend', err?.message ?? 'Please try again.');
+    } finally {
+      setBusyUid(null);
+    }
+  };
+
+  const handleShareFriendLink = async () => {
+    if (!myUid) return;
+    try {
+      const { Share } = await import('react-native');
+      await Share.share({
+        message: `Add me on MedQuel and let's grind together! https://medquel.app/add-friend/${myUid}`,
+      });
+    } catch {
+      // user dismissed
+    }
+  };
+
+  const handleEmailInvite = () => {
+    const link = myUid ? `https://medquel.app/add-friend/${myUid}` : 'https://medquel.app';
+    const subject = encodeURIComponent('Join me on MedQuel');
+    const body = encodeURIComponent(`Hey! I'm prepping on MedQuel — join me here: ${link}`);
+    Linking.openURL(`mailto:?subject=${subject}&body=${body}`).catch(() =>
+      Alert.alert('No email app found', 'Please set up an email app to send invites.')
+    );
+  };
+
+  const handleCreateChallengeLink = () => {
+    Alert.alert('Coming soon', 'Challenge links will be available in a future update.');
+  };
+  const quickActions = [
+    { key: 'link', label: 'Friend Link', icon: 'link-variant' as const, iconBg: theme.color.accent, onPress: handleShareFriendLink },
+    { key: 'email', label: 'Send Email Invite', icon: 'email-outline' as const, iconBg: theme.color.success, onPress: handleEmailInvite },
+    { key: 'challenge', label: 'Create Challenge Link', icon: 'sword-cross' as const, iconBg: theme.color.premium, onPress: handleCreateChallengeLink },
+  ];
+
+  const sheetOptions: ActionSheetOption[] = sheetTarget
+    ? [
+        { key: 'challenge', label: 'Challenge', icon: 'sword-cross', onPress: () => handleChallenge(sheetTarget.uid) },
+        { key: 'profile', label: 'View Profile', icon: 'account-circle-outline', onPress: () => goToProfile(sheetTarget.uid) },
+        ...(sheetTarget.status === 'FRIENDS'
+          ? [{ key: 'remove', label: 'Remove Friend', icon: 'account-remove' as const, destructive: true, onPress: () => handleRemoveFriend(sheetTarget.uid) }]
+          : []),
+      ]
+    : [];
+
+  const renderItem = ({ item }: { item: SectionItem }) => {
+    if (item.type === 'friend') {
+      return (
+        <FriendListItem
+          friend={item.data}
+          onPress={() => goToProfile(item.data.uid)}
+          onMorePress={() => setSheetTarget({ uid: item.data.uid, displayName: item.data.displayName, status: 'FRIENDS' })}
+        />
+      );
+    }
+    if (item.type === 'search') {
+      return (
+        <SearchResultItem
+          user={item.data}
+          busy={busyUid === item.data.uid}
+          onPress={() => goToProfile(item.data.uid)}
+          onAddFriend={() => handleAddFriend(item.data.uid)}
+          onMorePress={() => setSheetTarget({ uid: item.data.uid, displayName: item.data.displayName, status: item.data.relationshipStatus })}
+        />
+      );
+    }
+    return (
+      <FriendRequestItem
+        displayName={item.data.displayName}
+        photoURL={item.data.photoURL}
+        busy={busyUid === item.data.requestId}
+        onPress={() => goToProfile(item.data.fromUid)}
+        onAccept={() => handleRespond(item.data.requestId, true)}
+        onDecline={() => handleRespond(item.data.requestId, false)}
+      />
+    );
+  };
+
+  const listHeader = (
+    <View style={{ marginBottom: theme.space.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, marginBottom: theme.space.lg }}>
+        <MaterialCommunityIcons name="account-group" size={26} color={theme.color.accent} />
+        <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.xxl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.bold }}>
+          Friends
         </Text>
       </View>
 
-      {/* Top Navigation Tabs */}
-      <View style={styles.topTabBar}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'my_friends' && styles.activeTabButton,
-          ]}
-          onPress={() => handleTabChange('my_friends')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name='account-group'
-            size={20}
-            color={activeTab === 'my_friends' ? '#38BDF8' : '#64748B'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'my_friends' && styles.activeTabText,
-            ]}
-          >
-            {theme.i18n.t('friends.tabs.friends')}
-          </Text>
-        </TouchableOpacity>
+      <QuickActionList actions={quickActions} />
 
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'requests' && styles.activeTabButton,
-          ]}
-          onPress={() => handleTabChange('requests')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name='account-plus'
-            size={20}
-            color={activeTab === 'requests' ? '#38BDF8' : '#64748B'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'requests' && styles.activeTabText,
-            ]}
-          >
-            {theme.i18n.t('friends.tabs.requests')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            activeTab === 'search' && styles.activeTabButton,
-          ]}
-          onPress={() => handleTabChange('search')}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons
-            name='magnify'
-            size={20}
-            color={activeTab === 'search' ? '#38BDF8' : '#64748B'}
-          />
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'search' && styles.activeTabText,
-            ]}
-          >
-            {theme.i18n.t('friends.tabs.search')}
-          </Text>
-        </TouchableOpacity>
+      <View style={{ marginTop: theme.space.lg }}>
+        <CustomSearchBar
+          key={focusTrigger}
+          value={query}
+          onChange={setQuery}
+          onSubmit={setQuery}
+          onClear={() => setQuery('')}
+          placeholder="Search friends or find new people"
+          autoFocus={focusTrigger > 0}
+          loading={searching}
+        />
       </View>
+    </View>
+  );
 
-      <View style={styles.contentWrapper}>
-        {activeTab === 'search' && (
-          <View style={styles.searchWrapper}>
-            <CustomSearchBar
-              value={query}
-              onChange={setQuery}
-              onSubmit={() => {}}
-              placeholder={theme.i18n.t('friends.searchPlaceholder')}
-            />
-            {/* Challenge links will return here when the challenge flow ships. */}
-            {/*
-            <TouchableOpacity onPress={handleSendChallengeLink}>
-              <Text>{theme.i18n.t('friends.actions.challengeLink')}</Text>
-            </TouchableOpacity>
-            */}
-          </View>
-        )}
-
-        {loading ? (
-          <RenderSkeleton />
-        ) : (
-          <FlatList
-            data={results}
-            keyExtractor={(item) => item.uid}
-            renderItem={({ item }) => (
-              <AnimatedUserCard
-                item={item}
-                activeTab={activeTab}
-                isLoading={actionLoadingId === item.uid}
-                onSendRequest={handleSendRequest}
-                onRemoveFriend={handleRemoveFriend}
-                onPressCard={handlePressCard}
-                theme={theme}
-              />
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps='handled'
-            ListEmptyComponent={() => (
-              <View style={styles.emptyContainer}>
-                <View style={styles.emptyIconContainer}>
-                  <MaterialCommunityIcons
-                    name={
-                      activeTab === 'requests'
-                        ? 'email-outline'
-                        : activeTab === 'my_friends'
-                          ? 'account-heart-outline'
-                          : query.trim()
-                            ? 'account-search-outline'
-                            : 'compass-outline'
-                    }
-                    size={42}
-                    color='#38BDF8'
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.emptyTitle,
-                    {
-                      color: theme?.color?.textPrimary || '#F8FAFC',
-                      fontFamily:
-                        theme?.fontFamily?.bold || theme?.fontFamily?.regular,
-                      fontSize: theme?.fontSize?.lg || 18,
-                    },
-                  ]}
-                >
-                  {activeTab === 'requests'
-                    ? theme.i18n.t('friends.empty.requestsTitle')
-                    : activeTab === 'my_friends'
-                      ? theme.i18n.t('friends.empty.friendsTitle')
-                      : theme.i18n.t('friends.empty.resultsTitle')}
-                </Text>
-                <Text
-                  style={[
-                    styles.emptyText,
-                    {
-                      color: theme?.color?.textSecondary || '#94A3B8',
-                      fontFamily:
-                        theme?.fontFamily?.light || theme?.fontFamily?.regular,
-                      fontSize: theme?.fontSize?.xs || 13,
-                    },
-                  ]}
-                >
-                  {activeTab === 'requests'
-                    ? theme.i18n.t('friends.empty.requestsBody')
-                    : activeTab === 'my_friends'
-                      ? theme.i18n.t('friends.empty.friendsBody')
-                      : theme.i18n.t('friends.empty.resultsBody')}
-                </Text>
-              </View>
-            )}
-          />
-        )}
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={theme.color.accent} />
       </View>
+    );
+  }
 
-      <UserProfileScreen
-        visible={profileModalVisible}
-        onClose={() => setProfileModalVisible(false)}
-        userData={selectedUser}
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item, index) =>
+          item.type === 'friend' ? `friend-${item.data.uid}` :
+          item.type === 'search' ? `search-${item.data.uid}` :
+          `req-${item.data.requestId}-${index}`
+        }
+        renderItem={renderItem}
+        renderSectionHeader={({ section }) => (
+          <Text
+            style={{
+              color: theme.color.textSecondary,
+              fontSize: theme.fontSize.sm,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.bold,
+              backgroundColor: theme.color.background,
+              paddingTop: theme.space.md,
+              paddingBottom: theme.space.xs,
+            }}
+          >
+            {section.title}
+          </Text>
+        )}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          !searching ? (
+            <View style={{ alignItems: 'center', paddingVertical: theme.space.xl }}>
+              <MaterialCommunityIcons name="account-search-outline" size={36} color={theme.color.textMuted} />
+              <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, marginTop: theme.space.sm }}>
+                {isSearchMode ? 'No results found.' : 'No friends yet — try Find Friends above!'}
+              </Text>
+            </View>
+          ) : null
+        }
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{
+          paddingHorizontal: theme.space.md,
+          paddingBottom: theme.space.xxl,
+          paddingTop: Platform.OS === 'ios' ? theme.space.lg : theme.space.md,
+        }}
+        keyboardShouldPersistTaps="handled"
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+
+      <ActionSheet
+        visible={!!sheetTarget}
+        onClose={() => setSheetTarget(null)}
+        title={sheetTarget?.displayName}
+        options={sheetOptions}
       />
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  screenHeader: {
-    paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 8,
-  },
-  screenTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  topTabBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-    backgroundColor: '#050B14',
-    paddingTop: 8,
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-    gap: 4,
-  },
-  activeTabButton: {
-    borderBottomColor: '#2563EB',
-  },
-  tabText: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#2563EB',
-    fontWeight: '700',
-  },
-  contentWrapper: {
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-  },
-  searchWrapper: {
-    marginBottom: 12,
-  },
-  listContent: {
-    paddingBottom: 32,
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    marginBottom: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  cardClickableArea: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  avatarWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    marginRight: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  fallbackAvatar: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarLoader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  displayName: {
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  examBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  targetExam: {
-    fontWeight: '500',
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-  },
-  addBtn: {
-    backgroundColor: '#2563EB',
-  },
-  removeBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  alreadyFriendBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  pendingBtn: {
-    backgroundColor: 'rgba(148, 163, 184, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-  },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-  },
-  emptyIconContainer: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(56, 189, 248, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  emptyTitle: {
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  emptyText: {
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-});
-
-export default SearchFriendsScreen;
+}

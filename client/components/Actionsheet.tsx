@@ -11,7 +11,6 @@ export type ActionSheetOption = {
   destructive?: boolean;
   onPress: () => void;
 };
-
 type Props = {
   visible: boolean;
   onClose: () => void;

@@ -7,8 +7,6 @@ import type { ProfileComparison } from '../common/types/types';
 type Props = {
   comparison: ProfileComparison;
 };
-
-// Deltas are (viewer - target). Positive means the viewer is ahead.
 export function ComparisonChips({ comparison }: Props) {
   const { theme } = useTheme();
   const chips = [

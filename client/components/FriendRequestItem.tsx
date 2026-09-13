@@ -29,7 +29,6 @@ export function FriendRequestItem({ displayName, photoURL, busy, onPress, onAcce
           </Text>
         </View>
       </TouchableOpacity>
-
       {busy ? (
         <ActivityIndicator size="small" color={theme.color.accent} style={{ marginLeft: theme.space.sm }} />
       ) : (

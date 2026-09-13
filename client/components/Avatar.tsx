@@ -20,7 +20,6 @@ function getInitials(name: string): string {
 export function Avatar({ uri, name, size = 48, onPress, ringColor }: Props) {
   const { theme } = useTheme();
   const [previewVisible, setPreviewVisible] = useState(false);
-
   const handlePress = onPress ?? (() => setPreviewVisible(true));
 
   return (

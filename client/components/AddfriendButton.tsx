@@ -8,7 +8,6 @@ type Props = {
 
 export function AddFriendButton({ onPress }: Props) {
   const { theme } = useTheme();
-
   return (
     <View
       style={{

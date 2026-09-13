@@ -346,7 +346,7 @@ export default function ProfileScreen() {
       </View>
      {/* Add Friends */}
 <Section theme={theme}>
-  <AddFriendButton onPress={() => router.push("/friend/FriendsScreen")} />
+<AddFriendButton onPress={() => router.push("/friends")} />
 </Section>
 
       <Section theme={theme}>

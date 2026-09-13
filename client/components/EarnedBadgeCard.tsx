@@ -1,13 +1,15 @@
 import React from 'react';
 import { LayoutChangeEvent, Text, View, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { LayoutChangeEvent, Pressable, Text, View, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
 import type { Badge } from '../common/types/types';
 import { AchievementIcon } from './achievements/AchievementIcon';
-import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../common/constants/achievements';
-
+import {
+  BADGE_CATALOG_MAP,
+  AchievementIconKey,
+  AchievementVariant,
+} from '../common/constants/achievements';
 
 export type EarnedItemInput = Partial<Badge> & {
   id?: string;
@@ -35,10 +37,18 @@ type DisplayBadgeItem = {
 
 const rgba = (hex: string, alpha: number) => {
   const normalized = hex.replace('#', '');
-  const full = normalized.length === 3 ? normalized.split('').map(ch => ch + ch).join('') : normalized.slice(0, 6);
+  const full =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map(ch => ch + ch)
+          .join('')
+      : normalized.slice(0, 6);
+
   const red = Number.parseInt(full.slice(0, 2), 16);
   const green = Number.parseInt(full.slice(2, 4), 16);
   const blue = Number.parseInt(full.slice(4, 6), 16);
+
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 };
 
@@ -47,10 +57,12 @@ const resolveText = (value: string, fallback: string, key: string) => {
   return !text || text === key ? fallback : text;
 };
 
-const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const clamp = (value: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, value));
 
 const parseEarnedAt = (value?: string | null) => {
   if (!value) return -1;
+
   const text = value.trim().toLowerCase();
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
@@ -58,26 +70,41 @@ const parseEarnedAt = (value?: string | null) => {
   if (text === 'today') return now;
   if (text === 'yesterday') return now - day;
 
-  const match = text.match(/^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|month|months|y|yr|yrs|year|years)\s*ago$/);
+  const match = text.match(
+    /^(\d+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|wk|wks|week|weeks|mo|month|months|y|yr|yrs|year|years)\s*ago$/
+  );
+
   if (match) {
     const n = Number(match[1]);
     const unit = match[2] ?? '';
+
     const delta =
-      unit?.startsWith('m') && !unit.startsWith('mo') ? 60 * 1000 :
-      unit.startsWith('h') ? 60 * 60 * 1000 :
-      unit.startsWith('w') ? 7 * day :
-      unit.startsWith('mo') ? 30 * day :
-      unit.startsWith('y') ? 365 * day :
-      day;
+      unit?.startsWith('m') && !unit.startsWith('mo')
+        ? 60 * 1000
+        : unit.startsWith('h')
+          ? 60 * 60 * 1000
+          : unit.startsWith('w')
+            ? 7 * day
+            : unit.startsWith('mo')
+              ? 30 * day
+              : unit.startsWith('y')
+                ? 365 * day
+                : day;
+
     return now - n * delta;
   }
 
   const parsed = Date.parse(value);
+
   return Number.isNaN(parsed) ? -1 : parsed;
 };
 
-
-export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePress }: Props) {
+export function EarnedBadgeCard({
+  achievements,
+  title,
+  onViewAllPress,
+  onBadgePress,
+}: Props) {
   const { theme } = useTheme();
   const [cardWidth, setCardWidth] = React.useState<number>(0);
 
@@ -87,39 +114,73 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
     'components.EarnedBadgeCard.title'
   );
 
-  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+  const safeAchievements = Array.isArray(achievements)
+    ? achievements
+    : [];
 
   const items = safeAchievements
     .map((item, order): DisplayBadgeItem | null => {
       const id = item.badgeId || item.id;
+
       if (!id) return null;
 
       const catalogInfo = BADGE_CATALOG_MAP[id];
       const name = item.name || catalogInfo?.name || id;
-      const iconKey = (item.iconKey || catalogInfo?.iconKey || 'award') as AchievementIconKey;
-      const variant = (item.variant || catalogInfo?.variant || 'gold') as AchievementVariant;
+      const iconKey = (item.iconKey ||
+        catalogInfo?.iconKey ||
+        'award') as AchievementIconKey;
 
-      return { id, title: name, iconKey, variant, earnedAt: item.earnedAt, isNew: item.isNew, order };
+      const variant = (item.variant ||
+        catalogInfo?.variant ||
+        'gold') as AchievementVariant;
+
+      return {
+        id,
+        title: name,
+        iconKey,
+        variant,
+        earnedAt: item.earnedAt,
+        isNew: item.isNew,
+        order,
+      };
     })
-    .filter((item): item is DisplayBadgeItem => Boolean(item))
+    .filter(
+      (item): item is DisplayBadgeItem => Boolean(item)
+    )
     .sort((a, b) => {
-      const diff = parseEarnedAt(b.earnedAt) - parseEarnedAt(a.earnedAt);
+      const diff =
+        parseEarnedAt(b.earnedAt) -
+        parseEarnedAt(a.earnedAt);
+
       return diff || a.order - b.order;
     })
     .slice(0, 6);
 
-  // ✅ No earned badges → render nothing
   if (items.length === 0) return null;
 
-  const rows = [items.slice(0, 3), items.slice(3, 6)].filter(row => row.length);
+  const rows = [
+    items.slice(0, 3),
+    items.slice(3, 6),
+  ].filter(row => row.length);
 
   const tileSize = cardWidth
-    ? clamp(Math.floor(((cardWidth - theme.space.sm * 2) / 3) * 0.34), 54, 72)
+    ? clamp(
+        Math.floor(
+          ((cardWidth - theme.space.sm * 2) / 3) * 0.34
+        ),
+        54,
+        72
+      )
     : 72;
 
   const onCardLayout = (event: LayoutChangeEvent) => {
-    const nextWidth = Math.round(event.nativeEvent.layout.width);
-    setCardWidth(prev => (prev === nextWidth ? prev : nextWidth));
+    const nextWidth = Math.round(
+      event.nativeEvent.layout.width
+    );
+
+    setCardWidth(prev =>
+      prev === nextWidth ? prev : nextWidth
+    );
   };
 
   return (
@@ -131,18 +192,28 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
         padding: theme.space.md,
         borderWidth: 1.5,
         borderRadius: theme.borderRadius.xl,
-        borderColor: rgba(theme.color.accent, theme.isDark ? 0.20 : 0.12),
+        borderColor: rgba(
+          theme.color.accent,
+          theme.isDark ? 0.2 : 0.12
+        ),
         backgroundColor: theme.color.card,
       }}
     >
-      {/* Header — title + count + chevron */}
-      <View style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: theme.space.md,
-      }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: theme.space.md,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: theme.space.xs,
+          }}
+        >
           <Text
             style={{
               color: theme.color.textPrimary,
@@ -153,6 +224,7 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
           >
             {sectionTitle}
           </Text>
+
           <Text
             style={{
               color: theme.color.accent,
@@ -165,7 +237,6 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
           </Text>
         </View>
 
-        {/* Chevron right instead of View All */}
         <Feather
           name="chevron-right"
           size={theme.fontSize.lg}
@@ -173,7 +244,6 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
         />
       </View>
 
-      {/* Badge grid */}
       {rows.map((row, rowIndex) => (
         <View
           key={`earned-row-${rowIndex}`}
@@ -196,8 +266,18 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
                 paddingHorizontal: theme.space.xs,
               }}
             >
-              <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
-                <AchievementIcon iconKey={item.iconKey} variant={item.variant} size={tileSize} />
+              <View
+                style={{
+                  position: 'relative',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <AchievementIcon
+                  iconKey={item.iconKey}
+                  variant={item.variant}
+                  size={tileSize}
+                />
 
                 {item.isNew ? (
                   <View
@@ -243,8 +323,13 @@ export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePr
           ))}
 
           {row.length < 3
-            ? Array.from({ length: 3 - row.length }).map((_, index) => (
-                <View key={`gap-${rowIndex}-${index}`} style={{ flex: 1 }} />
+            ? Array.from({
+                length: 3 - row.length,
+              }).map((_, index) => (
+                <View
+                  key={`gap-${rowIndex}-${index}`}
+                  style={{ flex: 1 }}
+                />
               ))
             : null}
         </View>

@@ -15,10 +15,8 @@ export type QuickAction = {
 type Props = {
   actions: QuickAction[];
 };
-
 export function QuickActionList({ actions }: Props) {
   const { theme } = useTheme();
-
   return (
     <View style={{ gap: theme.space.sm }}>
       {actions.map((action) => (

@@ -73,7 +73,6 @@ export function SearchResultItem({ user, busy, onPress, onAddFriend, onMorePress
         );
     }
   };
-
   return (
     <TouchableOpacity
       activeOpacity={0.7}

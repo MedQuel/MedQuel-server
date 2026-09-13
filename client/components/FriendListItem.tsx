@@ -12,7 +12,6 @@ type Props = {
 
 export function FriendListItem({ friend, onPress, onMorePress }: Props) {
   const { theme } = useTheme();
-
   return (
     <TouchableOpacity
       activeOpacity={0.7}
