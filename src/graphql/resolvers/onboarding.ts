@@ -3,8 +3,8 @@ import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 import { DEFAULT_NOTIF_PREFS, DEFAULT_QUIZ_PREFS } from './user.js';
-import { type CompleteOnboardingInput } from '../../services/onboardingValidation.js';
-import { validateOnboardingInput, assertNotAlreadyOnboarded } from '../../services/onboardingValidation.js';
+import { type CompleteOnboardingInput } from '../../validators/onboardingValidation.js';
+import { validateOnboardingInput, assertNotAlreadyOnboarded } from '../../validators/onboardingValidation.js';
 
 
 function buildUserDocument(uid: string, email: string, data: ReturnType<typeof validateOnboardingInput>) {
