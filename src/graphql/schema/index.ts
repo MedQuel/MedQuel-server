@@ -5,6 +5,7 @@ import { quizTypeDefs } from './quiz.js';
 import { friendsTypeDefs } from './friends.js';
 import { contestTypeDefs } from './contest.js';
 import { analyticsTypeDefs } from './analytics.js';
+import { studyPlanTypeDefs } from './studyPlan.js';
 import { leaderboardTypeDefs } from './leaderboard.js';
 import { achievementsTypeDefs } from './achievements.js';
 
@@ -19,4 +20,5 @@ export const typeDefs = [
   analyticsTypeDefs,
   leaderboardTypeDefs,
   achievementsTypeDefs,
+  studyPlanTypeDefs,
 ];
