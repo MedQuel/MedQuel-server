@@ -1,7 +1,7 @@
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 import { startQuizSession } from '../../services/quizService.js';
-import { validateStartQuizSessionInput } from '../../services/quizValidation.js';
+import { validateStartQuizSessionInput } from '../../validators/quizValidation.js';
 import { getContest, getContests, assertContestExists } from '../../services/contestService.js';
 import { getPersonalizedContests, type GetContestsFilter } from '../../services/contestService.js';
 
