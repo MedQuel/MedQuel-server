@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
-import { Loading } from "../../components/common/loading";
+import type { Badge } from "../../common/types/types";
 import { ProfileScreenHeader } from "./profileScreenHeader";
 import { useBottomBar } from "../../common/context/useBottomBar";
-import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
+
+import { Loading } from "../../components/common/loading";
+import { EmptyState } from "../../components/common/EmptyState";
 import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
+import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
+import { ProfilePillRow } from "../../components/profile/ProfilePillRow";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
@@ -24,7 +26,7 @@ function Pill({ theme, children, style }: any) {
         {
           alignItems: "center",
           justifyContent: "center",
-          paddingVertical: theme.space.xs - 5,
+          paddingVertical: theme.space.xs,
           paddingHorizontal: theme.space.sm * 1.1,
           borderRadius: theme.borderRadius.md + 2,
         },
@@ -38,19 +40,14 @@ function Pill({ theme, children, style }: any) {
 
 function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
-    <View
-      style={{
-        gap: theme.space.xs,
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
+    <View style={{ gap: theme.space.xs, flexDirection: "row", alignItems: "center" }}>
       <MaterialCommunityIcons name={icon} size={theme.space.md} color={color} />
       <Text
         style={{
           color,
           fontSize: theme.fontSize.xs + 2,
           fontWeight: bold ? theme.fontWeight.bold : undefined,
+          fontFamily: bold ? theme.fontFamily.bold : theme.fontFamily.regular,
         }}
       >
         {text}
@@ -61,51 +58,60 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
 
 function Section({ theme, children, marginTop }: any) {
   return (
-    <View
-      style={{
-        marginTop: marginTop ?? theme.space.sm * 1.5,
-        paddingHorizontal: theme.space.md,
-      }}
-    >
+    <View style={{ marginTop: marginTop ?? theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
       {children}
     </View>
   );
 }
 
-export default function ChatScreen() {
+
+export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentData, setRecentData] = useState<any>(null);
   const [achievements, setAchievements] = useState<Badge[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [load, setLoad] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { theme } = useTheme();
   const router = useRouter();
   useBottomBar(true, "profile");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        setError(null);
-        setLoad(true);
-        const [user, analyticsData, achievementsData] = await Promise.all([
-          api.user.getMe(),
-          api.analytics.getAnalytics(),
-          api.achievement.getAchievements(),
-        ]);
+  const loadData = useCallback(async () => {
+    try {
+      setError(null);
+      const [user, analyticsData, achievementsData] = await Promise.all([
+        api.user.getMe(),
+        api.analytics.getAnalytics(),
+        api.achievement.getAchievements(),
+      ]);
 
-        setUserData(user);
-        setAnalytics(analyticsData);
-        setRecentData(analyticsData.recentAttempts);
-        setAchievements(achievementsData);
-      } catch {
-        setError("Could not load profile. Pull to refresh.");
-      } finally {
-        setLoad(false);
-      }
-    })();
+      setUserData(user);
+      setAnalytics(analyticsData);
+      setRecentData(analyticsData.recentAttempts ?? []);
+      setAchievements(achievementsData ?? []);
+    } catch {
+      setError("Could not load profile. Pull to refresh.");
+    } finally {
+      setLoad(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadData();
+  }, [loadData]);
+
+  const handleAddFriendsPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push("/friends" as any);
+  }, [router]);
 
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleString("en-IN", {
@@ -117,7 +123,7 @@ export default function ChatScreen() {
       hour12: true,
     });
 
-  if (load || error) {
+  if (load) {
     return (
       <View
         style={{
@@ -128,7 +134,25 @@ export default function ChatScreen() {
           backgroundColor: theme.color.background,
         }}
       >
-        {load ? <Loading /> : <Text>{error}</Text>}
+        <Loading />
+      </View>
+    );
+  }
+
+  if (error || !userData) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: theme.space.md,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <Text style={{ color: theme.color.textSecondary }}>
+          {error ?? "Could not load profile. Pull to refresh."}
+        </Text>
       </View>
     );
   }
@@ -137,20 +161,23 @@ export default function ChatScreen() {
   const hasRecentAttempts = (recentData ?? []).length > 0;
   const displayBadges = achievements.filter((b) => b.status === "earned");
 
+
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 75 }}
       style={{ flex: 1, backgroundColor: theme.color.background }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={theme.color.accent}
+        />
+      }
     >
       <ProfileScreenHeader user={userData} />
-      <View
-        style={{
-          gap: theme.space.xs * 1.5,
-          alignItems: "center",
-          marginTop: theme.space.xxl - 2,
-        }}
-      >
+
+      <View style={{ gap: theme.space.xs * 1.5, alignItems: "center", marginTop: theme.space.xxl }}>
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -163,24 +190,47 @@ export default function ChatScreen() {
         </Text>
 
         <View style={{ gap: theme.space.sm, flexDirection: "row" }}>
-          <Pill
-            theme={theme}
-            style={{
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              backgroundColor: theme.color.card,
-            }}
-          >
-            <Text
+          {userData?.describesYou && (
+            <Pill
+              theme={theme}
               style={{
-                color: theme.color.accent,
-                fontSize: theme.fontSize.xs * 1.2,
-                fontFamily: theme.fontFamily.bold,
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                backgroundColor: theme.color.card,
               }}
             >
-              {userData?.studyLevel}
-            </Text>
-          </Pill>
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.xs * 1.2,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {userData.describesYou}
+              </Text>
+            </Pill>
+          )}
+
+          {userData?.yearOfStudy && (
+            <Pill
+              theme={theme}
+              style={{
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                backgroundColor: theme.color.card,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.color.textSecondary,
+                  fontSize: theme.fontSize.xs * 1.2,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {userData.yearOfStudy}
+              </Text>
+            </Pill>
+          )}
 
           <Pill
             theme={theme}
@@ -216,11 +266,17 @@ export default function ChatScreen() {
           </Pill>
         </View>
 
+        {userData?.specialties?.length > 0 && (
+          <ProfilePillRow items={userData.specialties} variant="accent" />
+        )}
+
         <View
           style={{
+            flexWrap: "wrap",
             gap: theme.space.md + 2,
             flexDirection: "row",
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <IconLabel
@@ -249,6 +305,7 @@ export default function ChatScreen() {
         </View>
       </View>
 
+      {/* Stats Summary */}
       <View
         style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
       >
@@ -262,7 +319,7 @@ export default function ChatScreen() {
             },
             {
               label: theme.i18n.t("common.quizzes"),
-              value: String(userData?.stats.contestsPlayed ?? 0),
+              value: String(userData?.stats?.contestsPlayed ?? 0),
               color: "#3B82F6",
               icon: "lightning-bolt",
             },
@@ -277,7 +334,7 @@ export default function ChatScreen() {
               value: `${
                 userData?.totalQuestions
                   ? Math.floor(
-                      (userData.totalCorrect / userData.totalQuestions) * 1000,
+                      (userData.totalCorrect / userData.totalQuestions) * 1000
                     ) / 10
                   : 0
               }%`,
@@ -296,45 +353,59 @@ export default function ChatScreen() {
         <PremiumUpsellCard />
       </Section>
 
-      {/* Achievements */}
+      {/* Achievements Card */}
       <Section theme={theme}>
         <EarnedBadgeCard
           achievements={displayBadges}
-          onViewAllPress={() => router.push("/achievements")}
-          onBadgePress={() => router.push("/achievements")}
+          onViewAllPress={() => router.push("/achievements" as any)}
+          onBadgePress={() => router.push("/achievements" as any)}
         />
       </Section>
 
       {/* Subject Performance */}
       <Section theme={theme}>
-        <SubjectPerformanceCard
-          subjects={subjectPerformance.map(
-            (s: { subject: string; accuracy: number }) => ({
-              name: s.subject,
-              score: s.accuracy,
-            }),
-          )}
-        />
+        {subjectPerformance.length === 0 ? (
+          <EmptyState
+            icon="bar-chart-2"
+            title="No subject data yet"
+            subtitle="Complete a few quizzes to see your subject-wise performance here."
+          />
+        ) : (
+          <SubjectPerformanceCard
+            subjects={subjectPerformance.map(
+              (s: { subject: string; accuracy: number }) => ({
+                name: s.subject,
+                score: s.accuracy,
+              })
+            )}
+          />
+        )}
       </Section>
 
-      {/* Recent Attempts — only show if user has played contests */}
-      {hasRecentAttempts && (
-        <Section theme={theme}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.sm + 4,
-              fontFamily: theme.fontFamily.regular,
-              fontWeight: theme.fontWeight.bold,
-              paddingBottom: theme.space.md,
-              marginLeft: theme.space.xs,
-            }}
-          >
-            {theme.i18n.t("profile.recentAttempts")}
-          </Text>
+      {/* Recent Attempts */}
+      <Section theme={theme}>
+        <Text
+          style={{
+            color: theme.color.textPrimary,
+            fontSize: theme.fontSize.sm + 4,
+            fontFamily: theme.fontFamily.regular,
+            fontWeight: theme.fontWeight.bold,
+            paddingBottom: theme.space.md,
+            marginLeft: theme.space.xs,
+          }}
+        >
+          {theme.i18n.t("profile.recentAttempts")}
+        </Text>
 
+        {recentData?.length === 0 ? (
+          <EmptyState
+            icon="clock"
+            title="No attempts yet"
+            subtitle="Your recent quiz and contest attempts will show up here."
+          />
+        ) : (
           <AttemptHistoryItemCard
-            attempts={recentData.map(
+            attempts={recentData?.map(
               (a: {
                 sessionId: string;
                 subject: string;
@@ -345,11 +416,11 @@ export default function ChatScreen() {
                 title: a.subject,
                 time: formatTime(a.completedAt),
                 score: a.scorePercent,
-              }),
+              })
             )}
           />
-        </Section>
-      )}
+        )}
+      </Section>
     </ScrollView>
   );
 }
