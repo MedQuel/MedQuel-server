@@ -348,34 +348,66 @@ export interface LeaderboardResult {
 
 
 // -----> Study plan
+export type StudyPlanSessionType = 'quiz' | 'read';
 export type StudyPlanSessionStatus = 'pending' | 'completed' | 'skipped';
+export type DailyCommitment = 'light' | 'moderate' | 'intense';
+export type StudyPlanWeekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
-export interface StudyPlanSessionItem {
+export interface StudyPlanSession {
   sessionId: string;
+  sessionType: StudyPlanSessionType;
   subject: string;
   topic: string;
-  contestId?: string;
-  questionCount: number;
-  scheduledTime: string;
   scheduledDate: string;
-  epReward: number;
   status: StudyPlanSessionStatus;
+  xpReward: number;
+  completedAt: string | null;
+  questionCount?: number | null;
+  difficulty?: Difficulty | null;
+  linkedQuizSessionId?: string | null;
+  title?: string | null;
+  content?: string | null;
+  disclaimer?: string | null;
+  estimatedMinutes?: number | null;
+}
+export interface StudyPlanMilestone {
+  label: string;
+  phase: string;
+  description: string;
+  startWeek: number;
+  endWeek: number | null;
+}
+
+export interface GenerateStudyPlanInput {
+  examDate?: string;
+  dailyCommitment: DailyCommitment;
+  daysPerWeek: StudyPlanWeekday[];
+  subjectPriority?: string[];
 }
 
 export interface StudyPlan {
   userId: string;
   targetExam: TargetExam;
-  examDate: string;
+  examDate: string | null;
+  dailyCommitment: DailyCommitment;
+  daysPerWeek: StudyPlanWeekday[];
+  subjectPriority: string[];
+  milestones: StudyPlanMilestone[];
+  weeklyXpTarget: number;
   preparationPercent: number;
-  weeklyEpTarget: number;
-  currentWeekProgress: { daysCompleted: number; totalDays: number };
-  sessions: StudyPlanSessionItem[];
-  generatedBy: 'ai' | 'manual';
+  currentWeekNumber: number;
+  currentWeekStartDate: string;
+  sessions: StudyPlanSession[];
+  generatedBy: 'ai' | 'fallback';
 }
-export interface GenerateStudyPlanInput {
-  examDate: string;
-  weakSubjects?: string[];
-  hoursPerDay?: number;
+
+export interface MarkStudySessionCompleteInput {
+  sessionId: string;
+  quizSessionId?: string;
+}
+export interface MarkStudySessionCompleteResult {
+  plan: StudyPlan;
+  xpEarned: number;
 }
 
 
