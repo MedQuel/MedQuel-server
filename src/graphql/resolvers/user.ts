@@ -2,9 +2,9 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
-import { deriveDescribesYouFromStudyLevel } from '../../services/onboardingValidation.js';
-import { validateQuizPrefsInput, validateNotifPrefsInput, validateUpdateProfileInput } from '../../services/profileValidation.js';
-import type { CurrentProfileForUpdate, QuizPrefsInput, NotifPrefsInput, UpdateProfileInput } from '../../services/profileValidation.js';
+import { deriveDescribesYouFromStudyLevel } from '../../validators/onboardingValidation.js';
+import { validateQuizPrefsInput, validateNotifPrefsInput, validateUpdateProfileInput } from '../../validators/profileValidation.js';
+import type { CurrentProfileForUpdate, QuizPrefsInput, NotifPrefsInput, UpdateProfileInput } from '../../validators/profileValidation.js';
 
 
 export const DEFAULT_NOTIF_PREFS = {
