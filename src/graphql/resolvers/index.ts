@@ -11,6 +11,7 @@ import { removeFriendResolver, getPendingFriendRequestsResolver } from './friend
 import { sendFriendRequestResolver, respondFriendRequestResolver } from './friends.js';
 import { getContestsResolver, getContestResolver, joinContestResolver } from './contest.js';
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
+import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
 
 
 export const resolvers = {
@@ -28,6 +29,7 @@ export const resolvers = {
     getLeaderboard: getLeaderboardResolver,
     getAnalytics: getAnalyticsResolver,
     getAchievements: getAchievementsResolver,
+    getStudyPlan: getStudyPlanResolver,
   },
   Mutation: {
     completeOnboarding: completeOnboardingResolver,
@@ -40,5 +42,7 @@ export const resolvers = {
     joinContest: joinContestResolver,
     startQuizSession: startQuizSessionResolver,
     submitQuizSession: submitQuizSessionResolver,
+    generateStudyPlan: generateStudyPlanResolver,
+    markStudySessionComplete: markStudySessionCompleteResolver,
   },
 };
