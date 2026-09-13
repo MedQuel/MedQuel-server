@@ -11,6 +11,7 @@ import type { Contest, GetContestsFilter, GetContestsResult } from '../types/typ
 import type { User, QuizPrefs, NotifPrefs, UpdateProfileInput } from '../types/types';
 import type { CompleteOnboardingInput, CompleteOnboardingResult } from '../types/types';
 import type { LeaderboardPeriod, LeaderboardScope, LeaderboardResult } from '../types/types';
+import type { MarkStudySessionCompleteInput, MarkStudySessionCompleteResult } from '../types/types';
 import type { FriendRequest, FriendSummary, PublicProfile, UserSearchResult } from '../types/types';
 import type { Subscription, InitiatePaymentInput, InitiatePaymentResult, VerifyPaymentInput } from '../types/types';
 import type { StartQuizSessionInput, StartQuizSessionResult, SubmitQuizSessionInput, SubmitQuizSessionResult } from '../types/types';
@@ -37,8 +38,9 @@ const IMPLEMENTED_OPERATIONS = {
   'contest.getContest': true,
   'contest.joinContest': true,
   'leaderboard.getLeaderboard': true,
-  'studyPlan.getStudyPlan': false, //
-  'studyPlan.generateStudyPlan': false, //
+  'studyPlan.getStudyPlan': true,
+  'studyPlan.generateStudyPlan': true,
+  'studyPlan.markStudySessionComplete': true,
   'chat.getChatRooms': false, //
   'chat.getChatMessages': false, //
   'chat.sendMessage': false, //
@@ -706,11 +708,32 @@ const GET_STUDY_PLAN_QUERY = gql`
       userId
       targetExam
       examDate
+      dailyCommitment
+      daysPerWeek
+      subjectPriority
+      milestones { label phase description startWeek endWeek }
+      weeklyXpTarget
       preparationPercent
-      weeklyEpTarget
+      currentWeekNumber
+      currentWeekStartDate
       generatedBy
-      currentWeekProgress { daysCompleted totalDays }
-      sessions { sessionId subject topic contestId questionCount scheduledTime scheduledDate epReward status }
+      sessions {
+        sessionId
+        sessionType
+        subject
+        topic
+        scheduledDate
+        status
+        xpReward
+        completedAt
+        questionCount
+        difficulty
+        linkedQuizSessionId
+        title
+        content
+        disclaimer
+        estimatedMinutes
+      }
     }
   }
 `;
@@ -720,11 +743,70 @@ const GENERATE_STUDY_PLAN_MUTATION = gql`
       userId
       targetExam
       examDate
+      dailyCommitment
+      daysPerWeek
+      subjectPriority
+      milestones { label phase description startWeek endWeek }
+      weeklyXpTarget
       preparationPercent
-      weeklyEpTarget
+      currentWeekNumber
+      currentWeekStartDate
       generatedBy
-      currentWeekProgress { daysCompleted totalDays }
-      sessions { sessionId subject topic contestId questionCount scheduledTime scheduledDate epReward status }
+      sessions {
+        sessionId
+        sessionType
+        subject
+        topic
+        scheduledDate
+        status
+        xpReward
+        completedAt
+        questionCount
+        difficulty
+        linkedQuizSessionId
+        title
+        content
+        disclaimer
+        estimatedMinutes
+      }
+    }
+  }
+`;
+const MARK_STUDY_SESSION_COMPLETE_MUTATION = gql`
+  mutation MarkStudySessionComplete($sessionId: ID!, $quizSessionId: ID) {
+    markStudySessionComplete(sessionId: $sessionId, quizSessionId: $quizSessionId) {
+      xpEarned
+      plan {
+        userId
+        targetExam
+        examDate
+        dailyCommitment
+        daysPerWeek
+        subjectPriority
+        milestones { label phase description startWeek endWeek }
+        weeklyXpTarget
+        preparationPercent
+        currentWeekNumber
+        currentWeekStartDate
+        generatedBy
+        sessions {
+          sessionId
+          sessionType
+          subject
+          topic
+          scheduledDate
+          status
+          xpReward
+          completedAt
+          questionCount
+          difficulty
+          linkedQuizSessionId
+          title
+          content
+          disclaimer
+          estimatedMinutes
+        }
+      }
     }
   }
 `;
@@ -733,7 +815,7 @@ const GENERATE_STUDY_PLAN_MUTATION = gql`
 export const studyPlanApi = {
   getStudyPlan: () => withMockFallback(
     'studyPlan.getStudyPlan', async () => (
-      await graphqlRequest<{ getStudyPlan: StudyPlan }>(
+      await graphqlRequest<{ getStudyPlan: StudyPlan | null }>(
         GET_STUDY_PLAN_QUERY,
         undefined,
         { idempotent: true }
@@ -748,6 +830,18 @@ export const studyPlanApi = {
         { input: GenerateStudyPlanInput }
       >(GENERATE_STUDY_PLAN_MUTATION, { input })
     ).generateStudyPlan, () => Mock.MOCK_STUDY_PLAN
+  ),
+
+  markStudySessionComplete: (input: MarkStudySessionCompleteInput) => withMockFallback(
+    'studyPlan.markStudySessionComplete', async () => (
+      await graphqlRequest<
+        { markStudySessionComplete: MarkStudySessionCompleteResult },
+        { sessionId: string; quizSessionId?: string }
+      >(MARK_STUDY_SESSION_COMPLETE_MUTATION, {
+        sessionId: input.sessionId,
+        quizSessionId: input.quizSessionId,
+      })
+    ).markStudySessionComplete, () => Mock.buildMockMarkSessionCompleteResult(input.sessionId)
   ),
 };
 
