@@ -1,6 +1,6 @@
 import { InvalidAnswerError } from '../utils/errors.js';
-import type { ValidatedAnswer } from './quizValidation.js';
 import type { BigQueryService } from './bigqueryService.js';
+import type { ValidatedAnswer } from '../validators/quizValidation.js';
 
 
 export interface QuestionGradeResult {
