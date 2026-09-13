@@ -445,6 +445,49 @@
     }
   },
 
+  "friends": {
+    "title": "Friends",
+    "subtitle": "Connect with fellow aspirants",
+    "tabs": {
+      "friends": "My Friends",
+      "requests": "Requests",
+      "search": "Search"
+    },
+    "searchPlaceholder": "Search by name, username, or exam",
+    "sections": {
+      "requests": "Friend Requests",
+      "friends": "Friends",
+      "results": "Search Results"
+    },
+    "actions": {
+      "add": "Add",
+      "remove": "Remove",
+      "accept": "Accept",
+      "decline": "Decline",
+      "challengeLink": "Send Challenge Link"
+    },
+    "status": {
+      "friends": "Friends",
+      "pending": "Pending",
+      "received": "Incoming"
+    },
+    "empty": {
+      "requestsTitle": "No friend requests",
+      "requestsBody": "Incoming requests will appear here.",
+      "friendsTitle": "No friends yet",
+      "friendsBody": "Search for other aspirants to connect.",
+      "resultsTitle": "No aspirants found",
+      "resultsBody": "Try another name, username, or exam."
+    },
+    "profile": {
+      "title": "Profile",
+      "student": "Medical learner",
+      "badges": "Earned Badges",
+      "noBadges": "No badges earned yet",
+      "notAvailable": "Not available"
+    }
+  },
+
   "studyPlan": {
     "loading": "Loading your study plan...",
     "loadError": "Could not load your study plan. Pull to retry.",
