@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import { Loading } from "../../components/common/loading";
@@ -12,7 +13,9 @@ import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
+import { AddFriendButton } from "../../components/AddfriendButton";
 import type { Badge } from "../../common/types/types";
+
 
 function Pill({ theme, children, style }: any) {
   return (
@@ -132,9 +135,7 @@ export default function ChatScreen() {
 
   const subjectPerformance = analytics.subjectPerformance ?? [];
   const hasRecentAttempts = (recentData ?? []).length > 0;
-  const earnedBadges = achievements.filter((b) => b.status === "earned");
-  const inProgressBadges = achievements.filter((b) => b.status === "in_progress");
-  const displayBadges = [...earnedBadges, ...inProgressBadges];
+  const displayBadges = achievements.filter((b) => b.status === "earned");
 
   return (
     <ScrollView
@@ -286,10 +287,13 @@ export default function ChatScreen() {
           ]}
         />
       </View>
+     {/* Add Friends */}
+<Section theme={theme}>
+  <AddFriendButton onPress={() => router.push("/friend/FriendsScreen")} />
+</Section>
 
-      {/* Premium Upsell Card - Added Navigation */}
       <Section theme={theme}>
-        <PremiumUpsellCard onPress={() => router.push("/premium")} />
+        <PremiumUpsellCard />
       </Section>
 
       {/* Achievements */}
