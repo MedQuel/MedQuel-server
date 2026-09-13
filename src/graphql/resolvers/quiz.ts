@@ -4,7 +4,7 @@ import {
   validateStartQuizSessionInput,
   validateSubmitQuizSessionInput,
   validateGetTopicsForSubjectInput,
-} from '../../services/quizValidation.js';
+} from '../../validators/quizValidation.js';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 import { startQuizSession, submitQuizSession, getTopicsForSubject } from '../../services/quizService.js';
