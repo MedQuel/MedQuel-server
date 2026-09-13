@@ -16,8 +16,8 @@ import type { QuestionForQuiz } from './bigqueryService.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
 import { publishQuizCompleted } from '../pubsub/publisher.js';
 import { gradeQuizSession, type QuestionGradeResult } from './gradingService.js';
-import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from './quizValidation.js';
 import { updateStreak, computeXpEarned, computeEpEarned, computeLevelFromXp } from './xpEpService.js';
+import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from '../validators/quizValidation.js';
 
 
 const MIN_QUESTIONS_FOR_PERFECT_BADGE = 5;
