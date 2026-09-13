@@ -5,7 +5,7 @@ import { NotOnboardedError } from '../utils/errors.js';
 import { toISTDateKey, istDateKeyDaysAgo } from '../utils/istDate.js';
 
 
-const MIN_ATTEMPTS_FOR_SUBJECT_HIGHLIGHT = 5;
+export const MIN_ATTEMPTS_FOR_SUBJECT_HIGHLIGHT = 5;
 const DEFAULT_PASS_THRESHOLD_PERCENT = 60;
 const HEATMAP_LOOKBACK_DAYS = 30;
 const RECENT_ATTEMPTS_LIMIT = 15;
@@ -48,7 +48,7 @@ export interface AnalyticsResult {
   recentAttempts: RecentAttemptDTO[];
 }
 
-function computeSubjectPerformance(subjectStats: Record<string, SubjectStatsEntry>): SubjectPerformanceDTO[] {
+export function computeSubjectPerformance(subjectStats: Record<string, SubjectStatsEntry>): SubjectPerformanceDTO[] {
   return Object.entries(subjectStats)
     .filter(([, s]) => (s?.attempted ?? 0) > 0)
     .map(([subject, s]) => ({
