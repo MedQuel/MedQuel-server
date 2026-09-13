@@ -186,3 +186,41 @@ export class NotFriendsError extends GraphQLError {
     super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
   }
 }
+
+/**
+ * Throw when a user tries to regenerate their study plan before the 24-hour cooldown has elapsed.
+ */
+export class StudyPlanRegenerationCooldownError extends GraphQLError {
+  constructor(remainingHours: number) {
+    super(`You can regenerate your study plan again in ${remainingHours} hours${remainingHours}.`, {
+      extensions: { code: 'FAILED_PRECONDITION' },
+    });
+  }
+}
+
+/**
+ * Throw when a study plan session doesn't exist or isn't part of the user's current week.
+ */
+export class StudyPlanSessionNotFoundError extends GraphQLError {
+  constructor(message = 'This study plan session was not found in your current week.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when a study plan session has already been completed and the user tries to complete it again.
+ */
+export class StudyPlanSessionAlreadyCompletedError extends GraphQLError {
+  constructor(message = 'This study plan session has already been completed.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a quiz session is submitted with a study plan link that doesn't match the current study plan session.
+ */
+export class InvalidStudyPlanLinkError extends GraphQLError {
+  constructor(message = 'The referenced quiz session does not match this study plan session.') {
+    super(message, { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+}
