@@ -1,13 +1,14 @@
 import React from 'react';
-import { LayoutChangeEvent, Pressable, Text, View, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { LayoutChangeEvent, Pressable, Text, View, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
+import type { Badge } from '../common/types/types';
 import { AchievementIcon } from './achievements/AchievementIcon';
 import { BADGE_CATALOG_MAP, AchievementIconKey, AchievementVariant } from '../common/constants/achievements';
-import type { Badge } from '../common/types/types';
 
-type EarnedItemInput = Partial<Badge> & {
+
+export type EarnedItemInput = Partial<Badge> & {
   id?: string;
   badgeId?: string;
   earnedAt?: string | null;
@@ -74,6 +75,7 @@ const parseEarnedAt = (value?: string | null) => {
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? -1 : parsed;
 };
+
 
 export function EarnedBadgeCard({ achievements, title, onViewAllPress, onBadgePress }: Props) {
   const { theme } = useTheme();
