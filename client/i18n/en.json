@@ -395,12 +395,14 @@
         "studyLevel": "Study Level",
         "specialties": "Specialties",
         "institution": "Your Institution",
-        "updateProfile": "Update Profile"
+        "updateProfile": "Update Profile",
+        "studyPlan": "Study Plan",
+        "studyPlanSubtitle": "Your personalized study plan"
       },
       "learningFocus": {
         "all": "All Subjects",
         "focused": "Focused on",
-        "allSubtitle":"Exploring the full curriculum"
+        "allSubtitle": "Exploring the full curriculum"
       },
       "notifications": {
         "pushNotifications": "Push Notifications",
@@ -490,19 +492,68 @@
 
   "studyPlan": {
     "loading": "Loading your study plan...",
-    "loadError": "Could not load your study plan. Pull to retry.",
-    "notFound": "Study plan not found.",
-    "thisWeek": "This Week",
-    "editModal": {
-      "title": "Edit Study Plan",
-      "examName": "Exam Name",
-      "examDate": "Exam Date",
-      "cancel": "Cancel",
-      "save": "Save"
+    "header": {
+      "title": "Study Plan",
+      "subtitle": "Your personalized roadmap"
     },
-    "projection": {
-      "title": "Weekly Projection",
-      "subtitle": "Keep your current pace to maximize rewards"
+    "empty": {
+      "title": "No study plan yet",
+      "subtitle": "Build a personalized weekly plan based on your goals and weak subjects.",
+      "cta": "Create My Study Plan"
+    },
+    "error": {
+      "title": "Couldn't load your plan",
+      "subtitle": "Something went wrong. Pull to retry or tap below.",
+      "cta": "Try Again"
+    },
+    "overview": {
+      "targetExam": "Target Exam",
+      "weekBadge": "Week {{number}}",
+      "daysLeft": "days left",
+      "noExamDate": "No exam date set",
+      "preparation": "Preparation",
+      "fallbackNotice": "This week's plan is a basic version, we'll try AI generation again next week."
+    },
+    "weekTracker": {
+      "title": "This Week",
+      "sessionsComplete": "{{completed}}/{{total}} sessions complete",
+      "xpProgress": "{{earned}}/{{target}} XP this week"
+    },
+    "milestones": { "title": "Your Roadmap" },
+    "timeline": { "today": "Today" },
+    "readModal": {
+      "markComplete": "Mark as Read (+{{xp}} XP)",
+      "alreadyComplete": "Completed"
+    },
+    "wizard": {
+      "examDateTitle": "When's your exam or target date?",
+      "examDateSubtitle": "This helps us pace your plan or skip it for an ongoing routine.",
+      "noExamDateOption": "I don't have a date yet",
+      "hasExamDateOption": "I have an exam date",
+      "orCustomDate": "or enter a custom date",
+      "commitmentTitle": "How much can you commit?",
+      "commitmentSubtitle": "Pick what's realistic, you can change this anytime.",
+      "daysPerWeekTitle": "Which days work for you?",
+      "minDaysWarning": "Select at least {{min}} days",
+      "subjectsTitle": "Any subjects to prioritize?",
+      "subjectsSubtitle": "Optional - we'll focus on your weak subjects automatically if you skip this.",
+      "reviewTitle": "Review your plan",
+      "reviewExam": "Exam / Target date",
+      "reviewCommitment": "Commitment",
+      "reviewDays": "Days",
+      "reviewSubjects": "Priority subjects",
+      "autoDetect": "Auto-detected from your performance",
+      "back": "Back",
+      "continue": "Continue",
+      "generate": "Generate Plan",
+      "genericError": "Something went wrong. Please try again."
+    },
+    "home": {
+      "continueTitle": "Continue Your Study Plan",
+      "createTitle": "Build Your Study Plan",
+      "nextSessionSubtitle": "Next up: {{subject}} · +{{xp}} XP",
+      "allDoneSubtitle": "All caught up for this week 🎉",
+      "createSubtitle": "Get a personalized weekly roadmap"
     }
   },
 
