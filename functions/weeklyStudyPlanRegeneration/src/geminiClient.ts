@@ -11,7 +11,7 @@ export interface GeminiGenerateOptions {
 
 export async function generateJsonContent(options: GeminiGenerateOptions): Promise<unknown> {
   const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   if (!apiKey) throw new GeminiRequestError('GEMINI_API_KEY is not set.');
 
   const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
