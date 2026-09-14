@@ -1,9 +1,8 @@
+import { useCallback, useEffect, useState } from "react";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import { useEffect, useState, useCallback } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
-
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import type { Badge } from "../../common/types/types";
@@ -18,8 +17,7 @@ import { ProfilePillRow } from "../../components/profile/ProfilePillRow";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
-
-
+import { AddFriendButton } from "../../components/AddfriendButton";
 function Pill({ theme, children, style }: any) {
   return (
     <View
@@ -158,10 +156,9 @@ export default function ProfileScreen() {
     );
   }
 
-  const subjectPerformance = analytics?.subjectPerformance ?? [];
-  const earnedBadges = achievements.filter((b) => b.status === "earned");
-  const inProgressBadges = achievements.filter((b) => b.status === "in_progress");
-  const displayBadges = [...earnedBadges, ...inProgressBadges];
+  const subjectPerformance = analytics.subjectPerformance ?? [];
+  const hasRecentAttempts = (recentData ?? []).length > 0;
+  const displayBadges = achievements.filter((b) => b.status === "earned");
 
 
   return (
@@ -275,7 +272,7 @@ export default function ProfileScreen() {
         <View
           style={{
             flexWrap: "wrap",
-            gap: theme.space.md + 2,
+            gap: theme.space.sm,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
@@ -346,86 +343,13 @@ export default function ProfileScreen() {
           ]}
         />
       </View>
+     {/* Add Friends */}
+<Section theme={theme}>
+<AddFriendButton onPress={handleAddFriendsPress} />
+</Section>
 
-      {/* Friends Banner Card */}
       <Section theme={theme}>
-        <View
-          style={{
-            backgroundColor: theme.color.card,
-            borderRadius: theme.borderRadius.lg,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            padding: theme.space.md,
-            gap: theme.space.md,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.space.sm }}>
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: theme.borderRadius.md,
-                backgroundColor: theme.color.accent + "20",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <MaterialCommunityIcons name="account-group" size={24} color={theme.color.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                Friends
-              </Text>
-              <Text
-                style={{
-                  color: theme.color.textSecondary,
-                  fontSize: theme.fontSize.xs + 1,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                Find friends to compare progress and stay motivated.
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleAddFriendsPress}
-            style={{
-              backgroundColor: theme.color.accent,
-              borderRadius: theme.borderRadius.md,
-              paddingVertical: theme.space.sm + 2,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: theme.space.xs,
-            }}
-          >
-            <MaterialCommunityIcons name="account-plus" size={20} color="#FFFFFF" />
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: theme.fontSize.sm,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.bold,
-              }}
-            >
-              ADD FRIENDS
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </Section>
-
-      {/* Premium Upsell Card */}
-      <Section theme={theme}>
-        <PremiumUpsellCard onPress={() => router.push("/premium" as any)} />
+        <PremiumUpsellCard />
       </Section>
 
       {/* Achievements Card */}
@@ -472,7 +396,7 @@ export default function ProfileScreen() {
           {theme.i18n.t("profile.recentAttempts")}
         </Text>
 
-        {recentData?.length === 0 ? (
+        {!hasRecentAttempts ? (
           <EmptyState
             icon="clock"
             title="No attempts yet"
