@@ -1,7 +1,7 @@
 import type { StudyPlanMilestone } from '../../types/studyPlanTypes.js';
 
 
-const MAX_PLANNED_WEEKS = 16;
+const MAX_PLANNED_WEEKS = 24;
 const DEFAULT_ROLLING_WEEKS = 8;
 
 export function computeWeeklyXpTarget(sessions: { xpReward: number }[]): number {
