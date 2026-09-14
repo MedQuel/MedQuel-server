@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Svg, { G, Defs, Path, Stop, ClipPath, LinearGradient } from 'react-native-svg';
-import { View, Easing, Animated, Platform, type StyleProp, type ViewStyle, useWindowDimensions } from 'react-native';
+import { View, Text, Easing, Animated, Platform, useWindowDimensions } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -12,7 +13,6 @@ const GWithoutCollapsable = React.forwardRef<any, any>((props, ref) => {
   return <G ref={ref} {...rest} />;
 });
 const AnimatedG = Animated.createAnimatedComponent(GWithoutCollapsable);
-
 
 interface PremiumLoaderProps {
   size?: number;
@@ -146,7 +146,8 @@ export function Loading({ message, size, width, height, fullscreen = false, styl
   const primaryColor = theme.color.info;
   const secondaryColor = theme.color.accent;
 
-  const responsiveSize = Math.min(screenWidth, screenHeight) * 0.3;
+  const responsiveSize = Math.min(112, Math.max(64, Math.min(screenWidth, screenHeight) * 0.25));
+  const defaultSize = fullscreen ? 108 : responsiveSize;
 
   const containerStyle: StyleProp<ViewStyle> = fullscreen
     ? [
@@ -165,7 +166,7 @@ export function Loading({ message, size, width, height, fullscreen = false, styl
         style,
       ]
     : [
-        { alignItems: 'center', justifyContent: 'center', padding: theme.space.xl },
+        { alignItems: 'center', justifyContent: 'center', padding: theme.space.md },
         style,
       ];
 
@@ -176,12 +177,25 @@ export function Loading({ message, size, width, height, fullscreen = false, styl
       accessibilityLabel={message || 'Loading'}
     >
       <PremiumLoader
-        size={size ?? responsiveSize}
+        size={size ?? defaultSize}
         width={width}
         height={height}
         color={primaryColor}
         secondaryColor={secondaryColor}
       />
+
+      {!!message && (
+        <Text
+          style={{
+            color: theme.color.textSecondary,
+            fontSize: theme.fontSize.sm * 1.1,
+            fontFamily: theme.fontFamily.regular,
+            textAlign: 'center',
+          }}
+        >
+          {message}
+        </Text>
+      )}
     </View>
   );
 }
