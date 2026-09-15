@@ -4,63 +4,59 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 
 
-export function StudyHeader({ onBack, onEdit }: { onBack?: () => void, onEdit?: () => void }) {
+export default function StudyPlanHeader({ onBack, onEdit }: { onBack?: () => void; onEdit?: () => void; }) {
   const { theme } = useTheme();
 
   return (
     <View
       style={{
+        gap: theme.space.sm,
         flexDirection: 'row',
         alignItems: 'center',
+        paddingTop: theme.space.sm,
         paddingBottom: theme.space.sm,
-        paddingVertical: theme.space.md,
         paddingHorizontal: theme.space.md,
-        backgroundColor: theme.color.background,
       }}
     >
       <TouchableOpacity
-        activeOpacity={0.8}
         onPress={() => onBack?.()}
         style={{
-          width: theme.space.xl,
-          height: theme.space.xl,
           alignItems: 'center',
           justifyContent: 'center',
+          padding: theme.space.xs * 1.75,
           borderWidth: 1,
           borderColor: theme.color.border,
-          borderRadius: theme.borderRadius.md,
+          borderRadius: theme.borderRadius.lg,
           backgroundColor: theme.color.card,
         }}
       >
         <Feather
           name='chevron-left'
-          size={theme.fontSize.lg}
+          size={theme.fontSize.xl}
           color={theme.color.textPrimary}
         />
       </TouchableOpacity>
 
-      <View style={{ flex: 1, marginLeft: theme.space.md }}>
+      <View style={{ flex: 1, flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
         <Text
           numberOfLines={1}
           style={{
             color: theme.color.textPrimary,
-            fontSize: theme.fontSize.xl,
+            fontSize: theme.fontSize.lg * 1.1,
             fontFamily: theme.fontFamily.bold,
           }}
         >
-          {theme.i18n.t('Study Plan')}
+          {theme.i18n.t('studyPlan.header.title')}
         </Text>
-
         <Text
           numberOfLines={1}
           style={{
             color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm,
-            fontFamily: theme.fontFamily.regular,
-            marginTop: theme.space.xs / 2,
+            fontSize: theme.fontSize.sm * 1.05,
+            fontFamily: theme.fontFamily.light,
           }}
         >
-          {theme.i18n.t('Your personalized roadmap')}
+          {theme.i18n.t('studyPlan.header.subtitle')}
         </Text>
       </View>
 
@@ -68,19 +64,18 @@ export function StudyHeader({ onBack, onEdit }: { onBack?: () => void, onEdit?: 
         activeOpacity={0.8}
         onPress={onEdit}
         style={{
-          width: theme.space.xl,
-          height: theme.space.xl,
           alignItems: 'center',
           justifyContent: 'center',
+          padding: theme.space.xs * 1.75,
           borderWidth: 1,
           borderColor: theme.color.border,
-          borderRadius: theme.borderRadius.md,
+          borderRadius: theme.borderRadius.lg,
           backgroundColor: theme.color.card,
         }}
       >
         <Feather
           name='edit-2'
-          size={theme.fontSize.md}
+          size={theme.fontSize.xl}
           color={theme.color.textSecondary}
         />
       </TouchableOpacity>
