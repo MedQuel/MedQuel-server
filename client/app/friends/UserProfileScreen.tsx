@@ -1,27 +1,19 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, Image, Pressable, ScrollView } from 'react-native';
+import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Modal, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { hasValidPhoto } from '../../common/utils/imageUrl';
-import { ActionSheet, ActionSheetOption } from '../../components/Actionsheet';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
 import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
 import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
-import { useBottomBar } from '../../common/context/useBottomBar';
+import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
 import type { PublicProfile, FriendRelationshipStatus } from '../../common/types/types';
+
 
 function Pill({ theme, children, style }: any) {
   return (
@@ -59,6 +51,7 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
     </View>
   );
 }
+
 
 export default function UserProfileScreen() {
   const { theme } = useTheme();
@@ -189,7 +182,6 @@ export default function UserProfileScreen() {
           statusBarTranslucent
           onRequestClose={() => setPhotoModalVisible(false)}
         >
-          <StatusBar backgroundColor={overlayBg} barStyle="light-content" />
           <Pressable
             style={{ flex: 1, backgroundColor: overlayBg, alignItems: 'center', justifyContent: 'center' }}
             onPress={() => setPhotoModalVisible(false)}
