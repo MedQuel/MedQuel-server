@@ -1,14 +1,56 @@
+import { useEffect } from 'react';
 import { Slot } from 'expo-router';
-import { View } from 'react-native';
 import { useFonts } from 'expo-font';
-import { StatusBar } from 'expo-status-bar';
+import * as NavigationBar from 'expo-navigation-bar';
+import { View, Platform, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from '../theme/ThemeContext';
 import { AuthGate } from '../common/navigation/AuthGate';
 import { AppProvider } from '../common/context/AppContext';
+import { ThemeProvider, useTheme } from '../theme/ThemeContext';
 import { AppBottomBar } from '../components/common/AppBottomBar';
 import { LayoutProvider } from '../common/context/LayoutContext';
+
+
+function SystemChrome() {
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    if (typeof NavigationBar.setStyle === 'function') {
+      NavigationBar.setStyle(theme.isDark ? 'light' : 'dark');
+    }
+  }, [theme.isDark]);
+
+  return (
+    <StatusBar
+      animated
+      translucent={Platform.OS === 'android'}
+      barStyle={theme.isDark ? 'light-content' : 'dark-content'}
+      backgroundColor={Platform.OS === 'android' ? 'transparent' : undefined}
+    />
+  );
+}
+function AppShell() {
+  const { theme } = useTheme();
+  return (
+    <AppProvider>
+      <AuthGate>
+        <LayoutProvider>
+          <SafeAreaView
+            style={{ flex: 1, backgroundColor: theme.color.background }}
+            edges={['top', 'left', 'right']}
+          >
+            <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+              <Slot />
+              <AppBottomBar />
+            </View>
+          </SafeAreaView>
+        </LayoutProvider>
+      </AuthGate>
+    </AppProvider>
+  );
+}
 
 
 export default function App() {
@@ -21,25 +63,11 @@ export default function App() {
   if (!fontsLoaded) return null;
 
   return (
-    <>
-      <StatusBar style='auto' animated={true} />
-
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AppProvider>
-            <AuthGate>
-              <LayoutProvider>
-                <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
-                  <View style={{ flex: 1 }}>
-                    <Slot />
-                    <AppBottomBar />
-                  </View>
-                </SafeAreaView>
-              </LayoutProvider>
-            </AuthGate>
-          </AppProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <SystemChrome />
+        <AppShell />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
