@@ -1,46 +1,48 @@
+import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, SectionList, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
-import { ActionSheet, ActionSheetOption } from '../../components/Actionsheet';
-import { QuickActionList } from '../../components/QuickActionRow';
-import { FriendListItem } from '../../components/FriendListItem';
-import { SearchResultItem } from '../../components/SearchResultItem';
-import { FriendRequestItem } from '../../components/FriendRequestItem';
+import { FriendListItem } from '../../components/friends/FriendListItem';
+import { QuickActionList } from '../../components/friends/QuickActionRow';
+import { SearchResultItem } from '../../components/friends/SearchResultItem';
+import { FriendRequestItem } from '../../components/friends/FriendRequestItem';
+import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
 import type { FriendRequest, FriendSummary, UserSearchResult } from '../../common/types/types';
+
+
+const DEBOUNCE_MS = 350;
+const SEARCH_MIN_LENGTH = 2;
 
 type SectionItem =
   | { type: 'friend'; data: FriendSummary }
   | { type: 'search'; data: UserSearchResult }
   | { type: 'request'; data: FriendRequest & { displayName: string; photoURL?: string | null } };
 
-const SEARCH_MIN_LENGTH = 2;
-const DEBOUNCE_MS = 350;
 
 export default function FriendsScreen() {
-  const { theme } = useTheme();
-  const router = useRouter();
-  const [focusTrigger] = useState(0);
-
-  useBottomBar(true, 'friends');
-
   const [myUid, setMyUid] = useState<string | null>(null);
   const [friends, setFriends] = useState<FriendSummary[]>([]);
   const [pendingRequests, setPendingRequests] = useState<(FriendRequest & { displayName: string; photoURL?: string | null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
+  
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-
+  
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [sheetTarget, setSheetTarget] = useState<{ uid: string; displayName: string; status: string } | null>(null);
+  
+  const [focusTrigger] = useState(0);
+
+  const router = useRouter();
+  const { theme } = useTheme();
+  useBottomBar(true, 'friends');
 
   const loadAll = useCallback(async () => {
     const [me, friendsList, pending] = await Promise.all([
