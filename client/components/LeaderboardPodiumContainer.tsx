@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
+import { withAlpha } from '../common/utils/withAlpha';
 
 
 type User = {
@@ -41,12 +42,12 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
       podiumHeight: theme.space.xxl * 2,
     },
     2: {
-      color: theme.color.textSecondary,
+      color: theme.color.info,
       avatarSize: theme.space.xxl * 1.25,
       podiumHeight: theme.space.xxl * 1.5,
     },
     3: {
-      color: theme.color.info,
+      color: theme.color.premium,
       avatarSize: theme.space.xxl * 1.2,
       podiumHeight: theme.space.xxl,
     },
@@ -56,14 +57,14 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
     <LinearGradient
       colors={[theme.color.card, theme.color.surface]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      end={{ x: 0, y: 1 }}
       style={{
         overflow: 'hidden',
-        paddingTop: theme.space.md,
-        paddingHorizontal: theme.space.xl,
-        borderWidth: 2,
+        paddingTop: theme.space.lg,
+        paddingHorizontal: theme.space.lg,
+        borderWidth: 1,
         borderColor: theme.color.border,
-        borderRadius: theme.borderRadius.xl * 2,
+        borderRadius: theme.borderRadius.xl,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -182,7 +183,10 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
                   justifyContent: 'center',
                   borderTopLeftRadius: theme.borderRadius.lg,
                   borderTopRightRadius: theme.borderRadius.lg,
-                  backgroundColor: style.color + '22',
+                  backgroundColor: withAlpha(style.color, 0.16),
+                  borderWidth: 1,
+                  borderBottomWidth: 0,
+                  borderColor: withAlpha(style.color, 0.28),
                 }}
               >
                 <Text
