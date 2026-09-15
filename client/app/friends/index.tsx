@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ActivityIndicator, Alert, SectionList, Text, TouchableOpacity, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, SectionList, Text, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -139,7 +139,7 @@ export default function FriendsScreen() {
     return list;
   }, [isSearchMode, filteredFriends, searchResults, pendingRequests, friends]);
 
-    const goToProfile = (uid: string) => {
+  const goToProfile = (uid: string) => {
     if (uid === myUid) return;
     router.push({
       pathname: '/friends/UserProfileScreen',
@@ -199,28 +199,21 @@ export default function FriendsScreen() {
     }
   };
 
-  const handleEmailInvite = () => {
-    const link = myUid ? `https://medquel.app/add-friend/${myUid}` : 'https://medquel.app';
-    const subject = encodeURIComponent('Join me on MedQuel');
-    const body = encodeURIComponent(`Hey! I'm prepping on MedQuel — join me here: ${link}`);
-    Linking.openURL(`mailto:?subject=${subject}&body=${body}`).catch(() =>
-      Alert.alert('No email app found', 'Please set up an email app to send invites.')
-    );
-  };
-
   const handleCreateChallengeLink = () => {
     Alert.alert('Coming soon', 'Challenge links will be available in a future update.');
   };
+
   const quickActions = [
     { key: 'link', label: 'Friend Link', icon: 'link-variant' as const, iconBg: theme.color.accent, onPress: handleShareFriendLink },
-    { key: 'email', label: 'Send Email Invite', icon: 'email-outline' as const, iconBg: theme.color.success, onPress: handleEmailInvite },
     { key: 'challenge', label: 'Create Challenge Link', icon: 'sword-cross' as const, iconBg: theme.color.premium, onPress: handleCreateChallengeLink },
   ];
 
   const sheetOptions: ActionSheetOption[] = sheetTarget
     ? [
-        { key: 'challenge', label: 'Challenge', icon: 'sword-cross', onPress: () => handleChallenge(sheetTarget.uid) },
-        { key: 'profile', label: 'View Profile', icon: 'account-circle-outline', onPress: () => goToProfile(sheetTarget.uid) },
+        ...(sheetTarget.status === 'FRIENDS'
+          ? [{ key: 'challenge', label: 'Challenge', icon: 'sword-cross' as const, onPress: () => handleChallenge(sheetTarget.uid) }]
+          : []),
+        { key: 'profile', label: 'View Profile', icon: 'account-circle-outline' as const, onPress: () => goToProfile(sheetTarget.uid) },
         ...(sheetTarget.status === 'FRIENDS'
           ? [{ key: 'remove', label: 'Remove Friend', icon: 'account-remove' as const, destructive: true, onPress: () => handleRemoveFriend(sheetTarget.uid) }]
           : []),
@@ -260,13 +253,61 @@ export default function FriendsScreen() {
     );
   };
 
+  const handleBackPress = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/profile');
+    }
+  };
+
   const listHeader = (
     <View style={{ marginBottom: theme.space.md }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, marginBottom: theme.space.lg }}>
-        <MaterialCommunityIcons name="account-group" size={26} color={theme.color.accent} />
-        <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.xxl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.bold }}>
-          Friends
-        </Text>
+      <View
+        style={{
+          gap: theme.space.sm,
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingTop: theme.space.xs,
+          paddingBottom: theme.space.xs,
+          marginBottom: theme.space.md,
+        }}
+      >
+        <TouchableOpacity
+          onPress={handleBackPress}
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: theme.space.xs * 1.75,
+            borderWidth: 1,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: theme.color.card,
+          }}
+        >
+          <Feather name="chevron-left" size={theme.fontSize.xl} color={theme.color.textPrimary} />
+        </TouchableOpacity>
+
+        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.lg * 1.1,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            Friends
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.sm * 1.05,
+              fontFamily: theme.fontFamily.light,
+            }}
+          >
+            Connect and compete with fellow students
+          </Text>
+        </View>
       </View>
 
       <QuickActionList actions={quickActions} />
@@ -334,7 +375,7 @@ export default function FriendsScreen() {
         contentContainerStyle={{
           paddingHorizontal: theme.space.md,
           paddingBottom: theme.space.xxl,
-          paddingTop: Platform.OS === 'ios' ? theme.space.lg : theme.space.md,
+          paddingTop: theme.space.xs,
         }}
         keyboardShouldPersistTaps="handled"
         refreshing={refreshing}
