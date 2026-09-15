@@ -352,7 +352,8 @@ export default function ProfileScreen() {
 </Section>
 
       <Section theme={theme}>
-        <PremiumUpsellCard />
+        <PremiumUpsellCard 
+        />
       </Section>
 
       {/* Achievements Card */}

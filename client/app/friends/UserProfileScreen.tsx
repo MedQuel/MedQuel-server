@@ -140,27 +140,45 @@ export default function UserProfileScreen() {
   }
 
   const isSelf = profile.relationshipStatus === 'SELF';
+  const isFriend = profile.relationshipStatus === 'FRIENDS';
   const hasPhoto = hasValidPhoto(profile.photoURL);
 
   const sheetOptions: ActionSheetOption[] = [
-    ...(!isSelf ? [{ key: 'challenge', label: 'Challenge', icon: 'sword-cross' as const, onPress: handleChallenge }] : []),
-    ...(profile.relationshipStatus === 'FRIENDS'
+    ...(!isSelf && isFriend
+      ? [{ key: 'challenge', label: 'Challenge', icon: 'sword-cross' as const, onPress: handleChallenge }]
+      : []),
+    ...(isFriend
       ? [{ key: 'remove', label: 'Remove Friend', icon: 'account-remove' as const, destructive: true, onPress: handleRemoveFriend }]
       : []),
     ...(!isSelf ? [{ key: 'report', label: 'Report User', icon: 'flag-outline' as const, destructive: true, onPress: () => Alert.alert('Reported', 'Thanks — our team will review this.') }] : []),
   ];
 
-  // Covers currentLevel, xpPoints, currentStreak, longestStreak — everything not already
-  // shown in the pill/icon row above.
-  const stats = [
-    { label: theme.i18n.t('common.level'), value: String(profile.currentLevel), color: theme.color.accent, icon: 'star' },
-    { label: 'XP Points', value: String(profile.xpPoints), color: theme.color.info, icon: 'lightning-bolt' },
-    { label: theme.i18n.t('common.streak'), value: String(profile.currentStreak), color: theme.color.error, icon: 'fire' },
-    { label: 'Best Streak', value: String(profile.longestStreak), color: theme.color.warning, icon: 'trophy-outline' },
-  ];
-
-  // Same overlay/shadow tokens used in ProfileScreenHeader, so the photo viewer and header
-  // buttons feel identical whether opened from your own profile or a friend's.
+ const stats = [
+  {
+    label: theme.i18n.t('common.level'),
+    value: String(profile.currentLevel),
+    color: '#F59E0B',
+    icon: 'star',
+  },
+  {
+    label: 'XP Points',
+    value: String(profile.xpPoints),
+    color: '#3B82F6',
+    icon: 'lightning-bolt',
+  },
+  {
+    label: theme.i18n.t('common.streak'),
+    value: String(profile.currentStreak),
+    color: '#EF4444',
+    icon: 'fire',
+  },
+  {
+    label: 'Best Streak',
+    value: String(profile.longestStreak),
+    color: '#F59E0B',
+    icon: 'trophy-outline',
+  },
+];
   const overlayBg = 'rgba(0,0,0,0.92)';
   const overlayCloseBtnBg = 'rgba(255,255,255,0.15)';
   const headerBtnBg = theme.isDark ? theme.color.card : theme.color.textMuted + '33';
@@ -173,7 +191,7 @@ export default function UserProfileScreen() {
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 75 }}
       style={{ flex: 1, backgroundColor: theme.color.background }}
     >
-      {/* Full Screen Photo Modal — matches ProfileScreenHeader's viewer exactly */}
+      {/* Full Screen Photo Modal */}
       {hasPhoto && (
         <Modal
           visible={photoModalVisible}
@@ -233,7 +251,7 @@ export default function UserProfileScreen() {
         </Modal>
       )}
 
-      {/* Header — banner + overlapping avatar, mirroring ProfileScreenHeader */}
+      {/* Header */}
       <View style={{ position: 'relative' }}>
         <View
           style={{
@@ -242,7 +260,6 @@ export default function UserProfileScreen() {
           }}
         />
 
-        {/* Back button — same slot/style as the edit button on your own profile */}
         <TouchableOpacity
           onPress={() => router.back()}
           style={{
@@ -263,7 +280,6 @@ export default function UserProfileScreen() {
           <Feather name="chevron-left" size={theme.space.md + 2} color={headerIconColor} />
         </TouchableOpacity>
 
-        {/* More button — same slot/style as the settings button on your own profile */}
         {!isSelf && (
           <TouchableOpacity
             onPress={() => setSheetVisible(true)}
@@ -286,7 +302,6 @@ export default function UserProfileScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Avatar — overlaps the banner, tap opens the full-screen viewer */}
         <TouchableOpacity
           activeOpacity={hasPhoto ? 0.85 : 1}
           onPress={() => hasPhoto && setPhotoModalVisible(true)}
@@ -302,7 +317,7 @@ export default function UserProfileScreen() {
             borderWidth: 4,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.premium + 'FF',
+            backgroundColor: hasPhoto ? theme.color.card : theme.color.premium + 'FF',
             boxShadow: headerBtnShadow,
           }}
         >
@@ -325,7 +340,7 @@ export default function UserProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Name, pills, specialties, and the icon-label row — same structure as your own profile */}
+      {/* Name, pills, specialties */}
       <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl }}>
         <Text
           style={{
@@ -435,27 +450,30 @@ export default function UserProfileScreen() {
               </View>
             )}
 
-            <TouchableOpacity
-              onPress={handleChallenge}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 6,
-                paddingVertical: theme.space.sm, paddingHorizontal: theme.space.lg,
-                borderRadius: theme.borderRadius.full, backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border,
-              }}
-            >
-              <MaterialCommunityIcons name="sword-cross" size={16} color={theme.color.textPrimary} />
-              <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Challenge</Text>
-            </TouchableOpacity>
+            {/* ✅ CHANGED: Challenge button sirf FRIENDS ke liye show hoga */}
+            {isFriend && (
+              <TouchableOpacity
+                onPress={handleChallenge}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 6,
+                  paddingVertical: theme.space.sm, paddingHorizontal: theme.space.lg,
+                  borderRadius: theme.borderRadius.full, backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border,
+                }}
+              >
+                <MaterialCommunityIcons name="sword-cross" size={16} color={theme.color.textPrimary} />
+                <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Challenge</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>
 
-      {/* Stats — Level, XP, current streak, longest streak */}
+      {/* Stats */}
       <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
         <ProfileScreenStatsCard stats={stats} />
       </View>
 
-      {/* Head to head, only visible between friends */}
+      {/* Head to head — only between friends */}
       {profile.relationshipStatus === 'FRIENDS' && profile.headToHead && (
         <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
           <View
@@ -482,7 +500,7 @@ export default function UserProfileScreen() {
         </View>
       )}
 
-      {/* Earned badges — reusing the existing component as-is */}
+      {/* Earned badges */}
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <EarnedBadgeCard
           achievements={profile.badges.map((badgeId) => ({ badgeId }))}

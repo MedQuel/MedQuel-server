@@ -199,7 +199,7 @@ export function ProfileScreenHeader({ user }: Props) {
             borderWidth: 4,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.full,
-            backgroundColor: theme.color.premium + 'FF',
+            backgroundColor: hasPhoto ? theme.color.card : theme.color.premium + 'FF',
             boxShadow: theme.isDark
               ? '0 6px 14px rgba(0,0,0,0.2)'
               : '0 6px 14px rgba(0,0,0,0.05)',
