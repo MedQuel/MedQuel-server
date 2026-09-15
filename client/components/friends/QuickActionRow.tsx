@@ -1,8 +1,9 @@
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Text, TouchableOpacity, View } from 'react-native';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
+
 
 export type QuickAction = {
   key: string;
@@ -11,10 +12,10 @@ export type QuickAction = {
   iconBg: string;
   onPress: () => void;
 };
-
 type Props = {
   actions: QuickAction[];
 };
+
 export function QuickActionList({ actions }: Props) {
   const { theme } = useTheme();
   return (
@@ -46,7 +47,11 @@ export function QuickActionList({ actions }: Props) {
               marginRight: theme.space.md,
             }}
           >
-            <MaterialCommunityIcons name={action.icon} size={18} color={theme.color.textInverse} />
+            <MaterialCommunityIcons
+              name={action.icon}
+              size={18}
+              color={theme.color.textInverse}
+            />
           </View>
 
           <Text
@@ -61,7 +66,11 @@ export function QuickActionList({ actions }: Props) {
             {action.label}
           </Text>
 
-          <MaterialCommunityIcons name="chevron-right" size={22} color={theme.color.textMuted} />
+          <MaterialCommunityIcons
+            name='chevron-right'
+            size={22}
+            color={theme.color.textMuted}
+          />
         </TouchableOpacity>
       ))}
     </View>
