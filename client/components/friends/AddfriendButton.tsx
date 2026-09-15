@@ -1,10 +1,13 @@
-import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../theme/ThemeContext';
+import { View, Text, TouchableOpacity } from 'react-native';
+
+import { useTheme } from '../../theme/ThemeContext';
+
 
 type Props = {
   onPress: () => void;
 };
+
 
 export function AddFriendButton({ onPress }: Props) {
   const { theme } = useTheme();
@@ -19,8 +22,7 @@ export function AddFriendButton({ onPress }: Props) {
         gap: theme.space.md,
       }}
     >
-      {/* Top row — icon + text */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.md }}>
+      <View style={{ gap: theme.space.md, flexDirection: 'row', alignItems: 'center' }}>
         <View
           style={{
             width: theme.space.xxl + 8,
@@ -32,7 +34,7 @@ export function AddFriendButton({ onPress }: Props) {
           }}
         >
           <MaterialCommunityIcons
-            name="account-group"
+            name='account-group'
             size={theme.fontSize.xl}
             color={theme.color.accent}
           />
@@ -62,7 +64,6 @@ export function AddFriendButton({ onPress }: Props) {
         </View>
       </View>
 
-      {/* Full width button */}
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPress}
@@ -77,7 +78,7 @@ export function AddFriendButton({ onPress }: Props) {
         }}
       >
         <MaterialCommunityIcons
-          name="account-plus"
+          name='account-plus'
           size={theme.fontSize.md}
           color={theme.color.textInverse}
         />
