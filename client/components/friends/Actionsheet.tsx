@@ -1,8 +1,9 @@
 import React from 'react';
-import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
+
 
 export type ActionSheetOption = {
   key: string;
@@ -18,12 +19,12 @@ type Props = {
   options: ActionSheetOption[];
 };
 
+
 export function ActionSheet({ visible, onClose, title, options }: Props) {
   const { theme } = useTheme();
 
   const handleOptionPress = (option: ActionSheetOption) => {
     onClose();
-    // Let the close animation start before firing the action.
     setTimeout(option.onPress, 50);
   };
 
