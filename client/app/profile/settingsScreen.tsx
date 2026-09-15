@@ -538,15 +538,15 @@ export default function SettingsScreen() {
           )}
         </Card>
 
-        <View style={{ overflow: 'hidden', marginTop: theme.space.xs, borderRadius: theme.borderRadius.xl }}>
+        <View style={{ overflow: 'hidden' }}>
           <LinearGradient
             colors={theme.isDark ? ['#05173d', '#071d4d', '#08205a'] : ['#2762f7', '#1a56f0', '#0f49db']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
               borderWidth: 1.5,
-              borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
-              borderRadius: theme.borderRadius.xl,
+              borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.25)',
+              borderRadius: theme.borderRadius.lg,
             }}
           >
             <Row
@@ -554,12 +554,25 @@ export default function SettingsScreen() {
               onPress={() => router.push('/profile/updateProfile')}
               right={<View />}
               icon='account-edit-outline'
-              iconBg='rgba(255,255,255,0.15)'
+              iconBg='rgba(0,0,0,0)'
               iconColor={theme.isDark ? theme.color.info : theme.color.textInverse}
               title={theme.i18n.t('profile.settings.account.updateProfile')}
               titleColor={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
             />
           </LinearGradient>
+          
+          <Card theme={theme}>
+            <Row
+              theme={theme}
+              onPress={() => router.push('/studyPlan')}
+              right={<View />}
+              icon="calendar-check-outline"
+              iconBg={theme.color.accent + '1A'}
+              iconColor={theme.color.accent}
+              title={theme.i18n.t('profile.settings.account.studyPlan')}
+              subtitle={theme.i18n.t('profile.settings.account.studyPlanSubtitle')}
+            />
+          </Card>
         </View>
 
         <SectionLabel theme={theme} text={theme.i18n.t('profile.settings.section.learningFocus')} />
