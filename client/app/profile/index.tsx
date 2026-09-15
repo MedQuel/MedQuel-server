@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
+
 import { api } from "@/common/api/api";
 import { useTheme } from "../../theme/ThemeContext";
 import type { Badge } from "../../common/types/types";
@@ -14,10 +15,12 @@ import { EmptyState } from "../../components/common/EmptyState";
 import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
 import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
 import { ProfilePillRow } from "../../components/profile/ProfilePillRow";
+import { AddFriendButton } from "../../components/friends/AddfriendButton";
 import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
 import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
 import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
-import { AddFriendButton } from "../../components/AddfriendButton";
+
+
 function Pill({ theme, children, style }: any) {
   return (
     <View
