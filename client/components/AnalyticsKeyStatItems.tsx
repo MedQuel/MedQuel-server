@@ -78,9 +78,12 @@ export function AnalyticsKeyStatItems({
                 key={item.labelKey}
                 style={{
                   flex: 1,
-                  padding: theme.space.sm,
-                  borderRadius: theme.borderRadius.md,
-                  backgroundColor: theme.color.surface,
+                  paddingVertical: theme.space.sm,
+                  paddingHorizontal: theme.space.sm * 1.25,
+                  borderRadius: theme.borderRadius.lg,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  backgroundColor: 'transparent',
                 }}
               >
                 <Text
