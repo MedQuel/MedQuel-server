@@ -83,6 +83,9 @@ export function LeaderboardRankCard({
         borderWidth: 1,
         borderColor,
         overflow: 'hidden',
+        backgroundColor: theme.color.card,
+        elevation: 1,
+        boxShadow: theme.isDark ? 'none' : '0px 2px 6px rgba(0, 0, 0, 0.03)',
       }}
     >
       <LinearGradient

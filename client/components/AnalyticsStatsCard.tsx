@@ -1,9 +1,7 @@
-import React from 'react';
 import { Text, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../common/utils/withAlpha';
 
 
 type StatKey = 'accuracy' | 'streak' | 'questions';
@@ -45,17 +43,17 @@ export function AnalyticsStatsCard({ accuracy, streak, questions, totalQuestions
       valueColor: theme.color.textPrimary,
       background: theme.color.card,
       border: theme.color.border,
-      shadowColor: theme.color.accent,
+      shadowColor: theme.color.border,
     },
     {
       key: 'streak',
       label: theme.i18n.t('components.AnalyticsStatsCard.streak') || 'Streak',
       value: String(streak),
       color: theme.color.error,
-      valueColor: theme.color.success,
-      background: withAlpha(theme.color.success, theme.isDark ? 0.09 : 0.12),
-      border: withAlpha(theme.color.success, theme.isDark ? 0.24 : 0.30),
-      shadowColor: theme.color.success,
+      valueColor: theme.color.textPrimary,
+      background: theme.color.card,
+      border: theme.color.border,
+      shadowColor: theme.color.border,
     },
     {
       key: 'questions',
@@ -65,7 +63,7 @@ export function AnalyticsStatsCard({ accuracy, streak, questions, totalQuestions
       valueColor: theme.color.textPrimary,
       background: theme.color.card,
       border: theme.color.border,
-      shadowColor: theme.color.info,
+      shadowColor: theme.color.border,
     },
   ];
 
@@ -84,8 +82,8 @@ export function AnalyticsStatsCard({ accuracy, streak, questions, totalQuestions
             borderWidth: 1,
             borderColor: item.border,
             borderRadius: theme.borderRadius.lg,
-            elevation: 2,
-            boxShadow: `0px 4px 10px ${withAlpha(item.shadowColor, theme.isDark ? 0.12 : 0.05)}`,
+            elevation: 1,
+            boxShadow: theme.isDark ? 'none' : '0px 2px 8px rgba(0, 0, 0, 0.04)',
             backgroundColor: item.background,
           }}
         >
