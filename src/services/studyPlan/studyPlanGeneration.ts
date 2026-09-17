@@ -1,13 +1,12 @@
 import { type StudyPlanPromptContext } from './studyPlanPrompt.js';
 import { generateFallbackWeekSessions } from './studyPlanFallback.js';
 import { type ValidatedGeminiSession } from '../../validators/studyPlanOutputValidation.js';
+import { generateJsonContent, GeminiRequestError } from '../../integrations/geminiClient.js';
 import { validateGeminiStudyPlanOutput } from '../../validators/studyPlanOutputValidation.js';
 import { buildStudyPlanSystemInstruction, buildStudyPlanUserContent } from './studyPlanPrompt.js';
-import { generateJsonContent, GeminiRequestError } from '../../integrations/geminiClient.js';
 
 
 const MAX_GEMINI_ATTEMPTS = 2;
-
 export interface GenerationOutcome {
   sessions: ValidatedGeminiSession[];
   generatedBy: 'ai' | 'fallback';
@@ -19,7 +18,11 @@ export async function generateWeekSessions(ctx: StudyPlanPromptContext): Promise
 
   for (let attempt=1; attempt<=MAX_GEMINI_ATTEMPTS; attempt++) {
     try {
-      const raw = await generateJsonContent({ systemInstruction, userContent });
+      const raw = await generateJsonContent({
+        systemInstruction,
+        userContent,
+        apiKeyIndex: attempt - 1,
+      });
       const validated = validateGeminiStudyPlanOutput(
         raw,
         ctx.daysPerWeek,
@@ -29,9 +32,7 @@ export async function generateWeekSessions(ctx: StudyPlanPromptContext): Promise
       if (validated) return { sessions: validated, generatedBy: 'ai' };
       console.warn(`[studyPlan] Gemini output failed validation on attempt ${attempt}/${MAX_GEMINI_ATTEMPTS}.`);
     } catch (err) {
-      const message = err instanceof GeminiRequestError
-        ? err.message
-        : (err as Error).message;
+      const message = err instanceof GeminiRequestError ? err.message : (err as Error).message;
       console.warn(`[studyPlan] Gemini request failed on attempt ${attempt}/${MAX_GEMINI_ATTEMPTS}: ${message}`);
     }
   }
