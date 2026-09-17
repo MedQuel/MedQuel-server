@@ -51,7 +51,13 @@ export interface PublicProfileDTO {
   epPoints: number;
   currentStreak: number;
   longestStreak: number;
+  totalQuestions: number;
+  totalCorrect: number;
+  accuracy: number;
+  studyHours: number;
+  quizzesCompleted: number;
   badges: string[];
+  friends: FriendSummaryDTO[];
   relationshipStatus: FriendRelationshipStatus;
   headToHead: { wins: number; losses: number } | null;
   comparison: { xpDelta: number; epDelta: number; streakDelta: number; levelDelta: number };
@@ -314,6 +320,13 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
   const viewer = viewerSnap.data()!;
   const target = targetSnap.data()!;
   const relationshipStatus = await getRelationshipStatus(viewerUid, trimmedTarget, db);
+  const friendsSnap = await db
+    .collection('users')
+    .doc(trimmedTarget)
+    .collection('friends')
+    .orderBy('displayName', 'asc')
+    .limit(20)
+    .get();
 
   let headToHead: PublicProfileDTO['headToHead'] = null;
   if (relationshipStatus === 'FRIENDS') {
@@ -334,7 +347,32 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
     epPoints: target.epPoints ?? 0,
     currentStreak: target.currentStreak ?? 0,
     longestStreak: target.longestStreak ?? 0,
+    totalQuestions: target.totalQuestions ?? 0,
+    totalCorrect: target.totalCorrect ?? 0,
+    accuracy: target.totalQuestions
+      ? Math.round(((target.totalCorrect ?? 0)/target.totalQuestions)*10000) / 100
+      : 0,
+    studyHours: target.studyHours ?? 0,
+    quizzesCompleted: target.stats?.completedSessions ?? target.stats?.contestsPlayed ?? 0,
     badges: target.badges ?? [],
+    friends: friendsSnap.docs.map((friendDoc) => {
+      const data = friendDoc.data();
+      return {
+        uid: friendDoc.id,
+        displayName: data.displayName ?? 'Unknown',
+        photoURL: data.photoURL ?? null,
+        currentLevel: data.currentLevel ?? 1,
+        currentStreak: data.currentStreak ?? 0,
+        epPoints: data.epPoints ?? 0,
+        headToHead: {
+          wins: data.headToHead?.wins ?? 0,
+          losses: data.headToHead?.losses ?? 0,
+        },
+        addedAt: data.addedAt instanceof Timestamp
+          ? data.addedAt.toDate().toISOString()
+          : new Date().toISOString(),
+      };
+    }),
     relationshipStatus,
     headToHead,
     comparison: {
