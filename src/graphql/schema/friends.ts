@@ -54,7 +54,13 @@ export const friendsTypeDefs = `#graphql
     epPoints: Int!
     currentStreak: Int!
     longestStreak: Int!
+    totalQuestions: Int!
+    totalCorrect: Int!
+    accuracy: Float!
+    studyHours: Float!
+    quizzesCompleted: Int!
     badges: [String!]!
+    friends: [FriendSummary!]!
     relationshipStatus: FriendRelationshipStatus!
     headToHead: HeadToHead
     comparison: ProfileComparison!
