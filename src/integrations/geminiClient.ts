@@ -2,17 +2,31 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 const REQUEST_TIMEOUT_MS = 15_000;
 
 
-export class GeminiRequestError extends Error {}
+export class GeminiRequestError extends Error {
+  status?: number;
+  constructor(message: string, status?: number) {
+    super(message);
+    this.status = status;
+  }
+}
 export interface GeminiGenerateOptions {
   systemInstruction: string;
   userContent: string;
   maxOutputTokens?: number;
+  apiKeyIndex?: number;
 }
 
+
 export async function generateJsonContent(options: GeminiGenerateOptions): Promise<unknown> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
-  if (!apiKey) throw new GeminiRequestError('GEMINI_API_KEY is not set.');
+  const apiKeys = [
+    process.env.GEMINI_API_KEY_1,
+    process.env.GEMINI_API_KEY_2,
+  ].filter((key, index, keys): key is string => Boolean(key?.trim()) && keys.indexOf(key) === index);
+
+  const apiKeyIndex = options.apiKeyIndex ?? 0;
+  const apiKey = apiKeys[apiKeyIndex];
+  const model = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+  if (!apiKey) throw new GeminiRequestError(`Gemini API key ${apiKeyIndex + 1} is not configured.`);
 
   const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
   const body = {
@@ -44,7 +58,7 @@ export async function generateJsonContent(options: GeminiGenerateOptions): Promi
 
   if (!response.ok) {
     const text = await response.text().catch(() => '');
-    throw new GeminiRequestError(`Gemini API returned ${response.status}: ${text.slice(0, 300)}`);
+    throw new GeminiRequestError(`Gemini API returned ${response.status}: ${text.slice(0, 300)}`, response.status);
   }
 
   const data = (await response.json()) as {
