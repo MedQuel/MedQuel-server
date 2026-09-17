@@ -302,7 +302,22 @@ const GET_USER_PROFILE_QUERY = gql`
       epPoints
       currentStreak
       longestStreak
+      totalQuestions
+      totalCorrect
+      accuracy
+      studyHours
+      quizzesCompleted
       badges
+      friends {
+        uid
+        displayName
+        photoURL
+        currentLevel
+        currentStreak
+        epPoints
+        headToHead { wins losses }
+        addedAt
+      }
       relationshipStatus
       headToHead {
         wins
