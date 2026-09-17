@@ -65,7 +65,12 @@ async function regenerateOneUserPlan(planDoc: FirebaseFirestore.QueryDocumentSna
 
   for (let attempt=1; attempt<=MAX_GEMINI_ATTEMPTS; attempt++) {
     try {
-      const raw = await generateJsonContent({ systemInstruction, userContent });
+      const raw = await generateJsonContent({
+        systemInstruction,
+        userContent,
+        apiKeyIndex: attempt - 1,
+      });
+
       const candidate = validateGeminiStudyPlanOutput(
         raw,
         planData.daysPerWeek,
@@ -77,7 +82,8 @@ async function regenerateOneUserPlan(planDoc: FirebaseFirestore.QueryDocumentSna
         break;
       }
     } catch (err) {
-      console.warn(`[weeklyStudyPlanRegeneration] uid=${uid} attempt ${attempt} failed:`, err instanceof GeminiRequestError ? err.message : err);
+      const message = err instanceof GeminiRequestError ? err.message : (err as Error).message;
+      console.warn(`[weeklyStudyPlanRegeneration] Gemini request failed on attempt ${attempt}/${MAX_GEMINI_ATTEMPTS}: ${message}`);
     }
   }
 
