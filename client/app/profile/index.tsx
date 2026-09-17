@@ -1,24 +1,23 @@
-import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
-import { api } from "@/common/api/api";
-import { useTheme } from "../../theme/ThemeContext";
-import type { Badge } from "../../common/types/types";
-import { ProfileScreenHeader } from "./profileScreenHeader";
-import { useBottomBar } from "../../common/context/useBottomBar";
+import { api } from '@/common/api/api';
+import { useTheme } from '../../theme/ThemeContext';
+import type { Badge } from '../../common/types/types';
+import ProfileScreenHeader from './profileScreenHeader';
+import { useBottomBar } from '../../common/context/useBottomBar';
 
-import { Loading } from "../../components/common/loading";
-import { EmptyState } from "../../components/common/EmptyState";
-import { EarnedBadgeCard } from "../../components/EarnedBadgeCard";
-import { PremiumUpsellCard } from "../../components/PremiumUpsellCard";
-import { ProfilePillRow } from "../../components/profile/ProfilePillRow";
-import { AddFriendButton } from "../../components/friends/AddfriendButton";
-import { ProfileScreenStatsCard } from "../../components/ProfileScreenStatsCard";
-import { SubjectPerformanceCard } from "../../components/SubjectPerformanceCard";
-import { AttemptHistoryItemCard } from "../../components/AttemptHistoryItemCard";
+import { Loading } from '../../components/common/loading';
+import { EmptyState } from '../../components/common/EmptyState';
+import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
+import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
+import { AddFriendButton } from '../../components/friends/AddfriendButton';
+import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
+import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
+import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard';
 
 
 function Pill({ theme, children, style }: any) {
@@ -26,8 +25,8 @@ function Pill({ theme, children, style }: any) {
     <View
       style={[
         {
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: 'center',
+          justifyContent: 'center',
           paddingVertical: theme.space.xs,
           paddingHorizontal: theme.space.sm * 1.1,
           borderRadius: theme.borderRadius.md + 2,
@@ -39,10 +38,9 @@ function Pill({ theme, children, style }: any) {
     </View>
   );
 }
-
 function IconLabel({ theme, icon, color, text, bold }: any) {
   return (
-    <View style={{ gap: theme.space.xs, flexDirection: "row", alignItems: "center" }}>
+    <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
       <MaterialCommunityIcons name={icon} size={theme.space.md} color={color} />
       <Text
         style={{
@@ -57,10 +55,9 @@ function IconLabel({ theme, icon, color, text, bold }: any) {
     </View>
   );
 }
-
 function Section({ theme, children, marginTop }: any) {
   return (
-    <View style={{ marginTop: marginTop ?? theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
+    <View style={{ paddingHorizontal: theme.space.md, marginTop: marginTop ?? theme.space.sm * 1.5 }}>
       {children}
     </View>
   );
@@ -76,9 +73,9 @@ export default function ProfileScreen() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { theme } = useTheme();
   const router = useRouter();
-  useBottomBar(true, "profile");
+  const { theme } = useTheme();
+  useBottomBar(true, 'profile');
 
   const loadData = useCallback(async () => {
     try {
@@ -94,7 +91,7 @@ export default function ProfileScreen() {
       setRecentData(analyticsData.recentAttempts ?? []);
       setAchievements(achievementsData ?? []);
     } catch {
-      setError("Could not load profile. Pull to refresh.");
+      setError('Could not load profile. Pull to refresh.');
     } finally {
       setLoad(false);
       setRefreshing(false);
@@ -112,26 +109,29 @@ export default function ProfileScreen() {
 
   const handleAddFriendsPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push("/friends" as any);
+    router.push('/friends' as any);
   }, [router]);
 
-  const formatTime = (iso: string) =>
-    new Date(iso).toLocaleString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+  const formatTime = (iso: string) => new Date(iso).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const subjectPerformance = analytics.subjectPerformance ?? [];
+  const hasRecentAttempts = (recentData ?? []).length > 0;
+  const displayBadges = achievements.filter((b) => b.status === 'earned');
 
   if (load) {
     return (
       <View
         style={{
           flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: 'center',
+          justifyContent: 'center',
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
@@ -146,22 +146,18 @@ export default function ProfileScreen() {
       <View
         style={{
           flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
+          alignItems: 'center',
+          justifyContent: 'center',
           paddingHorizontal: theme.space.md,
           backgroundColor: theme.color.background,
         }}
       >
         <Text style={{ color: theme.color.textSecondary }}>
-          {error ?? "Could not load profile. Pull to refresh."}
+          {error ?? 'Could not load profile. Pull to refresh.'}
         </Text>
       </View>
     );
   }
-
-  const subjectPerformance = analytics.subjectPerformance ?? [];
-  const hasRecentAttempts = (recentData ?? []).length > 0;
-  const displayBadges = achievements.filter((b) => b.status === "earned");
 
 
   return (
@@ -179,7 +175,7 @@ export default function ProfileScreen() {
     >
       <ProfileScreenHeader user={userData} />
 
-      <View style={{ gap: theme.space.xs * 1.5, alignItems: "center", marginTop: theme.space.xxl }}>
+      <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl }}>
         <Text
           style={{
             color: theme.color.textPrimary,
@@ -191,7 +187,7 @@ export default function ProfileScreen() {
           {userData?.displayName}
         </Text>
 
-        <View style={{ gap: theme.space.sm, flexDirection: "row" }}>
+        <View style={{ gap: theme.space.sm, flexDirection: 'row' }}>
           {userData?.describesYou && (
             <Pill
               theme={theme}
@@ -238,18 +234,18 @@ export default function ProfileScreen() {
             theme={theme}
             style={{
               gap: 5,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
               paddingVertical: theme.space.xs,
               paddingHorizontal: theme.space.sm + 3,
               borderWidth: 0.5,
-              borderColor: theme.color.warning + "22",
-              backgroundColor: theme.color.warning + "22",
+              borderColor: theme.color.warning + '22',
+              backgroundColor: theme.color.warning + '22',
             }}
           >
             <MaterialCommunityIcons
-              name="star"
+              name='star'
               size={theme.space.md}
               color={theme.color.warning}
             />
@@ -261,131 +257,111 @@ export default function ProfileScreen() {
                 fontFamily: theme.fontFamily.number,
               }}
             >
-              {theme.i18n.t("profile.level", {
-                level: userData?.currentLevel ?? 0,
-              })}
+              {theme.i18n.t('profile.level', { level: userData?.currentLevel ?? 0 })}
             </Text>
           </Pill>
         </View>
 
         {userData?.specialties?.length > 0 && (
-          <ProfilePillRow items={userData.specialties} variant="accent" />
+          <ProfilePillRow items={userData.specialties} variant='accent' />
         )}
 
         <View
           style={{
-            flexWrap: "wrap",
+            flexWrap: 'wrap',
             gap: theme.space.sm,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <IconLabel
             theme={theme}
-            icon="target"
+            icon='target'
             color={theme.color.textSecondary}
             text={userData?.targetExam}
           />
           {userData?.institution && (
             <IconLabel
               theme={theme}
-              icon="map-marker-outline"
+              icon='map-marker-outline'
               color={theme.color.textMuted}
               text={userData?.institution}
             />
           )}
           <IconLabel
             theme={theme}
-            icon="lightning-bolt"
+            icon='lightning-bolt'
             color={theme.color.info}
             bold
-            text={theme.i18n.t("profile.xpPoints", {
-              points: userData?.xpPoints ?? 0,
-            })}
+            text={theme.i18n.t('profile.xpPoints', { points: userData?.xpPoints ?? 0 })}
           />
         </View>
       </View>
 
-      {/* Stats Summary */}
-      <View
-        style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}
-      >
+      <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
         <ProfileScreenStatsCard
           stats={[
             {
-              label: theme.i18n.t("common.level"),
+              label: theme.i18n.t('common.level'),
               value: String(userData?.currentLevel ?? 0),
-              color: "#F59E0B",
-              icon: "star",
+              color: '#F59E0B',
+              icon: 'star',
             },
             {
-              label: theme.i18n.t("common.quizzes"),
+              label: theme.i18n.t('common.quizzes'),
               value: String(userData?.stats?.contestsPlayed ?? 0),
-              color: "#3B82F6",
-              icon: "lightning-bolt",
+              color: '#3B82F6',
+              icon: 'lightning-bolt',
             },
             {
-              label: theme.i18n.t("common.streak"),
+              label: theme.i18n.t('common.streak'),
               value: String(userData?.longestStreak ?? 0),
-              color: "#EF4444",
-              icon: "fire",
+              color: '#EF4444',
+              icon: 'fire',
             },
             {
-              label: theme.i18n.t("common.accuracy"),
-              value: `${
-                userData?.totalQuestions
-                  ? Math.floor(
-                      (userData.totalCorrect / userData.totalQuestions) * 1000
-                    ) / 10
-                  : 0
+              label: theme.i18n.t('common.accuracy'),
+              value: `${userData?.totalQuestions
+                ? Math.floor((userData.totalCorrect/userData.totalQuestions)*1000) / 10
+                : 0
               }%`,
-              color: "#22C55E",
-              icon: "bullseye",
+              color: '#22C55E',
+              icon: 'bullseye',
             },
           ]}
         />
       </View>
-     {/* Add Friends */}
-<Section theme={theme}>
-<AddFriendButton onPress={handleAddFriendsPress} />
-</Section>
 
       <Section theme={theme}>
-        <PremiumUpsellCard 
-        />
+        <AddFriendButton onPress={handleAddFriendsPress} />
       </Section>
 
-      {/* Achievements Card */}
       <Section theme={theme}>
         <EarnedBadgeCard
           achievements={displayBadges}
-          onViewAllPress={() => router.push("/achievements" as any)}
-          onBadgePress={() => router.push("/achievements" as any)}
+          onViewAllPress={() => router.push('/achievements' as any)}
+          onBadgePress={() => router.push('/achievements' as any)}
         />
       </Section>
 
-      {/* Subject Performance */}
       <Section theme={theme}>
         {subjectPerformance.length === 0 ? (
           <EmptyState
-            icon="bar-chart-2"
-            title="No subject data yet"
-            subtitle="Complete a few quizzes to see your subject-wise performance here."
+            icon='bar-chart-2'
+            title='No subject data yet'
+            subtitle='Complete a few quizzes to see your subject-wise performance here.'
           />
         ) : (
           <SubjectPerformanceCard
-            subjects={subjectPerformance.map(
-              (s: { subject: string; accuracy: number }) => ({
-                name: s.subject,
-                score: s.accuracy,
-              })
-            )}
+            subjects={subjectPerformance.map((s: { subject: string; accuracy: number }) => ({
+              name: s.subject,
+              score: s.accuracy,
+            }))}
           />
         )}
       </Section>
 
-      {/* Recent Attempts */}
       <Section theme={theme}>
         <Text
           style={{
@@ -397,14 +373,14 @@ export default function ProfileScreen() {
             marginLeft: theme.space.xs,
           }}
         >
-          {theme.i18n.t("profile.recentAttempts")}
+          {theme.i18n.t('profile.recentAttempts')}
         </Text>
 
         {!hasRecentAttempts ? (
           <EmptyState
-            icon="clock"
-            title="No attempts yet"
-            subtitle="Your recent quiz and contest attempts will show up here."
+            icon='clock'
+            title='No attempts yet'
+            subtitle='Your recent quiz and contest attempts will show up here.'
           />
         ) : (
           <AttemptHistoryItemCard
