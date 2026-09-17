@@ -1,86 +1,71 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
-} from 'react-native';
+import { View, Text, Image, Modal } from 'react-native';
+import { Pressable, TouchableOpacity } from 'react-native';
 
-import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { useTheme } from '../../theme/ThemeContext';
+import { hasValidPhoto } from '../../common/utils/imageUrl';
+
 
 type User = {
   displayName?: string;
   photoURL?: string;
   [key: string]: any;
 };
-
 type Props = {
   user: User | null;
 };
 
-export function ProfileScreenHeader({ user }: Props) {
-  const { theme } = useTheme();
-  const router = useRouter();
+export default function ProfileScreenHeader({ user }: Props) {
   const [photoModalVisible, setPhotoModalVisible] = useState(false);
-
   const hasPhoto = hasValidPhoto(user?.photoURL);
 
-  // Overlay colors derived from existing tokens
-  const overlayBg = 'rgba(0,0,0,0.92)';
-  const overlayCloseBtnBg = 'rgba(255,255,255,0.15)';
+  const router = useRouter();
+  const { theme } = useTheme();
 
   return (
     <>
-      {/* Full Screen Photo Modal */}
       {hasPhoto && (
         <Modal
           visible={photoModalVisible}
           transparent
-          animationType="fade"
+          animationType='fade'
           statusBarTranslucent
           onRequestClose={() => setPhotoModalVisible(false)}
         >
-          <StatusBar backgroundColor={overlayBg} barStyle="light-content" />
           <Pressable
             style={{
               flex: 1,
-              backgroundColor: overlayBg,
               alignItems: 'center',
               justifyContent: 'center',
+              backgroundColor: 'rgba(0,0,0,0.92)',
             }}
             onPress={() => setPhotoModalVisible(false)}
           >
-            {/* Close button */}
             <TouchableOpacity
               style={{
+                zIndex: 10,
                 position: 'absolute',
                 top: theme.space.xxl,
                 right: theme.space.md,
                 width: theme.space.xl + theme.space.xs,
                 height: theme.space.xl + theme.space.xs,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: overlayCloseBtnBg,
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 10,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: 'rgba(255,255,255,0.15)',
               }}
               onPress={() => setPhotoModalVisible(false)}
               activeOpacity={0.7}
             >
               <Ionicons
-                name="close"
+                name='close'
                 size={theme.fontSize.lg}
                 color={theme.color.textInverse}
               />
             </TouchableOpacity>
 
-            {/* Photo — inner Pressable stops backdrop close on photo tap */}
             <Pressable onPress={() => {}}>
               <Image
                 source={{ uri: user!.photoURL }}
@@ -89,18 +74,11 @@ export function ProfileScreenHeader({ user }: Props) {
                   height: theme.space.xxl * 7,
                   borderRadius: theme.borderRadius.xl,
                 }}
-                resizeMode="contain"
+                resizeMode='contain'
               />
             </Pressable>
 
-            {/* Name at bottom */}
-            <View
-              style={{
-                position: 'absolute',
-                bottom: theme.space.xxl + theme.space.md,
-                alignItems: 'center',
-              }}
-            >
+            <View style={{ position: 'absolute', bottom: theme.space.xxl + theme.space.md, alignItems: 'center' }}>
               <Text
                 style={{
                   color: theme.color.textInverse,
@@ -116,7 +94,6 @@ export function ProfileScreenHeader({ user }: Props) {
         </Modal>
       )}
 
-      {/* Header */}
       <View style={{ position: 'relative' }}>
         <View
           style={{
@@ -125,7 +102,6 @@ export function ProfileScreenHeader({ user }: Props) {
           }}
         />
 
-        {/* Edit button - left */}
         <TouchableOpacity
           onPress={() => router.push('/profile/updateProfile')}
           style={{
@@ -139,22 +115,17 @@ export function ProfileScreenHeader({ user }: Props) {
             borderWidth: 1,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.lg + 2,
-            backgroundColor: theme.isDark
-              ? theme.color.card
-              : theme.color.textMuted + '33',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            backgroundColor: theme.isDark ? theme.color.card : theme.color.textMuted + '33',
+            boxShadow: theme.isDark ? '0 6px 14px rgba(0,0,0,0.2)' : '0 6px 14px rgba(0,0,0,0.05)',
           }}
         >
           <Feather
-            name="edit-2"
+            name='edit-2'
             size={theme.space.md + 2}
             color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
           />
         </TouchableOpacity>
 
-        {/* Settings button - right */}
         <TouchableOpacity
           onPress={() => router.push('/profile/settingsScreen')}
           style={{
@@ -168,22 +139,17 @@ export function ProfileScreenHeader({ user }: Props) {
             borderWidth: 1,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.lg + 2,
-            backgroundColor: theme.isDark
-              ? theme.color.card
-              : theme.color.textMuted + '33',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            backgroundColor: theme.isDark ? theme.color.card : theme.color.textMuted + '33',
+            boxShadow: theme.isDark ? '0 6px 14px rgba(0,0,0,0.2)' : '0 6px 14px rgba(0,0,0,0.05)',
           }}
         >
           <Feather
-            name="settings"
+            name='settings'
             size={theme.space.md + 2}
             color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
           />
         </TouchableOpacity>
 
-        {/* Avatar — tappable if photo exists */}
         <TouchableOpacity
           activeOpacity={hasPhoto ? 0.85 : 1}
           onPress={() => hasPhoto && setPhotoModalVisible(true)}
@@ -199,17 +165,14 @@ export function ProfileScreenHeader({ user }: Props) {
             borderWidth: 4,
             borderColor: theme.color.border,
             borderRadius: theme.borderRadius.full,
-            backgroundColor: hasPhoto ? theme.color.card : theme.color.premium + 'FF',
-            boxShadow: theme.isDark
-              ? '0 6px 14px rgba(0,0,0,0.2)'
-              : '0 6px 14px rgba(0,0,0,0.05)',
+            boxShadow: theme.isDark ? '0 6px 14px rgba(0,0,0,0.2)' : '0 6px 14px rgba(0,0,0,0.05)',
           }}
         >
           {hasPhoto ? (
             <Image
+              resizeMode='cover'
               source={{ uri: user!.photoURL }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
             />
           ) : (
             <Text
@@ -217,9 +180,7 @@ export function ProfileScreenHeader({ user }: Props) {
                 lineHeight: 82,
                 textAlign: 'center',
                 includeFontPadding: false,
-                color: theme.isDark
-                  ? theme.color.textPrimary
-                  : theme.color.textInverse,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                 fontSize: theme.fontSize.xxl + 20,
                 fontWeight: theme.fontWeight.bold,
               }}
