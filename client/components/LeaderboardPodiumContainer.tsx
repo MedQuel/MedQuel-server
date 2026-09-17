@@ -104,7 +104,7 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
                   >
                     <Text
                       style={{
-                        color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                        color: theme.color.textPrimary,
                         fontSize: isWinner ? theme.fontSize.xl : theme.fontSize.lg,
                         fontWeight: theme.fontWeight.bold,
                         fontFamily: theme.fontFamily.regular,
@@ -129,7 +129,7 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
                   >
                     <Text
                       style={{
-                        color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                        color: '#FFFFFF',
                         fontSize: theme.fontSize.xs,
                         fontWeight: theme.fontWeight.bold,
                         fontFamily: theme.fontFamily.number,

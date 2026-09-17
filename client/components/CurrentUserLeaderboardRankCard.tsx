@@ -24,10 +24,12 @@ export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowt
         justifyContent: 'space-between',
         paddingVertical: theme.space.sm * 1.5,
         paddingHorizontal: theme.space.md,
-        borderWidth: 1,
-        borderColor: withAlpha(theme.color.accent, 0.35),
+        borderWidth: 1.5,
+        borderColor: withAlpha(theme.color.accent, theme.isDark ? 0.45 : 0.4),
         borderRadius: theme.borderRadius.xl,
-        backgroundColor: withAlpha(theme.color.accent, theme.isDark ? 0.08 : 0.04),
+        backgroundColor: theme.color.card,
+        elevation: 2,
+        boxShadow: theme.isDark ? 'none' : '0px 2px 8px rgba(37, 99, 235, 0.08)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -64,7 +66,7 @@ export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowt
           >
             <Text
               style={{
-                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                color: '#FFFFFF',
                 fontSize: theme.fontSize.md,
                 fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.regular,
