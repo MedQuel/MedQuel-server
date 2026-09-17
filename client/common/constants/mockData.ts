@@ -113,7 +113,13 @@ export function buildMockPublicProfile(uid: string): PublicProfile {
     epPoints: 2890,
     currentStreak: 18,
     longestStreak: 22,
+    totalQuestions: 120,
+    totalCorrect: 96,
+    accuracy: 80,
+    studyHours: 42,
+    quizzesCompleted: 18,
     badges: ['streak_30'],
+    friends: MOCK_FRIENDS,
     relationshipStatus: 'NONE',
     headToHead: null,
     comparison: {
