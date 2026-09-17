@@ -153,7 +153,13 @@ export interface PublicProfile {
   epPoints: number;
   currentStreak: number;
   longestStreak: number;
+  totalQuestions: number;
+  totalCorrect: number;
+  accuracy: number;
+  studyHours: number;
+  quizzesCompleted: number;
   badges: string[];
+  friends: FriendSummary[];
   relationshipStatus: FriendRelationshipStatus;
   headToHead: HeadToHead | null;
   comparison: ProfileComparison;
