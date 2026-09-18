@@ -3,21 +3,24 @@ import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Text, View, Pressable, ScrollView } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActivityIndicator, Modal, TouchableOpacity } from 'react-native';
 
 import { userApi } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import { Loading } from '../../components/common/loading';
 import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { ProfilePhotoUploadError } from '../../common/api/api.errors';
 import type { UpdateProfileInput, Specialty } from '../../common/types/types';
-import { UpdateProfilePhoto } from '../../components/profile/UpdateProfilePhoto';
-import { UpdateProfileStatus } from '../../components/profile/UpdateProfileStatus';
 import { removeProfilePhoto, uploadProfilePhoto } from '../../common/firebase/storage';
 import { MAX_SPECIALTIES, MAX_FOCUS_SUBJECTS } from '../../common/constants/onboardingOptions';
-import { UpdateProfileFields, type ProfileFormValues } from '../../components/profile/UpdateProfileFields';
 import { ROLE_HAS_YEAR, ROLE_HAS_SPECIALTY, targetExamsFor } from '../../common/constants/onboardingOptions';
+
+import { Loading } from '../../components/common/loading';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { UpdateProfilePhoto } from '../../components/profile/UpdateProfilePhoto';
+import { UpdateProfileStatus } from '../../components/profile/UpdateProfileStatus';
+import { UpdateProfileFields, type ProfileFormValues } from '../../components/profile/UpdateProfileFields';
 
 
 interface ProfileFormState extends ProfileFormValues {
@@ -74,6 +77,7 @@ export default function UpdateProfile() {
   const navigateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   useBottomBar(false, 'profile');
 
@@ -362,61 +366,24 @@ export default function UpdateProfile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <ScreenHeader
+        title={theme.i18n.t('profile.updateProfile.title')}
+        subtitle={theme.i18n.t('profile.updateProfile.subtitle')}
+        onBack={() => router.canGoBack()
+          ? router.back()
+          : router.replace('/profile')
+        }
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        style={{ flex: 1, backgroundColor: theme.color.background }}
         contentContainerStyle={{
-          padding: theme.space.lg,
-          paddingBottom: theme.space.xl,
+          flexGrow: 1,
+          marginTop: theme.space.md,
+          paddingBottom: theme.space.md,
+          paddingHorizontal: theme.space.md,
         }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: theme.space.lg }}>
-          <TouchableOpacity
-            onPress={() => router.push('/profile')}
-            accessibilityLabel='Back to profile'
-            style={{
-              width: 40,
-              height: 40,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: theme.space.sm,
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
-            }}
-          >
-            <Feather
-              name='chevron-left'
-              size={theme.fontSize.xl}
-              color={theme.color.textPrimary}
-            />
-          </TouchableOpacity>
-
-          <View>
-            <Text
-              style={{
-                color: theme.color.textPrimary,
-                fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.medium,
-                fontFamily: theme.fontFamily.bold,
-              }}
-            >
-              {theme.i18n.t('profile.updateProfile.title')}
-            </Text>
-            <Text
-              style={{
-                fontSize: theme.fontSize.sm,
-                color: theme.color.textMuted,
-                fontFamily: theme.fontFamily.bold,
-                marginTop: theme.space.xs,
-              }}
-            >
-              {theme.i18n.t('profile.updateProfile.subtitle')}
-            </Text>
-          </View>
-        </View>
-
         {feedback && (
           <UpdateProfileStatus
             message={feedback.message}
@@ -450,7 +417,7 @@ export default function UpdateProfile() {
       <View
         style={{
           paddingTop: theme.space.sm,
-          paddingBottom: theme.space.lg,
+          paddingBottom: insets.bottom * 1.15,
           paddingHorizontal: theme.space.lg,
           backgroundColor: theme.color.background,
         }}
