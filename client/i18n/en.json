@@ -34,7 +34,7 @@
     "questions": "questions",
     "accuracy": "Accuracy",
     "streak": "Streak",
-    "ep": "XP",
+    "ep": "EP",
     "ep_points": "EP Points",
     "now": "Now",
     "min": "min",
@@ -208,6 +208,8 @@
     "subtitle": "Compete & climb the ranks",
     "rankings": "Rankings",
     "players_count": "{{count}} players",
+    "top_three_podium_title": "Top 3 Champions",
+    "top_three_podium_desc": "Complete daily quizzes and earn EP to climb the leaderboard!",
     "tabs": {
       "weekly": "Weekly",
       "monthly": "Monthly",
@@ -245,6 +247,7 @@
     "title": "Analytics",
     "subtitle": "Track your learning progress",
     "subjectPerformance": "Subject Performance",
+    "accuracy_subtitle": "Accuracy",
     "empty_states": {
       "subject": {
         "title": "No subject performance yet",
