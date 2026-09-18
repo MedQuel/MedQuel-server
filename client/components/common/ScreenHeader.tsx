@@ -1,18 +1,19 @@
 import type { ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { StyleProp, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
 
-export type ScreenHeaderAction = {
+
+type ScreenHeaderAction = {
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void;
   color?: string;
   accessibilityLabel?: string;
 };
-
-export type ScreenHeaderProps = {
+type ScreenHeaderProps = {
   title: string;
   subtitle?: string;
   showBack?: boolean;
@@ -31,8 +32,8 @@ export function ScreenHeader({
   rightElement,
   containerStyle,
 }: ScreenHeaderProps) {
-  const { theme } = useTheme();
   const router = useRouter();
+  const { theme } = useTheme();
 
   const handleBack = () => {
     if (onBack) {
@@ -45,7 +46,7 @@ export function ScreenHeader({
   const actionButtonStyle = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    padding: theme.space.xs * 1.75,
+    padding: theme.space.sm,
     borderWidth: 1,
     borderColor: theme.color.border,
     borderRadius: theme.borderRadius.lg,
@@ -56,10 +57,10 @@ export function ScreenHeader({
     <View
       style={[
         {
-          gap: theme.space.sm,
+          gap: theme.space.sm * 1.5,
           flexDirection: 'row',
           alignItems: 'center',
-          paddingTop: theme.space.sm,
+          paddingTop: theme.space.sm * 0.8,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
         },
@@ -70,23 +71,26 @@ export function ScreenHeader({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleBack}
+          accessibilityRole='button'
+          accessibilityLabel='Go back'
           style={actionButtonStyle}
         >
           <Feather
-            name="chevron-left"
+            name='chevron-left'
             size={theme.fontSize.xl}
             color={theme.color.textPrimary}
           />
         </TouchableOpacity>
       )}
 
-      <View style={{ flex: 1, flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
+      <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'center' }}>
         <Text
           numberOfLines={1}
           style={{
             color: theme.color.textPrimary,
             fontSize: theme.fontSize.lg * 1.1,
             fontFamily: theme.fontFamily.bold,
+            lineHeight: theme.fontSize.lg * 1.1 * 1.2,
           }}
         >
           {title}
@@ -108,12 +112,13 @@ export function ScreenHeader({
       {rightElement ? (
         rightElement
       ) : rightActions.length > 0 ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+        <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
           {rightActions.map((action, index) => (
             <TouchableOpacity
               key={`${action.icon}-${index}`}
               activeOpacity={0.8}
               onPress={action.onPress}
+              accessibilityRole='button'
               accessibilityLabel={action.accessibilityLabel}
               style={actionButtonStyle}
             >
