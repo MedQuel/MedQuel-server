@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -13,6 +12,7 @@ import { Loading } from '../../components/common/loading';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
 import { BadgeProgressCard } from '../../components/BadgeProgressCard';
 import { AchievementProgressCard } from '../../components/AchievementProgressCard';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 // Temporarily commented out ActivityHeatmapCard from achievements screen
 // import { ActivityHeatmapCard } from '../../components/ActivityHeatmapCard';
 
@@ -210,60 +210,20 @@ export default function AchievementsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      {/* Header */}
-      <View
-        style={{
-          gap: theme.space.md,
-          flexDirection: 'row',
-          alignItems: 'center',
+      <ScreenHeader
+        title={theme.i18n.t('achievements.title')}
+        subtitle={theme.i18n.t('achievements.subtitle')}
+        showBack={true}
+        onBack={() => {
+          if (router.canGoBack()) router.back();
+          else router.push('/profile');
+        }}
+        containerStyle={{
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
-          backgroundColor: theme.color.background,
         }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            if (router.canGoBack()) router.back();
-            else router.push('/profile');
-          }}
-          activeOpacity={0.8}
-          style={{
-            width: 40,
-            height: 40,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            backgroundColor: theme.color.card,
-            borderRadius: theme.borderRadius.lg,
-            borderColor: theme.color.border,
-          }}
-        >
-          <Feather name="chevron-left" size={20} color={theme.color.textPrimary} />
-        </TouchableOpacity>
-
-        <View style={{ flex: 1, gap: theme.space.xs / 2, flexDirection: 'column' }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.xxl,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            {theme.i18n.t('achievements.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textSecondary,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            {theme.i18n.t('achievements.subtitle')}
-          </Text>
-        </View>
-      </View>
+      />
 
       {/* Main Content */}
       <View style={{ flex: 1 }}>
