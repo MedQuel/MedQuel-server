@@ -206,8 +206,7 @@ export function WeeklyDayTracker({ plan }: { plan: StudyPlan }) {
               flexShrink: 1,
               color: theme.color.accent,
               fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
+              fontFamily: theme.fontFamily.number,
             }}
           >
             {theme.i18n.t('studyPlan.weekTracker.xpProgress', { earned: xpEarned, target: plan.weeklyXpTarget })}
