@@ -43,7 +43,7 @@ export default function EarnedBadgesScreen() {
 
   const { theme } = useTheme();
   const router = useRouter();
-  useBottomBar(true, 'profile');
+  useBottomBar(false);
 
   const fetchData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
@@ -186,6 +186,19 @@ export default function EarnedBadgesScreen() {
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.space.md }}>
             <EmptyStateCard icon="alert-circle" title={theme.i18n.t('Error Loading Badges')} description={error} />
           </View>
+        ) : earnedBadges.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: theme.space.xl }}>
+            <Text
+              style={{
+                color: theme.color.textMuted,
+                fontSize: theme.fontSize.md,
+                fontFamily: theme.fontFamily.regular,
+                textAlign: 'center',
+              }}
+            >
+              {theme.i18n.t('achievements.empty_states.no_badges.title') || 'No badges earned yet'}
+            </Text>
+          </View>
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -197,95 +210,84 @@ export default function EarnedBadgesScreen() {
             }}
           >
             {/* EARNED SECTIONS */}
-            {earnedBadges.length > 0 ? (
-              activeEarnedCategories.map((catKey) => {
-                const categoryBadges = earnedByCategory[catKey] ?? [];
-                const catTitle = CATEGORY_LABELS[catKey] ?? catKey.replace('_', ' ').toUpperCase();
+            {activeEarnedCategories.map((catKey) => {
+              const categoryBadges = earnedByCategory[catKey] ?? [];
+              const catTitle = CATEGORY_LABELS[catKey] ?? catKey.replace('_', ' ').toUpperCase();
 
-                return (
-                  <View key={catKey}>
-                    <Text
-                      style={{
-                        color: theme.color.textPrimary,
-                        fontSize: theme.fontSize.lg,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.bold,
-                        marginBottom: theme.space.sm,
-                      }}
-                    >
-                      {catTitle} ({categoryBadges.length})
-                    </Text>
+              return (
+                <View key={catKey}>
+                  <Text
+                    style={{
+                      color: theme.color.textPrimary,
+                      fontSize: theme.fontSize.lg,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.bold,
+                      marginBottom: theme.space.sm,
+                    }}
+                  >
+                    {catTitle} ({categoryBadges.length})
+                  </Text>
 
-                    <View
-                      style={{
-                        padding: theme.space.md,
-                        borderWidth: 1,
-                        borderRadius: theme.borderRadius.xl,
-                        borderColor: theme.color.border,
-                        backgroundColor: theme.color.card,
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
-                        gap: theme.space.sm,
-                      }}
-                    >
-                      {categoryBadges.map((badge) => {
-                        const catalog = BADGE_CATALOG_MAP[badge.badgeId];
-                        const iconKey = (badge.iconKey || catalog?.iconKey || 'award') as AchievementIconKey;
-                        const variant = (badge.variant || catalog?.variant || 'gold') as AchievementVariant;
+                  <View
+                    style={{
+                      padding: theme.space.md,
+                      borderWidth: 1,
+                      borderRadius: theme.borderRadius.xl,
+                      borderColor: theme.color.border,
+                      backgroundColor: theme.color.card,
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: theme.space.sm,
+                    }}
+                  >
+                    {categoryBadges.map((badge) => {
+                      const catalog = BADGE_CATALOG_MAP[badge.badgeId];
+                      const iconKey = (badge.iconKey || catalog?.iconKey || 'award') as AchievementIconKey;
+                      const variant = (badge.variant || catalog?.variant || 'gold') as AchievementVariant;
 
-                        return (
-                          <View
-                            key={badge.badgeId}
+                      return (
+                        <View
+                          key={badge.badgeId}
+                          style={{
+                            width: '30%',
+                            alignItems: 'center',
+                            paddingVertical: theme.space.sm,
+                            paddingHorizontal: theme.space.xs,
+                          }}
+                        >
+                          <AchievementIcon iconKey={iconKey} variant={variant} size={64} />
+                          <Text
+                            numberOfLines={2}
                             style={{
-                              width: '30%',
-                              alignItems: 'center',
-                              paddingVertical: theme.space.sm,
-                              paddingHorizontal: theme.space.xs,
+                              textAlign: 'center',
+                              color: theme.color.textPrimary,
+                              fontSize: theme.fontSize.xs + 1,
+                              fontWeight: theme.fontWeight.bold,
+                              fontFamily: theme.fontFamily.bold,
+                              marginTop: theme.space.sm,
                             }}
                           >
-                            <AchievementIcon iconKey={iconKey} variant={variant} size={64} />
-                            <Text
-                              numberOfLines={2}
-                              style={{
-                                textAlign: 'center',
-                                color: theme.color.textPrimary,
-                                fontSize: theme.fontSize.xs + 1,
-                                fontWeight: theme.fontWeight.bold,
-                                fontFamily: theme.fontFamily.bold,
-                                marginTop: theme.space.sm,
-                              }}
-                            >
-                              {badge.name}
-                            </Text>
-                            <Text
-                              numberOfLines={2}
-                              style={{
-                                textAlign: 'center',
-                                color: theme.color.textMuted,
-                                fontSize: theme.fontSize.xs * 0.9,
-                                fontFamily: theme.fontFamily.regular,
-                                marginTop: 2,
-                              }}
-                            >
-                              {badge.description}
-                            </Text>
-                          </View>
-                        );
-                      })}
-                    </View>
+                            {badge.name}
+                          </Text>
+                          <Text
+                            numberOfLines={2}
+                            style={{
+                              textAlign: 'center',
+                              color: theme.color.textMuted,
+                              fontSize: theme.fontSize.xs * 0.9,
+                              fontFamily: theme.fontFamily.regular,
+                              marginTop: 2,
+                            }}
+                          >
+                            {badge.description}
+                          </Text>
+                        </View>
+                      );
+                    })}
                   </View>
-                );
-              })
-            ) : (
-              /* EMPTY STATE: Shown at center when user has not earned any badges */
-              <View style={{ marginVertical: theme.space.xl }}>
-                <EmptyStateCard
-                  icon="award"
-                  title={theme.i18n.t('No Badges Earned')}
-                  description={theme.i18n.t('You have not earned any badges yet.')}
-                />
-              </View>
-            )}
+                </View>
+              );
+            })}
 
             {/* LOCKED BADGES SECTION (At bottom of Earned Badges screen, in 3 columns) */}
             <View style={{ marginTop: theme.space.md }}>
