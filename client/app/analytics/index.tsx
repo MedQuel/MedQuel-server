@@ -7,6 +7,7 @@ import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../common/utils/withAlpha';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import { useAppContext } from '../../common/context/AppContext';
 import type { AnalyticsData, User } from '../../common/types/types';
 
 import { Loading } from '../../components/common/loading';
@@ -15,6 +16,7 @@ import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 import { ActivityHeatmapCard, type HeatmapDayItem } from '../../components/ActivityHeatmapCard';
 import { AnalyticsKeyStatItems } from '../../components/AnalyticsKeyStatItems';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 
 
 type SubjectPerformanceItem = {
@@ -191,7 +193,7 @@ const emptyAnalyticsSnapshot: AnalyticsSnapshot = {
 };
 
 export default function AnalyticsScreen() {
-  const [userData, setUserData] = useState<User | null>(null);
+  const { user, refreshUser } = useAppContext();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
@@ -203,17 +205,16 @@ export default function AnalyticsScreen() {
   const fetchData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
     try {
-      const [user, analytics] = await Promise.all([
-        api.user.getMe().catch(() => null),
-        api.analytics.getAnalytics().catch((err) => {
-          if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
-            console.warn('Could not fetch analytics:', err?.message || err);
-          }
-          return null;
-        }),
-      ]);
+      if (refreshUser) {
+        refreshUser().catch(() => {});
+      }
+      const analytics = await api.analytics.getAnalytics().catch((err) => {
+        if (err?.name !== 'AuthenticationError' && err?.code !== 'UNAUTHENTICATED') {
+          console.warn('Could not fetch analytics:', err?.message || err);
+        }
+        return null;
+      });
 
-      if (user) setUserData(user);
       if (analytics) setAnalyticsData(analytics);
     } catch (error: any) {
       if (error?.name !== 'AuthenticationError' && error?.code !== 'UNAUTHENTICATED') {
@@ -223,7 +224,7 @@ export default function AnalyticsScreen() {
       if (showLoader) setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [refreshUser]);
 
   useEffect(() => {
     fetchData(true);
@@ -241,12 +242,12 @@ export default function AnalyticsScreen() {
   }, [fetchData]);
 
   const data = useMemo(() => {
-    if (!userData || !analyticsData) return emptyAnalyticsSnapshot;
-    return buildAnalyticsSnapshot(userData, analyticsData);
-  }, [userData, analyticsData]);
+    if (!user || !analyticsData) return emptyAnalyticsSnapshot;
+    return buildAnalyticsSnapshot(user, analyticsData);
+  }, [user, analyticsData]);
 
   const hasCompletedContest =
-    (userData?.totalQuestions || 0) > 0 ||
+    (user?.totalQuestions || 0) > 0 ||
     data.attempts.length > 0 ||
     (analyticsData?.recentAttempts && analyticsData.recentAttempts.length > 0) ||
     (analyticsData?.heatmap && analyticsData.heatmap.some((h) => (h.questionsAttempted || 0) > 0));
@@ -258,35 +259,24 @@ export default function AnalyticsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <View
-        style={{
-          gap: theme.space.xs / 2,
+      <ScreenHeader
+        title={theme.i18n.t('analytics.title')}
+        subtitle={theme.i18n.t('analytics.subtitle')}
+        showBack={false}
+        rightActions={[
+          {
+            icon: 'award',
+            onPress: () => router.push('/achievements'),
+            color: theme.color.accent,
+            accessibilityLabel: 'Achievements',
+          },
+        ]}
+        containerStyle={{
           paddingTop: theme.space.lg,
           paddingBottom: theme.space.sm,
           paddingHorizontal: theme.space.md,
-          backgroundColor: theme.color.background,
         }}
-      >
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.xxl,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.bold,
-          }}
-        >
-          {theme.i18n.t('analytics.title')}
-        </Text>
-        <Text
-          style={{
-            color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm,
-            fontFamily: theme.fontFamily.light,
-          }}
-        >
-          {theme.i18n.t('analytics.subtitle')}
-        </Text>
-      </View>
+      />
 
       <View style={{ flex: 1 }}>
         {isLoading ? (

@@ -46,16 +46,28 @@ export function SubjectPerformanceCard({ subjects }: PerformanceBySubjectProps) 
           size={20}
           color={theme.color.accent}
         />
-        <Text
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.lg,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.bold,
-          }}
-        >
-          {titleText === 'performanceBySubject' ? 'Performance by Subject' : titleText}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.md,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {titleText === 'performanceBySubject' ? 'Performance by Subject' : titleText}
+          </Text>
+          <Text
+            style={{
+              color: theme.color.textMuted,
+              fontSize: theme.fontSize.xs,
+              fontFamily: theme.fontFamily.regular,
+              marginTop: 1,
+            }}
+          >
+            {theme.i18n.t('analytics.accuracy_subtitle') || 'Accuracy'}
+          </Text>
+        </View>
       </View>
 
       {subjects.length === 0 ? (
