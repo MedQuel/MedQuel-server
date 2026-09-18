@@ -4,13 +4,13 @@ import { View, ScrollView, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '../../common/api/api';
-import StudyPlanHeader from './studyPlanHeader';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { EMPTY_STUDY_PLAN } from '../../common/utils/createEmptyStudyPlan';
 import type { StudyPlan, StudyPlanSession, GenerateStudyPlanInput } from '../../common/types/types';
 
 import { Loading } from '../../components/common/loading';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { WeeklyDayTracker } from '../../components/studyPlan/WeeklyDayTracker';
 import { PlanOverviewCard } from '../../components/studyPlan/PlanOverviewCard';
 import { ReadSessionModal } from '../../components/studyPlan/ReadSessionModal';
@@ -132,12 +132,20 @@ export default function StudyPlanScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <StudyPlanHeader
+      <ScreenHeader
+        title={theme.i18n.t('studyPlan.header.title')}
+        subtitle={theme.i18n.t('studyPlan.header.subtitle')}
         onBack={() => router.canGoBack()
           ? router.back()
           : router.replace('/home')
         }
-        onEdit={() => setWizardVisible(true)}
+        rightActions={[
+          {
+            icon: 'edit-2',
+            onPress: () => setWizardVisible(true),
+            accessibilityLabel: 'Edit study plan',
+          },
+        ]}
       />
 
       {error || !plan ? (
