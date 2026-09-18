@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -8,8 +8,11 @@ import { withAlpha } from '../common/utils/withAlpha';
 type LeaderboardRankCardProps = {
   rank: number;
   name: string;
-  specialty: string;
+  specialty?: string | null;
   points: number;
+  photoURL?: string | null;
+  isSimple?: boolean;
+  isCurrentUser?: boolean;
 };
 
 export function LeaderboardRankCard({
@@ -17,6 +20,9 @@ export function LeaderboardRankCard({
   name,
   specialty,
   points,
+  photoURL,
+  isSimple = false,
+  isCurrentUser = false,
 }: LeaderboardRankCardProps) {
   const { theme } = useTheme();
 
@@ -31,9 +37,10 @@ export function LeaderboardRankCard({
   };
 
   // Determine dynamic theme styling for Gold (#1), Silver (#2), Bronze (#3), or standard (#4+)
-  const isGold = rank === 1;
-  const isSilver = rank === 2;
-  const isBronze = rank === 3;
+  // In simple mode (e.g. friends leaderboard), top 3 gradients are omitted
+  const isGold = !isSimple && rank === 1;
+  const isSilver = !isSimple && rank === 2;
+  const isBronze = !isSimple && rank === 3;
   const isTop3 = isGold || isSilver || isBronze;
 
   const mainColor = isGold
@@ -42,6 +49,8 @@ export function LeaderboardRankCard({
     ? theme.color.info
     : isBronze
     ? theme.color.premium
+    : isCurrentUser
+    ? theme.color.accent
     : theme.color.textMuted;
 
   const cardGradientColors: [string, string] = isGold
@@ -61,7 +70,9 @@ export function LeaderboardRankCard({
       ]
     : [theme.color.card, theme.color.card];
 
-  const borderColor = isGold
+  const borderColor = isCurrentUser
+    ? withAlpha(theme.color.accent, 0.45)
+    : isGold
     ? withAlpha(theme.color.warning, 0.35)
     : isSilver
     ? withAlpha(theme.color.info, 0.3)
@@ -80,11 +91,13 @@ export function LeaderboardRankCard({
     <View
       style={{
         borderRadius: theme.borderRadius.xl,
-        borderWidth: 1,
+        borderWidth: isCurrentUser ? 1.5 : 1,
         borderColor,
         overflow: 'hidden',
-        backgroundColor: theme.color.card,
-        elevation: 1,
+        backgroundColor: isCurrentUser
+          ? withAlpha(theme.color.accent, theme.isDark ? 0.09 : 0.04)
+          : theme.color.card,
+        elevation: isCurrentUser ? 2 : 1,
         boxShadow: theme.isDark ? 'none' : '0px 2px 6px rgba(0, 0, 0, 0.03)',
       }}
     >
@@ -98,7 +111,7 @@ export function LeaderboardRankCard({
           justifyContent: 'space-between',
           paddingVertical: theme.space.sm * 1.5,
           paddingHorizontal: theme.space.md,
-          backgroundColor: isTop3 ? 'transparent' : theme.color.card,
+          backgroundColor: isTop3 ? 'transparent' : 'transparent',
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: theme.space.sm }}>
@@ -122,7 +135,7 @@ export function LeaderboardRankCard({
             ) : null}
             <Text
               style={{
-                color: isTop3 ? mainColor : theme.color.textMuted,
+                color: isTop3 ? mainColor : isCurrentUser ? theme.color.accent : theme.color.textMuted,
                 fontSize: isTop3 ? theme.fontSize.md + 1 : theme.fontSize.md,
                 fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.number,
@@ -142,44 +155,82 @@ export function LeaderboardRankCard({
               flex: 1,
             }}
           >
-            <LinearGradient
-              colors={avatarGradientColors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: theme.space.xl * 1.25,
-                height: theme.space.xl * 1.25,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 2,
-                borderColor: avatarBorderColor,
-                borderRadius: theme.borderRadius.full,
-              }}
-            >
-              <Text
+            {photoURL ? (
+              <Image
+                source={{ uri: photoURL }}
                 style={{
-                  color: avatarTextColor,
-                  fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  width: theme.space.xl * 1.25,
+                  height: theme.space.xl * 1.25,
+                  borderRadius: theme.borderRadius.full,
+                  borderWidth: 2,
+                  borderColor: avatarBorderColor,
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <LinearGradient
+                colors={avatarGradientColors}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: theme.space.xl * 1.25,
+                  height: theme.space.xl * 1.25,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: avatarBorderColor,
+                  borderRadius: theme.borderRadius.full,
                 }}
               >
-                {getInitials(name)}
-              </Text>
-            </LinearGradient>
+                <Text
+                  style={{
+                    color: avatarTextColor,
+                    fontSize: theme.fontSize.md,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {getInitials(name)}
+                </Text>
+              </LinearGradient>
+            )}
 
             <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', justifyContent: 'flex-start', flex: 1 }}>
-              <Text
-                numberOfLines={1}
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
-                }}
-              >
-                {name}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
+                <Text
+                  numberOfLines={1}
+                  style={{
+                    color: isCurrentUser ? theme.color.accent : theme.color.textPrimary,
+                    fontSize: theme.fontSize.md,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.regular,
+                    flexShrink: 1,
+                  }}
+                >
+                  {name}
+                </Text>
+                {isCurrentUser && (
+                  <View
+                    style={{
+                      paddingHorizontal: 6,
+                      paddingVertical: 1,
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: withAlpha(theme.color.accent, 0.15),
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        fontWeight: theme.fontWeight.bold,
+                        color: theme.color.accent,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                    >
+                      {theme.i18n.t('common.you') || 'You'}
+                    </Text>
+                  </View>
+                )}
+              </View>
               {specialty ? (
                 <Text
                   numberOfLines={1}
@@ -196,7 +247,7 @@ export function LeaderboardRankCard({
         <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', alignItems: 'flex-end' }}>
           <Text
             style={{
-              color: isTop3 ? mainColor : theme.color.textPrimary,
+              color: isTop3 ? mainColor : isCurrentUser ? theme.color.accent : theme.color.textPrimary,
               fontSize: theme.fontSize.md,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.number,
@@ -205,7 +256,7 @@ export function LeaderboardRankCard({
             {points.toLocaleString()}
           </Text>
           <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs * 1.1, fontFamily: theme.fontFamily.light }}>
-            {theme.i18n.t('common.ep')}
+            {theme.i18n.t('common.ep') || 'EP'}
           </Text>
         </View>
       </LinearGradient>

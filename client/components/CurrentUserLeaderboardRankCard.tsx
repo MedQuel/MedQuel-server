@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -10,9 +10,10 @@ type CurrentUserLeaderboardRankCardProps = {
   rank: number;
   points: number;
   weeklyGrowth: number;
+  photoURL?: string | null;
 };
 
-export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowth }: CurrentUserLeaderboardRankCardProps) {
+export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowth, photoURL }: CurrentUserLeaderboardRankCardProps) {
   const avatarInitial = name.trim().charAt(0).toUpperCase();
   const { theme } = useTheme();
 
@@ -52,29 +53,43 @@ export function CurrentUserLeaderboardRankCard({ name, rank, points, weeklyGrowt
             marginLeft: theme.space.md,
           }}
         >
-          <LinearGradient
-            colors={[theme.color.accent, withAlpha(theme.color.accent, 0.75)]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              width: theme.space.xl * 1.25,
-              height: theme.space.xl * 1.25,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: theme.borderRadius.full,
-            }}
-          >
-            <Text
+          {photoURL ? (
+            <Image
+              source={{ uri: photoURL }}
               style={{
-                color: '#FFFFFF',
-                fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                width: theme.space.xl * 1.25,
+                height: theme.space.xl * 1.25,
+                borderRadius: theme.borderRadius.full,
+                borderWidth: 1.5,
+                borderColor: theme.color.accent,
+              }}
+              resizeMode="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={[theme.color.accent, withAlpha(theme.color.accent, 0.75)]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{
+                width: theme.space.xl * 1.25,
+                height: theme.space.xl * 1.25,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: theme.borderRadius.full,
               }}
             >
-              {avatarInitial}
-            </Text>
-          </LinearGradient>
+              <Text
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: theme.fontSize.md,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {avatarInitial}
+              </Text>
+            </LinearGradient>
+          )}
 
           <View style={{ gap: theme.space.xs * 0.5, flexDirection: 'column', justifyContent: 'flex-start' }}>
             <Text
