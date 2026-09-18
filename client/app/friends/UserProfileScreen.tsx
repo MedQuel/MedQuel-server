@@ -9,10 +9,11 @@ import { useTheme } from '../../theme/ThemeContext';
 import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
+import { FriendsRow } from '../../components/friends/FriendsRow';
 import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
 import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
 import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
-import type { PublicProfile, FriendRelationshipStatus } from '../../common/types/types';
+import type { PublicProfile, FriendSummary, FriendRelationshipStatus } from '../../common/types/types';
 
 
 function Pill({ theme, children, style }: any) {
@@ -116,9 +117,20 @@ export default function UserProfileScreen() {
   };
 
   const handleChallenge = () => {
-    // Swap this for router.push(`/challenge/${uid}`) once that route exists.
     Alert.alert('Challenge', 'Challenge flow coming soon!');
   };
+
+  const handleFriendPress = useCallback((friend: FriendSummary) => {
+    router.push({ pathname: '/friends/UserProfileScreen', params: { uid: friend.uid } } as any);
+  }, [router]);
+
+  const handleViewAllFriends = useCallback(() => {
+    if (!profile) return;
+    router.push({
+      pathname: '/friends/FriendsListScreen',
+      params: { uid: profile.uid, displayName: profile.displayName },
+    } as any);
+  }, [router, profile]);
 
   if (loading) {
     return (
@@ -153,32 +165,37 @@ export default function UserProfileScreen() {
     ...(!isSelf ? [{ key: 'report', label: 'Report User', icon: 'flag-outline' as const, destructive: true, onPress: () => Alert.alert('Reported', 'Thanks — our team will review this.') }] : []),
   ];
 
- const stats = [
-  {
-    label: theme.i18n.t('common.level'),
-    value: String(profile.currentLevel),
-    color: '#F59E0B',
-    icon: 'star',
-  },
-  {
-    label: 'XP Points',
-    value: String(profile.xpPoints),
-    color: '#3B82F6',
-    icon: 'lightning-bolt',
-  },
-  {
-    label: theme.i18n.t('common.streak'),
-    value: String(profile.currentStreak),
-    color: '#EF4444',
-    icon: 'fire',
-  },
-  {
-    label: 'Best Streak',
-    value: String(profile.longestStreak),
-    color: '#F59E0B',
-    icon: 'trophy-outline',
-  },
-];
+  // ✅ Same 4 fields as profile screen: Level, Quizzes, Streak, Accuracy
+  const stats = [
+    {
+      label: theme.i18n.t('common.level'),
+      value: String(profile.currentLevel),
+      color: '#F59E0B',
+      icon: 'star',
+    },
+    {
+      label: theme.i18n.t('common.quizzes'),
+      value: String(profile.quizzesCompleted ?? 0),
+      color: '#3B82F6',
+      icon: 'lightning-bolt',
+    },
+    {
+      label: theme.i18n.t('common.streak'),
+      value: String(profile.currentStreak),
+      color: '#EF4444',
+      icon: 'fire',
+    },
+    {
+      label: theme.i18n.t('common.accuracy'),
+      value: `${profile.totalQuestions
+        ? Math.floor((profile.totalCorrect / profile.totalQuestions) * 1000) / 10
+        : 0
+      }%`,
+      color: '#22C55E',
+      icon: 'bullseye',
+    },
+  ];
+
   const overlayBg = 'rgba(0,0,0,0.92)';
   const overlayCloseBtnBg = 'rgba(255,255,255,0.15)';
   const headerBtnBg = theme.isDark ? theme.color.card : theme.color.textMuted + '33';
@@ -450,7 +467,6 @@ export default function UserProfileScreen() {
               </View>
             )}
 
-            {/* ✅ CHANGED: Challenge button sirf FRIENDS ke liye show hoga */}
             {isFriend && (
               <TouchableOpacity
                 onPress={handleChallenge}
@@ -468,7 +484,7 @@ export default function UserProfileScreen() {
         )}
       </View>
 
-      {/* Stats */}
+      {/* Stats — same as profile screen */}
       <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
         <ProfileScreenStatsCard stats={stats} />
       </View>
@@ -499,6 +515,16 @@ export default function UserProfileScreen() {
           </View>
         </View>
       )}
+
+      {/* Friends */}
+      <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
+        <FriendsRow
+          friends={profile.friends}
+          title={`${profile.displayName}'s friends`}
+          onViewAll={handleViewAllFriends}
+          onFriendPress={handleFriendPress}
+        />
+      </View>
 
       {/* Earned badges */}
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>

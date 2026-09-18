@@ -1,28 +1,32 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Avatar } from './Avatar';
 import { useTheme } from '../../theme/ThemeContext';
 import type { FriendSummary } from '../../common/types/types';
 
-
 type Props = {
   friend: FriendSummary;
   onPress: () => void;
   onMorePress: () => void;
+  isMutual?: boolean;
+  busy?: boolean;
 };
 
-export function FriendListItem({ friend, onPress, onMorePress }: Props) {
+export function FriendListItem({ friend, onPress, onMorePress, isMutual, busy = false }: Props) {
   const { theme } = useTheme();
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
+      disabled={busy}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: theme.space.sm,
         paddingHorizontal: theme.space.xs,
+        opacity: busy ? 0.6 : 1,
       }}
     >
       <Avatar
@@ -33,17 +37,40 @@ export function FriendListItem({ friend, onPress, onMorePress }: Props) {
       />
 
       <View style={{ flex: 1, marginLeft: theme.space.md }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.bold,
-          }}
-        >
-          {friend.displayName}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
+          <Text
+            numberOfLines={1}
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.md,
+              fontWeight: theme.fontWeight.bold,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {friend.displayName}
+          </Text>
+
+          {isMutual && (
+            <View
+              style={{
+                backgroundColor: theme.color.surface,
+                borderRadius: theme.borderRadius.sm,
+                paddingHorizontal: 6,
+                paddingVertical: 1,
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                Mutual
+              </Text>
+            </View>
+          )}
+        </View>
 
         <View
           style={{
@@ -55,7 +82,7 @@ export function FriendListItem({ friend, onPress, onMorePress }: Props) {
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
-              name='shield-star'
+              name="shield-star"
               size={13}
               color={theme.color.accent}
             />
@@ -72,7 +99,7 @@ export function FriendListItem({ friend, onPress, onMorePress }: Props) {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
-              name='fire'
+              name="fire"
               size={13}
               color={theme.color.warning}
             />
@@ -89,7 +116,7 @@ export function FriendListItem({ friend, onPress, onMorePress }: Props) {
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
-              name='star-circle'
+              name="star-circle"
               size={13}
               color={theme.color.info}
             />
@@ -109,13 +136,18 @@ export function FriendListItem({ friend, onPress, onMorePress }: Props) {
       <TouchableOpacity
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         onPress={onMorePress}
+        disabled={busy}
         style={{ padding: theme.space.xs }}
       >
-        <MaterialCommunityIcons
-          name='dots-horizontal'
-          size={20}
-          color={theme.color.textMuted}
-        />
+        {busy ? (
+          <ActivityIndicator size="small" color={theme.color.accent} />
+        ) : (
+          <MaterialCommunityIcons
+            name="dots-horizontal"
+            size={20}
+            color={theme.color.textMuted}
+          />
+        )}
       </TouchableOpacity>
     </TouchableOpacity>
   );
