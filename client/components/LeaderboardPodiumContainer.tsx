@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, View, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -10,6 +10,7 @@ type User = {
   id: string;
   name: string;
   score: number;
+  photoURL?: string | null;
 };
 type LeaderboardPodiumContainerProps = {
   users: User[];
@@ -100,18 +101,31 @@ export function LeaderboardPodiumContainer({ users }: LeaderboardPodiumContainer
                       borderRadius: theme.borderRadius.full,
                       borderColor: style.color,
                       backgroundColor: theme.color.surface,
+                      overflow: 'hidden',
                     }}
                   >
-                    <Text
-                      style={{
-                        color: theme.color.textPrimary,
-                        fontSize: isWinner ? theme.fontSize.xl : theme.fontSize.lg,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.regular,
-                      }}
-                    >
-                      {getInitials(user.name)}
-                    </Text>
+                    {user.photoURL ? (
+                      <Image
+                        source={{ uri: user.photoURL }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          borderRadius: theme.borderRadius.full,
+                        }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text
+                        style={{
+                          color: theme.color.textPrimary,
+                          fontSize: isWinner ? theme.fontSize.xl : theme.fontSize.lg,
+                          fontWeight: theme.fontWeight.bold,
+                          fontFamily: theme.fontFamily.regular,
+                        }}
+                      >
+                        {getInitials(user.name)}
+                      </Text>
+                    )}
                   </View>
 
                   <View

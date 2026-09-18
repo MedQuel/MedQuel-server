@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../common/utils/withAlpha';
 import { getInitials } from '../../common/utils/getInitials';
 import { TabContainer } from '../../components/TabContainer';
 import { useBottomBar } from '../../common/context/useBottomBar';
@@ -16,6 +17,7 @@ import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
 import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 
 
 type LeaderboardPodiumUser = {
@@ -23,6 +25,7 @@ type LeaderboardPodiumUser = {
   name: string;
   initials: string;
   score: number;
+  photoURL?: string | null;
 };
 type LeaderboardRankRow = {
   id: string;
@@ -31,8 +34,10 @@ type LeaderboardRankRow = {
   name: string;
   specialty: string;
   points: number;
+  photoURL?: string | null;
 };
 type CurrentUserLeaderboardRow = {
+  id?: string;
   rank: number;
   initials: string;
   name: string;
@@ -40,6 +45,7 @@ type CurrentUserLeaderboardRow = {
   points: number;
   trend: number;
   trendLabel: string;
+  photoURL?: string | null;
 };
 type LeaderboardSnapshot = {
   podiumUsers: LeaderboardPodiumUser[];
@@ -67,6 +73,7 @@ const mapLeaderboardSnapshot = (
     name: entry.displayName,
     initials: getInitials(entry.displayName || '') || '??',
     score: entry.epPoints,
+    photoURL: entry.photoURL ?? null,
   }));
 
   // Global Rankings list shows remaining participants (rank 4+) without repeating top 3 podium participants
@@ -77,6 +84,7 @@ const mapLeaderboardSnapshot = (
     name: entry.displayName,
     specialty: entry.specialization,
     points: entry.epPoints,
+    photoURL: entry.photoURL ?? null,
   }));
 
   // Friends Rankings list shows all friends starting from rank #1 onwards (without podium)
@@ -87,6 +95,7 @@ const mapLeaderboardSnapshot = (
     name: entry.displayName,
     specialty: entry.specialization,
     points: entry.epPoints,
+    photoURL: entry.photoURL ?? null,
   }));
 
   // Show Current User card if backend returns a valid myEntry with EP > 0, or if viewing friends leaderboard
@@ -94,6 +103,7 @@ const mapLeaderboardSnapshot = (
   const currentUser: CurrentUserLeaderboardRow | null =
     currentUserSource && (currentUserSource.epPoints > 0 || scopeFilter === 'friends')
       ? {
+          id: currentUserSource.userId,
           rank: currentUserSource.rank || result.myRank || 0,
           initials: getInitials(currentUserSource.displayName || '') || '??',
           name: currentUserSource.displayName,
@@ -101,6 +111,7 @@ const mapLeaderboardSnapshot = (
           points: currentUserSource.epPoints,
           trend: currentUserSource.weeklyChange,
           trendLabel: mapTrendLabel(timeFilter),
+          photoURL: currentUserSource.photoURL ?? null,
         }
       : null;
 
@@ -206,66 +217,58 @@ export default function LeaderboardScreen() {
     });
   }, [refreshing, spin, fetchLeaderboard]);
 
-  const switchScope = useCallback((value: 'global' | 'friends') => { setScopeFilter(value) }, []);
+  const switchScope = useCallback((value: 'global' | 'friends') => {
+    setScopeFilter(value);
+    if (value === 'friends' && timeFilter === 'monthly') {
+      setTimeFilter('weekly');
+    }
+  }, [timeFilter]);
+
+  const displayedTimeTabs = useMemo(() => {
+    if (scopeFilter === 'friends') {
+      return timeTabs.filter((tab) => tab.id !== 'monthly');
+    }
+    return timeTabs;
+  }, [scopeFilter]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <View
-        style={{
-          paddingTop: theme.space.lg,
-          paddingBottom: theme.space.sm,
-          paddingHorizontal: theme.space.md,
-          backgroundColor: theme.color.background,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.space.md }}>
-          <View style={{ flex: 1, gap: theme.space.xs / 2, flexDirection: 'column', paddingRight: theme.space.sm }}>
-            <Text
-              style={{
-                color: theme.color.textPrimary,
-                fontSize: theme.fontSize.xxl,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.bold,
-              }}
+      <View style={{ backgroundColor: theme.color.background }}>
+        <ScreenHeader
+          title={theme.i18n.t('leaderboard.title')}
+          subtitle={theme.i18n.t('leaderboard.subtitle')}
+          showBack={false}
+          rightElement={
+            <Pressable
+              onPress={refreshLeaderboard}
+              disabled={refreshing}
+              style={({ pressed }) => ({
+                width: 40,
+                height: 40,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: theme.color.border,
+                borderRadius: theme.borderRadius.lg,
+                backgroundColor: theme.color.card,
+                opacity: pressed ? 0.8 : 1,
+              })}
             >
-              {theme.i18n.t('leaderboard.title')}
-            </Text>
-
-            <Text
-              style={{
-                color: theme.color.textSecondary,
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.light,
-              }}
-            >
-              {theme.i18n.t('leaderboard.subtitle')}
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={refreshLeaderboard}
-            disabled={refreshing}
-            style={({ pressed }) => ({
-              width: 40,
-              height: 40,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderWidth: 1,
-              borderColor: theme.color.border,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.card,
-              opacity: pressed ? 0.8 : 1,
-            })}
-          >
-            <Animated.View style={{ transform: [{ rotate }] }}>
-              <Feather
-                name='refresh-cw'
-                size={theme.space.md}
-                color={theme.color.accent}
-              />
-            </Animated.View>
-          </Pressable>
-        </View>
+              <Animated.View style={{ transform: [{ rotate }] }}>
+                <Feather
+                  name='refresh-cw'
+                  size={theme.space.md}
+                  color={theme.color.accent}
+                />
+              </Animated.View>
+            </Pressable>
+          }
+          containerStyle={{
+            paddingTop: theme.space.lg,
+            paddingBottom: theme.space.xs,
+            paddingHorizontal: theme.space.md,
+          }}
+        />
 
         <View
           style={{
@@ -273,10 +276,11 @@ export default function LeaderboardScreen() {
             gap: theme.space.xs,
             flexDirection: 'row',
             alignSelf: 'flex-start',
+            paddingHorizontal: theme.space.md,
             marginBottom: theme.space.sm,
           }}
         >
-          {timeTabs.map((tab) => {
+          {displayedTimeTabs.map((tab) => {
             const active = timeFilter === tab.id;
 
             return (
@@ -360,6 +364,7 @@ export default function LeaderboardScreen() {
                         rank={activeSnapshot.currentUser.rank}
                         points={activeSnapshot.currentUser.points}
                         weeklyGrowth={activeSnapshot.currentUser.trend}
+                        photoURL={activeSnapshot.currentUser.photoURL}
                       />
                       <View style={{ height: theme.space.md }} />
                     </>
@@ -396,16 +401,26 @@ export default function LeaderboardScreen() {
                   </View>
 
                   <View>
-                    {activeSnapshot.allRankings.map((item) => (
-                      <View key={item.id} style={{ marginBottom: theme.space.sm }}>
-                        <LeaderboardRankCard
-                          rank={item.rank}
-                          name={item.name}
-                          specialty={item.specialty}
-                          points={item.points}
-                        />
-                      </View>
-                    ))}
+                    {activeSnapshot.allRankings.map((item) => {
+                      const isCurrentUser = Boolean(
+                        (activeSnapshot.currentUser?.id && item.id === activeSnapshot.currentUser.id) ||
+                        (activeSnapshot.currentUser?.name && item.name.replace('You • ', '') === activeSnapshot.currentUser.name.replace('You • ', ''))
+                      );
+
+                      return (
+                        <View key={item.id} style={{ marginBottom: theme.space.sm }}>
+                          <LeaderboardRankCard
+                            rank={item.rank}
+                            name={item.name}
+                            specialty={item.specialty}
+                            points={item.points}
+                            photoURL={item.photoURL}
+                            isSimple={true}
+                            isCurrentUser={isCurrentUser}
+                          />
+                        </View>
+                      );
+                    })}
                   </View>
                 </>
               )
@@ -429,11 +444,12 @@ export default function LeaderboardScreen() {
                         rank={activeSnapshot.currentUser.rank}
                         points={activeSnapshot.currentUser.points}
                         weeklyGrowth={activeSnapshot.currentUser.trend}
+                        photoURL={activeSnapshot.currentUser.photoURL}
                       />
                     </>
                   ) : null}
 
-                  {activeSnapshot.globalRankings.length > 0 && (
+                  {activeSnapshot.globalRankings.length > 0 ? (
                     <>
                       <View style={{ height: theme.space.lg }} />
                       <View
@@ -474,11 +490,62 @@ export default function LeaderboardScreen() {
                               name={item.name}
                               specialty={item.specialty}
                               points={item.points}
+                              photoURL={item.photoURL}
                             />
                           </View>
                         ))}
                       </View>
                     </>
+                  ) : (
+                    <View
+                      style={{
+                        marginTop: theme.space.xl,
+                        padding: theme.space.lg,
+                        borderRadius: theme.borderRadius.xl,
+                        backgroundColor: theme.color.card,
+                        borderWidth: 1,
+                        borderColor: theme.color.border,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: theme.borderRadius.full,
+                          backgroundColor: withAlpha(theme.color.accent, 0.12),
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: theme.space.sm,
+                        }}
+                      >
+                        <Feather name="award" size={22} color={theme.color.accent} />
+                      </View>
+                      <Text
+                        style={{
+                          color: theme.color.textPrimary,
+                          fontSize: theme.fontSize.md,
+                          fontWeight: theme.fontWeight.bold,
+                          fontFamily: theme.fontFamily.bold,
+                          textAlign: 'center',
+                          marginBottom: theme.space.xs,
+                        }}
+                      >
+                        {theme.i18n.t('leaderboard.top_three_podium_title') || 'Top 3 Champions'}
+                      </Text>
+                      <Text
+                        style={{
+                          color: theme.color.textSecondary,
+                          fontSize: theme.fontSize.xs,
+                          fontFamily: theme.fontFamily.regular,
+                          textAlign: 'center',
+                          lineHeight: 18,
+                        }}
+                      >
+                        {theme.i18n.t('leaderboard.top_three_podium_desc') || 'Complete daily quizzes and earn EP to climb the leaderboard!'}
+                      </Text>
+                    </View>
                   )}
                 </>
               )
