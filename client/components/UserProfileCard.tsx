@@ -9,6 +9,7 @@ type UserData = {
   email?: string;
   currentLevel?: number;
   currentStreak?: number;
+  isPremium?: boolean;
   [key: string]: any;
 };
 type ProfilePropsCards = {
@@ -100,29 +101,31 @@ export function UserProfileCard({ userData }: ProfilePropsCards) {
         </View>
       </View>
 
-      <TouchableOpacity
-        activeOpacity={0.7}
-        accessibilityLabel={theme.i18n.t('common.premium')}
-      >
-        <View
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: theme.space.sm,
-            paddingHorizontal: theme.space.sm * 1.5,
-            borderWidth: 1,
-            borderRadius: theme.borderRadius.xl,
-            borderColor: theme.isDark ? '#2E2D5B' : 'transparent',
-            backgroundColor: theme.isDark ? theme.color.premium + '22' : '#ece3fa',
-          }}
+      {userData?.isPremium && (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          accessibilityLabel={theme.i18n.t('common.premium')}
         >
-          <MaterialCommunityIcons
-            name='crown-outline'
-            size={theme.space.md * 1.25}
-            color={theme.isDark ? '#8282FB' : '#5852E8'}
-          />
-        </View>
-      </TouchableOpacity>
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: theme.space.sm,
+              paddingHorizontal: theme.space.sm * 1.5,
+              borderWidth: 1,
+              borderRadius: theme.borderRadius.xl,
+              borderColor: theme.isDark ? '#2E2D5B' : 'transparent',
+              backgroundColor: theme.isDark ? theme.color.premium + '22' : '#ece3fa',
+            }}
+          >
+            <MaterialCommunityIcons
+              name='crown-outline'
+              size={theme.space.md * 1.25}
+              color={theme.isDark ? '#8282FB' : '#5852E8'}
+            />
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
