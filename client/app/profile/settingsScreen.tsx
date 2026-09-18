@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Modal, Pressable, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 
@@ -15,6 +16,7 @@ import { Difficulty, QuizPrefs, NotifPrefs } from '@/common/types/types';
 import { Loading } from '../../components/common/loading';
 import { UserProfileCard } from '../../components/UserProfileCard';
 import { ToggleSwitch } from '../../components/common/ToggleSwitch';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 
 
 const DIFFICULTY_OPTIONS: Difficulty[] = ['easy', 'medium', 'hard'];
@@ -208,8 +210,9 @@ export default function SettingsScreen() {
   const [quizError, setQuizError] = useState<string | null>(null);
 
   const router = useRouter();
-  useBottomBar(false, 'profile');
+  const insets = useSafeAreaInsets();
   const { theme, toggleTheme } = useTheme();
+  useBottomBar(false, 'profile');
   const { user, userLoading, userError, refreshUser, logout } = useAppContext();
 
   const DIFFICULTY_LABELS = useMemo<Record<Difficulty, string>>(() => ({
@@ -349,62 +352,19 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, paddingHorizontal: theme.space.md, backgroundColor: theme.color.background }}>
-      <View
-        style={{
-          gap: theme.space.sm,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingTop: theme.space.lg,
-          paddingBottom: theme.space.sm,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.push('/profile')}
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: theme.space.xs * 1.75,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <Feather
-            name='chevron-left'
-            size={theme.fontSize.xl}
-            color={theme.color.textPrimary}
-          />
-        </TouchableOpacity>
-
-        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg * 1.1,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            {theme.i18n.t('profile.settings.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm * 1.05,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            {theme.i18n.t('profile.settings.subtitle')}
-          </Text>
-        </View>
-      </View>
+      <ScreenHeader
+        title={theme.i18n.t('profile.settings.title')}
+        subtitle={theme.i18n.t('profile.settings.subtitle')}
+        onBack={() => router.push('/profile')}
+        containerStyle={{ marginHorizontal: -theme.space.md }}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
           marginTop: theme.space.sm,
-          paddingBottom: theme.space.md,
+          paddingBottom: insets.bottom * 1.5,
         }}
       >
         <UserProfileCard userData={user} />
@@ -543,21 +503,17 @@ export default function SettingsScreen() {
             colors={theme.isDark ? ['#05173d', '#071d4d', '#08205a'] : ['#2762f7', '#1a56f0', '#0f49db']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{
-              borderWidth: 1.5,
-              borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.25)',
-              borderRadius: theme.borderRadius.lg,
-            }}
+            style={{ borderRadius: theme.borderRadius.lg }}
           >
             <Row
               theme={theme}
               onPress={() => router.push('/profile/updateProfile')}
-              right={<View />}
               icon='account-edit-outline'
               iconBg='rgba(0,0,0,0)'
               iconColor={theme.isDark ? theme.color.info : theme.color.textInverse}
               title={theme.i18n.t('profile.settings.account.updateProfile')}
               titleColor={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+              subtitle={theme.i18n.t('profile.settings.account.updateProfileSubtitle')}
             />
           </LinearGradient>
           
@@ -565,7 +521,6 @@ export default function SettingsScreen() {
             <Row
               theme={theme}
               onPress={() => router.push('/studyPlan')}
-              right={<View />}
               icon="calendar-check-outline"
               iconBg={theme.color.accent + '1A'}
               iconColor={theme.color.accent}
