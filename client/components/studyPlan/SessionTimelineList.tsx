@@ -115,7 +115,7 @@ function SessionRow({ session, onPress }: { session: StudyPlanSession; onPress: 
             style={{
               color: theme.color.textMuted,
               fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.light,
+              fontFamily: theme.fontFamily.number,
             }}
           >
             {session.sessionType === 'quiz'
@@ -147,7 +147,6 @@ function SessionRow({ session, onPress }: { session: StudyPlanSession; onPress: 
           style={{
             color: theme.color.warning,
             fontSize: theme.fontSize.md,
-            fontWeight: theme.fontWeight.bold,
             fontFamily: theme.fontFamily.number,
           }}
         >
