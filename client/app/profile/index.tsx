@@ -6,7 +6,7 @@ import { RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { api } from '@/common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import type { Badge } from '../../common/types/types';
+import type { Badge, FriendSummary } from '../../common/types/types';
 import ProfileScreenHeader from './profileScreenHeader';
 import { useBottomBar } from '../../common/context/useBottomBar';
 
@@ -14,6 +14,7 @@ import { Loading } from '../../components/common/loading';
 import { EmptyState } from '../../components/common/EmptyState';
 import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
 import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
+import { FriendsRow } from '../../components/friends/FriendsRow';
 import { AddFriendButton } from '../../components/friends/AddfriendButton';
 import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
@@ -66,9 +67,10 @@ function Section({ theme, children, marginTop }: any) {
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [recentData, setRecentData] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<any>({});         // ✅ null → {}
+  const [recentData, setRecentData] = useState<any[]>([]);     // ✅ null → []
   const [achievements, setAchievements] = useState<Badge[]>([]);
+  const [myFriends, setMyFriends] = useState<FriendSummary[]>([]);
   const [load, setLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -80,16 +82,18 @@ export default function ProfileScreen() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [user, analyticsData, achievementsData] = await Promise.all([
+      const [user, analyticsData, achievementsData, friendsData] = await Promise.all([
         api.user.getMe(),
         api.analytics.getAnalytics(),
         api.achievement.getAchievements(),
+        api.friends.getFriends(),
       ]);
 
       setUserData(user);
-      setAnalytics(analyticsData);
-      setRecentData(analyticsData.recentAttempts ?? []);
+      setAnalytics(analyticsData ?? {});                          // ✅ safe fallback
+      setRecentData(analyticsData?.recentAttempts ?? []);         // ✅ safe fallback
       setAchievements(achievementsData ?? []);
+      setMyFriends(friendsData ?? []);
     } catch {
       setError('Could not load profile. Pull to refresh.');
     } finally {
@@ -112,6 +116,10 @@ export default function ProfileScreen() {
     router.push('/friends' as any);
   }, [router]);
 
+  const handleFriendPress = useCallback((friend: FriendSummary) => {
+    router.push({ pathname: '/friends/UserProfileScreen', params: { uid: friend.uid } } as any);
+  }, [router]);
+
   const formatTime = (iso: string) => new Date(iso).toLocaleString('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -121,8 +129,8 @@ export default function ProfileScreen() {
     hour12: true,
   });
 
-  const subjectPerformance = analytics.subjectPerformance ?? [];
-  const hasRecentAttempts = (recentData ?? []).length > 0;
+  const subjectPerformance = analytics?.subjectPerformance ?? [];  // ✅ already safe
+  const hasRecentAttempts = (recentData ?? []).length > 0;          // ✅ already safe
   const displayBadges = achievements.filter((b) => b.status === 'earned');
 
   if (load) {
@@ -335,6 +343,14 @@ export default function ProfileScreen() {
 
       <Section theme={theme}>
         <AddFriendButton onPress={handleAddFriendsPress} />
+      </Section>
+
+      <Section theme={theme}>
+        <FriendsRow
+          friends={myFriends}
+          onViewAll={handleAddFriendsPress}
+          onFriendPress={handleFriendPress}
+        />
       </Section>
 
       <Section theme={theme}>

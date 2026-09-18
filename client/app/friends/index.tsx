@@ -14,7 +14,6 @@ import { FriendRequestItem } from '../../components/friends/FriendRequestItem';
 import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
 import type { FriendRequest, FriendSummary, UserSearchResult } from '../../common/types/types';
 
-
 const DEBOUNCE_MS = 350;
 const SEARCH_MIN_LENGTH = 2;
 
@@ -23,26 +22,25 @@ type SectionItem =
   | { type: 'search'; data: UserSearchResult }
   | { type: 'request'; data: FriendRequest & { displayName: string; photoURL?: string | null } };
 
-
 export default function FriendsScreen() {
   const [myUid, setMyUid] = useState<string | null>(null);
   const [friends, setFriends] = useState<FriendSummary[]>([]);
   const [pendingRequests, setPendingRequests] = useState<(FriendRequest & { displayName: string; photoURL?: string | null })[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-  
+
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [sheetTarget, setSheetTarget] = useState<{ uid: string; displayName: string; status: string } | null>(null);
-  
+
   const [focusTrigger] = useState(0);
 
   const router = useRouter();
   const { theme } = useTheme();
-  useBottomBar(true, 'friends');
+  useBottomBar(false);
 
   const loadAll = useCallback(async () => {
     const [me, friendsList, pending] = await Promise.all([
