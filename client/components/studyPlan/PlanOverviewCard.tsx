@@ -59,8 +59,7 @@ export function PlanOverviewCard({ plan }: { plan: StudyPlan }) {
             style={{
               color: theme.color.warning,
               fontSize: theme.fontSize.xxxl * 1.5,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
+              fontFamily: theme.fontFamily.number,
             }}
           >
             {daysUntil(plan.examDate)}
@@ -147,7 +146,7 @@ export function PlanOverviewCard({ plan }: { plan: StudyPlan }) {
           style={{
             color: theme.color.textMuted,
             fontSize: theme.fontSize.md,
-            fontFamily: theme.fontFamily.light,
+            fontFamily: theme.fontFamily.number,
           }}
         >
           {plan.examDate ? formatDate(plan.examDate) : theme.i18n.t('studyPlan.overview.noExamDate')}
