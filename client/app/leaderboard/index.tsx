@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { Easing, Animated } from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { View, Text, Pressable, ScrollView, RefreshControl } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { View, Text, Pressable, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../common/api/api';
@@ -13,7 +13,6 @@ import { useBottomBar } from '../../common/context/useBottomBar';
 import type { LeaderboardEntry, LeaderboardPeriod, LeaderboardResult } from '../../common/types/types';
 
 import { Loading } from '../../components/common/loading';
-import { EmptyStateCard } from '../../components/EmptyStateCard';
 import { LeaderboardRankCard } from '../../components/LeaderboardRankCard';
 import { LeaderboardPodiumContainer } from '../../components/LeaderboardPodiumContainer';
 import { CurrentUserLeaderboardRankCard } from '../../components/CurrentUserLeaderboardRankCard';
@@ -132,6 +131,7 @@ const timeTabs: { id: LeaderboardPeriod; label: string }[] = [
 
 
 export default function LeaderboardScreen() {
+  const router = useRouter();
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardResult | null>(null);
   const [timeFilter, setTimeFilter] = useState<LeaderboardPeriod>('weekly');
   const [scopeFilter, setScopeFilter] = useState<'global' | 'friends'>('global');
@@ -231,6 +231,10 @@ export default function LeaderboardScreen() {
     return timeTabs;
   }, [scopeFilter]);
 
+  const isFriendsEmpty = Boolean(activeSnapshot && scopeFilter === 'friends' && activeSnapshot.allRankings.length === 0);
+  const isGlobalEmpty = Boolean(activeSnapshot && scopeFilter === 'global' && activeSnapshot.podiumUsers.length === 0 && activeSnapshot.globalRankings.length === 0);
+  const isScrollable = !(isFriendsEmpty || isGlobalEmpty);
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View style={{ backgroundColor: theme.color.background }}>
@@ -325,6 +329,7 @@ export default function LeaderboardScreen() {
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
+            scrollEnabled={isScrollable}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -334,8 +339,9 @@ export default function LeaderboardScreen() {
               />
             }
             contentContainerStyle={{
+              flexGrow: 1,
               paddingTop: theme.space.md,
-              paddingBottom: 140, // Increased bottom padding to ensure participant cards roll clear of AppBottomBar
+              paddingBottom: isScrollable ? 140 : theme.space.xl,
               paddingHorizontal: theme.space.md,
             }}
           >
@@ -350,11 +356,85 @@ export default function LeaderboardScreen() {
             {scopeFilter === 'friends' ? (
               /* Friends Leaderboard: No Podium, shows all friends starting from Rank #1 */
               activeSnapshot.allRankings.length === 0 ? (
-                <EmptyStateCard
-                  icon='users'
-                  title={theme.i18n.t('No Friends Connected Yet')}
-                  description={theme.i18n.t('Connect with your Medical study Peers!')}
-                />
+                <View
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: theme.space.lg,
+                    paddingVertical: theme.space.xl,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 64,
+                      height: 64,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: theme.space.md,
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: withAlpha(theme.color.accent, 0.12),
+                      borderWidth: 1,
+                      borderColor: withAlpha(theme.color.accent, 0.25),
+                    }}
+                  >
+                    <Feather name="users" size={28} color={theme.color.accent} />
+                  </View>
+
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: theme.color.textPrimary,
+                      fontSize: theme.fontSize.lg,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.bold,
+                      marginBottom: theme.space.xs,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.empty_friends_title') || 'No Friends Connected Yet'}
+                  </Text>
+
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: theme.color.textMuted,
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.fontFamily.regular,
+                      lineHeight: theme.fontSize.sm * 1.5,
+                      marginBottom: theme.space.lg,
+                      paddingHorizontal: theme.space.sm,
+                      maxWidth: 320,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.empty_friends_desc') || 'Connect with your medical study peers to compare progress and climb the ranks together.'}
+                  </Text>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => router.push('/friends')}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: theme.space.xs,
+                      paddingVertical: theme.space.sm + 2,
+                      paddingHorizontal: theme.space.xl,
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: theme.color.accent,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.color.textInverse,
+                        fontSize: theme.fontSize.sm,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.bold,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.add_friends') || 'Add Friends'}
+                    </Text>
+                    <Feather name="arrow-right" size={14} color={theme.color.textInverse} />
+                  </TouchableOpacity>
+                </View>
               ) : (
                 <>
                   {activeSnapshot.currentUser ? (
@@ -427,11 +507,85 @@ export default function LeaderboardScreen() {
             ) : (
               /* Global Leaderboard: Podium displays top 3, Rankings section displays remaining (Rank #4+) */
               activeSnapshot.podiumUsers.length === 0 && activeSnapshot.globalRankings.length === 0 ? (
-                <EmptyStateCard
-                  icon='users'
-                  title={theme.i18n.t('No Rankings Yet')}
-                  description={theme.i18n.t('Be the first to join the leaderboard!')}
-                />
+                <View
+                  style={{
+                    flex: 1,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingHorizontal: theme.space.lg,
+                    paddingVertical: theme.space.xl,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 64,
+                      height: 64,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: theme.space.md,
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: withAlpha(theme.color.accent, 0.12),
+                      borderWidth: 1,
+                      borderColor: withAlpha(theme.color.accent, 0.25),
+                    }}
+                  >
+                    <Feather name="award" size={28} color={theme.color.accent} />
+                  </View>
+
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: theme.color.textPrimary,
+                      fontSize: theme.fontSize.lg,
+                      fontWeight: theme.fontWeight.bold,
+                      fontFamily: theme.fontFamily.bold,
+                      marginBottom: theme.space.xs,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.empty_global_title') || 'No Rankings Yet'}
+                  </Text>
+
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      color: theme.color.textMuted,
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.fontFamily.regular,
+                      lineHeight: theme.fontSize.sm * 1.5,
+                      marginBottom: theme.space.lg,
+                      paddingHorizontal: theme.space.sm,
+                      maxWidth: 320,
+                    }}
+                  >
+                    {theme.i18n.t('leaderboard.empty_global_desc') || 'Be the first to join the leaderboard! Complete quizzes and earn EP to claim the top spot.'}
+                  </Text>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => router.push('/contests')}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: theme.space.xs,
+                      paddingVertical: theme.space.sm + 2,
+                      paddingHorizontal: theme.space.xl,
+                      borderRadius: theme.borderRadius.full,
+                      backgroundColor: theme.color.accent,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.color.textInverse,
+                        fontSize: theme.fontSize.sm,
+                        fontWeight: theme.fontWeight.bold,
+                        fontFamily: theme.fontFamily.bold,
+                      }}
+                    >
+                      {theme.i18n.t('leaderboard.explore_contests') || 'Explore Contests'}
+                    </Text>
+                    <Feather name="arrow-right" size={14} color={theme.color.textInverse} />
+                  </TouchableOpacity>
+                </View>
               ) : (
                 <>
                   <LeaderboardPodiumContainer users={activeSnapshot.podiumUsers} />
