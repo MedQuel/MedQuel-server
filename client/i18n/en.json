@@ -210,6 +210,12 @@
     "players_count": "{{count}} players",
     "top_three_podium_title": "Top 3 Champions",
     "top_three_podium_desc": "Complete daily quizzes and earn EP to climb the leaderboard!",
+    "empty_friends_title": "No Friends Connected Yet",
+    "empty_friends_desc": "Connect with your medical study peers to compare progress and climb the ranks together.",
+    "add_friends": "Add Friends",
+    "empty_global_title": "No Rankings Yet",
+    "empty_global_desc": "Be the first to join the leaderboard! Complete quizzes and earn EP to claim the top spot.",
+    "explore_contests": "Explore Contests",
     "tabs": {
       "weekly": "Weekly",
       "monthly": "Monthly",
