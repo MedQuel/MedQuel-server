@@ -1,32 +1,30 @@
 import type { Firestore } from 'firebase-admin/firestore';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-import {
-  ForbiddenError,
-  NotOnboardedError,
-  AuthenticationError,
-  SessionNotFoundError,
-  ContestNotFoundError,
-  ContestNotActiveError,
-  InsufficientQuestionsError,
-  SessionAlreadyCompletedError,
-} from '../utils/errors.js';
 import type { GraphQLContext } from '../graphql/context.js';
 import type { QuestionForQuiz } from './bigqueryService.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
 import { publishQuizCompleted } from '../pubsub/publisher.js';
 import { gradeQuizSession, type QuestionGradeResult } from './gradingService.js';
+import { recordChallengeResult, type ChallengeOutcome } from './challenge/challengeResolution.js';
 import { updateStreak, computeXpEarned, computeEpEarned, computeLevelFromXp } from './xpEpService.js';
 import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from '../validators/quizValidation.js';
+
+import { ContestNotActiveError, ChallengeNotActiveError } from '../utils/errors.js';
+import { ForbiddenError, NotOnboardedError, AuthenticationError } from '../utils/errors.js';
+import { InsufficientQuestionsError, SessionAlreadyCompletedError } from '../utils/errors.js';
+import { NotChallengeParticipantError, ChallengeSessionAlreadyStartedError } from '../utils/errors.js';
+import { SessionNotFoundError, ContestNotFoundError, ChallengeNotFoundError } from '../utils/errors.js';
 
 
 const MIN_QUESTIONS_FOR_PERFECT_BADGE = 5;
 const FAST_COMPLETION_RATIO = 0.5;
 const MIN_QUESTIONS_FOR_SUBJECT_MASTERY = 20;
-const SUBJECT_MASTERY_THRESHOLD = 0.70;
+const SUBJECT_MASTERY_THRESHOLD = 0.7;
 
-const TOPIC_CACHE_TTL_MS = 60 * 60 * 1000;
+const TOPIC_CACHE_TTL_MS = 60*60*1000;
 const topicCache = new Map<string, TopicCacheEntry>();
+
 interface OnboardedUser {
   uid: string;
   isPremium: boolean;
@@ -35,6 +33,75 @@ interface TopicCacheEntry {
   topics: string[];
   expiresAt: number;
 }
+
+interface ActiveContest {
+  contestId: string;
+  subject: string;
+  difficulty: string;
+  isPremium: boolean;
+  questionIds: string[];
+  wrongPenalty: number;
+  epBaseReward: number;
+  passPercent: number;
+  timeLimitSecs: number;
+}
+interface ActiveChallenge {
+  subject: string;
+  difficulty: string;
+  questionIds: string[];
+  timeLimitSecs: number;
+}
+
+interface QuizSessionForGrading {
+  sessionId: string;
+  userId: string;
+  quizType: string;
+  subject: string;
+  difficulty: string;
+  contestId: string | null;
+  challengeId: string | null;
+  questionIds: string[];
+  wrongPenalty: number;
+  epBaseReward: number;
+  passPercent: number;
+  timeLimitSecs: number | null;
+  startedAt: Timestamp;
+}
+
+export interface StartQuizSessionResult {
+  sessionId: string;
+  quizType: string;
+  subject: string;
+  difficulty: string;
+  topic: string | null;
+  timeLimitSecs: number | null;
+  totalQuestions: number;
+  questions: QuestionForQuiz[];
+  startedAt: string;
+}
+export interface SubmitQuizSessionResult {
+  sessionId: string;
+  totalQuestions: number;
+  correctCount: number;
+  wrongCount: number;
+  skippedCount: number;
+  score: number;
+  scorePercent: number;
+  timeTaken: number;
+  epEarned: number;
+  xpEarned: number;
+  updatedXpPoints: number;
+  updatedEpPoints: number;
+  updatedCurrentLevel: number;
+  updatedCurrentStreak: number;
+  leveledUp: boolean;
+  isNewLongestStreak: boolean;
+  results: QuestionGradeResult[];
+  challengeId: string | null;
+  challengeStatus: string | null;
+  challengeWinnerUid: string | null;
+}
+
 
 export async function fetchOnboardedUser(context: GraphQLContext): Promise<OnboardedUser> {
   if (!context.user) throw new AuthenticationError();
@@ -52,28 +119,6 @@ function reorderByIds(ids: string[], questions: QuestionForQuiz[]): QuestionForQ
   return ids.map((id) => byId.get(id)).filter((q): q is QuestionForQuiz => Boolean(q));
 }
 
-export async function getTopicsForSubject(subject: string, context: GraphQLContext): Promise<string[]> {
-  const cached = topicCache.get(subject);
-  if (cached && cached.expiresAt > Date.now()) return cached.topics;
-
-  const topics = await context.bigqueryService.fetchTopicsForSubject(subject);
-  topicCache.set(subject, { topics, expiresAt: Date.now()+TOPIC_CACHE_TTL_MS });
-
-  return topics;
-}
-
-
-interface ActiveContest {
-  contestId: string;
-  subject: string;
-  difficulty: string;
-  isPremium: boolean;
-  questionIds: string[];
-  wrongPenalty: number;
-  epBaseReward: number;
-  passPercent: number;
-  timeLimitSecs: number;
-}
 async function fetchActiveContest(contestId: string, db: Firestore): Promise<ActiveContest> {
   const doc = await db.collection('contests').doc(contestId).get();
   if (!doc.exists) throw new ContestNotFoundError();
@@ -114,18 +159,73 @@ async function claimContestParticipation(contestId: string, uid: string, db: Fir
   });
 }
 
+async function fetchActiveChallengeForPlay(challengeId: string, uid: string, db: Firestore): Promise<ActiveChallenge> {
+  const doc = await db.collection('challenges').doc(challengeId).get();
+  if (!doc.exists) throw new ChallengeNotFoundError();
 
-export interface StartQuizSessionResult {
-  sessionId: string;
-  quizType: string;
-  subject: string;
-  difficulty: string;
-  topic: string | null;
-  timeLimitSecs: number | null;
-  totalQuestions: number;
-  questions: QuestionForQuiz[];
-  startedAt: string;
+  const data = doc.data()!;
+  if (!data.participants.includes(uid)) throw new NotChallengeParticipantError();
+  if (data.status !== 'active') throw new ChallengeNotActiveError();
+
+  const myState = data.participantStatus[uid];
+  if (myState?.quizSessionId) throw new ChallengeSessionAlreadyStartedError();
+  if (!data.questionIds || data.questionIds.length === 0) {
+    throw new InsufficientQuestionsError('This challenge has no questions configured.');
+  }
+
+  return {
+    subject: data.subject,
+    difficulty: data.difficulty,
+    questionIds: data.questionIds,
+    timeLimitSecs: data.timeLimitSecs,
+  };
 }
+
+async function claimChallengeSessionStart(uid: string, challengeId: string, sessionId: string, db: Firestore): Promise<void> {
+  const ref = db.collection('challenges').doc(challengeId);
+
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new ChallengeNotFoundError();
+
+    const data = snap.data()!;
+    if (data.status !== 'active') throw new ChallengeNotActiveError();
+    if (data.participantStatus[uid]?.quizSessionId) throw new ChallengeSessionAlreadyStartedError();
+
+    tx.update(ref, {
+      [`participantStatus.${uid}.quizSessionId`]: sessionId,
+      updatedAt: Timestamp.now(),
+    });
+  });
+}
+
+async function fetchSessionForSubmission(sessionId: string, uid: string, db: Firestore): Promise<QuizSessionForGrading> {
+  const ref = db.collection('quizSessions').doc(sessionId);
+  const doc = await ref.get();
+  if (!doc.exists) throw new SessionNotFoundError();
+
+  const data = doc.data()!;
+  if (data.userId !== uid) throw new SessionNotFoundError();
+  if (data.status !== 'in_progress') throw new SessionAlreadyCompletedError();
+
+  return {
+    sessionId: doc.id,
+    userId: data.userId,
+    quizType: data.quizType,
+    subject: data.subject,
+    difficulty: data.difficulty,
+    contestId: data.contestId ?? null,
+    challengeId: data.challengeId ?? null,
+    questionIds: data.questionIds ?? [],
+    wrongPenalty: data.wrongPenalty ?? 0,
+    epBaseReward: data.epBaseReward ?? 0,
+    passPercent: data.passPercent ?? 0,
+    timeLimitSecs: data.timeLimitSecs ?? null,
+    startedAt: data.startedAt,
+  };
+}
+
+
 export async function startQuizSession(input: ValidatedStartQuizSession, context: GraphQLContext): Promise<StartQuizSessionResult> {
   const { db, bigqueryService } = context;
   const user = await fetchOnboardedUser(context);
@@ -139,6 +239,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
   let passPercent: number;
   let topic: string | null;
   let timeLimitSecs: number | null;
+
+  const sessionRef = db.collection('quizSessions').doc();
 
   if (input.mode === 'contest') {
     const contest = await fetchActiveContest(input.contestId, db);
@@ -162,12 +264,29 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     const fetched = await bigqueryService.fetchQuestionsByIds(questionIds);
     questions = reorderByIds(questionIds, fetched);
     if (questions.length < questionIds.length) {
-      throw new InsufficientQuestionsError(
-        `Contest question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`
-      );
+      throw new InsufficientQuestionsError(`Contest question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`);
     }
 
     await claimContestParticipation(input.contestId, user.uid, db);
+  } else if (input.mode === 'challenge') {
+    const challenge = await fetchActiveChallengeForPlay(input.challengeId, user.uid, db);
+
+    subject = challenge.subject;
+    topic = null;
+    difficulty = challenge.difficulty;
+    questionIds = challenge.questionIds;
+    wrongPenalty = 0;
+    epBaseReward = 0;
+    passPercent = 0;
+    timeLimitSecs = challenge.timeLimitSecs;
+
+    const fetched = await bigqueryService.fetchQuestionsByIds(questionIds);
+    questions = reorderByIds(questionIds, fetched);
+    if (questions.length < questionIds.length) {
+      throw new InsufficientQuestionsError(`Challenge question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`);
+    }
+
+    await claimChallengeSessionStart(input.challengeId, user.uid, sessionRef.id, db);
   } else {
     subject = input.subject;
     difficulty = input.difficulty;
@@ -187,19 +306,19 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
 
     if (questions.length < input.questionCount) {
       const topicNote = topic ? ` for topic "${topic}"` : '';
-      throw new InsufficientQuestionsError(`Not enough ${difficulty} questions available for ${subject}${topicNote}. Requested ${input.questionCount}, found ${questions.length}.`);
+      throw new InsufficientQuestionsError(`Not enough ${difficulty} questions available for ${subject}${topicNote}. Found only ${questions.length}.`);
     }
 
     questionIds = questions.map((q) => q.questionId);
   }
 
-  const sessionRef = db.collection('quizSessions').doc();
   const startedAt = Timestamp.now();
 
   await sessionRef.set({
     sessionId: sessionRef.id,
     userId: user.uid,
     contestId: input.mode === 'contest' ? input.contestId : null,
+    challengeId: input.mode === 'challenge' ? input.challengeId : null,
     quizType: input.quizType,
     subject,
     difficulty,
@@ -237,65 +356,6 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
 }
 
 
-interface QuizSessionForGrading {
-  sessionId: string;
-  userId: string;
-  quizType: string;
-  subject: string;
-  difficulty: string;
-  contestId: string | null;
-  questionIds: string[];
-  wrongPenalty: number;
-  epBaseReward: number;
-  passPercent: number;
-  timeLimitSecs: number | null;
-  startedAt: Timestamp;
-}
-async function fetchSessionForSubmission(sessionId: string, uid: string, db: Firestore): Promise<QuizSessionForGrading> {
-  const ref = db.collection('quizSessions').doc(sessionId);
-  const doc = await ref.get();
-  if (!doc.exists) throw new SessionNotFoundError();
-
-  const data = doc.data()!;
-  if (data.userId !== uid) throw new SessionNotFoundError();
-  if (data.status !== 'in_progress') throw new SessionAlreadyCompletedError();
-
-  return {
-    sessionId: doc.id,
-    userId: data.userId,
-    quizType: data.quizType,
-    subject: data.subject,
-    difficulty: data.difficulty,
-    contestId: data.contestId ?? null,
-    questionIds: data.questionIds ?? [],
-    wrongPenalty: data.wrongPenalty ?? 0,
-    epBaseReward: data.epBaseReward ?? 0,
-    passPercent: data.passPercent ?? 0,
-    timeLimitSecs: data.timeLimitSecs ?? null,
-    startedAt: data.startedAt,
-  };
-}
-
-
-export interface SubmitQuizSessionResult {
-  sessionId: string;
-  totalQuestions: number;
-  correctCount: number;
-  wrongCount: number;
-  skippedCount: number;
-  score: number;
-  scorePercent: number;
-  timeTaken: number;
-  epEarned: number;
-  xpEarned: number;
-  updatedXpPoints: number;
-  updatedEpPoints: number;
-  updatedCurrentLevel: number;
-  updatedCurrentStreak: number;
-  leveledUp: boolean;
-  isNewLongestStreak: boolean;
-  results: QuestionGradeResult[];
-}
 export async function submitQuizSession(input: ValidatedSubmitQuizSession, context: GraphQLContext): Promise<SubmitQuizSessionResult> {
   const { db, bigqueryService } = context;
   const user = await fetchOnboardedUser(context);
@@ -382,7 +442,6 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const updatedPerfectQuizzes = (currentStats.perfectQuizzes ?? 0) + (isPerfectQuiz ? 1 : 0);
     const updatedFastCompletions = (currentStats.fastCompletions ?? 0) + (isFastCompletion ? 1 : 0);
 
-    // Per-subject running accuracy, and one-time "mastered" flag per subject.
     const subjectStats = { ...(currentStats.subjectStats ?? {}) };
     const prevSubjectStat = subjectStats[session.subject] ?? { attempted: 0, correct: 0 };
     const newSubjectStat = {
@@ -393,9 +452,10 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
 
     const masteredSubjects: string[] = currentStats.masteredSubjects ?? [];
     const newSubjectAccuracy = newSubjectStat.attempted > 0 ? newSubjectStat.correct/newSubjectStat.attempted : 0;
-    const justMasteredSubject = newSubjectStat.attempted >= MIN_QUESTIONS_FOR_SUBJECT_MASTERY
-      && newSubjectAccuracy >= SUBJECT_MASTERY_THRESHOLD
-      && !masteredSubjects.includes(session.subject);
+    const justMasteredSubject = 
+      newSubjectStat.attempted >= MIN_QUESTIONS_FOR_SUBJECT_MASTERY &&
+      newSubjectAccuracy >= SUBJECT_MASTERY_THRESHOLD &&
+      !masteredSubjects.includes(session.subject);
     const updatedMasteredSubjects = justMasteredSubject ? [...masteredSubjects, session.subject] : masteredSubjects;
 
     const timeTakenSecsFinal = timeTaken;
@@ -469,6 +529,20 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     };
   });
 
+  let challengeOutcome: ChallengeOutcome | null = null;
+  if (session.challengeId) {
+    try {
+      challengeOutcome = await recordChallengeResult(
+        session.challengeId,
+        user.uid,
+        { score: grading.score, correctCount: grading.correctCount, quizSessionId: session.sessionId },
+        db
+      );
+    } catch (err) {
+      console.error('[challenge] Failed to record challenge result:', err);
+    }
+  }
+
   publishQuizCompleted({
     sessionId: session.sessionId,
     userId: user.uid,
@@ -505,5 +579,18 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     leveledUp: txResult.leveledUp,
     isNewLongestStreak: txResult.isNewLongestStreak,
     results: grading.results,
+    challengeId: session.challengeId,
+    challengeStatus: challengeOutcome?.status ?? null,
+    challengeWinnerUid: challengeOutcome?.winnerUid ?? null,
   };
+}
+
+export async function getTopicsForSubject(subject: string, context: GraphQLContext): Promise<string[]> {
+  const cached = topicCache.get(subject);
+  if (cached && cached.expiresAt > Date.now()) return cached.topics;
+
+  const topics = await context.bigqueryService.fetchTopicsForSubject(subject);
+  topicCache.set(subject, { topics, expiresAt: Date.now() + TOPIC_CACHE_TTL_MS });
+
+  return topics;
 }
