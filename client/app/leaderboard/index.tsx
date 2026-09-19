@@ -269,7 +269,7 @@ export default function LeaderboardScreen() {
           }
           containerStyle={{
             paddingTop: theme.space.lg,
-            paddingBottom: theme.space.xs,
+            paddingBottom: theme.space.sm,
             paddingHorizontal: theme.space.md,
           }}
         />
@@ -281,6 +281,7 @@ export default function LeaderboardScreen() {
             flexDirection: 'row',
             alignSelf: 'flex-start',
             paddingHorizontal: theme.space.md,
+            marginTop: theme.space.xs,
             marginBottom: theme.space.sm,
           }}
         >
