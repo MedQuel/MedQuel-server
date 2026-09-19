@@ -529,8 +529,8 @@ export default function QuizScreen() {
             opacity: currentIndex === 0 ? 0.4 : 1,
           }}
         >
-          <Feather name="chevron-left" size={theme.fontSize.md} color={theme.color.textSecondary} />
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+          <Feather name="chevron-left" size={theme.fontSize.md} color={theme.color.textPrimary} />
+          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
             {t('common.prev')}
           </Text>
         </TouchableOpacity>
@@ -548,7 +548,7 @@ export default function QuizScreen() {
             backgroundColor: theme.color.card,
           }}
         >
-          <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
             {t('common.review')}
           </Text>
         </TouchableOpacity>
@@ -568,9 +568,9 @@ export default function QuizScreen() {
             }}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color={theme.color.textInverse} />
+              <ActivityIndicator size="small" color={theme.color.textPrimary} />
             ) : (
-              <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+              <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
                 {t('contests.quizScreen.finish')}
               </Text>
             )}
@@ -589,10 +589,10 @@ export default function QuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
               {t('common.next')}
             </Text>
-            <Feather name="chevron-right" size={theme.fontSize.md} color={theme.color.textInverse} />
+            <Feather name="chevron-right" size={theme.fontSize.md} color={theme.color.textPrimary} />
           </TouchableOpacity>
         )}
       </View>
@@ -739,7 +739,7 @@ export default function QuizScreen() {
             ) : (
               <Text
                 style={{
-                  color: theme.color.textInverse,
+                  color: theme.color.textPrimary,
                   fontSize: theme.fontSize.md,
                   fontWeight: theme.fontWeight.bold as any,
                   fontFamily: theme.fontFamily.bold,

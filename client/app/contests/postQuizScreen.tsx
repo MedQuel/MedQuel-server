@@ -511,8 +511,8 @@ export default function PostQuizScreen() {
             backgroundColor: theme.color.accent,
           }}
         >
-          <Feather name="book-open" size={theme.fontSize.lg} color={theme.color.textInverse} />
-          <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+          <Feather name="book-open" size={theme.fontSize.lg} color={theme.color.textPrimary} />
+          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
             {t('contests.postQuizScreen.review_answers')}
           </Text>
         </TouchableOpacity>
@@ -534,8 +534,8 @@ export default function PostQuizScreen() {
                 backgroundColor: theme.color.card,
               }}
             >
-              <Feather name="rotate-ccw" size={theme.fontSize.sm} color={theme.color.textSecondary} />
-              <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+              <Feather name="rotate-ccw" size={theme.fontSize.sm} color={theme.color.textPrimary} />
+              <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
                 {t('common.retry')}
               </Text>
             </TouchableOpacity>
@@ -556,8 +556,8 @@ export default function PostQuizScreen() {
               backgroundColor: theme.color.card,
             }}
           >
-            <Feather name="chevron-left" size={theme.fontSize.sm} color={theme.color.textSecondary} />
-            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+            <Feather name="chevron-left" size={theme.fontSize.sm} color={theme.color.textPrimary} />
+            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
               {t('common.back')}
             </Text>
           </TouchableOpacity>

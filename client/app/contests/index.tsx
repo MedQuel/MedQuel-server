@@ -11,11 +11,11 @@ import { ChipContainer } from '../../components/common/Chip';
 import { normalizeError } from '../../common/api/api.errors';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { FeatureContestCard } from '../../components/FeatureContestCard';
 import type { Contest, GetContestsFilter } from '../../common/types/types';
 import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
 import type { ContestFilter, ContestItem, FeaturedContest } from '../../common/types/contestTypes';
-
 
 const filterChips: ContestFilter[] = ['all', 'premium', ...(Object.keys(subjectCatalog) as SubjectId[])];
 
@@ -163,7 +163,6 @@ export default function ContestsScreen() {
       setFeatured(pickFeatured(activeOnly));
     } catch (err) {
       const apiErr = normalizeError(err);
-      console.log('[contests] fetch failed:', apiErr);
       setError(apiErr.message);
     } finally {
       setLoading(false);
@@ -186,7 +185,7 @@ export default function ContestsScreen() {
   const contests = useMemo(() => {
     return rawContests.map((c) => mapContest(c, nowMs));
   }, [rawContests, nowMs]);
-console.log(contests, 'contests');
+
   const filterOptions = useMemo(() => {
     return filterChips.map((filter) => {
       if (filter === 'all' || filter === 'premium') {
@@ -199,7 +198,6 @@ console.log(contests, 'contests');
       };
     });
   }, []);
-
 
   const filteredContests = useMemo(() => {
     return contests.filter((contest) => {
@@ -219,34 +217,15 @@ console.log(contests, 'contests');
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View style={{ flex: 1, opacity: loading && contests.length === 0 ? 0 : 1 }}>
-        <View
-          style={{
-            gap: theme.space.xs / 2,
+        <ScreenHeader
+          title={theme.i18n.t('contests.title')}
+          subtitle={theme.i18n.t('contests.subtitle')}
+          showBack={false}
+          containerStyle={{
             paddingTop: theme.space.lg,
             paddingBottom: theme.space.sm,
-            paddingHorizontal: theme.space.md,
           }}
-        >
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.xxl,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
-            }}
-          >
-            {theme.i18n.t('contests.title')}
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textSecondary,
-              fontSize: theme.fontSize.sm,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            {theme.i18n.t('contests.subtitle')}
-          </Text>
-        </View>
+        />
 
         <ScrollView
           contentContainerStyle={{ paddingBottom: theme.space.xl + 55 }}
@@ -364,6 +343,7 @@ console.log(contests, 'contests');
                     color: theme.color.textMuted,
                     fontSize: theme.fontSize.sm,
                     fontFamily: theme.fontFamily.regular,
+                    textAlign: 'center',
                   }}
                 >
                   {theme.i18n.t('contests.no_results')}

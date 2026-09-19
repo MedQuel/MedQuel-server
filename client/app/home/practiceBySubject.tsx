@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, PanResponder } from 'react-native';
@@ -8,7 +8,7 @@ import { useBottomBar } from '../../common/context/useBottomBar';
 import { SubjectId, SubjectIcon, subjectCatalog } from '../../common/constants/subject';
 import { api } from '../../common/api/api';
 import { normalizeError } from '../../common/api/api.errors';
-import type { Difficulty, StartQuizSessionInput } from '../../common/types/types';
+import type { Difficulty, StartQuizSessionInput, User } from '../../common/types/types';
 
 const DIFFICULTY_OPTIONS: Difficulty[] = ['easy', 'medium', 'hard'];
 const ALL_TOPICS = null;
@@ -32,6 +32,8 @@ export default function AllSubjectsScreen() {
   const router = useRouter();
   useBottomBar(false);
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   const [expandedSubject, setExpandedSubject] = useState<SubjectId | null>(null);
   const [topics, setTopics] = useState<string[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(ALL_TOPICS);
@@ -49,7 +51,94 @@ export default function AllSubjectsScreen() {
   const [startError, setStartError] = useState<string | null>(null);
   const topicCacheRef = useRef<Record<string, string[]>>({});
 
-  const allSubjectIds = Object.keys(subjectCatalog) as SubjectId[];
+  useEffect(() => {
+    let isMounted = true;
+    async function loadUser() {
+      try {
+        let userResult: any = null;
+        if (typeof (api as any)?.user?.getProfile === 'function') {
+          userResult = await (api as any).user.getProfile();
+        } else if (typeof (api as any)?.auth?.getCurrentUser === 'function') {
+          userResult = await (api as any).auth.getCurrentUser();
+        } else if (typeof (api as any)?.user?.getMe === 'function') {
+          userResult = await (api as any).user.getMe();
+        } else if (typeof (api as any)?.auth?.getMe === 'function') {
+          userResult = await (api as any).auth.getMe();
+        }
+
+        const resolvedUser = userResult?.user ?? userResult?.data ?? userResult;
+        if (isMounted && resolvedUser) {
+          setCurrentUser(resolvedUser);
+        }
+      } catch {
+      }
+    }
+    loadUser();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { preferredSubjectIds, otherSubjectIds } = useMemo(() => {
+    const rawIds = Object.keys(subjectCatalog) as SubjectId[];
+    const rawSpecialties = (currentUser as any)?.specialties ?? [];
+
+    const normalizedSpecs = rawSpecialties
+      .map((s: any) => {
+        if (!s) return '';
+        if (typeof s === 'string') return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (typeof s === 'object') {
+          return (s.id || s.name || s.title || s.value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    const isMatch = (id: SubjectId) => {
+      if (normalizedSpecs.length === 0) return false;
+      const def = subjectCatalog[id];
+      const normId = id.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normTitle = (def?.title ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const i18nTitle = theme.i18n.t(def?.title ?? id).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      return normalizedSpecs.some((spec: string) => {
+        return (
+          spec === normId ||
+          spec === normTitle ||
+          spec === i18nTitle ||
+          normId.includes(spec) ||
+          spec.includes(normId) ||
+          normTitle.includes(spec) ||
+          spec.includes(normTitle)
+        );
+      });
+    };
+
+    const preferred: SubjectId[] = [];
+    const others: SubjectId[] = [];
+
+    rawIds.forEach((id) => {
+      if (isMatch(id)) {
+        preferred.push(id);
+      } else {
+        others.push(id);
+      }
+    });
+
+    preferred.sort((a, b) => {
+      const titleA = theme.i18n.t(subjectCatalog[a]?.title ?? a).toLowerCase();
+      const titleB = theme.i18n.t(subjectCatalog[b]?.title ?? b).toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
+
+    others.sort((a, b) => {
+      const titleA = theme.i18n.t(subjectCatalog[a]?.title ?? a).toLowerCase();
+      const titleB = theme.i18n.t(subjectCatalog[b]?.title ?? b).toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
+
+    return { preferredSubjectIds: preferred, otherSubjectIds: others };
+  }, [currentUser, theme.i18n]);
 
   const getDifficultyColor = (d: Difficulty) => {
     switch (d) {
@@ -201,6 +290,520 @@ export default function AllSubjectsScreen() {
 
   const isStartDisabled = starting || topicsLoading || topics.length === 0;
 
+  const renderSubjectCard = (id: SubjectId) => {
+    const def = subjectCatalog[id];
+    const iconColor = theme.color[def?.variant ?? 'accent'];
+    const isExpanded = expandedSubject === id;
+
+    return (
+      <View
+        key={id}
+        style={{
+          borderWidth: 1,
+          borderColor: isExpanded ? theme.color.accent : theme.color.border,
+          borderRadius: theme.borderRadius.lg,
+          backgroundColor: theme.color.card,
+          overflow: 'hidden',
+        }}
+      >
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => handleToggleSubject(id)}
+          style={{
+            gap: theme.space.sm * 1.25,
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: theme.space.sm,
+          }}
+        >
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: theme.space.md * 0.75,
+              borderWidth: 1,
+              borderColor: `${iconColor}35`,
+              borderRadius: theme.borderRadius.md,
+              backgroundColor: `${iconColor}12`,
+            }}
+          >
+            <SubjectIcon id={id} color={iconColor} size={theme.space.lg * 0.9} />
+          </View>
+
+          <Text
+            style={{
+              flex: 1,
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.md,
+              fontFamily: theme.fontFamily.regular,
+            }}
+            numberOfLines={1}
+          >
+            {theme.i18n.t(def?.title ?? id)}
+          </Text>
+          <Ionicons
+            name={isExpanded ? 'chevron-down' : 'chevron-forward'}
+            size={theme.space.md}
+            color={isExpanded ? theme.color.accent : theme.color.textSecondary}
+          />
+        </TouchableOpacity>
+
+        {isExpanded && (
+          <View
+            style={{
+              paddingHorizontal: theme.space.md,
+              paddingBottom: theme.space.md,
+              paddingTop: theme.space.xs,
+              gap: theme.space.md,
+              borderTopWidth: 1,
+              borderTopColor: theme.color.border + '60',
+            }}
+          >
+            <View style={{ gap: theme.space.xs, zIndex: 10 }}>
+              <Text
+                style={{
+                  color: theme.color.textSecondary,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('home.practiceBySubject.select_topic')}
+              </Text>
+
+              {topicsLoading ? (
+                <ActivityIndicator size="small" color={theme.color.accent} />
+              ) : (
+                <View style={{ position: 'relative' }}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    disabled={topics.length === 0}
+                    onPress={() => setIsTopicDropdownOpen((prev) => !prev)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      paddingVertical: theme.space.sm,
+                      paddingHorizontal: theme.space.md,
+                      borderWidth: 1.5,
+                      borderRadius: theme.borderRadius.md,
+                      borderColor: theme.color.border,
+                      backgroundColor: theme.color.surface,
+                      opacity: topics.length === 0 ? 0.7 : 1,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: theme.color.textPrimary,
+                        fontSize: theme.fontSize.sm,
+                        fontFamily: theme.fontFamily.regular,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {selectedTopicLabel}
+                    </Text>
+                    <Feather
+                      name={isTopicDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                      size={theme.fontSize.md}
+                      color={theme.color.textSecondary}
+                    />
+                  </TouchableOpacity>
+
+                  {isTopicDropdownOpen && (
+                    <View
+                      style={{
+                        marginTop: theme.space.xs,
+                        borderWidth: 1,
+                        borderColor: theme.color.border,
+                        borderRadius: theme.borderRadius.md,
+                        backgroundColor: theme.color.surface,
+                        maxHeight: 180,
+                        overflow: 'hidden',
+                        elevation: 4,
+                      }}
+                    >
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
+                        {dropdownOptions.map((opt, index) => {
+                          const isSelected = selectedTopic === opt.value;
+                          return (
+                            <TouchableOpacity
+                              key={opt.value ?? `opt-${index}`}
+                              activeOpacity={0.7}
+                              onPress={() => {
+                                setSelectedTopic(opt.value);
+                                setIsTopicDropdownOpen(false);
+                              }}
+                              style={{
+                                paddingVertical: theme.space.sm,
+                                paddingHorizontal: theme.space.md,
+                                backgroundColor: isSelected
+                                  ? theme.color.accent + '15'
+                                  : 'transparent',
+                                borderBottomWidth:
+                                  index < dropdownOptions.length - 1 ? 0.5 : 0,
+                                borderBottomColor: theme.color.border,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: isSelected
+                                    ? theme.color.accent
+                                    : theme.color.textPrimary,
+                                  fontSize: theme.fontSize.sm,
+                                  fontWeight: isSelected
+                                    ? (theme.fontWeight.bold as any)
+                                    : (theme.fontWeight.regular as any),
+                                  fontFamily: theme.fontFamily.regular,
+                                }}
+                                numberOfLines={1}
+                              >
+                                {opt.label}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: theme.space.xs }}>
+              {DIFFICULTY_OPTIONS.map((d) => {
+                const selected = difficulty === d;
+                const diffColor = getDifficultyColor(d);
+                return (
+                  <TouchableOpacity
+                    key={d}
+                    activeOpacity={0.8}
+                    onPress={() => setDifficulty(d)}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      paddingVertical: theme.space.xs * 1.5,
+                      borderWidth: 1.5,
+                      borderRadius: theme.borderRadius.md,
+                      borderColor: selected ? diffColor : theme.color.border,
+                      backgroundColor: selected ? diffColor + '18' : theme.color.surface,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: selected ? diffColor : theme.color.textSecondary,
+                        fontSize: theme.fontSize.xs,
+                        fontFamily: theme.fontFamily.regular,
+                        fontWeight: selected
+                          ? (theme.fontWeight.bold as any)
+                          : (theme.fontWeight.regular as any),
+                      }}
+                    >
+                      {theme.i18n.t(`common.${d}`)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={{ gap: theme.space.xs }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.color.textSecondary,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {theme.i18n.t('home.practiceBySubject.question_count')}
+                </Text>
+                <Text
+                  style={{
+                    color: theme.color.accent,
+                    fontSize: theme.fontSize.md,
+                    fontWeight: theme.fontWeight.bold as any,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {questionCount}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: theme.space.sm,
+                }}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleDecrementQuestions}
+                  disabled={questionCount <= MIN_QUESTIONS}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: theme.borderRadius.full,
+                    borderWidth: 1.5,
+                    borderColor: theme.color.border,
+                    backgroundColor: theme.color.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: questionCount <= MIN_QUESTIONS ? 0.4 : 1,
+                  }}
+                >
+                  <Feather
+                    name="minus"
+                    size={theme.fontSize.md}
+                    color={theme.color.textPrimary}
+                  />
+                </TouchableOpacity>
+
+                <View
+                  {...questionPanResponder.panHandlers}
+                  onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
+                  style={{ flex: 1, height: 36, justifyContent: 'center' }}
+                >
+                  <View
+                    style={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: theme.color.border,
+                      width: '100%',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: '100%',
+                        width: `${questionSliderPercent}%`,
+                        backgroundColor: theme.color.accent,
+                      }}
+                    />
+                  </View>
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: `${questionSliderPercent}%`,
+                      marginLeft: -10,
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: theme.color.accent,
+                      elevation: 3,
+                    }}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleIncrementQuestions}
+                  disabled={questionCount >= MAX_QUESTIONS}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: theme.borderRadius.full,
+                    borderWidth: 1.5,
+                    borderColor: theme.color.border,
+                    backgroundColor: theme.color.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: questionCount >= MAX_QUESTIONS ? 0.4 : 1,
+                  }}
+                >
+                  <Feather
+                    name="plus"
+                    size={theme.fontSize.md}
+                    color={theme.color.textPrimary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={{ gap: theme.space.xs }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.color.textSecondary,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {theme.i18n.t('home.practiceBySubject.time_limit')}
+                </Text>
+                <Text
+                  style={{
+                    color: theme.color.accent,
+                    fontSize: theme.fontSize.md,
+                    fontWeight: theme.fontWeight.bold as any,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {timeLimitMins} {theme.i18n.t('common.min')}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: theme.space.sm,
+                }}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleDecrementTime}
+                  disabled={timeLimitMins <= MIN_TIME_MINS}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: theme.borderRadius.full,
+                    borderWidth: 1.5,
+                    borderColor: theme.color.border,
+                    backgroundColor: theme.color.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: timeLimitMins <= MIN_TIME_MINS ? 0.4 : 1,
+                  }}
+                >
+                  <Feather
+                    name="minus"
+                    size={theme.fontSize.md}
+                    color={theme.color.textPrimary}
+                  />
+                </TouchableOpacity>
+
+                <View
+                  {...timePanResponder.panHandlers}
+                  onLayout={(e) => setTimeSliderWidth(e.nativeEvent.layout.width)}
+                  style={{ flex: 1, height: 36, justifyContent: 'center' }}
+                >
+                  <View
+                    style={{
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: theme.color.border,
+                      width: '100%',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: '100%',
+                        width: `${timeSliderPercent}%`,
+                        backgroundColor: theme.color.accent,
+                      }}
+                    />
+                  </View>
+                  <View
+                    style={{
+                      position: 'absolute',
+                      left: `${timeSliderPercent}%`,
+                      marginLeft: -10,
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: theme.color.accent,
+                      elevation: 3,
+                    }}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleIncrementTime}
+                  disabled={timeLimitMins >= MAX_TIME_MINS}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: theme.borderRadius.full,
+                    borderWidth: 1.5,
+                    borderColor: theme.color.border,
+                    backgroundColor: theme.color.surface,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: timeLimitMins >= MAX_TIME_MINS ? 0.4 : 1,
+                  }}
+                >
+                  <Feather
+                    name="plus"
+                    size={theme.fontSize.md}
+                    color={theme.color.textPrimary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {startError && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: theme.space.xs,
+                }}
+              >
+                <Feather
+                  name="alert-circle"
+                  size={theme.fontSize.sm}
+                  color={theme.color.error}
+                />
+                <Text
+                  style={{
+                    flex: 1,
+                    color: theme.color.error,
+                    fontSize: theme.fontSize.xs,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {startError}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={() => handleStartPractice(id)}
+              disabled={isStartDisabled}
+              style={{
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: theme.space.sm,
+                borderRadius: theme.borderRadius.lg,
+                backgroundColor: theme.color.accent,
+                opacity: isStartDisabled ? 0.4 : 1,
+                marginTop: theme.space.xs,
+              }}
+            >
+              {starting ? (
+                <ActivityIndicator size="small" color={theme.color.textInverse} />
+              ) : (
+                <Text
+                  style={{
+                    color: theme.color.textInverse,
+                    fontSize: theme.fontSize.md,
+                    fontWeight: theme.fontWeight.bold as any,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {theme.i18n.t('home.practiceBySubject.start_practice')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={{ flex: 1, paddingHorizontal: theme.space.md, backgroundColor: theme.color.background }}>
       <View
@@ -258,519 +861,49 @@ export default function AllSubjectsScreen() {
         }}
       >
         <View style={{ gap: theme.space.sm * 1.1 }}>
-          {allSubjectIds.map((id) => {
-            const def = subjectCatalog[id];
-            const iconColor = theme.color[def?.variant ?? 'accent'];
-            const isExpanded = expandedSubject === id;
-
-            return (
-              <View
-                key={id}
-                style={{
-                  borderWidth: 1,
-                  borderColor: isExpanded ? theme.color.accent : theme.color.border,
-                  borderRadius: theme.borderRadius.lg,
-                  backgroundColor: theme.color.card,
-                  overflow: 'hidden',
-                }}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleToggleSubject(id)}
+          {preferredSubjectIds.length > 0 && (
+            <View style={{ gap: theme.space.sm * 1.1 }}>
+              <View style={{ paddingHorizontal: theme.space.xs, paddingTop: theme.space.xs }}>
+                <Text
                   style={{
-                    gap: theme.space.sm * 1.25,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    padding: theme.space.sm,
+                    color: theme.color.accent,
+                    fontSize: theme.fontSize.xs,
+                    fontWeight: theme.fontWeight.bold as any,
+                    fontFamily: theme.fontFamily.bold,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.8,
                   }}
                 >
-                  <View
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: theme.space.md * 0.75,
-                      borderWidth: 1,
-                      borderColor: `${iconColor}35`,
-                      borderRadius: theme.borderRadius.md,
-                      backgroundColor: `${iconColor}12`,
-                    }}
-                  >
-                    <SubjectIcon id={id} color={iconColor} size={theme.space.lg * 0.9} />
-                  </View>
-
-                  <Text
-                    style={{
-                      flex: 1,
-                      color: theme.color.textPrimary,
-                      fontSize: theme.fontSize.md,
-                      fontFamily: theme.fontFamily.regular,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {theme.i18n.t(def?.title ?? id)}
-                  </Text>
-                  <Ionicons
-                    name={isExpanded ? 'chevron-down' : 'chevron-forward'}
-                    size={theme.space.md}
-                    color={isExpanded ? theme.color.accent : theme.color.textSecondary}
-                  />
-                </TouchableOpacity>
-
-                {isExpanded && (
-                  <View
-                    style={{
-                      paddingHorizontal: theme.space.md,
-                      paddingBottom: theme.space.md,
-                      paddingTop: theme.space.xs,
-                      gap: theme.space.md,
-                      borderTopWidth: 1,
-                      borderTopColor: theme.color.border + '60',
-                    }}
-                  >
-                    <View style={{ gap: theme.space.xs, zIndex: 10 }}>
-                      <Text
-                        style={{
-                          color: theme.color.textSecondary,
-                          fontSize: theme.fontSize.sm,
-                          fontFamily: theme.fontFamily.regular,
-                        }}
-                      >
-                        {theme.i18n.t('home.practiceBySubject.select_topic')}
-                      </Text>
-
-                      {topicsLoading ? (
-                        <ActivityIndicator size="small" color={theme.color.accent} />
-                      ) : (
-                        <View style={{ position: 'relative' }}>
-                          <TouchableOpacity
-                            activeOpacity={0.8}
-                            disabled={topics.length === 0}
-                            onPress={() => setIsTopicDropdownOpen((prev) => !prev)}
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              paddingVertical: theme.space.sm,
-                              paddingHorizontal: theme.space.md,
-                              borderWidth: 1.5,
-                              borderRadius: theme.borderRadius.md,
-                              borderColor: theme.color.border,
-                              backgroundColor: theme.color.surface,
-                              opacity: topics.length === 0 ? 0.7 : 1,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: theme.color.textPrimary,
-                                fontSize: theme.fontSize.sm,
-                                fontFamily: theme.fontFamily.regular,
-                              }}
-                              numberOfLines={1}
-                            >
-                              {selectedTopicLabel}
-                            </Text>
-                            <Feather
-                              name={isTopicDropdownOpen ? 'chevron-up' : 'chevron-down'}
-                              size={theme.fontSize.md}
-                              color={theme.color.textSecondary}
-                            />
-                          </TouchableOpacity>
-
-                          {isTopicDropdownOpen && (
-                            <View
-                              style={{
-                                marginTop: theme.space.xs,
-                                borderWidth: 1,
-                                borderColor: theme.color.border,
-                                borderRadius: theme.borderRadius.md,
-                                backgroundColor: theme.color.surface,
-                                maxHeight: 180,
-                                overflow: 'hidden',
-                                elevation: 4,
-                              }}
-                            >
-                              <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
-                                {dropdownOptions.map((opt, index) => {
-                                  const isSelected = selectedTopic === opt.value;
-                                  return (
-                                    <TouchableOpacity
-                                      key={opt.value ?? `opt-${index}`}
-                                      activeOpacity={0.7}
-                                      onPress={() => {
-                                        setSelectedTopic(opt.value);
-                                        setIsTopicDropdownOpen(false);
-                                      }}
-                                      style={{
-                                        paddingVertical: theme.space.sm,
-                                        paddingHorizontal: theme.space.md,
-                                        backgroundColor: isSelected
-                                          ? theme.color.accent + '15'
-                                          : 'transparent',
-                                        borderBottomWidth:
-                                          index < dropdownOptions.length - 1 ? 0.5 : 0,
-                                        borderBottomColor: theme.color.border,
-                                      }}
-                                    >
-                                      <Text
-                                        style={{
-                                          color: isSelected
-                                            ? theme.color.accent
-                                            : theme.color.textPrimary,
-                                          fontSize: theme.fontSize.sm,
-                                          fontWeight: isSelected
-                                            ? (theme.fontWeight.bold as any)
-                                            : (theme.fontWeight.regular as any),
-                                          fontFamily: theme.fontFamily.regular,
-                                        }}
-                                        numberOfLines={1}
-                                      >
-                                        {opt.label}
-                                      </Text>
-                                    </TouchableOpacity>
-                                  );
-                                })}
-                              </ScrollView>
-                            </View>
-                          )}
-                        </View>
-                      )}
-                    </View>
-
-                    <View style={{ flexDirection: 'row', gap: theme.space.xs }}>
-                      {DIFFICULTY_OPTIONS.map((d) => {
-                        const selected = difficulty === d;
-                        const diffColor = getDifficultyColor(d);
-                        return (
-                          <TouchableOpacity
-                            key={d}
-                            activeOpacity={0.8}
-                            onPress={() => setDifficulty(d)}
-                            style={{
-                              flex: 1,
-                              alignItems: 'center',
-                              paddingVertical: theme.space.xs * 1.5,
-                              borderWidth: 1.5,
-                              borderRadius: theme.borderRadius.md,
-                              borderColor: selected ? diffColor : theme.color.border,
-                              backgroundColor: selected ? diffColor + '18' : theme.color.surface,
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: selected ? diffColor : theme.color.textSecondary,
-                                fontSize: theme.fontSize.xs,
-                                fontFamily: theme.fontFamily.regular,
-                                fontWeight: selected
-                                  ? (theme.fontWeight.bold as any)
-                                  : (theme.fontWeight.regular as any),
-                              }}
-                            >
-                              {theme.i18n.t(`common.${d}`)}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-
-                    <View style={{ gap: theme.space.xs }}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: theme.color.textSecondary,
-                            fontSize: theme.fontSize.sm,
-                            fontFamily: theme.fontFamily.regular,
-                          }}
-                        >
-                          {theme.i18n.t('home.practiceBySubject.question_count')}
-                        </Text>
-                        <Text
-                          style={{
-                            color: theme.color.accent,
-                            fontSize: theme.fontSize.md,
-                            fontWeight: theme.fontWeight.bold as any,
-                            fontFamily: theme.fontFamily.bold,
-                          }}
-                        >
-                          {questionCount}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: theme.space.sm,
-                        }}
-                      >
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={handleDecrementQuestions}
-                          disabled={questionCount <= MIN_QUESTIONS}
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: theme.borderRadius.full,
-                            borderWidth: 1.5,
-                            borderColor: theme.color.border,
-                            backgroundColor: theme.color.surface,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: questionCount <= MIN_QUESTIONS ? 0.4 : 1,
-                          }}
-                        >
-                          <Feather
-                            name="minus"
-                            size={theme.fontSize.md}
-                            color={theme.color.textPrimary}
-                          />
-                        </TouchableOpacity>
-
-                        <View
-                          {...questionPanResponder.panHandlers}
-                          onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
-                          style={{ flex: 1, height: 36, justifyContent: 'center' }}
-                        >
-                          <View
-                            style={{
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: theme.color.border,
-                              width: '100%',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <View
-                              style={{
-                                height: '100%',
-                                width: `${questionSliderPercent}%`,
-                                backgroundColor: theme.color.accent,
-                              }}
-                            />
-                          </View>
-                          <View
-                            style={{
-                              position: 'absolute',
-                              left: `${questionSliderPercent}%`,
-                              marginLeft: -10,
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              backgroundColor: theme.color.accent,
-                              elevation: 3,
-                            }}
-                          />
-                        </View>
-
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={handleIncrementQuestions}
-                          disabled={questionCount >= MAX_QUESTIONS}
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: theme.borderRadius.full,
-                            borderWidth: 1.5,
-                            borderColor: theme.color.border,
-                            backgroundColor: theme.color.surface,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: questionCount >= MAX_QUESTIONS ? 0.4 : 1,
-                          }}
-                        >
-                          <Feather
-                            name="plus"
-                            size={theme.fontSize.md}
-                            color={theme.color.textPrimary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <View style={{ gap: theme.space.xs }}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Text
-                          style={{
-                            color: theme.color.textSecondary,
-                            fontSize: theme.fontSize.sm,
-                            fontFamily: theme.fontFamily.regular,
-                          }}
-                        >
-                          {theme.i18n.t('home.practiceBySubject.time_limit')}
-                        </Text>
-                        <Text
-                          style={{
-                            color: theme.color.accent,
-                            fontSize: theme.fontSize.md,
-                            fontWeight: theme.fontWeight.bold as any,
-                            fontFamily: theme.fontFamily.bold,
-                          }}
-                        >
-                          {timeLimitMins} {theme.i18n.t('common.min')}
-                        </Text>
-                      </View>
-
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: theme.space.sm,
-                        }}
-                      >
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={handleDecrementTime}
-                          disabled={timeLimitMins <= MIN_TIME_MINS}
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: theme.borderRadius.full,
-                            borderWidth: 1.5,
-                            borderColor: theme.color.border,
-                            backgroundColor: theme.color.surface,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: timeLimitMins <= MIN_TIME_MINS ? 0.4 : 1,
-                          }}
-                        >
-                          <Feather
-                            name="minus"
-                            size={theme.fontSize.md}
-                            color={theme.color.textPrimary}
-                          />
-                        </TouchableOpacity>
-
-                        <View
-                          {...timePanResponder.panHandlers}
-                          onLayout={(e) => setTimeSliderWidth(e.nativeEvent.layout.width)}
-                          style={{ flex: 1, height: 36, justifyContent: 'center' }}
-                        >
-                          <View
-                            style={{
-                              height: 8,
-                              borderRadius: 4,
-                              backgroundColor: theme.color.border,
-                              width: '100%',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <View
-                              style={{
-                                height: '100%',
-                                width: `${timeSliderPercent}%`,
-                                backgroundColor: theme.color.accent,
-                              }}
-                            />
-                          </View>
-                          <View
-                            style={{
-                              position: 'absolute',
-                              left: `${timeSliderPercent}%`,
-                              marginLeft: -10,
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              backgroundColor: theme.color.accent,
-                              elevation: 3,
-                            }}
-                          />
-                        </View>
-
-                        <TouchableOpacity
-                          activeOpacity={0.7}
-                          onPress={handleIncrementTime}
-                          disabled={timeLimitMins >= MAX_TIME_MINS}
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: theme.borderRadius.full,
-                            borderWidth: 1.5,
-                            borderColor: theme.color.border,
-                            backgroundColor: theme.color.surface,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: timeLimitMins >= MAX_TIME_MINS ? 0.4 : 1,
-                          }}
-                        >
-                          <Feather
-                            name="plus"
-                            size={theme.fontSize.md}
-                            color={theme.color.textPrimary}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    {startError && (
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: theme.space.xs,
-                        }}
-                      >
-                        <Feather
-                          name="alert-circle"
-                          size={theme.fontSize.sm}
-                          color={theme.color.error}
-                        />
-                        <Text
-                          style={{
-                            flex: 1,
-                            color: theme.color.error,
-                            fontSize: theme.fontSize.xs,
-                            fontFamily: theme.fontFamily.regular,
-                          }}
-                        >
-                          {startError}
-                        </Text>
-                      </View>
-                    )}
-
-                    <TouchableOpacity
-                      onPress={() => handleStartPractice(id)}
-                      disabled={isStartDisabled}
-                      style={{
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        paddingVertical: theme.space.sm,
-                        borderRadius: theme.borderRadius.lg,
-                        backgroundColor: theme.color.accent,
-                        opacity: isStartDisabled ? 0.4 : 1,
-                        marginTop: theme.space.xs,
-                      }}
-                    >
-                      {starting ? (
-                        <ActivityIndicator size="small" color={theme.color.textInverse} />
-                      ) : (
-                        <Text
-                          style={{
-                            color: theme.color.textInverse,
-                            fontSize: theme.fontSize.md,
-                            fontWeight: theme.fontWeight.bold as any,
-                            fontFamily: theme.fontFamily.bold,
-                          }}
-                        >
-                          {theme.i18n.t('home.practiceBySubject.start_practice')}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                )}
+                  {theme.i18n.t('home.practiceBySubject.my_specialties', { defaultValue: 'My Specialties' })}
+                </Text>
               </View>
-            );
-          })}
+              {preferredSubjectIds.map(renderSubjectCard)}
+            </View>
+          )}
+
+          {preferredSubjectIds.length > 0 && otherSubjectIds.length > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, marginVertical: theme.space.sm }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.color.border }} />
+              <Text
+                style={{
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.xs,
+                  fontFamily: theme.fontFamily.bold,
+                  textTransform: 'uppercase',
+                  letterSpacing: 0.6,
+                }}
+              >
+                {theme.i18n.t('home.practiceBySubject.all_subjects', { defaultValue: 'All Subjects' })}
+              </Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: theme.color.border }} />
+            </View>
+          )}
+
+          {otherSubjectIds.length > 0 && (
+            <View style={{ gap: theme.space.sm * 1.1 }}>
+              {otherSubjectIds.map(renderSubjectCard)}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
