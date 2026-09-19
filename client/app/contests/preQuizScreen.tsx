@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import type { Contest } from '../../common/types/types';
+import type { Contest, User } from '../../common/types/types';
 import { Loading } from '../../components/common/loading';
 import { useBottomBar } from '@/common/context/useBottomBar';
 import { normalizeError } from '../../common/api/api.errors';
@@ -75,20 +75,6 @@ function mapContestToPreQuizData(
   };
 }
 
-// function StatItem({ value, label, color }: StatItemProps) {
-//   const { theme } = useTheme();
-//   return (
-//     <View style={{ flex: 1, alignItems: 'center', gap: theme.space.xs }}>
-//       <Text style={{ color, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
-//         {value}
-//       </Text>
-//       <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.light }}>
-//         {label}
-//       </Text>
-//     </View>
-//   );
-// }
-
 export default function PreQuizScreen() {
   const { theme } = useTheme();
   const router = useRouter();
@@ -97,8 +83,11 @@ export default function PreQuizScreen() {
   useBottomBar(false);
 
   const [data, setData] = useState<PreQuizData | null>(null);
+  const [contestRaw, setContestRaw] = useState<Contest | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   useEffect(() => {
     if (!contestId) {
@@ -113,17 +102,26 @@ export default function PreQuizScreen() {
       setLoading(true);
       setError(null);
       try {
-        const [contestRes, analyticsRes] = await Promise.allSettled([
+        const [contestRes, analyticsRes, userRes] = await Promise.allSettled([
           api.contest.getContest(contestId!),
           api.analytics.getAnalytics(),
+          typeof (api as any)?.auth?.getCurrentUser === 'function'
+            ? (api as any).auth.getCurrentUser()
+            : typeof (api as any)?.user?.getProfile === 'function'
+            ? (api as any).user.getProfile()
+            : Promise.resolve(null),
         ]);
 
         if (cancelled) return;
 
+        if (userRes.status === 'fulfilled' && userRes.value) {
+          setCurrentUser(userRes.value);
+        }
+
         if (contestRes.status === 'fulfilled' && contestRes.value) {
           const contest = contestRes.value;
+          setContestRaw(contest);
 
-          // Accurately filter user attempts for this specific contest
           let userStats = { bestScore: 0, attempts: 0, bestRank: 0 };
           if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
             const analytics = analyticsRes.value;
@@ -161,6 +159,34 @@ export default function PreQuizScreen() {
     if (color === 'error') return theme.color.error;
     if (color === 'info') return theme.color.info;
     return theme.color.textMuted;
+  };
+
+  const handleStartContest = () => {
+    if (!data) return;
+
+    const isContestPremium =
+      Boolean((contestRaw as any)?.isPremium) ||
+      Boolean((contestRaw as any)?.requiresPremium) ||
+      contestRaw?.contestType?.toLowerCase() === 'premium' ||
+      params.isPremium === 'true' ||
+      params.isPremium === '1';
+
+    const userIsPremium = Boolean(currentUser?.isPremium);
+
+    if (isContestPremium && !userIsPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+
+    router.push({
+      pathname: '/contests/[quizId]',
+      params: {
+        quizId: data.contestId,
+        totalQuestions: String(data.qCount),
+        difficulty: data.difficulty,
+        subject: data.creatorSpecialty,
+      },
+    });
   };
 
   if (loading) {
@@ -269,23 +295,6 @@ export default function PreQuizScreen() {
           epReward={data.epReward}
           passPercentage={data.passPercentage}
         />
-
-        {/* <View
-          style={{
-            flexDirection: 'row',
-            padding: theme.space.md,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.xl,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <StatItem value={data.bestScore > 0 ? `${data.bestScore}%` : '0%'} label="Best Score" color={theme.color.success} />
-          <View style={{ width: 1, backgroundColor: theme.color.border }} />
-          <StatItem label="Attempts" value={String(data.attempts)} color={theme.color.textPrimary} />
-          <View style={{ width: 1, backgroundColor: theme.color.border }} />
-          <StatItem label="Best Rank" value={data.bestRank > 0 ? `#${data.bestRank}` : '--'} color={theme.color.warning} />
-        </View> */}
 
         <View style={{ flexDirection: 'row', gap: theme.space.md }}>
           <View style={{ flex: 1 }}>
@@ -407,17 +416,7 @@ export default function PreQuizScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: '/contests/[quizId]',
-              params: {
-                quizId: data.contestId,
-                totalQuestions: String(data.qCount),
-                difficulty: data.difficulty,
-                subject: data.creatorSpecialty,
-              },
-            })
-          }
+          onPress={handleStartContest}
           activeOpacity={0.85}
           style={{
             gap: theme.space.sm,
@@ -429,14 +428,130 @@ export default function PreQuizScreen() {
             backgroundColor: theme.color.accent,
           }}
         >
-          <Feather name="zap" size={theme.fontSize.lg} color={theme.color.textInverse} />
-          <Text style={{ color: theme.color.textInverse, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
+          <Feather name="zap" size={theme.fontSize.lg} color={theme.color.textPrimary} />
+          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
             Start Contest
           </Text>
-          <Feather name="chevron-right" size={theme.fontSize.lg} color={theme.color.textInverse} />
+          <Feather name="chevron-right" size={theme.fontSize.lg} color={theme.color.textPrimary} />
         </TouchableOpacity>
-
       </View>
+
+      <Modal
+        visible={showPremiumModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPremiumModal(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: theme.color.accent,
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingHorizontal: theme.space.lg,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 340,
+              backgroundColor: theme.color.card,
+              borderRadius: theme.borderRadius.xl,
+              borderWidth: 1,
+              borderColor: theme.color.border,
+              padding: theme.space.xl,
+              alignItems: 'center',
+              gap: theme.space.md,
+            }}
+          >
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.color.warning + '20',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Feather name="lock" size={28} color={theme.color.warning} />
+            </View>
+
+            <View style={{ alignItems: 'center', gap: theme.space.xs }}>
+              <Text
+                style={{
+                  color: theme.color.textPrimary,
+                  fontSize: theme.fontSize.lg,
+                  fontWeight: theme.fontWeight.bold,
+                  fontFamily: theme.fontFamily.bold,
+                  textAlign: 'center',
+                }}
+              >
+                Premium Contest
+              </Text>
+              <Text
+                style={{
+                  color: theme.color.textMuted,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                  textAlign: 'center',
+                  lineHeight: theme.fontSize.sm * 1.5,
+                }}
+              >
+                This contest requires an active premium subscription. Unlock premium access to participate and earn rewards.
+              </Text>
+            </View>
+
+            <View style={{ width: '100%', gap: theme.space.sm, marginTop: theme.space.xs }}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  setShowPremiumModal(false);
+                  router.push('/subscription');
+                }}
+                style={{
+                  paddingVertical: theme.space.md * 0.9,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.accent,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.color.textInverse,
+                    fontSize: theme.fontSize.sm,
+                    fontWeight: theme.fontWeight.bold,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  Get Premium
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setShowPremiumModal(false)}
+                style={{
+                  paddingVertical: theme.space.sm,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: theme.color.textSecondary,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  Maybe Later
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

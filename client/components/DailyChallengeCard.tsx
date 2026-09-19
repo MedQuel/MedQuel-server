@@ -35,226 +35,269 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
     return `${minutes}m`;
   })();
 
+  if (props.completed) {
+    return (
+      <View
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: 'rgba(255, 255, 255, 0.08)',
+          backgroundColor: '#0c224e',
+        }}
+      >
+        <LinearGradient
+          colors={['#0d2a63', '#0a1e48', '#071638']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            paddingVertical: 36,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              top: -30,
+              right: -30,
+              width: 170,
+              height: 170,
+              borderRadius: 85,
+              backgroundColor: 'rgba(25, 60, 130, 0.45)',
+            }}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: 'absolute',
+              bottom: -50,
+              left: -30,
+              width: 130,
+              height: 130,
+              borderRadius: 65,
+              backgroundColor: 'rgba(15, 45, 100, 0.35)',
+            }}
+          />
+
+          {props.onDismiss && (
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={props.onDismiss}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={{
+                position: 'absolute',
+                top: 14,
+                right: 14,
+                zIndex: 20,
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              <Feather name="x" size={16} color="#A0B3D6" />
+            </TouchableOpacity>
+          )}
+
+          <View
+            style={{
+              width: 74,
+              height: 74,
+              borderRadius: 37,
+              backgroundColor: 'rgba(16, 75, 78, 0.75)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 18,
+            }}
+          >
+            <Feather name="check" size={36} color="#10B981" />
+          </View>
+
+          <Text
+            style={{
+              color: '#FFFFFF',
+              fontSize: 22,
+              fontWeight: '700',
+              fontFamily: theme?.fontFamily?.bold ?? 'System',
+              textAlign: 'center',
+              marginBottom: 8,
+              letterSpacing: 0.2,
+            }}
+          >
+            Today's Challenge Completed!
+          </Text>
+
+          <Text
+            style={{
+              color: '#8CA3CF',
+              fontSize: 14,
+              fontFamily: theme?.fontFamily?.regular ?? 'System',
+              textAlign: 'center',
+            }}
+          >
+            Come back tomorrow for a new one.
+          </Text>
+        </LinearGradient>
+      </View>
+    );
+  }
+
   return (
-    <LinearGradient
-      colors={
-        theme?.isDark
-          ? ['#05173d', '#071d4d', '#08205a']
-          : ['#2762f7', '#1a56f0', '#0f49db']
-      }
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+    <View
       style={{
         position: 'relative',
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderRadius: (theme?.borderRadius?.xl ?? 16) * 1.25,
+        borderRadius: 20,
         borderColor: theme?.isDark ? theme?.color?.border : 'rgba(37,99,235,0.15)',
-        paddingVertical: theme?.space?.lg ?? 16,
-        paddingHorizontal: (theme?.space?.md ?? 12) * 1.25,
+        backgroundColor: theme?.color?.card ?? '#071630',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
       }}
     >
       <View
+        pointerEvents="none"
         style={{
           position: 'absolute',
           top: -55,
           right: -35,
           width: 140,
           height: 140,
-          borderRadius: theme?.borderRadius?.full ?? 999,
-          backgroundColor: (theme?.color?.textMuted ?? '#666666') + '33',
+          borderRadius: 999,
+          backgroundColor: (theme?.color?.surface ?? '#102246') + '44',
         }}
       />
 
-      {/* Cross Button */}
-      {props.completed && props.onDismiss ? (
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={props.onDismiss}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-          style={{
-            position: 'absolute',
-            top: theme?.space?.md ?? 12,
-            right: theme?.space?.md ?? 12,
-            zIndex: 20,
-            width: (theme?.space?.xl ?? 20) * 1.1,
-            height: (theme?.space?.xl ?? 20) * 1.1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: theme?.borderRadius?.full ?? 999,
-            borderWidth: 1,
-            borderColor: 'rgba(255,255,255,0.35)',
-            backgroundColor: 'rgba(0, 0, 0, 0.25)',
-          }}
-        >
-          <Feather name="x" size={theme?.fontSize?.md ?? 14} color="#FFFFFF" />
-        </TouchableOpacity>
-      ) : null}
-
-      {props.completed ? (
-        <View style={{ gap: theme?.space?.md ?? 12, alignItems: 'center', paddingVertical: theme?.space?.sm ?? 8 }}>
+      <View style={{ gap: 8, flexDirection: 'column', justifyContent: 'center' }}>
+        <View style={{ gap: 6, flexDirection: 'row', alignItems: 'center' }}>
           <View
             style={{
-              width: (theme?.space?.xxl ?? 24) * 1.4,
-              height: (theme?.space?.xxl ?? 24) * 1.4,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: theme?.borderRadius?.full ?? 999,
-              backgroundColor: (theme?.color?.success ?? '#10B981') + '33',
+              padding: 4,
+              borderRadius: 999,
+              backgroundColor: theme?.color?.info ?? '#3B82F6',
             }}
-          >
-            <Feather name="check" size={theme?.fontSize?.xxl ?? 24} color={theme?.color?.success ?? '#10B981'} />
-          </View>
-
-          <View style={{ alignItems: 'center' }}>
-            <Text
-              style={{
-                color: theme?.isDark ? theme?.color?.textPrimary : theme?.color?.textInverse,
-                fontSize: (theme?.fontSize?.xl ?? 18) * 1.05,
-                fontWeight: theme?.fontWeight?.bold ?? '700',
-                fontFamily: theme?.fontFamily?.bold,
-                textAlign: 'center',
-              }}
-            >
-              Today's Challenge Completed!
-            </Text>
-            <Text
-              style={{
-                marginTop: theme?.space?.xs ?? 4,
-                color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
-                fontSize: theme?.fontSize?.md ?? 14,
-                fontFamily: theme?.fontFamily?.regular,
-                textAlign: 'center',
-              }}
-            >
-              Come back tomorrow for a new one.
-            </Text>
-          </View>
-        </View>
-      ) : (
-        <View style={{ gap: theme?.space?.sm ?? 8, flexDirection: 'column', justifyContent: 'center' }}>
-          <View style={{ gap: (theme?.space?.sm ?? 8) * 0.75, flexDirection: 'row', alignItems: 'center' }}>
-            <View
-              style={{
-                padding: (theme?.space?.xs ?? 4) * 1.1,
-                borderRadius: theme?.borderRadius?.full ?? 999,
-                backgroundColor: theme?.color?.info ?? '#3B82F6',
-              }}
-            />
-            <Text
-              style={{
-                letterSpacing: 0.85,
-                textTransform: 'uppercase',
-                color: theme?.isDark ? theme?.color?.info : (theme?.color?.textInverse ?? '#FFF') + '99',
-                fontSize: (theme?.fontSize?.sm ?? 12) * 0.95,
-                fontWeight: theme?.fontWeight?.bold ?? '700',
-                fontFamily: theme?.fontFamily?.regular,
-              }}
-            >
-              {t('home.daily_challenge')}
-            </Text>
-          </View>
-
+          />
           <Text
             style={{
-              color: theme?.isDark ? theme?.color?.textPrimary : theme?.color?.textInverse,
-              fontSize: (theme?.fontSize?.xl ?? 18) * 1.05,
-              fontWeight: theme?.fontWeight?.bold ?? '700',
-              fontFamily: theme?.fontFamily?.bold,
-            }}
-          >
-            {props.title}
-          </Text>
-
-          <Text
-            style={{
-              color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
-              fontSize: theme?.fontSize?.md ?? 14,
-              fontWeight: theme?.fontWeight?.medium ?? '500',
+              letterSpacing: 0.85,
+              textTransform: 'uppercase',
+              color: theme?.color?.info ?? '#3B82F6',
+              fontSize: 11,
+              fontWeight: '700',
               fontFamily: theme?.fontFamily?.regular,
             }}
           >
-            {props.questions} {t('common.questions')} · {props.duration} {t('common.min')} ·{' '}
-            {t(`common.${props.difficulty}`)}
+            {t('home.daily_challenge')}
           </Text>
+        </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ gap: (theme?.space?.sm ?? 8) * 1.25, flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ gap: theme?.space?.xs ?? 4, flexDirection: 'row', alignItems: 'center' }}>
-                <Feather
-                  name="clock"
-                  size={theme?.space?.md ?? 12}
-                  color={theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99'}
-                />
-                <Text
-                  style={{
-                    color: theme?.isDark ? theme?.color?.textSecondary : (theme?.color?.textInverse ?? '#FFF') + '99',
-                    fontSize: theme?.fontSize?.sm ?? 12,
-                    fontWeight: theme?.fontWeight?.medium ?? '500',
-                    fontFamily: theme?.fontFamily?.regular,
-                  }}
-                >
-                  {formattedTimeLeft} {t('contests.time_left')}
-                </Text>
-              </View>
+        <Text
+          style={{
+            color: theme?.color?.textPrimary ?? '#FFFFFF',
+            fontSize: 18,
+            fontWeight: '700',
+            fontFamily: theme?.fontFamily?.bold,
+          }}
+        >
+          {props.title}
+        </Text>
 
-              <View
-                style={{
-                  gap: (theme?.space?.sm ?? 8) * 0.5,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: (theme?.space?.xs ?? 4) * 1.5,
-                  paddingHorizontal: (theme?.space?.sm ?? 8) * 1.25,
-                  borderRadius: theme?.borderRadius?.md ?? 8,
-                  backgroundColor: theme?.isDark ? (theme?.color?.accent ?? '#3B82F6') + '33' : (theme?.color?.textInverse ?? '#FFF') + '33',
-                }}
-              >
-                <Feather
-                  name="zap"
-                  size={(theme?.space?.md ?? 12) * 0.95}
-                  color={theme?.isDark ? theme?.color?.info : theme?.color?.textInverse}
-                />
-                <Text
-                  style={{
-                    color: theme?.isDark ? theme?.color?.info : theme?.color?.textInverse,
-                    fontSize: theme?.fontSize?.sm ?? 12,
-                    fontWeight: theme?.fontWeight?.bold ?? '700',
-                    fontFamily: theme?.fontFamily?.number,
-                  }}
-                >
-                  +{props.epReward} {t('common.ep')}
-                </Text>
-              </View>
-            </View>
+        <Text
+          style={{
+            color: theme?.color?.textSecondary ?? '#8E9BAE',
+            fontSize: 14,
+            fontWeight: '500',
+            fontFamily: theme?.fontFamily?.regular,
+          }}
+        >
+          {props.questions} {t('common.questions')} · {props.duration} {t('common.min')} ·{' '}
+          {t(`common.${props.difficulty}`)}
+        </Text>
 
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={props.onStart}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: theme?.space?.xs ?? 4,
-                paddingVertical: theme?.space?.sm ?? 8,
-                paddingHorizontal: theme?.space?.md ?? 12,
-                borderRadius: theme?.borderRadius?.lg ?? 12,
-                backgroundColor: theme?.isDark ? theme?.color?.info : theme?.color?.textInverse,
-              }}
-            >
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ gap: 10, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ gap: 4, flexDirection: 'row', alignItems: 'center' }}>
+              <Feather
+                name="clock"
+                size={12}
+                color={theme?.color?.textSecondary ?? '#8E9BAE'}
+              />
               <Text
                 style={{
-                  letterSpacing: 0.2,
-                  color: theme?.isDark ? theme?.color?.background : theme?.color?.accent,
-                  fontSize: theme?.fontSize?.lg ?? 16,
-                  fontWeight: theme?.fontWeight?.bold ?? '700',
-                  fontFamily: theme?.fontFamily?.bold,
+                  color: theme?.color?.textSecondary ?? '#8E9BAE',
+                  fontSize: 12,
+                  fontWeight: '500',
+                  fontFamily: theme?.fontFamily?.regular,
                 }}
               >
-                {t('common.start')} →
+                {formattedTimeLeft} {t('contests.time_left')}
               </Text>
-            </TouchableOpacity>
+            </View>
+
+            <View
+              style={{
+                gap: 4,
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 4,
+                paddingHorizontal: 8,
+                borderRadius: 8,
+                backgroundColor: (theme?.color?.accent ?? '#3B82F6') + '22',
+              }}
+            >
+              <Feather
+                name="zap"
+                size={11}
+                color={theme?.color?.info ?? '#3B82F6'}
+              />
+              <Text
+                style={{
+                  color: theme?.color?.info ?? '#3B82F6',
+                  fontSize: 12,
+                  fontWeight: '700',
+                  fontFamily: theme?.fontFamily?.number,
+                }}
+              >
+                +{props.epReward} {t('common.ep')}
+              </Text>
+            </View>
           </View>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={props.onStart}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              backgroundColor: theme?.color?.accent ?? '#3B82F6',
+            }}
+          >
+            <Text
+              style={{
+                letterSpacing: 0.2,
+                color: theme?.color?.textInverse ?? '#FFFFFF',
+                fontSize: 15,
+                fontWeight: '700',
+                fontFamily: theme?.fontFamily?.bold,
+              }}
+            >
+              {t('common.start')} →
+            </Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </LinearGradient>
+      </View>
+    </View>
   );
 }
