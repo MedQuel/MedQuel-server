@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase-admin/firestore';
+
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 import { startQuizSession } from '../../services/quizService.js';
@@ -33,6 +35,30 @@ export async function getContestsResolver(
   }
 
   return getContests(filter, context.db);
+}
+
+export async function getTopPerformersResolver(parent: { contestId: string }, _args: unknown, context: GraphQLContext) {
+  if (!context.user) throw new AuthenticationError();
+
+  const snap = await context.db
+    .collection('contests')
+    .doc(parent.contestId)
+    .collection('leaderboard')
+    .orderBy('score', 'desc')
+    .limit(3)
+    .get();
+
+  return snap.docs.map((doc, index) => {
+    const data = doc.data();
+    return {
+      userId: data.userId,
+      displayName: data.displayName ?? 'Unknown',
+      photoURL: data.photoURL ?? null,
+      score: data.score ?? 0,
+      rank: index + 1,
+      completedAt: (data.completedAt as Timestamp).toDate().toISOString(),
+    };
+  });
 }
 
 export async function joinContestResolver(_parent: unknown, args: { contestId: string }, context: GraphQLContext) {
