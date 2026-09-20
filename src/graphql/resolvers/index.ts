@@ -4,12 +4,15 @@ import { getLeaderboardResolver } from './leaderboard.js';
 import { getAchievementsResolver } from './achievements.js';
 import { completeOnboardingResolver } from './onboarding.js';
 import { meResolver, updateProfileResolver } from './user.js';
+import { getContestsResolver, getContestResolver } from './contest.js';
+import { getChallengeResolver, getChallengesResolver } from './challenge.js';
+import { getTopPerformersResolver, joinContestResolver } from './contest.js';
 import { updateNotifPrefsResolver, updateQuizPrefsResolver } from './user.js';
 import { getTopicsForSubjectResolver, getQuizSessionResolver } from './quiz.js';
 import { startQuizSessionResolver, submitQuizSessionResolver } from './quiz.js';
+import { createChallengeResolver, respondChallengeResolver } from './challenge.js';
 import { removeFriendResolver, getPendingFriendRequestsResolver } from './friends.js';
 import { sendFriendRequestResolver, respondFriendRequestResolver } from './friends.js';
-import { getContestsResolver, getContestResolver, joinContestResolver } from './contest.js';
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
 import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
 
@@ -26,6 +29,8 @@ export const resolvers = {
     getQuizSession: getQuizSessionResolver,
     getContests: getContestsResolver,
     getContest: getContestResolver,
+    getChallenge: getChallengeResolver,
+    getChallenges: getChallengesResolver,
     getLeaderboard: getLeaderboardResolver,
     getAnalytics: getAnalyticsResolver,
     getAchievements: getAchievementsResolver,
@@ -42,7 +47,12 @@ export const resolvers = {
     joinContest: joinContestResolver,
     startQuizSession: startQuizSessionResolver,
     submitQuizSession: submitQuizSessionResolver,
+    createChallenge: createChallengeResolver,
+    respondChallenge: respondChallengeResolver,
     generateStudyPlan: generateStudyPlanResolver,
     markStudySessionComplete: markStudySessionCompleteResolver,
   },
+  Contest: {
+    topPerformers: getTopPerformersResolver,
+  }
 };
