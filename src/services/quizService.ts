@@ -36,6 +36,7 @@ interface TopicCacheEntry {
 
 interface ActiveContest {
   contestId: string;
+  title: string;
   subject: string;
   difficulty: string;
   isPremium: boolean;
@@ -135,6 +136,7 @@ async function fetchActiveContest(contestId: string, db: Firestore): Promise<Act
 
   return {
     contestId: doc.id,
+    title: data.title,
     subject: data.subject,
     difficulty: data.difficulty,
     isPremium: data.isPremium === true,
@@ -230,6 +232,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
   const { db, bigqueryService } = context;
   const user = await fetchOnboardedUser(context);
 
+  let contestTitle: string | null = null;
   let subject: string;
   let difficulty: string;
   let questionIds: string[];
@@ -248,6 +251,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
       throw new ForbiddenError('This contest requires an active premium subscription.');
     }
 
+    contestTitle = contest.title;
     subject = contest.subject;
     topic = null;
     difficulty = contest.difficulty;
@@ -318,6 +322,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     sessionId: sessionRef.id,
     userId: user.uid,
     contestId: input.mode === 'contest' ? input.contestId : null,
+    contestTitle,
     challengeId: input.mode === 'challenge' ? input.challengeId : null,
     quizType: input.quizType,
     subject,
@@ -510,6 +515,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       tx.set(contestLeaderboardRef, {
         userId: user.uid,
         displayName: userData.displayName ?? 'Unknown',
+        photoURL: userData.photoURL ?? null,
         score: bestScore,
         rank: 0,
         completedAt: now,
