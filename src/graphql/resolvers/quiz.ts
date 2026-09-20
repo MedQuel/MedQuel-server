@@ -15,6 +15,7 @@ function mapQuizSessionDoc(id: string, data: FirebaseFirestore.DocumentData) {
     sessionId: id,
     userId: data.userId,
     contestId: data.contestId ?? null,
+    challengeId: data.challengeId ?? null,
     quizType: data.quizType,
     subject: data.subject,
     totalQuestions: data.totalQuestions ?? 0,
