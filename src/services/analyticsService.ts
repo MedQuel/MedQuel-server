@@ -15,7 +15,6 @@ interface SubjectStatsEntry {
   attempted: number;
   correct: number;
 }
-
 export interface SubjectPerformanceDTO {
   subject: string;
   accuracy: number;
@@ -29,6 +28,7 @@ export interface HeatmapEntryDTO {
 }
 export interface RecentAttemptDTO {
   sessionId: string;
+  title: string;
   subject: string;
   quizType: string;
   scorePercent: number;
@@ -53,14 +53,14 @@ export function computeSubjectPerformance(subjectStats: Record<string, SubjectSt
     .filter(([, s]) => (s?.attempted ?? 0) > 0)
     .map(([subject, s]) => ({
       subject,
-      accuracy: Math.round((s.correct/s.attempted) * 10000)/100,
+      accuracy: Math.round((s.correct/s.attempted)*10000) / 100,
       totalAttempted: s.attempted,
       totalCorrect: s.correct,
     }))
     .sort((a, b) => b.accuracy - a.accuracy);
 }
 
-function pickBestAndWeakSubject(subjectPerformance: SubjectPerformanceDTO[]): { best: string | null, weak: string | null} {
+function pickBestAndWeakSubject(subjectPerformance: SubjectPerformanceDTO[]): { best: string | null; weak: string | null; } {
   const eligible = subjectPerformance.filter((s) => s.totalAttempted >= MIN_ATTEMPTS_FOR_SUBJECT_HIGHLIGHT);
   if (eligible.length === 0) return { best: null, weak: null };
 
@@ -71,6 +71,13 @@ function pickBestAndWeakSubject(subjectPerformance: SubjectPerformanceDTO[]): { 
   return { best: bestSubject.subject, weak: weakSubject.subject };
 }
 
+function computeAttemptTitle(data: FirebaseFirestore.DocumentData): string {
+  if (data.contestTitle) return data.contestTitle;
+  if (data.challengeId) return `Challenge: ${data.subject}`;
+  if (CONTEST_QUIZ_TYPES.has(data.quizType)) return `${data.subject} Contest`;
+
+  return `Quiz on ${data.subject}`;
+}
 
 async function fetchHeatmap(userRef: DocumentReference, now: Date): Promise<HeatmapEntryDTO[]> {
   const todayKey = toISTDateKey(now);
@@ -88,7 +95,7 @@ async function fetchHeatmap(userRef: DocumentReference, now: Date): Promise<Heat
     return {
       date: doc.id,
       questionsAttempted: data.questionsAttempted ?? 0,
-      minutesStudied: Math.round((data.minutesStudied ?? 0) * 10)/10,
+      minutesStudied: Math.round((data.minutesStudied ?? 0)*10) / 10,
     };
   });
 }
@@ -113,6 +120,7 @@ async function fetchRecentAttempts(uid: string, db: Firestore): Promise<RecentAt
 
       return {
         sessionId: doc.id,
+        title: computeAttemptTitle(data),
         subject: data.subject,
         quizType: data.quizType,
         scorePercent,
@@ -137,11 +145,15 @@ export async function getAnalytics(uid: string, db: Firestore): Promise<Analytic
 
   const totalQuestions = userData.totalQuestions ?? 0;
   const totalCorrect = userData.totalCorrect ?? 0;
-  const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect/totalQuestions) * 10000)/100 : 0;
+  const overallAccuracy = totalQuestions > 0
+    ? Math.round((totalCorrect/totalQuestions)*10000) / 100
+    : 0;
 
   const completedSessions = stats.completedSessions ?? 0;
   const scorePercentSum = stats.scorePercentSum ?? 0;
-  const avgScore = completedSessions > 0 ? Math.round((scorePercentSum/completedSessions) * 100)/100 : 0;
+  const avgScore = completedSessions > 0
+    ? Math.round((scorePercentSum/completedSessions)*100) / 100
+    : 0;
 
   const subjectPerformance = computeSubjectPerformance(subjectStats);
   const { best, weak } = pickBestAndWeakSubject(subjectPerformance);
