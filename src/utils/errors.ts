@@ -224,3 +224,85 @@ export class InvalidStudyPlanLinkError extends GraphQLError {
     super(message, { extensions: { code: 'BAD_USER_INPUT' } });
   }
 }
+
+/**
+ * Throw when a challenge doesn't exist or isn't accessible.
+ */
+export class ChallengeNotFoundError extends GraphQLError {
+  constructor(message = 'Challenge not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when a user tries to challenge themselves.
+ */
+export class SelfChallengeError extends GraphQLError {
+  constructor(message = 'You cannot challenge yourself.') {
+    super(message, { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+}
+
+/**
+ * Throw when a user tries to challenge another user while they already have a pending challenge with that user.
+ */
+export class DuplicatePendingChallengeError extends GraphQLError {
+  constructor(message = 'You already have a pending challenge with this user.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a user tries to respond to a challenge they are not a participant in.
+ */
+export class NotChallengeParticipantError extends GraphQLError {
+  constructor(message = 'You are not a participant in this challenge.') {
+    super(message, { extensions: { code: 'FORBIDDEN' } });
+  }
+}
+
+/**
+ * Throw when a user tries to respond to a challenge they have already responded to.
+ */
+export class ChallengeAlreadyRespondedError extends GraphQLError {
+  constructor(message = 'You have already responded to this challenge.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a user tries to respond to a challenge that is no longer pending (e.g. already accepted, declined, or expired).
+ */
+export class ChallengeNotPendingError extends GraphQLError {
+  constructor(message = 'This challenge is no longer pending.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a user tries to respond to a challenge that has expired.
+ */
+export class ChallengeExpiredError extends GraphQLError {
+  constructor(message = 'This challenge invite has expired.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a user tries to start a challenge session that is not yet active
+ * (e.g. the invite has not been accepted yet).
+ */
+export class ChallengeNotActiveError extends GraphQLError {
+  constructor(message = 'This challenge is not active yet, the invite must be accepted first.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a user tries to start a challenge session that has already been started.
+ */
+export class ChallengeSessionAlreadyStartedError extends GraphQLError {
+  constructor(message = 'You have already started your attempt for this challenge.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
