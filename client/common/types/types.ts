@@ -196,13 +196,14 @@ export type WireSelectedOption = 'A' | 'B' | 'C' | 'D' | null;
 
 
 // -----> Quiz sessions
-export type QuizType = 'daily' | 'contest' | 'practice' | 'subject';
+export type QuizType = 'daily' | 'contest' | 'practice' | 'subject' | 'challenge';
 export type QuizSessionStatus = 'in_progress' | 'completed' | 'abandoned';
 
 export interface QuizSession {
   sessionId: string;
   userId: string;
   contestId?: string | null;
+  challengeId?: string | null;
   quizType: QuizType;
   subject: string;
   totalQuestions: number;
@@ -219,12 +220,13 @@ export interface QuizSession {
 }
 
 export interface StartQuizSessionInput {
-  quizType: 'practice' | 'subject';
-  subject: string;
+  quizType: 'practice' | 'subject' | 'challenge';
+  subject?: string;
   topic?: string;
-  difficulty: Difficulty;
-  questionCount: number;
+  difficulty?: Difficulty;
+  questionCount?: number;
   timeLimitSecs?: number;
+  challengeId?: string;
 }
 export interface StartQuizSessionResult {
   sessionId: string;
@@ -272,6 +274,9 @@ export interface SubmitQuizSessionResult {
   leveledUp: boolean;
   isNewLongestStreak: boolean;
   results: GradedAnswer[];
+  challengeId: string | null;
+  challengeStatus: ChallengeStatus | null;
+  challengeWinnerUid: string | null;
 }
 
 
@@ -282,6 +287,14 @@ export interface MarkingScheme {
   correct: number;
   wrong: number;
   skipped: number;
+}
+export interface ContestPerformer {
+  userId: string;
+  displayName: string;
+  photoURL?: string | null;
+  score: number;
+  rank: number;
+  completedAt: string;
 }
 
 export interface Contest {
@@ -302,6 +315,7 @@ export interface Contest {
   startsAt: string;
   endsAt: string;
   participantCount: number;
+  topPerformers?: ContestPerformer[];
 }
 
 export interface ContestLeaderboardEntry {
@@ -325,6 +339,54 @@ export interface GetContestsFilter {
 export interface GetContestsResult {
   contests: Contest[];
   nextCursor: string | null;
+}
+
+
+// -----> Challenges
+export type ChallengeStatus = 'pending' | 'active' | 'completed' | 'declined' | 'expired' | 'cancelled';
+export type ParticipantResponseStatus = 'invited' | 'accepted' | 'declined';
+
+export interface ParticipantState {
+  uid: string;
+  status: ParticipantResponseStatus;
+  respondedAt: string | null;
+  score: number | null;
+  correctCount: number | null;
+  quizSessionId: string | null;
+  completedAt: string | null;
+}
+export interface ChallengeRewards {
+  winnerEp: number;
+  participationEp: number;
+}
+
+export interface Challenge {
+  challengeId: string;
+  createdBy: string;
+  participants: string[];
+  participantStates: ParticipantState[];
+  subject: string;
+  difficulty: Difficulty;
+  questionCount: number;
+  timeLimitSecs: number;
+  status: ChallengeStatus;
+  winnerUid: string | null;
+  rewards: ChallengeRewards;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateChallengeInput {
+  toUid: string;
+  subject: string;
+  difficulty: Difficulty;
+  questionCount: number;
+  timeLimitSecs?: number;
+}
+export interface GetChallengesFilter {
+  status?: ChallengeStatus;
+  limit?: number;
 }
 
 
@@ -546,6 +608,7 @@ export interface ActivityLogEntry {
 }
 export interface RecentAttempt {
   sessionId: string;
+  title: string;
   subject: string;
   quizType: QuizType;
   scorePercent: number;
