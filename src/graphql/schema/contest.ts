@@ -17,6 +17,14 @@ export const contestTypeDefs = `#graphql
     wrong: Int!
     skipped: Int!
   }
+  type ContestPerformer {
+    userId: ID!
+    displayName: String!
+    photoURL: String
+    score: Int!
+    rank: Int!
+    completedAt: String!
+  }
 
   type Contest {
     contestId: ID!
@@ -36,6 +44,7 @@ export const contestTypeDefs = `#graphql
     startsAt: String!
     endsAt: String!
     participantCount: Int!
+    topPerformers: [ContestPerformer!]!
   }
 
   input GetContestsFilter {
