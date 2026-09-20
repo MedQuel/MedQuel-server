@@ -4,6 +4,7 @@ export const quizTypeDefs = `#graphql
     contest
     practice
     subject
+    challenge
   }
   enum QuizSessionStatus {
     in_progress
@@ -33,6 +34,7 @@ export const quizTypeDefs = `#graphql
     sessionId: ID!
     userId: String!
     contestId: String
+    challengeId: String
     quizType: QuizType!
     subject: String!
     totalQuestions: Int!
@@ -56,6 +58,7 @@ export const quizTypeDefs = `#graphql
     timeLimitSecs: Int
     quizType: QuizType!
     contestId: ID
+    challengeId: ID
   }
   type StartQuizSessionResult {
     sessionId: ID!
@@ -104,6 +107,9 @@ export const quizTypeDefs = `#graphql
     leveledUp: Boolean!
     isNewLongestStreak: Boolean!
     results: [QuestionResult!]!
+    challengeId: ID
+    challengeStatus: ChallengeStatus
+    challengeWinnerUid: ID
   }
 
   extend type Query {
