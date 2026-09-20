@@ -10,6 +10,7 @@ import type { StudyPlan, GenerateStudyPlanInput } from '../types/types';
 import type { Contest, GetContestsFilter, GetContestsResult } from '../types/types';
 import type { User, QuizPrefs, NotifPrefs, UpdateProfileInput } from '../types/types';
 import type { CompleteOnboardingInput, CompleteOnboardingResult } from '../types/types';
+import type { Challenge, CreateChallengeInput, GetChallengesFilter } from '../types/types';
 import type { LeaderboardPeriod, LeaderboardScope, LeaderboardResult } from '../types/types';
 import type { MarkStudySessionCompleteInput, MarkStudySessionCompleteResult } from '../types/types';
 import type { FriendRequest, FriendSummary, PublicProfile, UserSearchResult } from '../types/types';
@@ -37,6 +38,10 @@ const IMPLEMENTED_OPERATIONS = {
   'contest.getContests': true,
   'contest.getContest': true,
   'contest.joinContest': true,
+  'challenge.createChallenge': true,
+  'challenge.respondChallenge': true,
+  'challenge.getChallenge': true,
+  'challenge.getChallenges': true,
   'leaderboard.getLeaderboard': true,
   'studyPlan.getStudyPlan': true,
   'studyPlan.generateStudyPlan': true,
@@ -538,6 +543,9 @@ const SUBMIT_QUIZ_SESSION_MUTATION = gql`
         isCorrect
         explanation
       }
+      challengeId
+      challengeStatus
+      challengeWinnerUid
     }
   }
 `;
@@ -626,6 +634,7 @@ const GET_CONTEST_QUERY = gql`
       startsAt
       endsAt
       participantCount
+      topPerformers(limit: 3) { userId displayName score rank completedAt }
     }
   }
 `;
@@ -684,6 +693,160 @@ export const contestApi = {
         { contestId: string }
       >(JOIN_CONTEST_MUTATION, { contestId })
     ).joinContest, () => Mock.buildMockQuizSession()
+  ),
+};
+
+
+// -----> Challenges <-----
+const CREATE_CHALLENGE_MUTATION = gql`
+  mutation CreateChallenge($input: CreateChallengeInput!) {
+    createChallenge(input: $input) {
+      challengeId
+      createdBy
+      participants
+      participantStates {
+        uid
+        status
+        respondedAt
+        score
+        correctCount
+        quizSessionId
+        completedAt
+      }
+      subject
+      difficulty
+      questionCount
+      timeLimitSecs
+      status
+      winnerUid
+      rewards { winnerEp participationEp }
+      expiresAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+const RESPOND_CHALLENGE_MUTATION = gql`
+  mutation RespondChallenge($challengeId: ID!, $accept: Boolean!) {
+    respondChallenge(challengeId: $challengeId, accept: $accept) {
+      challengeId
+      createdBy
+      participants
+      participantStates {
+        uid
+        status
+        respondedAt
+        score
+        correctCount
+        quizSessionId
+        completedAt
+      }
+      subject
+      difficulty
+      questionCount
+      timeLimitSecs
+      status
+      winnerUid
+      rewards { winnerEp participationEp }
+      expiresAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+const GET_CHALLENGE_QUERY = gql`
+  query GetChallenge($challengeId: ID!) {
+    getChallenge(challengeId: $challengeId) {
+      challengeId
+      createdBy
+      participants
+      participantStates {
+        uid
+        status
+        respondedAt
+        score
+        correctCount
+        quizSessionId
+        completedAt
+      }
+      subject
+      difficulty
+      questionCount
+      timeLimitSecs
+      status
+      winnerUid
+      rewards { winnerEp participationEp }
+      expiresAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+const GET_CHALLENGES_QUERY = gql`
+  query GetChallenges($filter: GetChallengesFilter) {
+    getChallenges(filter: $filter) {
+      challengeId
+      createdBy
+      participants
+      participantStates {
+        uid
+        status
+        respondedAt
+        score
+        correctCount
+        quizSessionId
+        completedAt
+      }
+      subject
+      difficulty
+      questionCount
+      timeLimitSecs
+      status
+      winnerUid
+      rewards { winnerEp participationEp }
+      expiresAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+
+export const challengeApi = {
+  createChallenge: (input: CreateChallengeInput) => withMockFallback(
+    'challenge.createChallenge', async () => (
+      await graphqlRequest<
+        { createChallenge: Challenge },
+        { input: CreateChallengeInput }
+      >(CREATE_CHALLENGE_MUTATION, { input })
+    ).createChallenge, () => Mock.buildMockChallenge(input)
+  ),
+
+  respondChallenge: (challengeId: string, accept: boolean) => withMockFallback(
+    'challenge.respondChallenge', async () => (
+      await graphqlRequest<
+        { respondChallenge: Challenge },
+        { challengeId: string; accept: boolean }
+      >(RESPOND_CHALLENGE_MUTATION, { challengeId, accept })
+    ).respondChallenge, () => Mock.buildMockRespondedChallenge(challengeId, accept)
+  ),
+
+  getChallenge: (challengeId: string) => withMockFallback(
+    'challenge.getChallenge', async () => (
+      await graphqlRequest<
+        { getChallenge: Challenge | null },
+        { challengeId: string }
+      >(GET_CHALLENGE_QUERY, { challengeId }, { idempotent: true })
+    ).getChallenge, () => Mock.MOCK_CHALLENGES.find((c) => c.challengeId === challengeId) ?? null
+  ),
+
+  getChallenges: (filter?: GetChallengesFilter) => withMockFallback(
+    'challenge.getChallenges', async () => (
+      await graphqlRequest<
+        { getChallenges: Challenge[] },
+        { filter?: GetChallengesFilter }
+      >(GET_CHALLENGES_QUERY, { filter }, { idempotent: true })
+    ).getChallenges, () => Mock.MOCK_CHALLENGES
   ),
 };
 
@@ -993,6 +1156,7 @@ const GET_ANALYTICS_QUERY = gql`
       subjectPerformance { subject accuracy totalAttempted totalCorrect }
       recentAttempts {
         sessionId
+        title
         subject
         quizType
         scorePercent
@@ -1088,6 +1252,7 @@ export const api = {
   home: homeApi,
   quiz: quizApi,
   contest: contestApi,
+  challenge: challengeApi,
   leaderboard: leaderboardApi,
   chat: chatApi,
   analytics: analyticsApi,
