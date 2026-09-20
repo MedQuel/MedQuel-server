@@ -6,14 +6,19 @@ const MIN_QUESTION_COUNT = 2;
 const MAX_SUBJECT_LENGTH = 60;
 const MAX_TOPIC_LENGTH = 80;
 const MIN_TIME_LIMIT_SECS = 60;
-const MAX_TIME_LIMIT_SECS = 7200;
+const MAX_TIME_LIMIT_SECS = 3600;
 
 export const VALID_DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
 export type ValidDifficulty = (typeof VALID_DIFFICULTIES)[number];
 
 export const CONTEST_QUIZ_TYPES = ['contest', 'daily'] as const;
 export const PRACTICE_QUIZ_TYPES = ['practice', 'subject'] as const;
-export const VALID_QUIZ_TYPES = [...CONTEST_QUIZ_TYPES, ...PRACTICE_QUIZ_TYPES] as const;
+export const CHALLENGE_QUIZ_TYPES = ['challenge'] as const;
+export const VALID_QUIZ_TYPES = [
+  ...CONTEST_QUIZ_TYPES,
+  ...PRACTICE_QUIZ_TYPES,
+  ...CHALLENGE_QUIZ_TYPES,
+] as const;
 export type ValidQuizType = (typeof VALID_QUIZ_TYPES)[number];
 
 export interface StartQuizSessionInput {
@@ -24,11 +29,16 @@ export interface StartQuizSessionInput {
   timeLimitSecs?: number | null;
   quizType: string;
   contestId?: string | null;
+  challengeId?: string | null;
 }
 export type ValidatedStartQuizSession = {
   mode: 'contest';
   quizType: 'contest' | 'daily';
   contestId: string;
+} | {
+  mode: 'challenge';
+  quizType: 'challenge';
+  challengeId: string;
 } | {
   mode: 'practice';
   quizType: 'practice' | 'subject';
@@ -51,13 +61,29 @@ export function validateStartQuizSessionInput(input: StartQuizSessionInput): Val
   }
 
   const isContestMode = (CONTEST_QUIZ_TYPES as readonly string[]).includes(quizType);
+  const isChallengeMode = (CHALLENGE_QUIZ_TYPES as readonly string[]).includes(quizType);
+
+  if (isChallengeMode) {
+    const challengeId = input.challengeId?.trim();
+    if (!challengeId) badInput('challengeId is required when quizType is "challenge".');
+
+    if (input.subject || input.difficulty || input.questionCount || input.topic || input.timeLimitSecs || input.contestId) {
+      badInput('subject/difficulty/questionCount/topic/timeLimitSecs/contestId must not be sent when quizType is "challenge", these are determined by the challenge.');
+    }
+
+    return {
+      mode: 'challenge',
+      quizType: 'challenge',
+      challengeId: challengeId!,
+    };
+  }
 
   if (isContestMode) {
     const contestId = input.contestId?.trim();
     if (!contestId) badInput(`contestId is required when quizType is "${quizType}".`);
 
-    if (input.subject || input.difficulty || input.questionCount || input.topic || input.timeLimitSecs) {
-      badInput('subject/difficulty/questionCount/topic/timeLimitSecs must not be sent when quizType is "contest" or "daily" — these are determined by the contest.');
+    if (input.subject || input.difficulty || input.questionCount || input.topic || input.timeLimitSecs || input.challengeId) {
+      badInput('subject/difficulty/questionCount/topic/timeLimitSecs/challengeId must not be sent when quizType is "contest" or "daily", these are determined by the contest.');
     }
 
     return {
@@ -69,6 +95,9 @@ export function validateStartQuizSessionInput(input: StartQuizSessionInput): Val
 
   if (input.contestId) {
     badInput('contestId must not be provided unless quizType is "contest" or "daily".');
+  }
+  if (input.challengeId) {
+    badInput('challengeId must not be provided unless quizType is "challenge".');
   }
 
   const subject = input.subject?.trim();
@@ -98,7 +127,7 @@ export function validateStartQuizSessionInput(input: StartQuizSessionInput): Val
   if (input.timeLimitSecs !== undefined && input.timeLimitSecs !== null) {
     const parsed = Math.trunc(input.timeLimitSecs);
     if (!Number.isFinite(parsed) || parsed < MIN_TIME_LIMIT_SECS || parsed > MAX_TIME_LIMIT_SECS) {
-      badInput(`timeLimitSecs must be between ${MIN_TIME_LIMIT_SECS} and ${MAX_TIME_LIMIT_SECS} (1 min-2 hrs), got "${input.timeLimitSecs}".`);
+      badInput(`timeLimitSecs must be between ${MIN_TIME_LIMIT_SECS} and ${MAX_TIME_LIMIT_SECS} (1 min-1 hrs), got "${input.timeLimitSecs}".`);
     }
     timeLimitSecs = parsed;
   }
@@ -175,7 +204,7 @@ export function validateSubmitQuizSessionInput(input: SubmitQuizSessionInput): V
       if (normalized !== '') {
         if (!VALID_OPTIONS.includes(normalized)) {
           throw new GraphQLError(`answers[${i}].selectedOption must be one of A/B/C/D, got "${answer.selectedOption}".`, {
-            extensions: { code: 'BAD_USER_INPUT' }
+            extensions: { code: 'BAD_USER_INPUT' },
           });
         }
         selectedOption = normalized as 'A' | 'B' | 'C' | 'D';
