@@ -2,6 +2,7 @@ import { config } from '../api/config';
 import type { User, HomeData } from '../types/types';
 import type { Badge, AnalyticsData } from '../types/types';
 import type { Plan, InitiatePaymentResult } from '../types/types';
+import type { Challenge, CreateChallengeInput } from '../types/types';
 import type { LeaderboardResult, LeaderboardPeriod } from '../types/types';
 import type { StudyPlan, MarkStudySessionCompleteResult } from '../types/types';
 import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
@@ -229,6 +230,9 @@ export function buildMockSubmitResult(sessionId: string): SubmitQuizSessionResul
       isCorrect: i !== 1,
       explanation: 'Serum lipase remains elevated longer and is more specific for pancreatic injury than amylase.',
     })),
+    challengeId: null,
+    challengeStatus: null,
+    challengeWinnerUid: null,
   };
 }
 
@@ -312,6 +316,128 @@ export const MOCK_CONTESTS: Contest[] = [
     participantCount: 0,
   },
 ];
+
+
+// -----> Challenges <-----
+export const MOCK_CHALLENGES: Challenge[] = [
+  {
+    challengeId: 'challenge-001',
+    createdBy: MOCK_USER.uid,
+    participants: [MOCK_USER.uid, 'user-2'],
+    participantStates: [
+      {
+        uid: MOCK_USER.uid,
+        status: 'accepted',
+        respondedAt: new Date(Date.now() - 3600000).toISOString(),
+        score: null,
+        correctCount: null,
+        quizSessionId: null,
+        completedAt: null,
+      },
+      {
+        uid: 'user-2',
+        status: 'invited',
+        respondedAt: null,
+        score: null,
+        correctCount: null,
+        quizSessionId: null,
+        completedAt: null,
+      },
+    ],
+    subject: 'Surgery',
+    difficulty: 'medium',
+    questionCount: 10,
+    timeLimitSecs: 600,
+    status: 'pending',
+    winnerUid: null,
+    rewards: { winnerEp: 35, participationEp: 9 },
+    expiresAt: new Date(Date.now()+44 * 3600000).toISOString(),
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    challengeId: 'challenge-002',
+    createdBy: 'user-5',
+    participants: ['user-5', MOCK_USER.uid],
+    participantStates: [
+      {
+        uid: 'user-5',
+        status: 'accepted',
+        respondedAt: new Date(Date.now() - 172800000).toISOString(),
+        score: 32,
+        correctCount: 8,
+        quizSessionId: 'mock-session-c1',
+        completedAt: new Date(Date.now() - 90000000).toISOString(),
+      },
+      {
+        uid: MOCK_USER.uid,
+        status: 'accepted',
+        respondedAt: new Date(Date.now() - 170000000).toISOString(),
+        score: 36,
+        correctCount: 9,
+        quizSessionId: 'mock-session-c2',
+        completedAt: new Date(Date.now() - 86400000).toISOString(),
+      },
+    ],
+    subject: 'Cardiology',
+    difficulty: 'hard',
+    questionCount: 10,
+    timeLimitSecs: 600,
+    status: 'completed',
+    winnerUid: MOCK_USER.uid,
+    rewards: { winnerEp: 50, participationEp: 13 },
+    expiresAt: new Date(Date.now() - 90000000).toISOString(),
+    createdAt: new Date(Date.now() - 172800000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
+export function buildMockChallenge(input: CreateChallengeInput): Challenge {
+  return {
+    challengeId: `mock-challenge-${Date.now()}`,
+    createdBy: MOCK_USER.uid,
+    participants: [MOCK_USER.uid, input.toUid],
+    participantStates: [
+      {
+        uid: MOCK_USER.uid,
+        status: 'accepted',
+        respondedAt: new Date().toISOString(),
+        score: null,
+        correctCount: null,
+        quizSessionId: null,
+        completedAt: null,
+      },
+      {
+        uid: input.toUid,
+        status: 'invited',
+        respondedAt: null,
+        score: null,
+        correctCount: null,
+        quizSessionId: null,
+        completedAt: null,
+      },
+    ],
+    subject: input.subject,
+    difficulty: input.difficulty,
+    questionCount: input.questionCount,
+    timeLimitSecs: input.timeLimitSecs ?? 600,
+    status: 'pending',
+    winnerUid: null,
+    rewards: { winnerEp: 35, participationEp: 9 },
+    expiresAt: new Date(Date.now()+48 * 3600000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function buildMockRespondedChallenge(challengeId: string, accept: boolean): Challenge {
+  const base = MOCK_CHALLENGES.find((c) => c.challengeId === challengeId) ?? MOCK_CHALLENGES[0]!;
+  return {
+    ...base,
+    status: accept ? 'active' : 'declined',
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 
 // -----> Leaderboard <-----
@@ -652,6 +778,7 @@ export const MOCK_ANALYTICS: AnalyticsData = {
   recentAttempts: [
     {
       sessionId: 'mock-session-1',
+      title: 'Quiz on Surgery',
       subject: 'Surgery',
       quizType: 'practice',
       scorePercent: 80,
@@ -663,6 +790,7 @@ export const MOCK_ANALYTICS: AnalyticsData = {
     },
     {
       sessionId: 'mock-session-2',
+      title: 'Cardiology Sprint',
       subject: 'Cardiology',
       quizType: 'contest',
       scorePercent: 65,
