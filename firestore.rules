@@ -111,6 +111,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    match /challenges/{challengeId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow write: if false;
+    }
+
 
     // ─────> Study plans
     match /studyPlans/{userId} {
