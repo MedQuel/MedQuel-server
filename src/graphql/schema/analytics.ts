@@ -12,6 +12,7 @@ export const analyticsTypeDefs = `#graphql
   }
   type RecentAttempt {
     sessionId: ID!
+    title: String!
     subject: String!
     quizType: QuizType!
     scorePercent: Float!
