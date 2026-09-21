@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { View, Text, ScrollView } from 'react-native';
 import { useCallback, useEffect, useState } from 'react';
-import { View, ScrollView, RefreshControl } from 'react-native';
+import { RefreshControl, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { normalizeError } from '../../common/api/api.errors';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { EMPTY_STUDY_PLAN } from '../../common/utils/createEmptyStudyPlan';
 import type { StudyPlan, StudyPlanSession, GenerateStudyPlanInput } from '../../common/types/types';
@@ -33,10 +36,13 @@ export default function StudyPlanScreen() {
   const [activeReadSession, setActiveReadSession] = useState<StudyPlanSession | null>(null);
   const [completingSessionId, setCompletingSessionId] = useState<string | null>(null);
 
+  const [startingSessionId, setStartingSessionId] = useState<string | null>(null);
+  const [startSessionError, setStartSessionError] = useState<string | null>(null);
+
   const router = useRouter();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  useBottomBar(true, 'profile');
+  useBottomBar(false);
 
   const loadPlan = useCallback(async () => {
     try {
@@ -54,6 +60,12 @@ export default function StudyPlanScreen() {
   useEffect(() => {
     loadPlan();
   }, [loadPlan]);
+
+  useEffect(() => {
+    if (!startSessionError) return;
+    const timeoutId = setTimeout(() => setStartSessionError(null), 5000);
+    return () => clearTimeout(timeoutId);
+  }, [startSessionError]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -78,29 +90,41 @@ export default function StudyPlanScreen() {
   );
 
   const handleSessionPress = useCallback(
-    (session: StudyPlanSession) => {
+    async (session: StudyPlanSession) => {
       if (session.sessionType === 'read') {
         setActiveReadSession(session);
         return;
       }
-      if (session.status === 'completed') return;
+      if (session.status === 'completed' || startingSessionId) return;
 
-      // Integration point: hand off to your practice-quiz launch flow. I don't
-      // have that screen's route/params in context — wire this to wherever
-      // startQuizSession normally gets triggered from (e.g. home/practiceBySubject.tsx),
-      // passing subject/difficulty/questionCount, then call
-      // api.studyPlan.markStudySessionComplete({ sessionId, quizSessionId }) once that quiz is submitted.
-      router.push({
-        pathname: '/contests/preQuizScreen',
-        params: {
+      setStartSessionError(null);
+      setStartingSessionId(session.sessionId);
+      try {
+        const result = await api.quiz.startQuizSession({
+          quizType: 'subject',
           subject: session.subject,
-          difficulty: session.difficulty,
-          questionCount: String(session.questionCount),
-          studyPlanSessionId: session.sessionId,
-        },
-      } as never);
+          difficulty: session.difficulty!,
+          questionCount: session.questionCount!,
+        });
+        const encodedSessionData = encodeURIComponent(JSON.stringify(result));
+
+        router.push({
+          pathname: '/contests/[quizId]',
+          params: {
+            quizId: result.sessionId,
+            mode: 'subject',
+            subject: session.subject,
+            sessionData: encodedSessionData,
+            studyPlanSessionId: session.sessionId,
+          },
+        });
+      } catch (err) {
+        setStartSessionError(normalizeError(err).message);
+      } finally {
+        setStartingSessionId(null);
+      }
     },
-    [router]
+    [router, startingSessionId]
   );
 
   const handleMarkReadComplete = useCallback(async () => {
@@ -197,6 +221,69 @@ export default function StudyPlanScreen() {
           <PlanOverviewCard plan={plan} />
           <WeeklyDayTracker plan={plan} />
           <MilestoneTimeline plan={plan} />
+
+          {startSessionError && (
+            <View
+              accessibilityRole='alert'
+              style={{
+                gap: theme.space.sm,
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                padding: theme.space.sm,
+                marginTop: theme.space.xs,
+                borderWidth: 1,
+                borderColor: theme.color.error + '55',
+                borderRadius: theme.borderRadius.lg,
+                backgroundColor: theme.color.error + '12',
+              }}
+            >
+              <View
+                style={{
+                  width: theme.space.lg,
+                  height: theme.space.lg,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: theme.borderRadius.full,
+                  backgroundColor: theme.color.error + '22',
+                }}
+              >
+                <Feather name='alert-circle' size={theme.fontSize.md} color={theme.color.error} />
+              </View>
+
+              <View style={{ flex: 1, gap: theme.space.xs * 0.5 }}>
+                <Text
+                  style={{
+                    color: theme.color.error,
+                    fontSize: theme.fontSize.sm,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {theme.i18n.t('studyPlan.sessionErrorTitle')}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.sm,
+                    color: theme.color.textSecondary,
+                    fontFamily: theme.fontFamily.regular,
+                    lineHeight: theme.fontSize.sm * 1.35,
+                  }}
+                >
+                  {startSessionError}{' '}{theme.i18n.t('studyPlan.sessionErrorBody')}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                accessibilityRole='button'
+                accessibilityLabel='Dismiss error'
+                onPress={() => setStartSessionError(null)}
+                hitSlop={8}
+                style={{ padding: theme.space.xs * 0.5 }}
+              >
+                <Feather name='x' size={theme.fontSize.md} color={theme.color.textMuted} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           <SessionTimelineList sessions={plan.sessions} onSessionPress={handleSessionPress} />
         </ScrollView>
       )}
