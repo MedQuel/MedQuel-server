@@ -10,7 +10,6 @@ import { useLayoutContext } from '../../common/context/LayoutContext';
 
 
 const ICON_SIZE = 22;
-
 interface TabDefs {
   id: string;
   href: Href;
@@ -153,13 +152,13 @@ export function AppBottomBar() {
 
   return (
     <View
-      pointerEvents='box-none'
       style={{
         position: isWeb ? ('fixed' as any) : 'absolute',
         left: 0,
         right: 0,
         bottom: 0,
         zIndex: 9999,
+        pointerEvents: 'box-none',
       }}
     >
       <View
