@@ -35,9 +35,9 @@ export function StudyPlanCard({ plan }: { plan: StudyPlan | null }) {
         gap: theme.space.sm * 1.25,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: theme.space.md * 0.5,
+        paddingTop: theme.space.md * 0.75,
         paddingBottom: theme.space.md * 0.75,
-        paddingHorizontal: theme.space.sm * 1.25,
+        paddingHorizontal: theme.space.md * 0.9,
         borderWidth: 1.5,
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.lg,
@@ -47,8 +47,8 @@ export function StudyPlanCard({ plan }: { plan: StudyPlan | null }) {
     >
       <View
         style={{
-          width: theme.space.xl * 1.25,
-          height: theme.space.xl * 1.25,
+          width: theme.space.xl * 1.35,
+          height: theme.space.xl * 1.35,
           alignItems: 'center',
           justifyContent: 'center',
           borderRadius: theme.borderRadius.md,
@@ -62,7 +62,8 @@ export function StudyPlanCard({ plan }: { plan: StudyPlan | null }) {
         <Text
           numberOfLines={1}
           style={{
-            fontSize: theme.fontSize.md * 0.95,
+            lineHeight: theme.fontSize.md * 1.25,
+            fontSize: theme.fontSize.md * 1.05,
             color: theme.color.textPrimary,
             fontFamily: theme.fontFamily.bold,
           }}
@@ -72,7 +73,7 @@ export function StudyPlanCard({ plan }: { plan: StudyPlan | null }) {
         <Text
           numberOfLines={1}
           style={{
-            fontSize: theme.fontSize.sm,
+            fontSize: theme.fontSize.sm * 1.1,
             color: theme.color.textMuted,
             fontFamily: theme.fontFamily.number,
           }}
