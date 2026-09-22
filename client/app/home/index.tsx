@@ -1,27 +1,30 @@
-import { useRouter, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useCallback, useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather } from '@expo/vector-icons';
-import { api } from '../../common/api/api';
-import { HomeHeader } from './homeHeader';
+import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, ScrollView } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { TouchableOpacity, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import HomeHeader from './homeHeader';
 import { useTheme } from '../../theme/ThemeContext';
-import { Loading } from '../../components/common/loading';
-import type { HomeData, User, Contest, AnalyticsData } from '../../common/types/types';
+import { getTodayKey } from '../../common/utils/dateUtils';
+import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import { useHomeDashboard } from '../../common/hooks/useHomeDashboard';
+
+import { Loading } from '../../components/common/loading';
+import { StudyPlanCard } from '../../components/home/StudyPlanCard';
+import { ChallengesCard } from '../../components/home/ChallengesCard';
 import { LevelProgressCard } from '../../components/LevelProgressCard';
 import { StatsOverviewCard } from '../../components/StatsOverviewCard';
 import { DailyChallengeCard } from '../../components/DailyChallengeCard';
 import { ActiveContestsCard } from '../../components/ActiveContestsCard';
 import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
 
-const STORAGE_KEY_DISMISSED_CHALLENGE = 'medquel_dismissed_challenge_date';
 
-function getTodayKey(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-}
+const STORAGE_KEY_DISMISSED_CHALLENGE = 'medquel_dismissed_challenge_date';
 
 async function getStoredDismissedKey(): Promise<string | null> {
   try {
@@ -30,26 +33,21 @@ async function getStoredDismissedKey(): Promise<string | null> {
     return null;
   }
 }
-
 async function setStoredDismissedKey(val: string): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY_DISMISSED_CHALLENGE, val);
   } catch {}
 }
 
-export default function HomeScreen() {
-  const [homeData, setHomeData] = useState<HomeData | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [myRank, setMyRank] = useState<number | null>(null);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [challengeContest, setChallengeContest] = useState<Contest | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [challengeDismissed, setChallengeDismissed] = useState(false);
 
-  const { theme } = useTheme();
+export default function HomeScreen() {
+  const [challengeDismissed, setChallengeDismissed] = useState(false);
+  const { data, loading, refreshing, error, load } = useHomeDashboard();
+  const { user, userLoading, userError, refreshUser } = useAppContext();
+
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
   useBottomBar(true, 'home');
 
   const todayKey = getTodayKey();
@@ -57,128 +55,40 @@ export default function HomeScreen() {
   useEffect(() => {
     let isMounted = true;
     getStoredDismissedKey().then((storedVal) => {
-      if (isMounted) {
-        setChallengeDismissed(storedVal === todayKey);
-      }
+      if (isMounted) setChallengeDismissed(storedVal === todayKey);
     });
     return () => {
       isMounted = false;
     };
   }, [todayKey]);
 
-  const fetchHomeDashboard = useCallback(
-    async (isMountedRef: { current: boolean }, retries = 2) => {
-      try {
-        setError(null);
-
-        const [homeRes, userRes, leaderboardRes, analyticsRes] = await Promise.allSettled([
-          api.home.getHomeData(),
-          api.user.getMe(),
-          api.leaderboard.getLeaderboard(),
-          api.analytics.getAnalytics(),
-        ]);
-
-        if (!isMountedRef.current) return;
-
-        const nextHome = homeRes.status === 'fulfilled' ? homeRes.value : null;
-        const currentUser = userRes.status === 'fulfilled' ? userRes.value : null;
-        const leaderboard = leaderboardRes.status === 'fulfilled' ? leaderboardRes.value : null;
-        const analyticsData = analyticsRes.status === 'fulfilled' ? analyticsRes.value : null;
-
-        if (!currentUser && !nextHome && retries > 0) {
-          await new Promise<void>((resolve) => setTimeout(resolve, 400));
-          return fetchHomeDashboard(isMountedRef, retries - 1);
-        }
-
-        if (!currentUser && !nextHome) {
-          throw new Error('Could not load dashboard data');
-        }
-
-        setHomeData(nextHome);
-        setUser(currentUser);
-        setMyRank(leaderboard?.myRank ?? 0);
-        setAnalytics(analyticsData);
-
-        const challengeId =
-          nextHome?.dailyChallenge?.contestId ||
-          (nextHome?.dailyChallenge as any)?.id ||
-          (nextHome?.dailyChallenge as any)?._id;
-
-        if (challengeId) {
-          try {
-            const contest = await api.contest.getContest(challengeId);
-            if (isMountedRef.current) setChallengeContest(contest ?? null);
-          } catch {}
-        }
-      } catch (err) {
-        if (isMountedRef.current) {
-          setError(theme.i18n.t('Could not load your dashboard. Pull to retry.'));
-        }
-      } finally {
-        if (isMountedRef.current) {
-          setLoading(false);
-          setRefreshing(false);
-        }
-      }
-    },
-    [theme.i18n]
-  );
-
   useFocusEffect(
     useCallback(() => {
-      const isMountedRef = { current: true };
-      fetchHomeDashboard(isMountedRef);
-      return () => {
-        isMountedRef.current = false;
-      };
-    }, [fetchHomeDashboard])
+      load();
+      refreshUser();
+    }, [load, refreshUser])
   );
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchHomeDashboard({ current: true });
-  }, [fetchHomeDashboard]);
-
-  const dailyChallenge = homeData?.dailyChallenge ?? null;
-  const challengeId =
-    dailyChallenge?.contestId ||
-    (dailyChallenge as any)?.id ||
-    (dailyChallenge as any)?._id;
-
-  const quizzesTaken = analytics?.recentAttempts.length ?? 0;
-
-  const playedContestIds = new Set(
-    analytics?.recentAttempts
-      ?.map((attempt: any) => attempt?.contestId ?? attempt?.quizId)
-      .filter(Boolean) ?? []
-  );
-
-  const availableContests = (homeData?.activeContests ?? []).filter((contest) => {
-    const isActive =
-      contest.status === 'active' && new Date(contest.endsAt).getTime() > Date.now();
-    const isAlreadyPlayed = playedContestIds.has(contest.contestId);
-    return isActive && !isAlreadyPlayed;
-  });
-
-  const isChallengeCompleted = Boolean(
-    (challengeId && playedContestIds.has(challengeId)) ||
-    (homeData && !dailyChallenge)
-  );
+    load();
+    refreshUser();
+  }, [load, refreshUser]);
 
   const handleDismissChallenge = () => {
     setChallengeDismissed(true);
     setStoredDismissedKey(todayKey);
   };
 
-  if (loading) {
+  const isInitialLoading = (userLoading && !user) || (loading && !data.homeData);
+  if (isInitialLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-        <Loading message={theme.i18n.t('Loading your dashboard...')} fullscreen />
+        <Loading message={theme.i18n.t('home.loading')} fullscreen />
       </View>
     );
   }
 
-  if (error || !user) {
+  if (!user || (error && !data.homeData)) {
     return (
       <ScrollView
         contentContainerStyle={{
@@ -189,26 +99,33 @@ export default function HomeScreen() {
           backgroundColor: theme.color.background,
         }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.color.accent}
+          />
         }
       >
-        <Feather name="alert-circle" size={48} color={theme.color.error} style={{ marginBottom: theme.space.md }} />
+        <Feather
+          name='alert-circle'
+          size={theme.space.xxl}
+          color={theme.color.error}
+          style={{ marginBottom: theme.space.md }}
+        />
         <Text
           style={{
             textAlign: 'center',
-            color: theme.color.textSecondary,
             fontSize: theme.fontSize.sm,
+            color: theme.color.textSecondary,
             fontFamily: theme.fontFamily.regular,
             marginBottom: theme.space.lg,
           }}
         >
-          {error ?? theme.i18n.t('Could not load your dashboard. Pull to retry.')}
+          {error ?? userError?.message ?? theme.i18n.t('home.loadError')}
         </Text>
+
         <TouchableOpacity
-          onPress={() => {
-            setLoading(true);
-            fetchHomeDashboard({ current: true });
-          }}
+          onPress={onRefresh}
           style={{
             paddingVertical: theme.space.sm * 1.25,
             paddingHorizontal: theme.space.xl,
@@ -216,62 +133,51 @@ export default function HomeScreen() {
             backgroundColor: theme.color.accent,
           }}
         >
-          <Text style={{ color: theme.color.textInverse, fontWeight: '700', fontSize: theme.fontSize.sm }}>
-            {theme.i18n.t('Retry')}
+          <Text
+            style={{
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textInverse,
+              fontWeight: theme.fontWeight.bold,
+            }}
+          >
+            {theme.i18n.t('common.retry')}
           </Text>
         </TouchableOpacity>
       </ScrollView>
     );
   }
 
+  const { homeData, analytics, challenges, friendsById, studyPlan, dailyChallengeContest } = data;
+  const dailyChallenge = homeData!.dailyChallenge;
+  const quizzesTaken = analytics?.recentAttempts.length ?? 0;
+  const activeContests = homeData!.activeContests;
+
   const renderDailyChallengeSection = () => {
-    if (challengeDismissed) {
-      return null;
-    }
+    if (challengeDismissed || !dailyChallenge) return null;
 
-    if (isChallengeCompleted) {
-      return (
-        <DailyChallengeCard
-          title=""
-          questions={0}
-          duration={0}
-          difficulty="medium"
-          endsAt="0"
-          epReward={0}
-          completed={true}
-          onDismiss={handleDismissChallenge}
-          onStart={() => {}}
-        />
-      );
-    }
+    const expiresAt = new Date(dailyChallenge.expiresAt).getTime();
+    const minutesLeft = expiresAt > Date.now() ? Math.round((expiresAt-Date.now()) / 60000) : 45;
 
-    if (dailyChallenge) {
-      const expiresAt = dailyChallenge.expiresAt ? new Date(dailyChallenge.expiresAt).getTime() : 0;
-      const minutesLeft = expiresAt > Date.now() ? Math.round((expiresAt - Date.now()) / 60000) : 45;
-
-      return (
-        <DailyChallengeCard
-          title={dailyChallenge.subject || challengeContest?.subject || 'Clinical Challenge'}
-          questions={challengeContest?.totalQuestions ?? 20}
-          duration={challengeContest ? Math.round(challengeContest.timeLimitSecs / 60) : 15}
-          difficulty={(challengeContest?.difficulty as any) || 'medium'}
-          endsAt={String(Math.max(1, minutesLeft))}
-          epReward={dailyChallenge.epReward ?? challengeContest?.epReward ?? 50}
-          completed={false}
-          onStart={() => {
-            if (challengeId) {
-              router.push({
-                pathname: '/contests/preQuizScreen',
-                params: { contestId: challengeId },
-              });
-            }
-          }}
-        />
-      );
-    }
-
-    return null;
+    return (
+      <DailyChallengeCard
+        title={dailyChallenge.subject || dailyChallengeContest?.subject || 'Clinical Challenge'}
+        questions={dailyChallengeContest?.totalQuestions ?? 20}
+        duration={dailyChallengeContest ? Math.round(dailyChallengeContest.timeLimitSecs / 60) : 15}
+        difficulty={(dailyChallengeContest?.difficulty as any) || 'medium'}
+        endsAt={String(Math.max(1, minutesLeft))}
+        epReward={dailyChallenge.epReward ?? dailyChallengeContest?.epReward ?? 50}
+        completed={false}
+        onDismiss={handleDismissChallenge}
+        onStart={() => {
+          router.push({
+            pathname: '/contests/preQuizScreen',
+            params: { contestId: dailyChallenge.contestId },
+          });
+        }}
+      />
+    );
   };
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -286,24 +192,18 @@ export default function HomeScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={theme.color.accent}
-          />
-        }
         contentContainerStyle={{
+          flexGrow: 1,
           gap: theme.space.md,
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.xxl * 1.75,
+          paddingTop: theme.space.md * 0.8,
+          paddingBottom: insets.bottom * 2.5,
           paddingHorizontal: theme.space.md,
         }}
       >
-        <LevelProgressCard epPoints={user.xpPoints} />
+        <LevelProgressCard xpPoints={user.xpPoints} />
 
         <StatsOverviewCard
-          rank={myRank ?? 0}
+          rank={data.myRank ?? 0}
           accuracy={analytics ? Math.round(analytics.overallAccuracy) : 0}
           quizzesTaken={quizzesTaken}
           earnedPoints={user.epPoints}
@@ -311,50 +211,55 @@ export default function HomeScreen() {
 
         {renderDailyChallengeSection()}
 
-        <View style={{ gap: theme.space.sm }}>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => router.push('/home/practiceBySubject')}
+        <ChallengesCard
+          challenges={challenges}
+          friendsById={friendsById}
+          currentUserId={user.uid}
+          currentUserName={user.displayName}
+          currentUserPhoto={user.photoURL}
+        />
+
+        <StudyPlanCard plan={studyPlan} />
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => router.push('/home/practiceBySubject')}
+          style={{ borderRadius: theme.borderRadius.xl, overflow: 'hidden' }}
+        >
+          <LinearGradient
+            colors={theme.isDark
+              ? ['#05173d', '#071d4d', '#08205a']
+              : ['#2762f7', '#1a56f0', '#0f49db']
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: theme.space.md * 1.25,
+              borderWidth: 1.5,
               borderRadius: theme.borderRadius.xl,
-              overflow: 'hidden',
+              borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
             }}
           >
-            <LinearGradient
-              colors={
-                theme.isDark
-                  ? ['#05173d', '#071d4d', '#08205a']
-                  : ['#2762f7', '#1a56f0', '#0f49db']
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <Text
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: theme.space.md,
-                borderWidth: 1.5,
-                borderColor: theme.isDark ? theme.color.border : 'rgba(37,99,235,0.15)',
-                borderRadius: theme.borderRadius.xl,
+                lineHeight: theme.fontSize.md * 1.25,
+                fontSize: theme.fontSize.lg,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
               }}
             >
-              <Text
-                style={{
-                  color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
-                  fontSize: theme.fontSize.md,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {theme.i18n.t('Explore Practice Subjects')}
-              </Text>
-              <Feather
-                name="chevron-right"
-                size={theme.fontSize.lg}
-                color={theme.isDark ? theme.color.info : theme.color.textInverse}
-              />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              {theme.i18n.t('home.practice_by_subject')}
+            </Text>
+            <Feather
+              name='chevron-right'
+              size={theme.fontSize.lg}
+              color={theme.isDark ? theme.color.info : theme.color.textInverse}
+            />
+          </LinearGradient>
+        </TouchableOpacity>
 
         <View style={{ gap: theme.space.sm }}>
           <View
@@ -368,13 +273,11 @@ export default function HomeScreen() {
               style={{
                 color: theme.color.textPrimary,
                 fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
                 fontFamily: theme.fontFamily.bold,
               }}
             >
-              {theme.i18n.t('Active Contests')}
+              {theme.i18n.t('home.active_contests')}
             </Text>
-
             <TouchableOpacity onPress={() => router.push('/contests')}>
               <Text
                 style={{
@@ -383,25 +286,23 @@ export default function HomeScreen() {
                   fontFamily: theme.fontFamily.regular,
                 }}
               >
-                {theme.i18n.t('View All')}
+                {theme.i18n.t('home.view_all')}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {availableContests.length > 0 ? (
-            <View>
-              <ActiveContestsCard
-                contests={availableContests.map((contest) => ({
-                  contestId: contest.contestId,
-                  title: contest.title,
-                  subject: contest.subject,
-                  difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
-                  isLive: contest.status === 'active',
-                  participantsCount: contest.participantCount,
-                  epReward: contest.epReward,
-                }))}
-              />
-            </View>
+          {activeContests.length > 0 ? (
+            <ActiveContestsCard
+              contests={activeContests.map((contest) => ({
+                contestId: contest.contestId,
+                title: contest.title,
+                subject: contest.subject,
+                difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
+                isLive: contest.status === 'active',
+                participantsCount: contest.participantCount,
+                epReward: contest.epReward,
+              }))}
+            />
           ) : (
             <View
               style={{
@@ -414,23 +315,27 @@ export default function HomeScreen() {
                 backgroundColor: theme.color.card,
               }}
             >
-              <Feather name="inbox" size={theme.fontSize.xl} color={theme.color.textMuted} />
+              <Feather
+                name='inbox'
+                size={theme.fontSize.xl}
+                color={theme.color.textMuted}
+              />
               <Text
                 style={{
-                  marginTop: theme.space.sm,
-                  color: theme.color.textMuted,
                   fontSize: theme.fontSize.sm,
+                  color: theme.color.textMuted,
                   fontFamily: theme.fontFamily.regular,
+                  marginTop: theme.space.sm,
                 }}
               >
-                {theme.i18n.t('No contest available to play')}
+                {theme.i18n.t('home.no_contests_available')}
               </Text>
             </View>
           )}
         </View>
 
-        {homeData?.performanceTrend && (
-          <PerformanceTrendCard data={homeData.performanceTrend.slice(-7)} />
+        {homeData!.performanceTrend.length > 0 && (
+          <PerformanceTrendCard data={homeData!.performanceTrend.slice(-7)} />
         )}
       </ScrollView>
     </View>
