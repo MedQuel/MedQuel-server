@@ -1,27 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
+
 import { useTheme } from '../../theme/ThemeContext';
+import { isSameDay } from '../../common/utils/dateUtils';
+import { hasValidPhoto } from '../../common/utils/imageUrl';
+import { getInitials } from '../../common/utils/getInitials';
 import { UserLevelChip } from '../../components/UserLevelChip';
 import { computeLevelFromXp } from '../../common/utils/computeLevelXP';
-import { hasValidPhoto } from '../../common/utils/imageUrl';
 
-function getAvatarLabel(fullName: string): string {
-  const words = fullName.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '';
-  if (words.length === 1) return words[0]!.charAt(0).toUpperCase();
-  return (words[0]!.charAt(0) + words[words.length - 1]!.charAt(0)).toUpperCase();
-}
 
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-export function HomeHeader({
+export default function HomeHeader({
   name,
   streak,
   xpPoints,
@@ -39,15 +28,7 @@ export function HomeHeader({
   onAvatarPress?: () => void;
 }) {
   const { theme } = useTheme();
-  const avatarLabel = getAvatarLabel(name);
-  const level = computeLevelFromXp(xpPoints);
-  const isActiveToday = lastActiveDate
-    ? isSameDay(new Date(lastActiveDate), new Date())
-    : false;
-  const flameIconName = isActiveToday ? 'flame' : 'flame-outline';
-  const flameColor = '#FF6723';
-  const streakTextColor = theme.color.warning;
-  const avatarSize = theme.space.xxl;
+  const isActiveToday = lastActiveDate ? isSameDay(new Date(lastActiveDate), new Date()) : false;
 
   return (
     <View
@@ -55,23 +36,19 @@ export function HomeHeader({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        paddingTop: theme.space.xs,
         paddingBottom: theme.space.sm,
-        paddingVertical: theme.space.md,
         paddingHorizontal: theme.space.md,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-        {/* Avatar — Direct Click Trigger */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onAvatarPress}
-        >
+        <TouchableOpacity activeOpacity={0.85} onPress={onAvatarPress}>
           {hasValidPhoto(photoURL) ? (
             <Image
               source={{ uri: photoURL! }}
               style={{
-                width: avatarSize,
-                height: avatarSize,
+                width: theme.space.xxl,
+                height: theme.space.xxl,
                 borderRadius: theme.borderRadius.full,
               }}
             />
@@ -81,8 +58,8 @@ export function HomeHeader({
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
-                width: avatarSize,
-                height: avatarSize,
+                width: theme.space.xxl,
+                height: theme.space.xxl,
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: theme.borderRadius.full,
@@ -95,7 +72,7 @@ export function HomeHeader({
                   fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {avatarLabel}
+                {getInitials(name)}
               </Text>
             </LinearGradient>
           )}
@@ -112,11 +89,16 @@ export function HomeHeader({
           >
             {name}
           </Text>
+
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: theme.space.xs * 0.5 }}>
-            <Ionicons name={flameIconName} size={theme.fontSize.md} color={flameColor} />
+            <Ionicons
+              name={isActiveToday ? 'flame' : 'flame-outline'}
+              size={theme.fontSize.md}
+              color={'#FF6723'}
+            />
             <Text
               style={{
-                color: streakTextColor,
+                color: theme.color.warning,
                 fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
                 marginLeft: theme.space.xs * 0.5,
@@ -145,7 +127,7 @@ export function HomeHeader({
           }}
         >
           <Ionicons
-            name="notifications-outline"
+            name='notifications-outline'
             size={theme.fontSize.md}
             color={theme.color.textSecondary}
           />
@@ -163,9 +145,10 @@ export function HomeHeader({
             }}
           />
         </TouchableOpacity>
+
         <UserLevelChip
-          level={level}
-          size="sm"
+          level={computeLevelFromXp(xpPoints)}
+          size='sm'
           style={{
             height: theme.space.xl + theme.space.xs,
             borderColor: theme.color.border,
