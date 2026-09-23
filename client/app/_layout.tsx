@@ -55,6 +55,7 @@ function AppShell() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
+    SpaceGrotesk_700Bold: require('../assets/fonts/SpaceGrotesk-Bold.ttf'),
     SpaceGrotesk_400Regular: require('../assets/fonts/SpaceGrotesk-Regular.ttf'),
     PlusJakartaSans_700Bold: require('../assets/fonts/PlusJakartaSans-Bold.ttf'),
     PlusJakartaSans_200Light: require('../assets/fonts/PlusJakartaSans-Light.ttf'),
