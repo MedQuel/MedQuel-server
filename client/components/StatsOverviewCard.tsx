@@ -1,7 +1,6 @@
 import { View, Text } from 'react-native';
-import { Feather, Octicons, MaterialCommunityIcons } from '@expo/vector-icons';
-
 import { useTheme } from '../theme/ThemeContext';
+import { Feather, Octicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 
 type StatsOverviewCardProps = {
@@ -100,17 +99,16 @@ export function StatsOverviewCard({ rank, accuracy, quizzesTaken, earnedPoints }
               color: stat.color,
               textAlign: 'center',
               fontSize: theme.fontSize.lg * 1.1,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              fontFamily: theme.fontFamily.numberBold,
             }}
           >
             {stat.value}
           </Text>
           <Text
             style={{
-              color: theme.color.textMuted,
               textAlign: 'center',
-              fontSize: theme.fontSize.xs,
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textSecondary,
               fontFamily: theme.fontFamily.light,
             }}
           >
