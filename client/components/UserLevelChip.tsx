@@ -3,13 +3,14 @@ import { View, Text, ViewStyle } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
 
+
 export function UserLevelChip({ level, size = 'md', style }: {
   level: number;
   size?: 'sm' | 'md';
   style?: ViewStyle;
 }) {
-  const isSm = size === 'sm';
   const { theme } = useTheme();
+  const isSm = size === 'sm';
 
   return (
     <View
@@ -19,7 +20,7 @@ export function UserLevelChip({ level, size = 'md', style }: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: isSm ? theme.space.xs : theme.space.sm * 0.8,
-        paddingHorizontal: isSm ? theme.space.sm : theme.space.md,
+        paddingHorizontal: isSm ? theme.space.sm * 1.5 : theme.space.md,
         borderWidth: isSm ? 1 : 2,
         borderRadius: theme.borderRadius.full,
         borderColor: theme.color.accent + '33',
@@ -29,15 +30,14 @@ export function UserLevelChip({ level, size = 'md', style }: {
     >
       <FontAwesome
         name='star'
-        size={isSm ? theme.fontSize.sm : theme.space.md * 0.95}
+        size={isSm ? theme.fontSize.sm * 1.15 : theme.space.md}
         color={theme.color.warning}
       />
       <Text
         style={{
           color: theme.color.accent,
-          fontSize: isSm ? theme.fontSize.sm : theme.fontSize.md,
-          fontWeight: theme.fontWeight.bold,
-          fontFamily: theme.fontFamily.regular,
+          fontSize: isSm ? theme.fontSize.sm * 1.15 : theme.fontSize.md,
+          fontFamily: theme.fontFamily.numberBold,
         }}
       >
         {theme.i18n.t('common.lv')} {level}
