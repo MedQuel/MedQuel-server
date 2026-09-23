@@ -3,6 +3,7 @@ export const fontFamily = {
   light: 'PlusJakartaSans_200Light',
   bold: 'PlusJakartaSans_700Bold',
   number: 'SpaceGrotesk_400Regular',
+  numberBold: 'SpaceGrotesk_700Bold',
 };
 
 export const fontSize = {
