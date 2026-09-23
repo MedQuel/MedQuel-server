@@ -43,7 +43,7 @@ async function setStoredDismissedKey(val: string): Promise<void> {
 export default function HomeScreen() {
   const [challengeDismissed, setChallengeDismissed] = useState(false);
   const { data, loading, refreshing, error, load } = useHomeDashboard();
-  const { user, userLoading, userError, refreshUser } = useAppContext();
+  const { authStatus, user, userLoading, userError } = useAppContext();
 
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -64,15 +64,13 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      load();
-      refreshUser();
-    }, [load, refreshUser])
+      if (authStatus === 'authenticated') load();
+    }, [authStatus, load])
   );
 
   const onRefresh = useCallback(() => {
     load();
-    refreshUser();
-  }, [load, refreshUser]);
+  }, [load]);
 
   const handleDismissChallenge = () => {
     setChallengeDismissed(true);
