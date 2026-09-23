@@ -5,25 +5,16 @@ import { useTheme } from '../theme/ThemeContext';
 import { xpRequiredForLevel, computeLevelFromXp } from '../common/utils/computeLevelXP';
 
 
-export type LevelProgressCardProps = {
-  epPoints: number;
-};
+export function LevelProgressCard({ xpPoints }: { xpPoints: number }) {
+  const currentLevelXP = xpRequiredForLevel(computeLevelFromXp(xpPoints));
+  const nextLevelXP = xpRequiredForLevel(computeLevelFromXp(xpPoints) + 1);
+  const remainingXP = Math.max(0, nextLevelXP-xpPoints);
 
-export function LevelProgressCard(props: LevelProgressCardProps) {
-  const { theme } = useTheme();
-
-  const currentLevel = computeLevelFromXp(props.epPoints);
-  const nextLevel = currentLevel + 1;
-  const currentXP = props.epPoints;
-  const nextLevelXP = xpRequiredForLevel(nextLevel);
-  const remainingXP = Math.max(0, nextLevelXP - currentXP);
-
-  const currentLevelXP = xpRequiredForLevel(currentLevel);
-  const levelRange = nextLevelXP - currentLevelXP;
-
-  const progress = levelRange > 0
-    ? Math.min(Math.max((currentXP - currentLevelXP) / levelRange, 0), 1)
+  const progress = (nextLevelXP - currentLevelXP) > 0
+    ? Math.min(Math.max((xpPoints-currentLevelXP) / (nextLevelXP-currentLevelXP), 0), 1)
     : 0;
+
+  const { theme } = useTheme();
 
   return (
     <View
@@ -34,9 +25,7 @@ export function LevelProgressCard(props: LevelProgressCardProps) {
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark
-          ? '0px 8px 20px rgba(0,0,0,0.22)'
-          : '0px 8px 18px rgba(15,23,42,0.06)',
+        boxShadow: theme.isDark ? '0px 8px 20px rgba(0,0,0,0.22)' : '0px 8px 18px rgba(15,23,42,0.06)',
       }}
     >
       <View
@@ -50,24 +39,21 @@ export function LevelProgressCard(props: LevelProgressCardProps) {
         <Text
           style={{
             color: theme.color.textSecondary,
-            fontSize: theme.fontSize.sm,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.regular,
+            fontSize: theme.fontSize.sm * 1.15,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
-          {theme.i18n.t('common.level')} {currentLevel} ⟶{' '}
-          {theme.i18n.t('common.level')} {nextLevel}
+          {theme.i18n.t('common.level')} {computeLevelFromXp(xpPoints)} ➜{' '}
+          {theme.i18n.t('common.level')} {computeLevelFromXp(xpPoints) + 1}
         </Text>
         <Text
           style={{
             color: theme.color.accent,
             fontSize: theme.fontSize.sm * 1.05,
-            fontWeight: theme.fontWeight.bold,
-            fontFamily: theme.fontFamily.number,
+            fontFamily: theme.fontFamily.numberBold,
           }}
         >
-          {currentXP.toLocaleString()} /{' '}
-          {nextLevelXP.toLocaleString()} {theme.i18n.t('common.XP')}
+          {xpPoints.toLocaleString()} / {nextLevelXP.toLocaleString()}{' '}{theme.i18n.t('common.XP')}
         </Text>
       </View>
 
@@ -98,11 +84,11 @@ export function LevelProgressCard(props: LevelProgressCardProps) {
         style={{
           color: theme.color.textMuted,
           fontSize: theme.fontSize.sm,
-          fontFamily: theme.fontFamily.light,
+          fontFamily: theme.fontFamily.number,
           marginTop: theme.space.sm,
         }}
       >
-        {theme.i18n.t('home.ep_to_next_level', { remainingEP: remainingXP.toLocaleString() })}
+        {theme.i18n.t('home.xp_to_next_level', { remainingXP: remainingXP.toLocaleString() })}
       </Text>
     </View>
   );
