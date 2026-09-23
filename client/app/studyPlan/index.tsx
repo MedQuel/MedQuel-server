@@ -214,7 +214,7 @@ export default function StudyPlanScreen() {
           contentContainerStyle={{
             gap: theme.space.md,
             paddingTop: theme.space.md,
-            paddingBottom: insets.bottom * 2.75,
+            paddingBottom: insets.bottom * 1.5,
             paddingHorizontal: theme.space.md,
           }}
         >
