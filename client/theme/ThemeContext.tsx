@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
-import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 import { space } from './spacing';
 import { borderRadius } from './borderRadius';
@@ -7,6 +7,8 @@ import { lightColors, darkColors } from './colors';
 import { getLocaleProvider, SupportedLanguages } from '../i18n';
 import { fontSize, fontFamily, fontWeight, lineHeight } from './typography';
 
+
+const THEME_STORAGE_KEY = 'medquel:theme';
 
 const buildTheme = (scheme: 'light' | 'dark', locale: string) => ({
   color: scheme === 'dark' ? darkColors : lightColors,
@@ -29,12 +31,26 @@ const ThemeContext = createContext<{
 } | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = (useColorScheme() ?? 'light') as 'light' | 'dark';
-  const [scheme, setScheme] = useState<'light' | 'dark'>(systemScheme);
+  const [scheme, setScheme] = useState<'light' | 'dark'>('dark');
   const [locale, setLocaleState] = useState<string>('en');
 
-  const toggleTheme = () =>
-    setScheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY)
+      .then((storedScheme) => {
+        if (storedScheme === 'light' || storedScheme === 'dark') {
+          setScheme(storedScheme);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleTheme = () => {
+    setScheme((prev) => {
+      const nextScheme = prev === 'light' ? 'dark' : 'light';
+      AsyncStorage.setItem(THEME_STORAGE_KEY, nextScheme).catch(() => {});
+      return nextScheme;
+    });
+  };
 
   const setLocale = (code: string) => {
     const valid = SupportedLanguages.find((l) => l.code === code);
