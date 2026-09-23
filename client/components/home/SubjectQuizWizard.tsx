@@ -25,7 +25,6 @@ function calculateDefaultTimeMins(questionCount: number): number {
   return Math.min(MAX_TIME_MINS, Math.max(MIN_TIME_MINS, Math.ceil((questionCount*30) / 60)));
 }
 
-
 export function SubjectQuizWizard({ subjectId }: { subjectId: SubjectId }) {
   const { user } = useAppContext();
   const [topics, setTopics] = useState<string[]>([]);
@@ -450,7 +449,7 @@ export function SubjectQuizWizard({ subjectId }: { subjectId: SubjectId }) {
             >
               <Text
                 style={{
-                  fontSize: theme.fontSize.xs,
+                  fontSize: theme.fontSize.xs * 1.15,
                   color: selected ? color : theme.color.textSecondary,
                   fontWeight: selected ? theme.fontWeight.bold : theme.fontWeight.regular,
                   fontFamily: theme.fontFamily.regular,
@@ -478,8 +477,7 @@ export function SubjectQuizWizard({ subjectId }: { subjectId: SubjectId }) {
             style={{
               color: theme.color.accent,
               fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              fontFamily: theme.fontFamily.numberBold,
             }}
           >
             {questionCount}
@@ -514,8 +512,7 @@ export function SubjectQuizWizard({ subjectId }: { subjectId: SubjectId }) {
             style={{
               color: theme.color.accent,
               fontSize: theme.fontSize.md,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              fontFamily: theme.fontFamily.numberBold,
             }}
           >
             {timeLimitMins} {theme.i18n.t('common.min')}
