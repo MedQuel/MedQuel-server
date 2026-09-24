@@ -290,7 +290,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
       throw new InsufficientQuestionsError(`Challenge question set is incomplete: expected ${questionIds.length}, found ${questions.length}.`);
     }
 
-    await claimChallengeSessionStart(input.challengeId, user.uid, sessionRef.id, db);
+    await claimChallengeSessionStart(user.uid, input.challengeId, sessionRef.id, db);
   } else {
     subject = input.subject;
     difficulty = input.difficulty;
@@ -539,8 +539,8 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
   if (session.challengeId) {
     try {
       challengeOutcome = await recordChallengeResult(
-        session.challengeId,
         user.uid,
+        session.challengeId,
         { score: grading.score, correctCount: grading.correctCount, quizSessionId: session.sessionId },
         db
       );
