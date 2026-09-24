@@ -10,6 +10,7 @@
     "pro": "PRO",
     "premium": "Premium",
     "continue": "Continue",
+    "play": "Play",
     "done": "Done",
     "close": "Close",
     "clear": "Clear",
@@ -24,12 +25,14 @@
     "prev": "Prev",
     "next": "Next",
     "review": "Review",
+    "difficulty": "Difficulty",
     "easy": "Easy",
     "medium": "Medium",
     "hard": "Hard",
     "rank": "Rank",
     "start": "Start",
     "start_contest": "Start Contest",
+    "subject": "Subject",
     "quizzes": "Quizzes",
     "questions": "questions",
     "accuracy": "Accuracy",
@@ -185,11 +188,13 @@
 
   "home": {
     "title": "Home",
-    "daily_challenge": "Daily Challenge",
-    "ep_to_next_level": "{{remainingEP}} XP to next level",
     "loading": "Loading your dashboard...",
+    "loadError": "Could not load your dashboard. Pull to retry.",
     "dayStreak": "{{streak}} Days Streak",
+    "xp_to_next_level": "{{remainingXP}} XP to next level",
+    "daily_challenge": "Daily Challenge",
     "active_contests": "Active Contests",
+    "no_contests_available": "No contest available to play",
     "practice_by_subject": "Practice by Subject",
     "view_all": "View All",
     "practiceBySubject": {
@@ -200,6 +205,53 @@
       "question_count": "Question Count",
       "time_limit": "Time Limit",
       "start_practice": "Start Practice"
+    },
+    "challenges": {
+      "title": "Challenges"
+    }
+  },
+
+  "challenges": {
+    "title": "Challenges",
+    "subtitle": "Duel your friends head-to-head",
+    "loading": "Loading challenges...",
+    "vsOpponent": "vs {{name}}",
+    "unknownOpponent": "Unknown Opponent",
+    "respond": "Respond",
+    "waitingOnThem": "Waiting",
+    "createFirst": "Challenge a friend",
+    "notFound": "This challenge could not be found.",
+    "reward": "Reward",
+    "waitingForOpponent": "Waiting for your opponent to finish...",
+    "tabs": {
+      "invites": "Invites",
+      "active": "Active",
+      "history": "History"
+    },
+    "empty": {
+      "invites": "No pending invites right now.",
+      "active": "No matches in progress.",
+      "history": "Your finished challenges will show up here."
+    },
+    "status": {
+      "won": "You won",
+      "lost": "You lost",
+      "draw": "Draw",
+      "waiting": "Waiting",
+      "declined": "Declined",
+      "expired": "Expired",
+      "cancelled": "Cancelled"
+    },
+    "create": {
+      "title": "New Challenge",
+      "subtitle": "Pick a friend and set the terms",
+      "pickOpponent": "Challenge who?",
+      "pickSubject": "Subject",
+      "pickDifficulty": "Difficulty",
+      "noFriends": "Add friends first to start a challenge.",
+      "findFriends": "Find friends",
+      "friendsLoadError": "Could not load your friends. Pull to retry.",
+      "send": "Send Challenge"
     }
   },
 
@@ -502,6 +554,8 @@
 
   "studyPlan": {
     "loading": "Loading your study plan...",
+    "sessionErrorTitle": "Could not start session",
+    "sessionErrorBody": "Check back later or try again.",
     "header": {
       "title": "Study Plan",
       "subtitle": "Your personalized roadmap"
