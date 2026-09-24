@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -225,6 +225,16 @@ export default function ContestsScreen() {
             paddingTop: theme.space.lg,
             paddingBottom: theme.space.sm,
           }}
+          rightElement={
+            <MaterialCommunityIcons
+              name="sword-cross"
+              size={theme.space.lg}
+              color={theme.color.accent}
+              onPress={() => {
+                router.push('/challenges');
+              }}
+            />
+          }
         />
 
         <ScrollView
