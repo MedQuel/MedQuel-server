@@ -218,6 +218,8 @@
     "vsOpponent": "vs {{name}}",
     "unknownOpponent": "Unknown Opponent",
     "respond": "Respond",
+    "accept": "Accept",
+    "decline": "Decline",
     "waitingOnThem": "Waiting",
     "createFirst": "Challenge a friend",
     "notFound": "This challenge could not be found.",
@@ -252,6 +254,17 @@
       "findFriends": "Find friends",
       "friendsLoadError": "Could not load your friends. Pull to retry.",
       "send": "Send Challenge"
+    },
+    "detail": {
+      "notCompleted": "Not finished",
+      "correct": "Correct",
+      "timeLimit": "Time Limit",
+      "viewProfile": "View profile",
+      "expiresIn": "Expires in {{time}}",
+      "sentAgo": "Sent {{time}} ago",
+      "leadBy": "{{name}} +{{percent}}% accuracy",
+      "tied": "Tied on accuracy",
+      "points": "points"
     }
   },
 
