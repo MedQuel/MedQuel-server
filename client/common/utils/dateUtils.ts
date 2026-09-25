@@ -1,5 +1,25 @@
 export type TimeRemaining = { kind: 'expired' } | { kind: 'hours'; value: number } | { kind: 'minutes'; value: number };
 
+export function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+export function formatRelativeDuration(ms: number): string {
+  const clamped = Math.max(0, ms);
+  const totalMins = Math.floor(clamped / 60_000);
+
+  const days = Math.floor(totalMins / 1440);
+  const hours = Math.floor((totalMins%1440) / 60);
+  const mins = totalMins % 60;
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${Math.max(mins, 1)}m`;
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
