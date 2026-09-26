@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +31,6 @@ export default function AllSubjectsScreen() {
   const [expandedSubject, setExpandedSubject] = useState<SubjectId | null>(null);
   const [subjectPerformance, setSubjectPerformance] = useState<SubjectPerformanceEntry[]>([]);
 
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   useBottomBar(false);
@@ -172,7 +170,6 @@ export default function AllSubjectsScreen() {
       <ScreenHeader
         title={theme.i18n.t('home.practiceBySubject.title')}
         subtitle={theme.i18n.t('home.practiceBySubject.subtitle')}
-        onBack={() => router.push('/profile')}
         containerStyle={{ marginHorizontal: -theme.space.md }}
       />
 
