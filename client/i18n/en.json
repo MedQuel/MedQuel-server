@@ -41,6 +41,7 @@
     "hour": "hour",
     "this_week": "this week",
     "unlock_and_start": "Unlock & Start",
+    "view_all": "View all",
     "tabs": {
       "home": "Home",
       "leaderboard": "Leaderboard",
@@ -460,43 +461,104 @@
   "friends": {
     "title": "Friends",
     "subtitle": "Connect with fellow aspirants",
+    "unknownUser": "Unknown User",
+    "shareMessage": "Join me on MedQuel!",
+
     "tabs": {
       "friends": "My Friends",
       "requests": "Requests",
       "search": "Search"
     },
-    "searchPlaceholder": "Search by name, username, or exam",
+
+    "search": {
+      "placeholder": "Search by name or username..."
+    },
+
     "sections": {
       "requests": "Friend Requests",
+      "requestsCount": "{{count}} Pending Request",
+      "suggestions": "Search Results",
       "friends": "Friends",
+      "friendsCount": "{{count}} Friends",
+      "yourFriendsCount": "Your Friends({{count}})",
       "results": "Search Results"
     },
+
     "actions": {
       "add": "Add",
       "remove": "Remove",
       "accept": "Accept",
       "decline": "Decline",
+      "addFriend": "Add Friend",
+      "removeFriend": "Remove Friend",
+      "challenge": "Challenge",
+      "viewProfile": "View Profile",
+      "reportUser": "Report User",
+      "friendLink": "Friend Link",
+      "createChallengeLink": "Create Challenge Link",
       "challengeLink": "Send Challenge Link"
     },
+
     "status": {
       "friends": "Friends",
       "pending": "Pending",
-      "received": "Incoming"
+      "received": "Incoming",
+      "requested": "Requested"
     },
+
+    "profile": {
+      "title": "Profile",
+      "student": "Medical learner",
+      "badges": "Earned Badges",
+      "noBadges": "No badges earned yet",
+      "notAvailable": "Not available",
+      "unavailable": "Profile not available",
+      "friendsOf": "{{name}}'s Friends",
+      "wins": "Wins",
+      "losses": "Losses"
+    },
+
+    "list": {
+      "title": "{{name}}'s Friends",
+      "totalOne": "1 friend",
+      "totalMany": "{{count}} friends"
+    },
+
+    "addFriendCard": {
+      "title": "Friends",
+      "subtitle": "Find friends to compare progress and stay motivated.",
+      "cta": "Add Friends"
+    },
+
+    "alerts": {
+      "loadProfileTitle": "Could not load profile",
+      "loadFriendsTitle": "Could not load friends",
+      "loadFriendsBody": "Please try again.",
+      "sendRequestFailed": "Could not send request",
+      "removeFriendFailed": "Could not remove friend",
+      "somethingWrong": "Something went wrong",
+      "tryAgain": "Please try again.",
+      "challengeSoon": "Challenge feature coming soon!",
+      "comingSoonTitle": "Coming Soon",
+      "challengeLinkSoon": "Challenge links will be available soon.",
+      "requestSentTitle": "Request Sent",
+      "requestSentBody": "Friend request sent successfully.",
+      "reportTitle": "Report User",
+      "reportUserBody": "Are you sure you want to report this user? We'll review it shortly.",
+      "reportedTitle": "Reported",
+      "reportedBody": "Thank you for your report. We'll review it shortly."
+    },
+
     "empty": {
       "requestsTitle": "No friend requests",
       "requestsBody": "Incoming requests will appear here.",
       "friendsTitle": "No friends yet",
       "friendsBody": "Search for other aspirants to connect.",
       "resultsTitle": "No aspirants found",
-      "resultsBody": "Try another name, username, or exam."
-    },
-    "profile": {
-      "title": "Profile",
-      "student": "Medical learner",
-      "badges": "Earned Badges",
-      "noBadges": "No badges earned yet",
-      "notAvailable": "Not available"
+      "resultsBody": "Try another name or username.",
+      "noFriendsYet": "No friends yet. Search to connect!",
+      "noResults": "No users found. Try a different name.",
+      "noFriendsToShow": "No friends to show."
     }
   },
 

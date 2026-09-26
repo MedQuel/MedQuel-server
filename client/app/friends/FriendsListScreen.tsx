@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, Text, FlatList, Alert } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
+import { Loading } from '../../components/common/loading';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { FriendListItem } from '../../components/friends/FriendListItem';
 import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
 import type { FriendSummary } from '../../common/types/types';
@@ -65,15 +66,20 @@ export default function FriendsListScreen() {
   };
 
   const handleChallenge = (_targetUid: string) => {
-    Alert.alert('Challenge', 'Challenge flow coming soon!');
+    Alert.alert(theme.i18n.t('friends.actions.challenge'), theme.i18n.t('friends.alerts.challengeSoon'));
   };
+
   const handleAddFriend = async (targetUid: string) => {
     setBusyUid(targetUid);
     try {
       await api.friends.sendFriendRequest(targetUid);
-      Alert.alert('Success', 'Friend request sent!');
+      // ✅ FIXED: Was using hardcoded strings, now uses i18n keys
+      Alert.alert(
+        theme.i18n.t('friends.alerts.requestSentTitle'),
+        theme.i18n.t('friends.alerts.requestSentBody'),
+      );
     } catch (err: any) {
-      Alert.alert('Could not send request', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.sendRequestFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setBusyUid(null);
     }
@@ -90,14 +96,17 @@ export default function FriendsListScreen() {
       });
       setFriends((prev) => prev?.filter((f) => f.uid !== targetUid) ?? null);
     } catch (err: any) {
-      Alert.alert('Could not remove friend', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.removeFriendFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setBusyUid(null);
     }
   };
 
   const handleReport = (_targetUid: string) => {
-    Alert.alert('Report User', 'User report submitted for review.');
+    Alert.alert(
+      theme.i18n.t('friends.alerts.reportTitle'),
+      theme.i18n.t('friends.alerts.reportUserBody'),
+    );
   };
 
   const sheetOptions: ActionSheetOption[] = useMemo(() => {
@@ -108,7 +117,7 @@ export default function FriendsListScreen() {
       return [
         {
           key: 'profile',
-          label: 'View Profile',
+          label: theme.i18n.t('friends.actions.viewProfile'),
           icon: 'account-circle-outline',
           onPress: () => goToProfile(sheetTarget.uid),
         },
@@ -119,19 +128,19 @@ export default function FriendsListScreen() {
       return [
         {
           key: 'challenge',
-          label: 'Challenge',
+          label: theme.i18n.t('friends.actions.challenge'),
           icon: 'sword-cross',
           onPress: () => handleChallenge(sheetTarget.uid),
         },
         {
           key: 'profile',
-          label: 'View Profile',
+          label: theme.i18n.t('friends.actions.viewProfile'),
           icon: 'account-circle-outline',
           onPress: () => goToProfile(sheetTarget.uid),
         },
         {
           key: 'remove',
-          label: 'Remove Friend',
+          label: theme.i18n.t('friends.actions.removeFriend'),
           icon: 'account-remove',
           destructive: true,
           onPress: () => handleRemoveFriend(sheetTarget.uid),
@@ -142,36 +151,47 @@ export default function FriendsListScreen() {
     return [
       {
         key: 'profile',
-        label: 'View Profile',
+        label: theme.i18n.t('friends.actions.viewProfile'),
         icon: 'account-circle-outline',
         onPress: () => goToProfile(sheetTarget.uid),
       },
       {
         key: 'add',
-        label: 'Add Friend',
+        label: theme.i18n.t('friends.actions.addFriend'),
         icon: 'account-plus-outline',
         onPress: () => handleAddFriend(sheetTarget.uid),
       },
       {
         key: 'report',
-        label: 'Report',
+        // ✅ FIXED: Was 'friends.actions.report', standardized to 'friends.actions.reportUser'
+        label: theme.i18n.t('friends.actions.reportUser'),
         icon: 'alert-circle-outline',
         destructive: true,
         onPress: () => handleReport(sheetTarget.uid),
       },
     ];
-  }, [sheetTarget]);
+  }, [sheetTarget, theme]);
 
   if (friends === null) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={theme.color.accent} />
+        <Loading />
       </View>
     );
   }
-  const titleText = displayName ? `${displayName}'s Friends` : 'Friends';
+  const titleText = displayName ? theme.i18n.t('friends.list.title', { name: displayName }) : theme.i18n.t('friends.title');
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <ScreenHeader
+        title={titleText}
+        subtitle={friends.length === 1 ? theme.i18n.t('friends.list.totalOne') : theme.i18n.t('friends.list.totalMany', { count: friends.length })}
+        onBack={handleBackPress}
+        containerStyle={{
+          paddingTop: theme.space.lg,
+          paddingBottom: theme.space.sm,
+        }}
+      />
+
       <FlatList
         data={sorted}
         keyExtractor={(item) => item.uid}
@@ -180,57 +200,6 @@ export default function FriendsListScreen() {
           paddingTop: theme.space.xs,
           paddingBottom: theme.space.xxl,
         }}
-        ListHeaderComponent={
-          <View style={{ marginBottom: theme.space.md }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: theme.space.sm,
-                paddingTop: theme.space.xs,
-                paddingBottom: theme.space.xs,
-                marginBottom: theme.space.xs,
-              }}
-            >
-              <TouchableOpacity
-                onPress={handleBackPress}
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: theme.space.xs * 1.75,
-                  borderWidth: 1,
-                  borderColor: theme.color.border,
-                  borderRadius: theme.borderRadius.lg,
-                  backgroundColor: theme.color.card,
-                }}
-              >
-                <Feather name="chevron-left" size={theme.fontSize.xl} color={theme.color.textPrimary} />
-              </TouchableOpacity>
-
-              <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5, flex: 1 }}>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    color: theme.color.textPrimary,
-                    fontSize: theme.fontSize.lg * 1.1,
-                    fontFamily: theme.fontFamily.bold,
-                  }}
-                >
-                  {titleText}
-                </Text>
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm * 1.05,
-                    fontFamily: theme.fontFamily.light,
-                  }}
-                >
-                  {friends.length} {friends.length === 1 ? 'friend' : 'friends'} total
-                </Text>
-              </View>
-            </View>
-          </View>
-        }
         ItemSeparatorComponent={() => (
           <View
             style={{
@@ -271,7 +240,7 @@ export default function FriendsListScreen() {
                 color: theme.color.textMuted,
               }}
             >
-              No friends to show yet.
+              {theme.i18n.t('friends.empty.noFriendsToShow')}
             </Text>
           </View>
         }

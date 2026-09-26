@@ -2,13 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View, Text, Image, Pressable, ScrollView } from 'react-native';
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Modal, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Modal, Alert, TouchableOpacity } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
+import { Loading } from '../../components/common/loading';
+import { ProfileEarnedBadge } from '../../components/ProfileEarnedBadge';
 import { FriendsRow } from '../../components/friends/FriendsRow';
 import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
 import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
@@ -79,7 +80,7 @@ export default function UserProfileScreen() {
       try {
         await loadProfile();
       } catch (err: any) {
-        Alert.alert('Could not load profile', err?.message ?? 'Please try again.');
+        Alert.alert(theme.i18n.t('friends.alerts.loadProfileTitle'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
       } finally {
         setLoading(false);
       }
@@ -97,7 +98,7 @@ export default function UserProfileScreen() {
       await api.friends.sendFriendRequest(uid);
       updateStatus('REQUEST_SENT');
     } catch (err: any) {
-      Alert.alert('Could not send request', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.sendRequestFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setActionBusy(false);
     }
@@ -110,14 +111,18 @@ export default function UserProfileScreen() {
       await api.friends.removeFriend(uid);
       updateStatus('NONE');
     } catch (err: any) {
-      Alert.alert('Could not remove friend', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.removeFriendFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setActionBusy(false);
     }
   };
 
+  // ✅ FIXED: Was hardcoded, now uses i18n keys
   const handleChallenge = () => {
-    Alert.alert('Challenge', 'Challenge flow coming soon!');
+    Alert.alert(
+      theme.i18n.t('friends.actions.challenge'),
+      theme.i18n.t('friends.alerts.challengeSoon'),
+    );
   };
 
   const handleFriendPress = useCallback((friend: FriendSummary) => {
@@ -135,7 +140,7 @@ export default function UserProfileScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={theme.color.accent} />
+        <Loading />
       </View>
     );
   }
@@ -145,7 +150,7 @@ export default function UserProfileScreen() {
       <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center', padding: theme.space.lg }}>
         <MaterialCommunityIcons name="account-off-outline" size={40} color={theme.color.textMuted} />
         <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.md, fontFamily: theme.fontFamily.regular, marginTop: theme.space.sm }}>
-          This profile isn't available right now.
+          {theme.i18n.t('friends.profile.unavailable')}
         </Text>
       </View>
     );
@@ -157,12 +162,13 @@ export default function UserProfileScreen() {
 
   const sheetOptions: ActionSheetOption[] = [
     ...(!isSelf && isFriend
-      ? [{ key: 'challenge', label: 'Challenge', icon: 'sword-cross' as const, onPress: handleChallenge }]
+      ? [{ key: 'challenge', label: theme.i18n.t('friends.actions.challenge'), icon: 'sword-cross' as const, onPress: handleChallenge }]
       : []),
     ...(isFriend
-      ? [{ key: 'remove', label: 'Remove Friend', icon: 'account-remove' as const, destructive: true, onPress: handleRemoveFriend }]
+      ? [{ key: 'remove', label: theme.i18n.t('friends.actions.removeFriend'), icon: 'account-remove' as const, destructive: true, onPress: handleRemoveFriend }]
       : []),
-    ...(!isSelf ? [{ key: 'report', label: 'Report User', icon: 'flag-outline' as const, destructive: true, onPress: () => Alert.alert('Reported', 'Thanks — our team will review this.') }] : []),
+    // ✅ FIXED: reportedTitle & reportedBody keys used (verify these exist in translation file)
+    ...(!isSelf ? [{ key: 'report', label: theme.i18n.t('friends.actions.reportUser'), icon: 'flag-outline' as const, destructive: true, onPress: () => Alert.alert(theme.i18n.t('friends.alerts.reportedTitle'), theme.i18n.t('friends.alerts.reportedBody')) }] : []),
   ];
 
   // ✅ Same 4 fields as profile screen: Level, Quizzes, Streak, Accuracy
@@ -420,7 +426,7 @@ export default function UserProfileScreen() {
           }}
         >
           <IconLabel theme={theme} icon="target" color={theme.color.textSecondary} text={profile.targetExam} />
-          <IconLabel theme={theme} icon="star-circle" color={theme.color.textMuted} text={`${profile.epPoints} EP`} />
+          <IconLabel theme={theme} icon="flash-outline" color={theme.color.textMuted} text={`${profile.epPoints} ${theme.i18n.t('common.ep')}`} />
           <IconLabel
             theme={theme}
             icon="lightning-bolt"
@@ -430,7 +436,8 @@ export default function UserProfileScreen() {
           />
         </View>
 
-        {!isSelf && (
+        {/* Add Friend / Requested only — Friends badge & Challenge removed from here */}
+        {!isSelf && !isFriend && (
           <View style={{ flexDirection: 'row', gap: theme.space.sm, marginTop: theme.space.sm }}>
             {profile.relationshipStatus === 'NONE' && (
               <TouchableOpacity
@@ -443,42 +450,15 @@ export default function UserProfileScreen() {
                   opacity: actionBusy ? 0.6 : 1,
                 }}
               >
-                {actionBusy ? <ActivityIndicator size="small" color={theme.color.textInverse} /> : <MaterialCommunityIcons name="account-plus" size={16} color={theme.color.textInverse} />}
-                <Text style={{ color: theme.color.textInverse, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Add Friend</Text>
+                {actionBusy ? <Loading size={22} style={{ padding: 0 }} /> : <MaterialCommunityIcons name="account-plus" size={16} color={theme.color.textInverse} />}
+                <Text style={{ color: theme.color.textInverse, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>{theme.i18n.t('friends.actions.addFriend')}</Text>
               </TouchableOpacity>
             )}
 
             {profile.relationshipStatus === 'REQUEST_SENT' && (
               <View style={{ paddingVertical: theme.space.sm, paddingHorizontal: theme.space.lg, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.color.border }}>
-                <Text style={{ color: theme.color.textMuted, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Requested</Text>
+                <Text style={{ color: theme.color.textMuted, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>{theme.i18n.t('friends.status.requested')}</Text>
               </View>
-            )}
-
-            {profile.relationshipStatus === 'FRIENDS' && (
-              <View
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 6,
-                  paddingVertical: theme.space.sm, paddingHorizontal: theme.space.lg,
-                  borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.color.success,
-                }}
-              >
-                <MaterialCommunityIcons name="account-check" size={16} color={theme.color.success} />
-                <Text style={{ color: theme.color.success, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Friends</Text>
-              </View>
-            )}
-
-            {isFriend && (
-              <TouchableOpacity
-                onPress={handleChallenge}
-                style={{
-                  flexDirection: 'row', alignItems: 'center', gap: 6,
-                  paddingVertical: theme.space.sm, paddingHorizontal: theme.space.lg,
-                  borderRadius: theme.borderRadius.full, backgroundColor: theme.color.surface, borderWidth: 1, borderColor: theme.color.border,
-                }}
-              >
-                <MaterialCommunityIcons name="sword-cross" size={16} color={theme.color.textPrimary} />
-                <Text style={{ color: theme.color.textPrimary, fontFamily: theme.fontFamily.bold, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm }}>Challenge</Text>
-              </TouchableOpacity>
             )}
           </View>
         )}
@@ -489,7 +469,7 @@ export default function UserProfileScreen() {
         <ProfileScreenStatsCard stats={stats} />
       </View>
 
-      {/* Head to head — only between friends */}
+      {/* Head to head + Challenge — only between friends */}
       {profile.relationshipStatus === 'FRIENDS' && profile.headToHead && (
         <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
           <View
@@ -503,15 +483,20 @@ export default function UserProfileScreen() {
               <Text style={{ color: theme.color.success, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
                 {profile.headToHead.wins}
               </Text>
-              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>Wins</Text>
+              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.profile.wins')}</Text>
             </View>
             <View style={{ width: 1, height: 32, backgroundColor: theme.color.border }} />
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: theme.color.error, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
                 {profile.headToHead.losses}
               </Text>
-              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>Losses</Text>
+              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.profile.losses')}</Text>
             </View>
+            <View style={{ width: 1, height: 32, backgroundColor: theme.color.border }} />
+          <TouchableOpacity onPress={handleChallenge} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+  <MaterialCommunityIcons name="sword-cross" size={theme.fontSize.xl} color={theme.color.accent} />
+  <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.actions.challenge')}</Text>
+</TouchableOpacity>
           </View>
         </View>
       )}
@@ -520,7 +505,7 @@ export default function UserProfileScreen() {
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <FriendsRow
           friends={profile.friends}
-          title={`${profile.displayName}'s friends`}
+          title={theme.i18n.t('friends.profile.friendsOf', { name: profile.displayName })}
           onViewAll={handleViewAllFriends}
           onFriendPress={handleFriendPress}
         />
@@ -528,9 +513,9 @@ export default function UserProfileScreen() {
 
       {/* Earned badges */}
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
-        <EarnedBadgeCard
+        <ProfileEarnedBadge
           achievements={profile.badges.map((badgeId) => ({ badgeId }))}
-          title="Earned Badges"
+          title={theme.i18n.t('friends.profile.badges')}
           onViewAllPress={() => router.push('/achievements')}
           onBadgePress={() => router.push('/achievements')}
         />

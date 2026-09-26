@@ -1,12 +1,14 @@
 import { useRouter } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { ActivityIndicator, Alert, SectionList, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, SectionList, Text, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
+import { Loading } from '../../components/common/loading';
 import { CustomSearchBar } from '../../components/CustomSearchBar';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { FriendListItem } from '../../components/friends/FriendListItem';
 import { QuickActionList } from '../../components/friends/QuickActionRow';
 import { SearchResultItem } from '../../components/friends/SearchResultItem';
@@ -59,7 +61,7 @@ export default function FriendsScreen() {
             const profile = await api.friends.getUserProfile(r.fromUid);
             return { ...r, displayName: profile.displayName, photoURL: profile.photoURL };
           } catch {
-            return { ...r, displayName: 'Unknown', photoURL: null };
+            return { ...r, displayName: '', photoURL: null };
           }
         })
     );
@@ -72,7 +74,7 @@ export default function FriendsScreen() {
       try {
         await loadAll();
       } catch {
-        Alert.alert('Could not load friends', 'Please check your connection and try again.');
+        Alert.alert(theme.i18n.t('friends.alerts.loadFriendsTitle'), theme.i18n.t('friends.alerts.loadFriendsBody'));
       } finally {
         setLoading(false);
       }
@@ -123,19 +125,19 @@ export default function FriendsScreen() {
     if (isSearchMode) {
       const list: { title: string; data: SectionItem[] }[] = [];
       if (filteredFriends.length) {
-        list.push({ title: `Friends (${filteredFriends.length})`, data: filteredFriends.map((f) => ({ type: 'friend' as const, data: f })) });
+        list.push({ title: theme.i18n.t('friends.sections.friendsCount', { count: filteredFriends.length }) ?? '', data: filteredFriends.map((f) => ({ type: 'friend' as const, data: f })) });
       }
-      list.push({ title: 'Suggestions', data: searchResults.map((r) => ({ type: 'search' as const, data: r })) });
+      list.push({ title: theme.i18n.t('friends.sections.suggestions'), data: searchResults.map((r) => ({ type: 'search' as const, data: r })) });
       return list;
     }
 
     const list: { title: string; data: SectionItem[] }[] = [];
     if (pendingRequests.length) {
-      list.push({ title: `Friend Requests (${pendingRequests.length})`, data: pendingRequests.map((r) => ({ type: 'request' as const, data: r })) });
+      list.push({ title: theme.i18n.t('friends.sections.requestsCount', { count: pendingRequests.length }) ?? '', data: pendingRequests.map((r) => ({ type: 'request' as const, data: r })) });
     }
-    list.push({ title: `Your Friends (${friends.length})`, data: friends.map((f) => ({ type: 'friend' as const, data: f })) });
+    list.push({ title: theme.i18n.t('friends.sections.yourFriendsCount', { count: friends.length }) ?? '', data: friends.map((f) => ({ type: 'friend' as const, data: f })) });
     return list;
-  }, [isSearchMode, filteredFriends, searchResults, pendingRequests, friends]);
+  }, [isSearchMode, filteredFriends, searchResults, pendingRequests, friends, theme]);
 
   const goToProfile = (uid: string) => {
     if (uid === myUid) return;
@@ -146,7 +148,7 @@ export default function FriendsScreen() {
   };
 
   const handleChallenge = (_uid: string) => {
-    Alert.alert('Challenge', 'Challenge flow coming soon!');
+    Alert.alert(theme.i18n.t('friends.actions.challenge'), theme.i18n.t('friends.alerts.challengeSoon'));
   };
 
   const handleAddFriend = async (uid: string) => {
@@ -155,7 +157,7 @@ export default function FriendsScreen() {
       await api.friends.sendFriendRequest(uid);
       setSearchResults((prev) => prev.map((r) => (r.uid === uid ? { ...r, relationshipStatus: 'REQUEST_SENT' } : r)));
     } catch (err: any) {
-      Alert.alert('Could not send request', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.sendRequestFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setBusyUid(null);
     }
@@ -167,7 +169,7 @@ export default function FriendsScreen() {
       await api.friends.respondFriendRequest(requestId, accept);
       await loadAll();
     } catch (err: any) {
-      Alert.alert('Something went wrong', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.somethingWrong'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setBusyUid(null);
     }
@@ -179,7 +181,7 @@ export default function FriendsScreen() {
       await api.friends.removeFriend(uid);
       setFriends((prev) => prev.filter((f) => f.uid !== uid));
     } catch (err: any) {
-      Alert.alert('Could not remove friend', err?.message ?? 'Please try again.');
+      Alert.alert(theme.i18n.t('friends.alerts.removeFriendFailed'), err?.message ?? theme.i18n.t('friends.alerts.tryAgain'));
     } finally {
       setBusyUid(null);
     }
@@ -190,7 +192,7 @@ export default function FriendsScreen() {
     try {
       const { Share } = await import('react-native');
       await Share.share({
-        message: `Add me on MedQuel and let's grind together! https://medquel.app/add-friend/${myUid}`,
+        message: `${theme.i18n.t('friends.shareMessage')} https://medquel.app/add-friend/${myUid}`,
       });
     } catch {
       // user dismissed
@@ -198,23 +200,39 @@ export default function FriendsScreen() {
   };
 
   const handleCreateChallengeLink = () => {
-    Alert.alert('Coming soon', 'Challenge links will be available in a future update.');
+    // ✅ FIXED: Was missing keys, now uses i18n
+    Alert.alert(
+      theme.i18n.t('friends.alerts.comingSoonTitle'),
+      theme.i18n.t('friends.alerts.challengeLinkSoon'),
+    );
   };
 
   const quickActions = [
-    { key: 'link', label: 'Friend Link', icon: 'link-variant' as const, iconBg: theme.color.accent, onPress: handleShareFriendLink },
-    { key: 'challenge', label: 'Create Challenge Link', icon: 'sword-cross' as const, iconBg: theme.color.premium, onPress: handleCreateChallengeLink },
+    { key: 'link', label: theme.i18n.t('friends.actions.friendLink'), icon: 'link-variant' as const, iconBg: theme.color.accent, onPress: handleShareFriendLink },
+    { key: 'challenge', label: theme.i18n.t('friends.actions.createChallengeLink'), icon: 'sword-cross' as const, iconBg: theme.color.premium, onPress: handleCreateChallengeLink },
   ];
 
   const sheetOptions: ActionSheetOption[] = sheetTarget
     ? [
         ...(sheetTarget.status === 'FRIENDS'
-          ? [{ key: 'challenge', label: 'Challenge', icon: 'sword-cross' as const, onPress: () => handleChallenge(sheetTarget.uid) }]
+          ? [{ key: 'challenge', label: theme.i18n.t('friends.actions.challenge'), icon: 'sword-cross' as const, onPress: () => handleChallenge(sheetTarget.uid) }]
           : []),
-        { key: 'profile', label: 'View Profile', icon: 'account-circle-outline' as const, onPress: () => goToProfile(sheetTarget.uid) },
+        { key: 'profile', label: theme.i18n.t('friends.actions.viewProfile'), icon: 'account-circle-outline' as const, onPress: () => goToProfile(sheetTarget.uid) },
         ...(sheetTarget.status === 'FRIENDS'
-          ? [{ key: 'remove', label: 'Remove Friend', icon: 'account-remove' as const, destructive: true, onPress: () => handleRemoveFriend(sheetTarget.uid) }]
+          ? [{ key: 'remove', label: theme.i18n.t('friends.actions.removeFriend'), icon: 'account-remove' as const, destructive: true, onPress: () => handleRemoveFriend(sheetTarget.uid) }]
           : []),
+        // ✅ FIXED: Standardized to 'friends.actions.reportUser' (was inconsistent with FriendsListScreen)
+        // ✅ FIXED: Alert now uses dedicated 'friends.alerts.reportTitle' instead of action label key
+        {
+          key: 'report',
+          label: theme.i18n.t('friends.actions.reportUser'),
+          icon: 'flag-outline' as const,
+          destructive: true,
+          onPress: () => Alert.alert(
+            theme.i18n.t('friends.alerts.reportTitle'),
+            theme.i18n.t('friends.alerts.reportUserBody'),
+          ),
+        },
       ]
     : [];
 
@@ -241,7 +259,7 @@ export default function FriendsScreen() {
     }
     return (
       <FriendRequestItem
-        displayName={item.data.displayName}
+        displayName={item.data.displayName || theme.i18n.t('friends.unknownUser')}
         photoURL={item.data.photoURL}
         busy={busyUid === item.data.requestId}
         onPress={() => goToProfile(item.data.fromUid)}
@@ -261,53 +279,6 @@ export default function FriendsScreen() {
 
   const listHeader = (
     <View style={{ marginBottom: theme.space.md }}>
-      <View
-        style={{
-          gap: theme.space.sm,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingTop: theme.space.xs,
-          paddingBottom: theme.space.xs,
-          marginBottom: theme.space.md,
-        }}
-      >
-        <TouchableOpacity
-          onPress={handleBackPress}
-          style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: theme.space.xs * 1.75,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <Feather name="chevron-left" size={theme.fontSize.xl} color={theme.color.textPrimary} />
-        </TouchableOpacity>
-
-        <View style={{ flexDirection: 'column', gap: theme.space.xs * 0.5 }}>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg * 1.1,
-              fontFamily: theme.fontFamily.bold,
-            }}
-          >
-            Friends
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.sm * 1.05,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            Connect and compete with fellow students
-          </Text>
-        </View>
-      </View>
-
       <QuickActionList actions={quickActions} />
 
       <View style={{ marginTop: theme.space.lg }}>
@@ -317,7 +288,7 @@ export default function FriendsScreen() {
           onChange={setQuery}
           onSubmit={setQuery}
           onClear={() => setQuery('')}
-          placeholder="Search friends or find new people"
+          placeholder={theme.i18n.t('friends.search.placeholder')}
           autoFocus={focusTrigger > 0}
           loading={searching}
         />
@@ -328,13 +299,23 @@ export default function FriendsScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.color.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={theme.color.accent} />
+        <Loading />
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <ScreenHeader
+        title={theme.i18n.t('friends.title')}
+        subtitle={theme.i18n.t('friends.subtitle')}
+        onBack={handleBackPress}
+        containerStyle={{
+          paddingTop: theme.space.lg,
+          paddingBottom: theme.space.sm,
+        }}
+      />
+
       <SectionList
         sections={sections}
         keyExtractor={(item, index) =>
@@ -364,7 +345,7 @@ export default function FriendsScreen() {
             <View style={{ alignItems: 'center', paddingVertical: theme.space.xl }}>
               <MaterialCommunityIcons name="account-search-outline" size={36} color={theme.color.textMuted} />
               <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, marginTop: theme.space.sm }}>
-                {isSearchMode ? 'No results found.' : 'No friends yet — try Find Friends above!'}
+                {isSearchMode ? theme.i18n.t('friends.empty.noResults') : theme.i18n.t('friends.empty.noFriendsYet')}
               </Text>
             </View>
           ) : null
