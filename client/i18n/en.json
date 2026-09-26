@@ -16,6 +16,12 @@
     "clear": "Clear",
     "cancel": "Cancel",
     "live": "LIVE",
+    "contest_types": {
+      "daily": "DAILY",
+      "live": "LIVE",
+      "contest": "CONTEST",
+      "weekly": "WEEKLY"
+    },
     "select": "Select",
     "save": "Save",
     "retry": "Retry",
@@ -193,6 +199,9 @@
     "dayStreak": "{{streak}} Days Streak",
     "xp_to_next_level": "{{remainingXP}} XP to next level",
     "daily_challenge": "Daily Challenge",
+    "daily_challenge_completed": "Today's Challenge Completed!",
+    "daily_challenge_come_back": "Come back tomorrow for a new one.",
+    "expires": "expires",
     "active_contests": "Active Contests",
     "no_contests_available": "No contest available to play",
     "practice_by_subject": "Practice by Subject",
