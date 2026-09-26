@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { View, Text, ViewStyle } from 'react-native';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 
 
 export function UserLevelChip({ level, size = 'md', style }: {
