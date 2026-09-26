@@ -256,10 +256,9 @@ export function ChallengesCard({ challenges, friendsById, currentUserId, current
                   fontFamily: theme.fontFamily.light,
                 }}
               >
-                {remaining.kind === 'hours'
-                  ? theme.i18n.t('challenges.timeLeftHours', { count: remaining.value })
-                  : theme.i18n.t('challenges.timeLeftMinutes', { count: remaining.value })
-                }
+                {theme.i18n.t('challenges.detail.expiresIn', {
+                  time: remaining.kind === 'hours' ? `${remaining.value}h` : `${remaining.value}m`
+                })}
               </Text>
             )}
           </View>
