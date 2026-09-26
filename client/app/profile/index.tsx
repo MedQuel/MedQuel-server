@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { api } from '@/common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
@@ -12,13 +12,13 @@ import { useBottomBar } from '../../common/context/useBottomBar';
 
 import { Loading } from '../../components/common/loading';
 import { EmptyState } from '../../components/common/EmptyState';
-import { EarnedBadgeCard } from '../../components/EarnedBadgeCard';
+import { ProfileEarnedBadge } from '../../components/ProfileEarnedBadge';
 import { ProfilePillRow } from '../../components/profile/ProfilePillRow';
 import { FriendsRow } from '../../components/friends/FriendsRow';
 import { AddFriendButton } from '../../components/friends/AddfriendButton';
 import { ProfileScreenStatsCard } from '../../components/ProfileScreenStatsCard';
 import { SubjectPerformanceCard } from '../../components/SubjectPerformanceCard';
-import { AttemptHistoryItemCard } from '../../components/AttemptHistoryItemCard';
+import { AttemptHistoryCard } from '../../components/AttemptHistoryCard';
 
 
 function Pill({ theme, children, style }: any) {
@@ -64,11 +64,12 @@ function Section({ theme, children, marginTop }: any) {
   );
 }
 
+const RECENT_ATTEMPTS_LIMIT = 3;
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);
-  const [analytics, setAnalytics] = useState<any>({});         // ✅ null → {}
-  const [recentData, setRecentData] = useState<any[]>([]);     // ✅ null → []
+  const [analytics, setAnalytics] = useState<any>({});         
+  const [recentData, setRecentData] = useState<any[]>([]);     
   const [achievements, setAchievements] = useState<Badge[]>([]);
   const [myFriends, setMyFriends] = useState<FriendSummary[]>([]);
   const [load, setLoad] = useState(true);
@@ -120,18 +121,28 @@ export default function ProfileScreen() {
     router.push({ pathname: '/friends/UserProfileScreen', params: { uid: friend.uid } } as any);
   }, [router]);
 
-  const formatTime = (iso: string) => new Date(iso).toLocaleString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
+  const handleViewAllAttemptsPress = useCallback(() => {
+    router.push('/analytics' as any);
+  }, [router]);
 
   const subjectPerformance = analytics?.subjectPerformance ?? [];  // ✅ already safe
   const hasRecentAttempts = (recentData ?? []).length > 0;          // ✅ already safe
   const displayBadges = achievements.filter((b) => b.status === 'earned');
+
+  const attemptHistoryItems = (recentData ?? []).map((a: any) => ({
+    id: a.sessionId,
+    title: `Quiz on ${a.subject}`,
+    date: new Date(a.completedAt).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }),
+    totalQuestions: a.totalQuestions || 10,
+    correctAnswers: a.correctCount || Math.round(((a.scorePercent || 0) / 100) * (a.totalQuestions || 10)),
+    timeTaken: `${Math.max(1, Math.round((a.timeTaken || 0) / 60))}m`,
+  }));
+
+  const hasMoreAttempts = attemptHistoryItems.length > RECENT_ATTEMPTS_LIMIT;
 
   if (load) {
     return (
@@ -340,24 +351,25 @@ export default function ProfileScreen() {
           ]}
         />
       </View>
-
       <Section theme={theme}>
-        <AddFriendButton onPress={handleAddFriendsPress} />
+        {myFriends.length === 0 ? (
+          <AddFriendButton onPress={handleAddFriendsPress} />
+        ) : (
+          <FriendsRow
+            friends={myFriends}
+            onViewAll={handleAddFriendsPress}
+            onFriendPress={handleFriendPress}
+            onAddFriendPress={handleAddFriendsPress}
+          />
+        )}
       </Section>
 
       <Section theme={theme}>
-        <FriendsRow
-          friends={myFriends}
-          onViewAll={handleAddFriendsPress}
-          onFriendPress={handleFriendPress}
-        />
-      </Section>
-
-      <Section theme={theme}>
-        <EarnedBadgeCard
+        <ProfileEarnedBadge
           achievements={displayBadges}
-          onViewAllPress={() => router.push('/achievements' as any)}
-          onBadgePress={() => router.push('/achievements' as any)}
+          title="Earned Badges"
+          onViewAllPress={() => router.push('/achievements')}
+          onBadgePress={() => router.push('/achievements')}
         />
       </Section>
 
@@ -379,18 +391,40 @@ export default function ProfileScreen() {
       </Section>
 
       <Section theme={theme}>
-        <Text
+        <View
           style={{
-            color: theme.color.textPrimary,
-            fontSize: theme.fontSize.sm + 4,
-            fontFamily: theme.fontFamily.regular,
-            fontWeight: theme.fontWeight.bold,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             paddingBottom: theme.space.md,
             marginLeft: theme.space.xs,
           }}
         >
-          {theme.i18n.t('profile.recentAttempts')}
-        </Text>
+          <Text
+            style={{
+              color: theme.color.textPrimary,
+              fontSize: theme.fontSize.sm + 4,
+              fontFamily: theme.fontFamily.regular,
+              fontWeight: theme.fontWeight.bold,
+            }}
+          >
+            {theme.i18n.t('profile.recentAttempts')}
+          </Text>
+
+          {hasMoreAttempts && (
+            <TouchableOpacity onPress={handleViewAllAttemptsPress} hitSlop={8}>
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {theme.i18n.t('common.view_all')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {!hasRecentAttempts ? (
           <EmptyState
@@ -399,21 +433,7 @@ export default function ProfileScreen() {
             subtitle='Your recent quiz and contest attempts will show up here.'
           />
         ) : (
-          <AttemptHistoryItemCard
-            attempts={recentData?.map(
-              (a: {
-                sessionId: string;
-                subject: string;
-                scorePercent: number;
-                completedAt: string;
-              }) => ({
-                id: a.sessionId,
-                title: a.subject,
-                time: formatTime(a.completedAt),
-                score: a.scorePercent,
-              })
-            )}
-          />
+          <AttemptHistoryCard attempts={attemptHistoryItems.slice(0, RECENT_ATTEMPTS_LIMIT)} />
         )}
       </Section>
     </ScrollView>

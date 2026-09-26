@@ -49,7 +49,7 @@ export function AddFriendButton({ onPress }: Props) {
               fontWeight: theme.fontWeight.bold,
             }}
           >
-            Friends
+            {theme.i18n.t('friends.addFriendCard.title')}
           </Text>
           <Text
             style={{
@@ -60,7 +60,7 @@ export function AddFriendButton({ onPress }: Props) {
               lineHeight: theme.fontSize.sm * theme.lineHeight.normal,
             }}
           >
-            Find friends to compare progress and stay motivated.
+            {theme.i18n.t('friends.addFriendCard.subtitle')}
           </Text>
         </View>
       </View>
@@ -94,7 +94,7 @@ export function AddFriendButton({ onPress }: Props) {
             textTransform: 'uppercase',
           }}
         >
-          Add Friends
+          {theme.i18n.t('friends.addFriendCard.cta')}
         </Text>
       </TouchableOpacity>
     </View>

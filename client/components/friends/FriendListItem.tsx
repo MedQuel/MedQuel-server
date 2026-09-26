@@ -80,11 +80,12 @@ export function FriendListItem({ friend, onPress, onMorePress, isMutual, busy = 
             gap: theme.space.sm,
           }}
         >
+          {/* Level — same icon/color as profile screen level pill */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
-              name="shield-star"
+              name="star"
               size={13}
-              color={theme.color.accent}
+              color={theme.color.warning}
             />
             <Text
               style={{
@@ -97,11 +98,12 @@ export function FriendListItem({ friend, onPress, onMorePress, isMutual, busy = 
             </Text>
           </View>
 
+          {/* Streak — same icon/color as profile screen stats card */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
               name="fire"
               size={13}
-              color={theme.color.warning}
+              color="#EF4444"
             />
             <Text
               style={{
@@ -114,11 +116,12 @@ export function FriendListItem({ friend, onPress, onMorePress, isMutual, busy = 
             </Text>
           </View>
 
+          {/* EP — same icon/color as profile screen IconLabel */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
             <MaterialCommunityIcons
-              name="star-circle"
+              name="flash-outline"
               size={13}
-              color={theme.color.info}
+              color={theme.color.textMuted}
             />
             <Text
               style={{
