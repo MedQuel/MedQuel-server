@@ -17,11 +17,11 @@ import { useHomeDashboard } from '../../common/hooks/useHomeDashboard';
 import { Loading } from '../../components/common/loading';
 import { StudyPlanCard } from '../../components/home/StudyPlanCard';
 import { ChallengesCard } from '../../components/home/ChallengesCard';
-import { LevelProgressCard } from '../../components/LevelProgressCard';
-import { StatsOverviewCard } from '../../components/StatsOverviewCard';
-import { DailyChallengeCard } from '../../components/DailyChallengeCard';
-import { ActiveContestsCard } from '../../components/ActiveContestsCard';
-import { PerformanceTrendCard } from '../../components/PerformanceTrendCard';
+import { LevelProgressCard } from '../../components/home/LevelProgressCard';
+import { StatsOverviewCard } from '../../components/home/StatsOverviewCard';
+import { DailyChallengeCard } from '../../components/home/DailyChallengeCard';
+import { ActiveContestsCard } from '../../components/home/ActiveContestsCard';
+import { PerformanceTrendCard } from '../../components/home/PerformanceTrendCard';
 
 
 const STORAGE_KEY_DISMISSED_CHALLENGE = 'medquel_dismissed_challenge_date';
