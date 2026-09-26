@@ -152,17 +152,14 @@ export default function HomeScreen() {
 
   const renderDailyChallengeSection = () => {
     if (challengeDismissed || !dailyChallenge) return null;
-
-    const expiresAt = new Date(dailyChallenge.expiresAt).getTime();
-    const minutesLeft = expiresAt > Date.now() ? Math.round((expiresAt-Date.now()) / 60000) : 45;
-
     return (
       <DailyChallengeCard
-        title={dailyChallenge.subject || dailyChallengeContest?.subject || 'Clinical Challenge'}
-        questions={dailyChallengeContest?.totalQuestions ?? 20}
-        duration={dailyChallengeContest ? Math.round(dailyChallengeContest.timeLimitSecs / 60) : 15}
-        difficulty={(dailyChallengeContest?.difficulty as any) || 'medium'}
-        endsAt={String(Math.max(1, minutesLeft))}
+        title={dailyChallengeContest?.title ?? theme.i18n.t('home.daily_challenge')}
+        subject={dailyChallenge?.subject ?? 'General'}
+        questions={dailyChallengeContest?.totalQuestions ?? 0}
+        duration={Math.round((dailyChallengeContest?.timeLimitSecs ?? 0) / 60)}
+        difficulty={dailyChallengeContest?.difficulty ?? 'medium'}
+        endsAt={dailyChallenge.expiresAt}
         epReward={dailyChallenge.epReward ?? dailyChallengeContest?.epReward ?? 50}
         completed={false}
         onDismiss={handleDismissChallenge}
@@ -295,8 +292,9 @@ export default function HomeScreen() {
                 contestId: contest.contestId,
                 title: contest.title,
                 subject: contest.subject,
-                difficulty: contest.difficulty as 'hard' | 'medium' | 'easy',
-                isLive: contest.status === 'active',
+                difficulty: contest.difficulty,
+                contestType: contest.contestType,
+                isPremium: contest.isPremium,
                 participantsCount: contest.participantCount,
                 epReward: contest.epReward,
               }))}
