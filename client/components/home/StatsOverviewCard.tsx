@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 import { Feather, Octicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 
