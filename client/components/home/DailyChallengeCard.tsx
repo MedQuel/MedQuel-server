@@ -1,39 +1,38 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TouchableOpacity } from 'react-native';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 
-export type DailyChallengeCardProps = {
+
+type DailyChallengeCardProps = {
   title: string;
+  subject: string;
   questions: number;
   duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   endsAt: string;
   epReward: number;
-  onStart: () => void;
   completed?: boolean;
+  onStart: () => void;
   onDismiss?: () => void;
 };
 
 export function DailyChallengeCard(props: DailyChallengeCardProps) {
   const { theme } = useTheme();
 
-  const t = (key: string, options?: any) => {
-    try {
-      const translation = theme?.i18n?.t ? theme.i18n.t(key, options) : key;
-      return translation || key;
-    } catch {
-      return key;
-    }
-  };
-
   const formattedTimeLeft = (() => {
-    const minutes = Number(props.endsAt);
-    if (!Number.isFinite(minutes)) return props.endsAt ?? '0';
+    const expiry = new Date(props.endsAt).getTime();
+    if (!Number.isFinite(expiry)) return props.endsAt || '-';
+    const minutes = Math.max(0, Math.ceil((expiry-Date.now()) / 60000));
     if (minutes > 60) return `${Math.floor(minutes / 60)}h`;
-    return `${minutes}m`;
+
+    return `${Math.max(1, minutes)}m`;
   })();
+
+  const gradientColors: [string, string, string] = theme.isDark
+    ? ['#0d2a63', '#0a1e48', '#071638']
+    : ['#ffffff', '#f8fafc', '#eef2f7'];
 
   if (props.completed) {
     return (
@@ -41,47 +40,45 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
         style={{
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.08)',
-          backgroundColor: '#0c224e',
+          borderWidth: 0,
+          borderRadius: theme.borderRadius.xl,
         }}
       >
         <LinearGradient
-          colors={['#0d2a63', '#0a1e48', '#071638']}
+          colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{
             position: 'relative',
             overflow: 'hidden',
-            paddingVertical: 36,
-            paddingHorizontal: 20,
             alignItems: 'center',
             justifyContent: 'center',
+            paddingVertical: theme.space.xl,
+            paddingHorizontal: theme.space.xl,
           }}
         >
           <View
-            pointerEvents="none"
             style={{
               position: 'absolute',
               top: -30,
               right: -30,
               width: 170,
               height: 170,
-              borderRadius: 85,
-              backgroundColor: 'rgba(25, 60, 130, 0.45)',
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.info + '18',
+              pointerEvents: 'none'
             }}
           />
           <View
-            pointerEvents="none"
             style={{
               position: 'absolute',
               bottom: -50,
               left: -30,
               width: 130,
               height: 130,
-              borderRadius: 65,
-              backgroundColor: 'rgba(15, 45, 100, 0.35)',
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.accent + '18',
+              pointerEvents: 'none'
             }}
           />
 
@@ -94,56 +91,53 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
                 position: 'absolute',
                 top: 14,
                 right: 14,
-                zIndex: 20,
                 width: 30,
                 height: 30,
-                borderRadius: 15,
+                zIndex: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.color.textPrimary + '18',
               }}
             >
-              <Feather name="x" size={16} color="#A0B3D6" />
+              <Feather name='x' size={theme.fontSize.md} color={theme.color.textSecondary} />
             </TouchableOpacity>
           )}
 
           <View
             style={{
-              width: 74,
-              height: 74,
-              borderRadius: 37,
-              backgroundColor: 'rgba(16, 75, 78, 0.75)',
+              width: theme.space.xxl * 1.5,
+              height: theme.space.xxl * 1.5,
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: 18,
+              marginBottom: theme.space.md,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.success + '22',
             }}
           >
-            <Feather name="check" size={36} color="#10B981" />
+            <Feather name='check' size={theme.fontSize.xxl} color={theme.color.success} />
           </View>
 
           <Text
             style={{
-              color: '#FFFFFF',
-              fontSize: 22,
-              fontWeight: '700',
-              fontFamily: theme?.fontFamily?.bold ?? 'System',
               textAlign: 'center',
-              marginBottom: 8,
-              letterSpacing: 0.2,
+              fontSize: theme.fontSize.xl,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.regular,
+              marginBottom: theme.space.xs,
             }}
           >
-            Today's Challenge Completed!
+            {theme.i18n.t('home.daily_challenge_completed')}
           </Text>
-
           <Text
             style={{
-              color: '#8CA3CF',
-              fontSize: 14,
-              fontFamily: theme?.fontFamily?.regular ?? 'System',
               textAlign: 'center',
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textSecondary,
+              fontFamily: theme.fontFamily.regular,
             }}
           >
-            Come back tomorrow for a new one.
+            {theme.i18n.t('home.daily_challenge_come_back')}
           </Text>
         </LinearGradient>
       </View>
@@ -151,122 +145,135 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
   }
 
   return (
-    <View
+    <LinearGradient
+      colors={gradientColors}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderWidth: 1.5,
-        borderRadius: 20,
-        borderColor: theme?.isDark ? theme?.color?.border : 'rgba(37,99,235,0.15)',
-        backgroundColor: theme?.color?.card ?? '#071630',
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        paddingHorizontal: theme.space.md,
+        paddingVertical: theme.space.md * 1.15,
+        borderWidth: 0,
+        borderRadius: theme.borderRadius.xl,
       }}
     >
       <View
-        pointerEvents="none"
         style={{
           position: 'absolute',
           top: -55,
           right: -35,
           width: 140,
           height: 140,
-          borderRadius: 999,
-          backgroundColor: (theme?.color?.surface ?? '#102246') + '44',
+          borderRadius: theme.borderRadius.full,
+          backgroundColor: theme.color.info + '18',
+          pointerEvents: 'none'
         }}
       />
 
-      <View style={{ gap: 8, flexDirection: 'column', justifyContent: 'center' }}>
-        <View style={{ gap: 6, flexDirection: 'row', alignItems: 'center' }}>
+      <View style={{ gap: theme.space.sm, flexDirection: 'column', justifyContent: 'center' }}>
+        <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
           <View
             style={{
-              padding: 4,
-              borderRadius: 999,
-              backgroundColor: theme?.color?.info ?? '#3B82F6',
+              width: theme.space.sm,
+              height: theme.space.sm,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.info,
             }}
           />
           <Text
             style={{
-              letterSpacing: 0.85,
+              letterSpacing: 0.5,
               textTransform: 'uppercase',
-              color: theme?.color?.info ?? '#3B82F6',
-              fontSize: 11,
-              fontWeight: '700',
-              fontFamily: theme?.fontFamily?.regular,
+              lineHeight: theme.fontSize.sm * 1.25,
+              color: theme.color.info,
+              fontSize: theme.fontSize.sm,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
-            {t('home.daily_challenge')}
+            {theme.i18n.t('home.daily_challenge')}
+          </Text>
+        </View>
+
+        <View style={{ gap: theme.space.xs * 0.25, flexDirection: 'column' }}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.xl,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {props.title}
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textSecondary,
+              fontFamily: theme.fontFamily.light,
+            }}
+          >
+            {props.subject}
           </Text>
         </View>
 
         <Text
           style={{
-            color: theme?.color?.textPrimary ?? '#FFFFFF',
-            fontSize: 18,
-            fontWeight: '700',
-            fontFamily: theme?.fontFamily?.bold,
+            fontSize: theme.fontSize.md,
+            color: theme.color.textSecondary,
+            fontFamily: theme.fontFamily.number,
           }}
         >
-          {props.title}
+          {props.questions} {theme.i18n.t('common.questions')} ·{' '}
+          {props.duration} {theme.i18n.t('common.min')} ·{' '}
+          {theme.i18n.t(`common.${props.difficulty}`)}
         </Text>
 
-        <Text
+        <View
           style={{
-            color: theme?.color?.textSecondary ?? '#8E9BAE',
-            fontSize: 14,
-            fontWeight: '500',
-            fontFamily: theme?.fontFamily?.regular,
+            gap: theme.space.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          {props.questions} {t('common.questions')} · {props.duration} {t('common.min')} ·{' '}
-          {t(`common.${props.difficulty}`)}
-        </Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ gap: 10, flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ gap: 4, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
               <Feather
-                name="clock"
-                size={12}
-                color={theme?.color?.textSecondary ?? '#8E9BAE'}
+                name='clock'
+                size={theme.fontSize.sm}
+                color={theme.color.textSecondary}
               />
               <Text
                 style={{
-                  color: theme?.color?.textSecondary ?? '#8E9BAE',
-                  fontSize: 12,
-                  fontWeight: '500',
-                  fontFamily: theme?.fontFamily?.regular,
+                  fontSize: theme.fontSize.sm,
+                  color: theme.color.textSecondary,
+                  fontFamily: theme.fontFamily.number,
                 }}
               >
-                {formattedTimeLeft} {t('contests.time_left')}
+                {formattedTimeLeft} {theme.i18n.t('home.expires')}
               </Text>
             </View>
 
             <View
               style={{
-                gap: 4,
+                gap: theme.space.xs,
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 4,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-                backgroundColor: (theme?.color?.accent ?? '#3B82F6') + '22',
+                paddingVertical: theme.space.xs,
+                paddingHorizontal: theme.space.sm,
+                borderRadius: theme.borderRadius.md,
+                backgroundColor: theme.color.info + '22',
               }}
             >
-              <Feather
-                name="zap"
-                size={11}
-                color={theme?.color?.info ?? '#3B82F6'}
-              />
+              <Feather name='zap' size={theme.fontSize.xs} color={theme.color.info} />
               <Text
                 style={{
-                  color: theme?.color?.info ?? '#3B82F6',
-                  fontSize: 12,
-                  fontWeight: '700',
-                  fontFamily: theme?.fontFamily?.number,
+                  color: theme.color.info,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.numberBold,
                 }}
               >
-                +{props.epReward} {t('common.ep')}
+                +{props.epReward} {theme.i18n.t('common.ep')}
               </Text>
             </View>
           </View>
@@ -275,29 +282,28 @@ export function DailyChallengeCard(props: DailyChallengeCardProps) {
             activeOpacity={0.85}
             onPress={props.onStart}
             style={{
+              gap: theme.space.xs,
               flexDirection: 'row',
               alignItems: 'center',
-              gap: 4,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              backgroundColor: theme?.color?.accent ?? '#3B82F6',
+              paddingVertical: theme.space.sm,
+              paddingHorizontal: theme.space.md,
+              borderRadius: theme.borderRadius.md,
+              backgroundColor: theme.color.accent,
             }}
           >
             <Text
               style={{
-                letterSpacing: 0.2,
-                color: theme?.color?.textInverse ?? '#FFFFFF',
-                fontSize: 15,
-                fontWeight: '700',
-                fontFamily: theme?.fontFamily?.bold,
+                lineHeight: theme.fontSize.md * 1.25,
+                fontSize: theme.fontSize.md,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
               }}
             >
-              {t('common.start')} →
+              {theme.i18n.t('common.start')} →
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
