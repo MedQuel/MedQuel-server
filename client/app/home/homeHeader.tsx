@@ -6,7 +6,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { isSameDay } from '../../common/utils/dateUtils';
 import { hasValidPhoto } from '../../common/utils/imageUrl';
 import { getInitials } from '../../common/utils/getInitials';
-import { UserLevelChip } from '../../components/UserLevelChip';
+import { UserLevelChip } from '../../components/home/UserLevelChip';
 import { computeLevelFromXp } from '../../common/utils/computeLevelXP';
 
 
