@@ -1,8 +1,8 @@
 import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { useTheme } from '../theme/ThemeContext';
-import { xpRequiredForLevel, computeLevelFromXp } from '../common/utils/computeLevelXP';
+import { useTheme } from '../../theme/ThemeContext';
+import { xpRequiredForLevel, computeLevelFromXp } from '../../common/utils/computeLevelXP';
 
 
 export function LevelProgressCard({ xpPoints }: { xpPoints: number }) {
