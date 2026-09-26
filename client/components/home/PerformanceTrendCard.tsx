@@ -1,20 +1,13 @@
 import { Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '../../theme/ThemeContext';
 
-import { useTheme } from '../theme/ThemeContext';
 
+type TrendPoint = { date: string; accuracy: number | null };
 
-type TrendPoint = {
-  date: string;
-  accuracy: number | null;
-};
-type PerformanceTrendCardProps = {
-  data: TrendPoint[];
-};
-
-const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 const MIN_BAR_HEIGHT = 10;
 const MAX_BAR_HEIGHT = 120;
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 function weekdayKeyForDate(dateStr: string): (typeof WEEKDAY_KEYS)[number] {
   const day = new Date(`${dateStr}T00:00:00Z`).getUTCDay();
@@ -52,12 +45,10 @@ function calculateTrend(points: TrendPoint[]): number | null {
 }
 
 
-export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
+export function PerformanceTrendCard({ data }: { data: TrendPoint[] }) {
   const { theme } = useTheme();
 
-  const knownValues = data
-    .map((d) => d.accuracy)
-    .filter((v): v is number => v !== null);
+  const knownValues = data.map((d) => d.accuracy).filter((v): v is number => v !== null);
   const hasAnyActivity = knownValues.length > 0;
   const maxValue = hasAnyActivity ? Math.max(...knownValues, 1) : 1;
   const trend = calculateTrend(data);
@@ -72,17 +63,15 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
         borderColor: theme.color.border,
         borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        boxShadow: theme.isDark
-          ? '0 6px 14px rgba(0,0,0,0.2)'
-          : '0 6px 14px rgba(0,0,0,0.05)',
+        boxShadow: theme.isDark ? '0 6px 14px rgba(0,0,0,0.2)' : '0 6px 14px rgba(0,0,0,0.05)',
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View style={{ flex: 1, gap: theme.space.xs }}>
+        <View style={{ flex: 1, gap: theme.space.xs * 0.5 }}>
           <Text
             style={{
-              color: theme.color.textPrimary,
               fontSize: theme.fontSize.lg,
+              color: theme.color.textPrimary,
               fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.regular,
             }}
@@ -91,8 +80,8 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
           </Text>
           <Text
             style={{
-              color: theme.color.textMuted,
               fontSize: theme.fontSize.sm,
+              color: theme.color.textSecondary,
               fontFamily: theme.fontFamily.light,
             }}
           >
@@ -108,7 +97,7 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
               alignItems: 'center',
               justifyContent: 'center',
               paddingVertical: theme.space.xs * 1.5,
-              paddingHorizontal: theme.space.md * 0.75,
+              paddingHorizontal: theme.space.md * 0.5,
               borderRadius: theme.borderRadius.md,
               backgroundColor: trend >= 0 ? theme.color.success + '22' : theme.color.error + '22',
             }}
@@ -120,9 +109,8 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
             />
             <Text
               style={{
+                fontFamily: theme.fontFamily.numberBold,
                 color: trend >= 0 ? theme.color.success : theme.color.error,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.number,
               }}
             >
               {trend.toFixed(2)}%
@@ -141,8 +129,8 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
           <Text
             style={{
               textAlign: 'center',
-              color: theme.color.textMuted,
               fontSize: theme.fontSize.sm,
+              color: theme.color.textMuted,
               fontFamily: theme.fontFamily.light,
             }}
           >
@@ -159,14 +147,13 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
           }}
         >
           {data.map((point, index) => {
-            const isLatest = index === data.length-1;
+            const isLatest = index === data.length - 1;
             const isNoActivity = point.accuracy === null;
             const isZeroScore = point.accuracy === 0;
 
             const barHeight = isNoActivity
               ? MIN_BAR_HEIGHT
               : Math.max((point.accuracy!/maxValue) * MAX_BAR_HEIGHT, MIN_BAR_HEIGHT);
-
             const barColor = isNoActivity
               ? theme.color.textMuted + '33'
               : isLatest ? theme.color.accent + 'AA' : theme.color.textMuted + 'AA';
@@ -184,9 +171,9 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
                 {!isNoActivity && (
                   <Text
                     style={{
-                      color: isZeroScore ? theme.color.error : theme.color.textMuted,
-                      fontSize: theme.fontSize.xs * 0.9,
+                      fontSize: theme.fontSize.xs,
                       fontFamily: theme.fontFamily.number,
+                      color: isZeroScore ? theme.color.error : theme.color.textMuted,
                     }}
                   >
                     {Math.round(point.accuracy!)}%
@@ -197,21 +184,20 @@ export function PerformanceTrendCard({ data }: PerformanceTrendCardProps) {
                   style={{
                     height: barHeight,
                     alignSelf: 'stretch',
+                    borderWidth: isNoActivity ? 1 : 0,
+                    borderColor: theme.color.textMuted + '55',
+                    borderStyle: isNoActivity ? 'dashed' : 'solid',
                     borderRadius: theme.borderRadius.sm,
                     backgroundColor: barColor,
-                    borderWidth: isNoActivity ? 1 : 0,
-                    borderStyle: isNoActivity ? 'dashed' : 'solid',
-                    borderColor: theme.color.textMuted + '55',
                     boxShadow: isNoActivity
                       ? undefined
                       : isLatest ? `0 0 12px ${theme.color.accent}45` : `0 0 12px ${theme.color.textMuted}45`,
                   }}
                 />
-
                 <Text
                   style={{
-                    color: isLatest ? theme.color.accent + 'AA' : theme.color.textSecondary,
                     fontSize: theme.fontSize.xs * 1.05,
+                    color: isLatest ? theme.color.accent + 'AA' : theme.color.textSecondary,
                     fontWeight: isLatest ? theme.fontWeight.bold : theme.fontWeight.medium,
                     fontFamily: theme.fontFamily.regular,
                   }}
