@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeContext';
-import { CustomSearchBar } from '../../components/CustomSearchBar';
+import { CustomSearchBar } from '../../components/common/CustomSearchBar';
 
 
 type PersonalChatListHeaderProps = {
@@ -13,7 +13,7 @@ type PersonalChatListHeaderProps = {
   setSearchVisible: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-export function PersonalChatListHeader({ search, setSearch, searchVisible, setSearchVisible }: PersonalChatListHeaderProps) {
+export default function PersonalChatListHeader({ search, setSearch, searchVisible, setSearchVisible }: PersonalChatListHeaderProps) {
   const { theme } = useTheme();
 
   return (
