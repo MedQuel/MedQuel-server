@@ -7,8 +7,8 @@ import { useTheme } from '../../theme/ThemeContext';
 import type { ChatRoom } from '../../common/types/types';
 import { Loading } from '../../components/common/loading';
 import { getInitials } from '../../common/utils/getInitials';
+import PersonalChatListHeader from './Personalchatlistheader';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { PersonalChatListHeader } from './Personalchatlistheader';
 
 
 const CONTACT_COLOR_KEYS = ['accent', 'info', 'success', 'warning', 'premium'] as const;
