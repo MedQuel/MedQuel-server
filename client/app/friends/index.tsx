@@ -5,16 +5,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import { useBottomBar } from '../../common/context/useBottomBar';
 import { Loading } from '../../components/common/loading';
-import { CustomSearchBar } from '../../components/CustomSearchBar';
+import { useBottomBar } from '../../common/context/useBottomBar';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
 import { FriendListItem } from '../../components/friends/FriendListItem';
 import { QuickActionList } from '../../components/friends/QuickActionRow';
+import { CustomSearchBar } from '../../components/common/CustomSearchBar';
 import { SearchResultItem } from '../../components/friends/SearchResultItem';
 import { FriendRequestItem } from '../../components/friends/FriendRequestItem';
 import { ActionSheet, ActionSheetOption } from '../../components/friends/Actionsheet';
 import type { FriendRequest, FriendSummary, UserSearchResult } from '../../common/types/types';
+
 
 const DEBOUNCE_MS = 350;
 const SEARCH_MIN_LENGTH = 2;
@@ -79,7 +80,7 @@ export default function FriendsScreen() {
         setLoading(false);
       }
     })();
-  }, [loadAll]);
+  }, [loadAll, theme.i18n]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
