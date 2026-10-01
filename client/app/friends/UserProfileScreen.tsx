@@ -85,7 +85,7 @@ export default function UserProfileScreen() {
         setLoading(false);
       }
     })();
-  }, [loadProfile]);
+  }, [loadProfile, theme.i18n]);
 
   const updateStatus = (status: FriendRelationshipStatus) => {
     setProfile((prev) => (prev ? { ...prev, relationshipStatus: status } : prev));
@@ -117,12 +117,16 @@ export default function UserProfileScreen() {
     }
   };
 
-  // ✅ FIXED: Was hardcoded, now uses i18n keys
   const handleChallenge = () => {
-    Alert.alert(
-      theme.i18n.t('friends.actions.challenge'),
-      theme.i18n.t('friends.alerts.challengeSoon'),
-    );
+    if (!profile) return;
+    setSheetVisible(false);
+    router.push({
+      pathname: '/challenges/create',
+      params: {
+        opponentUid: profile.uid,
+        opponentName: profile.displayName,
+      },
+    } as any);
   };
 
   const handleFriendPress = useCallback((friend: FriendSummary) => {
@@ -167,11 +171,9 @@ export default function UserProfileScreen() {
     ...(isFriend
       ? [{ key: 'remove', label: theme.i18n.t('friends.actions.removeFriend'), icon: 'account-remove' as const, destructive: true, onPress: handleRemoveFriend }]
       : []),
-    // ✅ FIXED: reportedTitle & reportedBody keys used (verify these exist in translation file)
     ...(!isSelf ? [{ key: 'report', label: theme.i18n.t('friends.actions.reportUser'), icon: 'flag-outline' as const, destructive: true, onPress: () => Alert.alert(theme.i18n.t('friends.alerts.reportedTitle'), theme.i18n.t('friends.alerts.reportedBody')) }] : []),
   ];
 
-  // ✅ Same 4 fields as profile screen: Level, Quizzes, Streak, Accuracy
   const stats = [
     {
       label: theme.i18n.t('common.level'),
@@ -274,7 +276,6 @@ export default function UserProfileScreen() {
         </Modal>
       )}
 
-      {/* Header */}
       <View style={{ position: 'relative' }}>
         <View
           style={{
@@ -363,7 +364,6 @@ export default function UserProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Name, pills, specialties */}
       <View style={{ gap: theme.space.xs * 1.5, alignItems: 'center', marginTop: theme.space.xxl }}>
         <Text
           style={{
@@ -436,7 +436,6 @@ export default function UserProfileScreen() {
           />
         </View>
 
-        {/* Add Friend / Requested only — Friends badge & Challenge removed from here */}
         {!isSelf && !isFriend && (
           <View style={{ flexDirection: 'row', gap: theme.space.sm, marginTop: theme.space.sm }}>
             {profile.relationshipStatus === 'NONE' && (
@@ -464,12 +463,10 @@ export default function UserProfileScreen() {
         )}
       </View>
 
-      {/* Stats — same as profile screen */}
       <View style={{ marginTop: theme.space.md, paddingHorizontal: theme.space.md }}>
         <ProfileScreenStatsCard stats={stats} />
       </View>
 
-      {/* Head to head + Challenge — only between friends */}
       {profile.relationshipStatus === 'FRIENDS' && profile.headToHead && (
         <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
           <View
@@ -493,15 +490,14 @@ export default function UserProfileScreen() {
               <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.profile.losses')}</Text>
             </View>
             <View style={{ width: 1, height: 32, backgroundColor: theme.color.border }} />
-          <TouchableOpacity onPress={handleChallenge} activeOpacity={0.7} style={{ alignItems: 'center' }}>
-  <MaterialCommunityIcons name="sword-cross" size={theme.fontSize.xl} color={theme.color.accent} />
-  <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.actions.challenge')}</Text>
-</TouchableOpacity>
+            <TouchableOpacity onPress={handleChallenge} activeOpacity={0.7} style={{ alignItems: 'center' }}>
+              <MaterialCommunityIcons name="sword-cross" size={theme.fontSize.xl} color={theme.color.accent} />
+              <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>{theme.i18n.t('friends.actions.challenge')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* Friends */}
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <FriendsRow
           friends={profile.friends}
@@ -511,7 +507,6 @@ export default function UserProfileScreen() {
         />
       </View>
 
-      {/* Earned badges */}
       <View style={{ marginTop: theme.space.sm * 1.5, paddingHorizontal: theme.space.md }}>
         <ProfileEarnedBadge
           achievements={profile.badges.map((badgeId) => ({ badgeId }))}
