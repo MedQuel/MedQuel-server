@@ -1,7 +1,12 @@
 import type { Difficulty, SelectedOption } from './types';
 
 
+export type MCQOption = { label: 'A' | 'B' | 'C' | 'D'; text: string };
+export type ModalType = 'summary' | null;
+export type QuizTopic = { id: string; label: string };
 export type ContestFilter = string | 'all' | 'premium';
+export type StatItemProps = { value: string; label: string; color: string };
+
 export type ContestItem = {
   id: string;
   title: string;
@@ -27,9 +32,6 @@ export type FeaturedContest = {
   endsAt: string;
 };
 
-
-// -----> Pre-quiz screen <-----
-export type QuizTopic = { id: string; label: string };
 export type QuizRule = {
   id: string;
   points: number;
@@ -50,17 +52,12 @@ export type PreQuizData = {
   bestScore: number;
   attempts: number;
   bestRank: number;
-  difficulty: 'easy' | 'intermediate' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard';
   recommended: string;
   topics: QuizTopic[];
   rules: QuizRule[];
 };
 
-export type StatItemProps = { value: string; label: string; color: string };
-
-
-// -----> Quiz screen ([quizId]) <-----
-export type MCQOption = { label: 'A' | 'B' | 'C' | 'D'; text: string };
 export type QuizQuestion = {
   id: string;
   subject: string;
@@ -70,8 +67,6 @@ export type QuizQuestion = {
   difficulty: Difficulty;
   points: number;
 };
-
-export type ModalType = 'summary' | null;
 export type AnswerRecord = {
   questionId: string;
   selectedLabel: SelectedOption | null;
@@ -79,8 +74,6 @@ export type AnswerRecord = {
   isFlagged: boolean;
 };
 
-
-// -----> Post-quiz screen <-----
 export type ReviewItem = {
   id: string;
   index: number;
@@ -93,30 +86,6 @@ export type ReviewItem = {
   correctText: string;
   explanation: string;
 };
-
-export type StatBox = {
-  key: 'correct' | 'wrong' | 'time' | 'xp';
-  icon: 'check' | 'x' | 'clock' | 'trending-up';
-  value: string;
-  labelKey: string;
-  colorToken: 'success' | 'error' | 'textPrimary' | 'accent';
-};
-
-export type QuizResultData = {
-  title: string;
-  totalQuestions: number;
-  scorePercent: number;
-  epEarned: number;
-  formattedTime: string;
-  percentileMessage: string;
-  showBadge: boolean;
-  badge: { label: string; title: string; subtitle: string } | null;
-  statBoxes: StatBox[];
-  reviewItems: ReviewItem[];
-  reviewSummary: { correct: number; wrong: number; skipped: number };
-  isPractice: boolean;
-};
-
 export type ReviewQuestion = {
   id: string;
   subject: string;
