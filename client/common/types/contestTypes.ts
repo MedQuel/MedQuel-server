@@ -1,11 +1,9 @@
 import type { Difficulty, SelectedOption } from './types';
 
 
-export type MCQOption = { label: 'A' | 'B' | 'C' | 'D'; text: string };
 export type ModalType = 'summary' | null;
-export type QuizTopic = { id: string; label: string };
 export type ContestFilter = string | 'all' | 'premium';
-export type StatItemProps = { value: string; label: string; color: string };
+export type MCQOption = { label: 'A' | 'B' | 'C' | 'D'; text: string };
 
 export type ContestItem = {
   id: string;
@@ -30,32 +28,6 @@ export type FeaturedContest = {
   duration: number;
   difficulty: 'easy' | 'medium' | 'hard';
   endsAt: string;
-};
-
-export type QuizRule = {
-  id: string;
-  points: number;
-  description: string;
-  icon: 'plus-circle' | 'minus-circle' | 'clock';
-  color: 'success' | 'error' | 'textMuted' | 'info';
-};
-export type PreQuizData = {
-  contestId: string;
-  subtitle: string;
-  title: string;
-  creator: string;
-  creatorSpecialty: string;
-  qCount: number;
-  timeMinutes: number;
-  epReward: number;
-  passPercentage: number;
-  bestScore: number;
-  attempts: number;
-  bestRank: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  recommended: string;
-  topics: QuizTopic[];
-  rules: QuizRule[];
 };
 
 export type QuizQuestion = {
