@@ -1,30 +1,61 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import type { ComponentProps, ReactNode } from 'react';
+import { View, Text, Image, Modal } from 'react-native';
+import { Animated, ActivityIndicator } from 'react-native';
+import { ScrollView, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
 import { normalizeError } from '../../common/api/api.errors';
-import { QuestionCard } from '../../components/QuestionCard';
+import { useQuizTimer } from '../../common/hooks/useQuizTimer';
+import { formatCountdown } from '../../common/utils/dateUtils';
+import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { QuizProgressBar } from '../../components/QuizProgressBar';
-import type { QuizQuestion, ModalType, AnswerRecord } from '../../common/types/contestTypes';
-import type { ClientQuestion, SubmittedAnswer, SelectedOption, StartQuizSessionResult } from '../../common/types/types';
+import { QuestionCard } from '../../components/contests/QuestionCard';
+import { playSound, releaseSounds } from '../../common/utils/soundManager';
+import { QuizProgressBar } from '../../components/contests/QuizProgressBar';
+import type { QuizType, StartQuizSessionResult } from '../../common/types/types';
+import type { QuizQuestion, AnswerRecord } from '../../common/types/contestTypes';
+import { getQuizModeConfig, resolveQuizModeKey } from '../../common/constants/quizModes';
+import type { ClientQuestion, SelectedOption, SubmittedAnswer } from '../../common/types/types';
 
-function formatTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+const NON_CONTEST_TYPES = ['practice', 'subject', 'challenge'];
+
+type ActiveModal = 'summary' | 'submit' | 'exit' | 'timeUp' | null;
+interface LoadedSession {
+  sessionId: string;
+  quizType: QuizType;
+  subject: string;
+  difficulty: string;
+  topic: string | null;
+  timeLimitSecs: number;
+  contestId: string | null;
+  questions: QuizQuestion[];
 }
 
-function mapClientQuestion(q: ClientQuestion, fallbackDifficulty?: string): QuizQuestion {
+type DialogModalProps = {
+  visible: boolean;
+  icon: ComponentProps<typeof Feather>['name'];
+  tone: string;
+  title: string;
+  body: string;
+  extra?: ReactNode;
+  primaryLabel: string;
+  onPrimary: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+  onRequestClose?: () => void;
+};
+
+function mapClientQuestion(q: ClientQuestion, fallbackSubject: string, fallbackDifficulty: string): QuizQuestion {
   return {
     id: q.questionId,
-    subject: q.subject ?? '',
+    subject: q.subject ?? fallbackSubject,
     question: q.questionText,
     image: q.imageUrl ?? undefined,
     options: [
@@ -34,320 +65,528 @@ function mapClientQuestion(q: ClientQuestion, fallbackDifficulty?: string): Quiz
       { label: 'D', text: q.optionD },
     ],
     points: q.marks,
-    difficulty: (q.difficulty ?? fallbackDifficulty) as any,
+    difficulty: (q.difficulty ?? fallbackDifficulty) as QuizQuestion['difficulty'],
   };
 }
 
-type QuizTimerProps = {
-  totalSeconds: number;
-  paused: boolean;
-  currentQuestionId?: string;
-  timeSpentRef: React.MutableRefObject<Record<string, number>>;
-  onExpire: () => void;
-  color: string;
-  fontSize: number;
-  fontWeight: any;
-  fontFamily: string;
-};
-
-function QuizTimer({ totalSeconds, paused, currentQuestionId, timeSpentRef, onExpire, color, fontSize, fontWeight, fontFamily }: QuizTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(totalSeconds);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onExpireRef = useRef(onExpire);
-  const questionIdRef = useRef(currentQuestionId);
-
-  useEffect(() => {
-    onExpireRef.current = onExpire;
-  }, [onExpire]);
-
-  useEffect(() => {
-    questionIdRef.current = currentQuestionId;
-  }, [currentQuestionId]);
-
-  useEffect(() => {
-    setTimeLeft(totalSeconds);
-  }, [totalSeconds]);
-
-  useEffect(() => {
-    if (paused) return;
-
-    intervalRef.current = setInterval(() => {
-      const qId = questionIdRef.current;
-      if (qId) {
-        timeSpentRef.current[qId] = (timeSpentRef.current[qId] ?? 0) + 1;
-      }
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current!);
-          onExpireRef.current();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalRef.current!);
-  }, [paused, timeSpentRef]);
-
-  return <Text style={{ color, fontSize, fontWeight, fontFamily }}>{formatTime(timeLeft)}</Text>;
+function toLoadedSession(raw: StartQuizSessionResult, contestId: string | null): LoadedSession {
+  return {
+    sessionId: raw.sessionId,
+    quizType: raw.quizType,
+    subject: raw.subject,
+    difficulty: raw.difficulty,
+    topic: raw.topic ?? null,
+    timeLimitSecs: raw.timeLimitSecs ?? 0,
+    contestId,
+    questions: (raw.questions ?? []).map((q) =>
+      mapClientQuestion(q, raw.subject, raw.difficulty)
+    ),
+  };
 }
 
-export default function QuizScreen() {
-  const params = useLocalSearchParams<{
-    quizId: string;
-    title?: string;
-    subject?: string;
-    difficulty?: string;
-    mode?: string;
-    practice?: string;
-    totalQuestions?: string;
-    sessionData?: string;
-  }>();
+function buildEmptyAnswers(questions: QuizQuestion[]): Record<string, AnswerRecord> {
+  return Object.fromEntries(
+    questions.map((q) => [
+      q.id,
+      {
+        questionId: q.id,
+        selectedLabel: null,
+        isBookmarked: false,
+        isFlagged: false,
+      } as AnswerRecord,
+    ])
+  );
+}
+
+function parseSessionData(raw: string): StartQuizSessionResult | null {
+  try {
+    return JSON.parse(decodeURIComponent(raw));
+  } catch {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+}
+
+function DialogModal(props: DialogModalProps) {
   const { theme } = useTheme();
-  useBottomBar(false);
-  const router = useRouter();
-  const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
 
-  const quizId = params.quizId;
-  const isPractice =
-    params.practice === '1' ||
-    params.practice === 'true' ||
-    params.mode === 'practice' ||
-    params.mode === 'subject';
+  return (
+    <Modal
+      transparent
+      animationType='fade'
+      visible={props.visible}
+      onRequestClose={props.onRequestClose}
+    >
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: theme.space.lg,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        }}
+      >
+        <View
+          style={{
+            width: '100%',
+            maxWidth: 380,
+            gap: theme.space.md,
+            alignItems: 'center',
+            padding: theme.space.lg,
+            borderWidth: 1,
+            borderColor: theme.color.border,
+            borderRadius: theme.borderRadius.xl,
+            backgroundColor: theme.color.card,
+          }}
+        >
+          <View
+            style={{
+              width: theme.space.xxl * 1.4,
+              height: theme.space.xxl * 1.4,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: props.tone + '22',
+            }}
+          >
+            <Feather name={props.icon} size={theme.fontSize.xxl} color={props.tone} />
+          </View>
 
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionSubject, setSessionSubject] = useState<string>('');
-  const [sessionDifficulty, setSessionDifficulty] = useState<string>('');
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: theme.fontSize.xl,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.bold,
+            }}
+          >
+            {props.title}
+          </Text>
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: theme.fontSize.md,
+              color: theme.color.textSecondary,
+              fontFamily: theme.fontFamily.regular,
+              lineHeight: theme.fontSize.md * 1.25,
+            }}
+          >
+            {props.body}
+          </Text>
+
+          {props.extra}
+
+          <View style={{ width: '100%', gap: theme.space.sm, marginTop: theme.space.xs }}>
+            <TouchableOpacity
+              onPress={props.onPrimary}
+              activeOpacity={0.85}
+              style={{
+                alignItems: 'center',
+                paddingVertical: theme.space.sm * 1.5,
+                borderRadius: theme.borderRadius.lg,
+                backgroundColor: props.tone,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: theme.fontSize.md,
+                  fontFamily: theme.fontFamily.bold,
+                  color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                }}
+              >
+                {props.primaryLabel}
+              </Text>
+            </TouchableOpacity>
+
+            {props.secondaryLabel && props.onSecondary && (
+              <TouchableOpacity
+                onPress={props.onSecondary}
+                activeOpacity={0.85}
+                style={{
+                  alignItems: 'center',
+                  paddingVertical: theme.space.sm * 1.5,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.surface,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.md,
+                    color: theme.color.textPrimary,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {props.secondaryLabel}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+
+export default function QuizScreen() {
+  const [session, setSession] = useState<LoadedSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerRecord>>({});
-
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [expired, setExpired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [sessionTimeLimitSecs, setSessionTimeLimitSecs] = useState(0);
-  const timeSpentRef = useRef<Record<string, number>>({});
+  const loadStartedRef = useRef(false);
+  const submittingRef = useRef(false);
+  const submittedRef = useRef(false);
+  const expiredRef = useRef(false);
+  const allowExitRef = useRef(false);
+  const guardActiveRef = useRef(false);
+  const pendingExitActionRef = useRef<unknown>(null);
+  const submitQuizRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
-    let cancelled = false;
+  const router = useRouter();
+  const { theme } = useTheme();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const { user } = useAppContext();
+  useBottomBar(false);
 
-    async function loadSession() {
-      setLoading(true);
-      setLoadError(null);
+  const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
+  const timerSound = user?.quizPrefs?.timerSound ?? false;
+  const autoSubmit = user?.quizPrefs?.autoSubmit ?? false;
 
-      try {
-        let loadedQuestions: QuizQuestion[] = [];
-        let loadedSessionId: string | null = null;
-        let loadedTimeLimit = 0;
-        if (params.sessionData) {
-          let parsedSession: StartQuizSessionResult | null = null;
-          try {
-            parsedSession = JSON.parse(decodeURIComponent(params.sessionData));
-          } catch {
-            parsedSession = JSON.parse(params.sessionData);
-          }
+  const params = useLocalSearchParams<{
+    quizId?: string;
+    quizType?: string;
+    mode?: string;
+    contestId?: string;
+    title?: string;
+    subject?: string;
+    difficulty?: string;
+    topic?: string;
+    sessionData?: string;
+    studyPlanSessionId?: string;
+    passPercent?: string;
+  }>();
 
-          if (parsedSession) {
-            loadedSessionId = parsedSession.sessionId;
-            const sessionDiff = parsedSession.difficulty || params.difficulty || '';
-            const subj = parsedSession.subject || params.subject || '';
+  const modeKey = resolveQuizModeKey({
+    quizType: session?.quizType ?? params.quizType ?? params.mode,
+    studyPlanSessionId: params.studyPlanSessionId,
+  });
+  const modeConfig = getQuizModeConfig(modeKey);
 
-            setSessionSubject(subj);
-            setSessionDifficulty(sessionDiff);
-
-            loadedQuestions = parsedSession.questions.map((q) => mapClientQuestion(q, sessionDiff));
-            loadedTimeLimit = parsedSession.timeLimitSecs ?? 1800;
-          }
-        }
-
-        if (!loadedSessionId && isPractice && typeof (api.quiz as any)?.startPracticeSession === 'function') {
-          try {
-            const practiceSession = await (api.quiz as any).startPracticeSession({
-              subject: params.subject || 'General',
-              difficulty: params.difficulty || 'medium',
-              count: Number(params.totalQuestions || 10),
-            });
-            if (practiceSession) {
-              loadedSessionId = practiceSession.sessionId;
-              const sessionDiff = practiceSession.difficulty || params.difficulty || '';
-              const subj = practiceSession.subject || params.subject || '';
-              setSessionSubject(subj);
-              setSessionDifficulty(sessionDiff);
-              loadedQuestions = (practiceSession.questions || []).map((q: any) => mapClientQuestion(q, sessionDiff));
-              loadedTimeLimit = practiceSession.timeLimitSecs ?? 1800;
-            }
-          } catch {
-          }
-        }
-
-        if (!loadedSessionId && quizId) {
-          const contestSession = await api.contest.joinContest(quizId);
-          if (cancelled) return;
-          loadedSessionId = contestSession.sessionId;
-
-          const sessionDiff = contestSession.difficulty || params.difficulty || '';
-          const subj = contestSession.subject || params.subject || '';
-
-          setSessionSubject(subj);
-          setSessionDifficulty(sessionDiff);
-
-          loadedQuestions = contestSession.questions.map((q) => mapClientQuestion(q, sessionDiff));
-          loadedTimeLimit = contestSession.timeLimitSecs ?? 1800;
-        }
-
-        if (cancelled) return;
-        if (!loadedSessionId || loadedQuestions.length === 0) {
-          throw new Error(t('contests.quizScreen.load_error'));
-        }
-
-        setSessionId(loadedSessionId);
-        setSessionTimeLimitSecs(loadedTimeLimit);
-        setQuestions(loadedQuestions);
-        setAnswers(
-          Object.fromEntries(
-            loadedQuestions.map((q) => [
-              q.id,
-              { questionId: q.id, selectedLabel: null, isBookmarked: false, isFlagged: false },
-            ])
-          )
-        );
-      } catch (err) {
-        if (cancelled) return;
-        const apiErr = normalizeError(err);
-        console.log('[quiz] session load failed:', apiErr);
-        setLoadError(apiErr.message);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadSession();
-    return () => {
-      cancelled = true;
-    };
-  }, [quizId, params.sessionData, params.difficulty, params.subject, isPractice, params.totalQuestions]);
-
-  const currentQuestion = questions[currentIndex];
-  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
-
-  const handleFinish = useCallback(async () => {
-    if (submitting || !sessionId) return;
-    setSubmitting(true);
-    setSubmitError(null);
+  const loadSession = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
 
     try {
-      const answerInputs: SubmittedAnswer[] = Object.values(answers).map((a) => ({
-        questionId: a.questionId,
-        selectedOption: (a.selectedLabel && a.selectedLabel !== 'SKIPPED') ? a.selectedLabel : null,
-      }));
-      const totalTimeSpent = Object.values(timeSpentRef.current).reduce((acc, curr) => acc + curr, 0);
+      if (params.sessionData) {
+        const parsed = parseSessionData(params.sessionData);
+        if (!parsed?.sessionId) throw new Error(t('contests.quizScreen.session_missing'));
 
-      const result = await api.quiz.submitQuizSession({ sessionId, answers: answerInputs });
+        const loaded = toLoadedSession(parsed, params.contestId ?? null);
+        if (loaded.questions.length === 0) throw new Error(t('contests.quizScreen.load_error'));
+        setAnswers(buildEmptyAnswers(loaded.questions));
+        setSession(loaded);
+        return;
+      }
 
-      router.push({
+      const declaredType = params.quizType ?? params.mode;
+      const startedElsewhere = !!params.studyPlanSessionId || (!!declaredType && NON_CONTEST_TYPES.includes(declaredType));
+      const contestId = params.contestId ?? params.quizId;
+      if (startedElsewhere || !contestId) throw new Error(t('contests.quizScreen.session_missing'));
+
+      const started = await api.contest.joinContest(contestId);
+      const loaded = toLoadedSession(started, contestId);
+      if (loaded.questions.length === 0) throw new Error(t('contests.quizScreen.load_error'));
+      setAnswers(buildEmptyAnswers(loaded.questions));
+      setSession(loaded);
+    } catch (err) {
+      setLoadError(normalizeError(err).message);
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.sessionData, params.contestId, params.quizId, params.quizType, params.mode, params.studyPlanSessionId]);
+
+  useEffect(() => {
+    if (loadStartedRef.current) return;
+    loadStartedRef.current = true;
+    loadSession();
+  }, [loadSession]);
+
+  useEffect(() => () => releaseSounds(), []);
+
+  const submitQuiz = useCallback(async () => {
+    if (!session || submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    setSubmitError(null);
+    setActiveModal(null);
+
+    try {
+      const answerInputs: SubmittedAnswer[] = session.questions.map((q) => {
+        const label = answers[q.id]?.selectedLabel;
+        return {
+          questionId: q.id,
+          selectedOption: label && label !== 'SKIPPED' ? label : null,
+        };
+      });
+      const result = await api.quiz.submitQuizSession({
+        sessionId: session.sessionId,
+        answers: answerInputs,
+      });
+
+      submittedRef.current = true;
+      allowExitRef.current = true;
+
+      const isContestMode = session.quizType === 'contest' || session.quizType === 'daily';
+      const nextParams: Record<string, string> = {
+        title: params.title ?? session.subject ?? t('contests.postQuizScreen.default_title'),
+        subject: session.subject,
+        difficulty: session.difficulty,
+        quizType: session.quizType,
+        questions: JSON.stringify(
+          session.questions.map((q) => ({
+            id: q.id,
+            subject: q.subject,
+            question: q.question,
+            options: q.options,
+          }))
+        ),
+        submission: JSON.stringify(result),
+      };
+
+      if (session.topic) nextParams.topic = session.topic;
+      if (session.timeLimitSecs > 0) nextParams.timeLimitSecs = String(session.timeLimitSecs);
+      if (isContestMode && session.contestId) nextParams.contestId = session.contestId;
+      if (isContestMode && params.passPercent) nextParams.passPercent = params.passPercent;
+      if (params.studyPlanSessionId) nextParams.studyPlanSessionId = params.studyPlanSessionId;
+
+      router.replace({
         pathname: '/contests/postQuizScreen',
-        params: {
-          title: params.title ?? params.subject ?? sessionSubject ?? currentQuestion?.subject ?? t('contests.postQuizScreen.default_title'),
-          subject: sessionSubject || params.subject || '',
-          difficulty: sessionDifficulty || params.difficulty || '',
-          questions: JSON.stringify(
-            questions.map((q) => ({ id: q.id, subject: q.subject, question: q.question, options: q.options }))
-          ),
-          submission: JSON.stringify(result),
-          practice: isPractice ? '1' : '0',
-          mode: isPractice ? 'practice' : 'contest',
-          contestId: quizId,
-          quizId: quizId,
-          totalQuestions: String(questions.length),
-          timeTaken: String(totalTimeSpent),
-        },
+        params: nextParams,
       });
     } catch (err) {
-      const apiErr = normalizeError(err);
-      console.log('[quiz] submit failed:', apiErr);
-      setSubmitError(apiErr.message);
+      setSubmitError(normalizeError(err).message);
+      submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [answers, currentQuestion?.subject, isPractice, params.difficulty, params.subject, params.title, questions, quizId, router, sessionId, sessionDifficulty, sessionSubject, submitting, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, answers, params.title, params.passPercent, params.studyPlanSessionId, router]);
+
+  useEffect(() => {
+    submitQuizRef.current = submitQuiz;
+  }, [submitQuiz]);
+
+  const hasTimer = (session?.timeLimitSecs ?? 0) > 0;
+  const handleExpire = useCallback(() => {
+    if (expiredRef.current) return;
+    expiredRef.current = true;
+    setExpired(true);
+
+    if (modeConfig.hardTimerStop || autoSubmit) {
+      setTimeout(() => submitQuizRef.current(), 0);
+    } else {
+      setTimeout(() => setActiveModal('timeUp'), 0);
+    }
+  }, [modeConfig.hardTimerStop, autoSubmit]);
+
+  const handleLowTime = useCallback(() => {
+    playSound('lowTime', timerSound);
+  }, [timerSound]);
+
+  const timerPaused = !session || !hasTimer || expired || submitting || (!modeConfig.hardTimerStop && activeModal !== null);
+
+  const { timeLeft, isLowTime } = useQuizTimer({
+    totalSeconds: hasTimer ? session!.timeLimitSecs : 1,
+    paused: timerPaused,
+    onExpire: handleExpire,
+    onLowTime: handleLowTime,
+  });
+
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!isLowTime || expired) {
+      pulse.setValue(1);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 0.35,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 450,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isLowTime, expired, pulse]);
+
+  useEffect(() => {
+    guardActiveRef.current = !!session && !submitting;
+  }, [session, submitting]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      if (!guardActiveRef.current || allowExitRef.current || submittedRef.current) return;
+      e.preventDefault();
+      pendingExitActionRef.current = e.data?.action ?? null;
+      setActiveModal('exit');
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const requestExit = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(modeConfig.backCta.route as any);
+  };
+
+  const confirmExit = () => {
+    allowExitRef.current = true;
+    setActiveModal(null);
+    const action = pendingExitActionRef.current;
+    pendingExitActionRef.current = null;
+
+    if (action) navigation.dispatch(action as any);
+    else requestExit();
+  };
+
+  const questions = session?.questions ?? [];
+  const currentQuestion = questions[currentIndex];
+  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const locked = submitting || (expired && modeConfig.hardTimerStop);
+
+  const stats = useMemo(() => {
+    const list = Object.values(answers);
+    const answered = list.filter((a) => a.selectedLabel !== null).length;
+
+    return {
+      answered,
+      unanswered: questions.length - answered,
+      flagged: list.filter((a) => a.isFlagged).length,
+      saved: list.filter((a) => a.isBookmarked).length,
+    };
+  }, [answers, questions.length]);
 
   const updateAnswer = (questionId: string, patch: Partial<AnswerRecord>) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: { ...prev[questionId]!, ...patch } }));
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: { ...prev[questionId]!, ...patch },
+    }));
   };
 
   const handleSelect = (label: SelectedOption) => {
-    if (!currentQuestion) return;
-    updateAnswer(currentQuestion.id, { selectedLabel: label });
+    if (!currentQuestion || locked) return;
+    const alreadySelected = answers[currentQuestion.id]?.selectedLabel === label;
+    if (!alreadySelected) playSound('select', timerSound);
+    updateAnswer(currentQuestion.id, { selectedLabel: alreadySelected ? null : label });
   };
 
   const goTo = (index: number) => {
+    if (index < 0 || index >= questions.length) return;
     setCurrentIndex(index);
     setActiveModal(null);
   };
 
-  const answeredCount = Object.values(answers).filter((a) => a.selectedLabel !== null).length;
-  const skippedCount = questions.length - answeredCount;
-  const bookmarkedQuestions = questions.filter((q) => answers[q.id]?.isBookmarked);
-  const flaggedQuestions = questions.filter((q) => answers[q.id]?.isFlagged);
-
   const getQuestionStatus = (qId: string) => {
     const a = answers[qId];
-    if (a?.isFlagged) return { icon: 'flag' as const, color: theme.color.error };
-    if (a?.isBookmarked) return { icon: 'bookmark' as const, color: theme.color.accent };
-    if (a?.selectedLabel !== null && a?.selectedLabel !== undefined) return { icon: 'check' as const, color: theme.color.success };
-    return { icon: 'minus' as const, color: theme.color.textMuted };
+    if (a?.isFlagged) return { color: theme.color.error };
+    if (a?.isBookmarked) return { color: theme.color.accent };
+    if (a?.selectedLabel) return { color: theme.color.success };
+    return { color: theme.color.textMuted };
   };
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.color.background, justifyContent: 'center', alignItems: 'center' }}>
-        <Loading message={t('contests.quizScreen.loading')} />
-      </View>
-    );
-  }
-
-  if (loadError || !currentQuestion || !currentAnswer) {
     return (
       <View
         style={{
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          gap: theme.space.sm,
           backgroundColor: theme.color.background,
-          padding: theme.space.xl,
         }}
       >
-        <Feather name="alert-circle" size={32} color={theme.color.error} />
-        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, textAlign: 'center' }}>
+        <Loading message={t('contests.quizScreen.loading')} />
+      </View>
+    );
+  }
+
+  if (loadError || !session || !currentQuestion || !currentAnswer) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          gap: theme.space.sm,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: theme.space.xl,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <Feather name='alert-circle' size={theme.space.xl} color={theme.color.error} />
+        <Text
+          style={{
+            textAlign: 'center',
+            fontSize: theme.fontSize.sm,
+            color: theme.color.textMuted,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
           {loadError ?? t('contests.quizScreen.load_error')}
         </Text>
+
         <TouchableOpacity
-          onPress={() => router.push('/contests')}
+          onPress={() => router.replace(modeConfig.backCta.route as any)}
           style={{
+            marginTop: theme.space.sm,
             paddingVertical: theme.space.sm,
             paddingHorizontal: theme.space.lg,
             borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.accent,
           }}
         >
-          <Text style={{ color: theme.color.textInverse, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
-            {t('common.back_to_contests')}
+          <Text
+            style={{
+              fontFamily: theme.fontFamily.bold,
+              color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+            }}
+          >
+            {t(modeConfig.backCta.labelKey)}
           </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const displayTitle = params.title || params.subject || sessionSubject || currentQuestion.subject || t('common.quizzes');
+  const displayTitle = params.title || session.subject || currentQuestion.subject || t('common.quizzes');
+  const timerColor = expired || isLowTime ? theme.color.error : theme.color.info;
+  const isLast = currentIndex === questions.length - 1;
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
       <View
         style={{
+          gap: theme.space.sm,
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -357,38 +596,63 @@ export default function QuizScreen() {
         }}
       >
         <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
-          <Feather name="clock" size={theme.fontSize.md} color={theme.color.info} />
-          <QuizTimer
-            totalSeconds={sessionTimeLimitSecs}
-            paused={activeModal !== null || submitting}
-            currentQuestionId={currentQuestion.id}
-            timeSpentRef={timeSpentRef}
-            onExpire={handleFinish}
-            color={theme.color.info}
-            fontSize={theme.fontSize.lg}
-            fontWeight={theme.fontWeight.bold}
-            fontFamily={theme.fontFamily.number}
-          />
+          <TouchableOpacity
+            hitSlop={10}
+            onPress={requestExit}
+            accessibilityRole='button'
+            accessibilityLabel={t('contests.quizScreen.close_quiz')}
+            style={{
+              padding: theme.space.xs,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.surface,
+            }}
+          >
+            <Feather name='x' size={theme.fontSize.lg} color={theme.color.textSecondary} />
+          </TouchableOpacity>
+
+          <Animated.View
+            style={{
+              gap: theme.space.xs,
+              flexDirection: 'row',
+              alignItems: 'center',
+              opacity: pulse,
+            }}
+          >
+            <Feather name='clock' size={theme.fontSize.md} color={timerColor} />
+            <Text
+              style={{
+                color: timerColor,
+                fontSize: theme.fontSize.lg,
+                fontFamily: theme.fontFamily.numberBold,
+              }}
+            >
+              {hasTimer ? formatCountdown(expired ? 0 : timeLeft) : t('contests.quizScreen.untimed')}
+            </Text>
+          </Animated.View>
         </View>
 
         <View
           style={{
+            flexShrink: 1,
+            gap: theme.space.xs,
+            flexDirection: 'row',
+            alignItems: 'center',
             paddingVertical: theme.space.xs,
             paddingHorizontal: theme.space.md,
             borderWidth: 1,
             borderRadius: theme.borderRadius.full,
-            borderColor: theme.color.accent + '55',
-            backgroundColor: theme.color.accent + '22',
-            maxWidth: '60%',
+            borderColor: theme.color[modeConfig.accentToken] + '55',
+            backgroundColor: theme.color[modeConfig.accentToken] + '22',
           }}
         >
+          <Feather name={modeConfig.icon} size={theme.fontSize.sm} color={theme.color[modeConfig.accentToken]} />
           <Text
             numberOfLines={1}
             style={{
-              color: theme.color.accent,
+              flexShrink: 1,
               fontSize: theme.fontSize.sm,
-              fontWeight: theme.fontWeight.bold,
               fontFamily: theme.fontFamily.bold,
+              color: theme.color[modeConfig.accentToken],
             }}
           >
             {displayTitle}
@@ -396,16 +660,20 @@ export default function QuizScreen() {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: theme.space.md, paddingBottom: theme.space.sm }}>
+      <View style={{ paddingBottom: theme.space.sm, paddingHorizontal: theme.space.md }}>
         <QuizProgressBar current={currentIndex + 1} total={questions.length} />
       </View>
 
       <ScrollView
-        contentContainerStyle={{ padding: theme.space.md, gap: theme.space.md, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: theme.space.md,
+          padding: theme.space.md,
+          paddingBottom: insets.bottom,
+        }}
       >
         <QuestionCard
-          difficulty={(currentQuestion as any).difficulty || sessionDifficulty || params.difficulty}
+          difficulty={currentQuestion.difficulty}
           question={currentQuestion.question}
           isBookmarked={currentAnswer.isBookmarked}
           isFlagged={currentAnswer.isFlagged}
@@ -414,20 +682,39 @@ export default function QuizScreen() {
         />
 
         {currentQuestion.image && (
-          <View style={{ overflow: 'hidden', borderWidth: 1, borderColor: theme.color.border, borderRadius: theme.borderRadius.xl }}>
-            <Image resizeMode="cover" source={{ uri: currentQuestion.image }} style={{ width: '100%', height: 200 }} />
+          <View
+            style={{
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: theme.color.border,
+              borderRadius: theme.borderRadius.xl,
+              backgroundColor: theme.color.surface,
+            }}
+          >
+            <Image
+              resizeMode='contain'
+              source={{ uri: currentQuestion.image }}
+              style={{ width: '100%', height: 220 }}
+            />
+
             <View
               style={{
                 position: 'absolute',
                 bottom: theme.space.sm,
                 right: theme.space.sm,
                 paddingHorizontal: theme.space.sm,
-                paddingVertical: 2,
+                paddingVertical: theme.space.xs * 0.5,
                 borderRadius: theme.borderRadius.sm,
                 backgroundColor: theme.color.textPrimary + '99',
               }}
             >
-              <Text style={{ color: theme.color.background, fontSize: theme.fontSize.xs, fontFamily: theme.fontFamily.regular }}>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.xs,
+                  color: theme.color.background,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
                 {t('contests.quizScreen.figure_label')}
               </Text>
             </View>
@@ -440,8 +727,11 @@ export default function QuizScreen() {
             return (
               <TouchableOpacity
                 key={option.label}
+                disabled={locked}
                 onPress={() => handleSelect(option.label as SelectedOption)}
                 activeOpacity={0.75}
+                accessibilityRole='button'
+                accessibilityState={{ selected, disabled: locked }}
                 style={{
                   gap: theme.space.md,
                   flexDirection: 'row',
@@ -451,6 +741,7 @@ export default function QuizScreen() {
                   borderRadius: theme.borderRadius.xl,
                   borderColor: selected ? theme.color.accent : theme.color.border,
                   backgroundColor: selected ? theme.color.accent + '18' : theme.color.card,
+                  opacity: locked && !selected ? 0.6 : 1,
                 }}
               >
                 <View
@@ -465,22 +756,23 @@ export default function QuizScreen() {
                 >
                   <Text
                     style={{
-                      color: selected ? theme.color.textInverse : theme.color.textSecondary,
                       fontSize: theme.fontSize.sm,
-                      fontWeight: theme.fontWeight.bold,
-                      fontFamily: theme.fontFamily.regular,
+                      fontFamily: theme.fontFamily.bold,
+                      color: selected
+                        ? theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+                        : theme.color.textSecondary,
                     }}
                   >
                     {option.label}
                   </Text>
                 </View>
+
                 <Text
                   style={{
                     flex: 1,
-                    color: selected ? theme.color.accent : theme.color.textPrimary,
                     fontSize: theme.fontSize.md,
-                    fontWeight: selected ? theme.fontWeight.bold : theme.fontWeight.regular,
-                    fontFamily: theme.fontFamily.regular,
+                    color: selected ? theme.color.accent : theme.color.textPrimary,
+                    fontFamily: selected ? theme.fontFamily.bold : theme.fontFamily.regular,
                   }}
                 >
                   {option.text}
@@ -491,9 +783,42 @@ export default function QuizScreen() {
         </View>
 
         {submitError && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.sm }}>
-            <Feather name="alert-circle" size={theme.fontSize.md} color={theme.color.error} />
-            <Text style={{ flex: 1, color: theme.color.error, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>{submitError}</Text>
+          <View
+            accessibilityRole='alert'
+            style={{
+              gap: theme.space.sm,
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: theme.space.sm,
+              borderWidth: 1,
+              borderColor: theme.color.error + '55',
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.color.error + '12',
+            }}
+          >
+            <Feather name='alert-circle' size={theme.fontSize.md} color={theme.color.error} />
+            <Text
+              style={{
+                flex: 1,
+                color: theme.color.error,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {submitError}
+            </Text>
+
+            <TouchableOpacity onPress={submitQuiz} hitSlop={8}>
+              <Text
+                style={{
+                  color: theme.color.accent,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.bold,
+                }}
+              >
+                {t('common.retry')}
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
@@ -507,9 +832,10 @@ export default function QuizScreen() {
           gap: theme.space.sm,
           flexDirection: 'row',
           padding: theme.space.md,
-          backgroundColor: theme.color.background,
+          paddingBottom: theme.space.md + insets.bottom,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
+          backgroundColor: theme.color.background,
         }}
       >
         <TouchableOpacity
@@ -529,8 +855,14 @@ export default function QuizScreen() {
             opacity: currentIndex === 0 ? 0.4 : 1,
           }}
         >
-          <Feather name="chevron-left" size={theme.fontSize.md} color={theme.color.textPrimary} />
-          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+          <Feather name='chevron-left' size={theme.fontSize.md} color={theme.color.textPrimary} />
+          <Text
+            style={{
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
             {t('common.prev')}
           </Text>
         </TouchableOpacity>
@@ -548,14 +880,20 @@ export default function QuizScreen() {
             backgroundColor: theme.color.card,
           }}
         >
-          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
+          <Text
+            style={{
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
             {t('common.review')}
           </Text>
         </TouchableOpacity>
 
-        {currentIndex === questions.length - 1 ? (
+        {isLast ? (
           <TouchableOpacity
-            onPress={handleFinish}
+            onPress={() => setActiveModal('submit')}
             disabled={submitting}
             style={{
               flex: 1,
@@ -568,9 +906,18 @@ export default function QuizScreen() {
             }}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color={theme.color.textPrimary} />
+              <ActivityIndicator
+                size='small'
+                color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+              />
             ) : (
-              <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+              <Text
+                style={{
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.bold,
+                  color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+                }}
+              >
                 {t('contests.quizScreen.finish')}
               </Text>
             )}
@@ -589,15 +936,30 @@ export default function QuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.sm, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+              }}
+            >
               {t('common.next')}
             </Text>
-            <Feather name="chevron-right" size={theme.fontSize.md} color={theme.color.textPrimary} />
+            <Feather
+              name='chevron-right'
+              size={theme.fontSize.md}
+              color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            />
           </TouchableOpacity>
         )}
       </View>
 
-      <Modal visible={activeModal === 'summary'} transparent animationType="slide">
+      <Modal
+        visible={activeModal === 'summary'}
+        transparent
+        animationType='slide'
+        onRequestClose={() => setActiveModal(null)}
+      >
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setActiveModal(null)}
@@ -612,49 +974,72 @@ export default function QuizScreen() {
             maxHeight: '75%',
             gap: theme.space.md,
             padding: theme.space.lg,
+            paddingBottom: theme.space.lg + insets.bottom,
             borderTopLeftRadius: theme.borderRadius.xl + 4,
             borderTopRightRadius: theme.borderRadius.xl + 4,
             backgroundColor: theme.color.card,
           }}
         >
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text
               style={{
-                color: theme.color.textPrimary,
                 fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
+                color: theme.color.textPrimary,
                 fontFamily: theme.fontFamily.bold,
               }}
             >
               {t('common.review')}
             </Text>
-            <TouchableOpacity onPress={() => setActiveModal(null)}>
-              <Feather name="x" size={theme.fontSize.xl} color={theme.color.textMuted} />
+
+            <TouchableOpacity onPress={() => setActiveModal(null)} hitSlop={8}>
+              <Feather name='x' size={theme.fontSize.xl} color={theme.color.textMuted} />
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: 'row', gap: theme.space.md }}>
+          <View style={{ gap: theme.space.md, flexDirection: 'row' }}>
             {[
-              { label: t('contests.quizScreen.answered'), value: answeredCount, color: theme.color.success },
-              { label: t('contests.quizScreen.skipped'), value: skippedCount, color: theme.color.textMuted },
-              { label: t('contests.quizScreen.flagged'), value: flaggedQuestions.length, color: theme.color.error },
-              { label: t('contests.quizScreen.saved'), value: bookmarkedQuestions.length, color: theme.color.accent },
+              {
+                label: t('contests.quizScreen.answered'),
+                value: stats.answered,
+                color: theme.color.success,
+              },
+              {
+                label: t('contests.quizScreen.skipped'),
+                value: stats.unanswered,
+                color: theme.color.textMuted,
+              },
+              {
+                label: t('contests.quizScreen.flagged'),
+                value: stats.flagged,
+                color: theme.color.error,
+              },
+              {
+                label: t('contests.quizScreen.saved'),
+                value: stats.saved,
+                color: theme.color.accent,
+              },
             ].map((stat) => (
-              <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+              <View
+                key={stat.label}
+                style={{
+                  flex: 1,
+                  gap: theme.space.xs * 0.5,
+                  alignItems: 'center',
+                }}
+              >
                 <Text
                   style={{
                     color: stat.color,
                     fontSize: theme.fontSize.lg,
-                    fontWeight: theme.fontWeight.bold as any,
-                    fontFamily: theme.fontFamily.number,
+                    fontFamily: theme.fontFamily.numberBold,
                   }}
                 >
                   {stat.value}
                 </Text>
                 <Text
                   style={{
-                    color: theme.color.textMuted,
                     fontSize: theme.fontSize.xs,
+                    color: theme.color.textMuted,
                     fontFamily: theme.fontFamily.regular,
                   }}
                 >
@@ -665,7 +1050,7 @@ export default function QuizScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm }}>
+            <View style={{ flexWrap: 'wrap', gap: theme.space.sm, flexDirection: 'row' }}>
               {questions.map((q, idx) => {
                 const status = getQuestionStatus(q.id);
                 const isCurrent = idx === currentIndex;
@@ -688,8 +1073,7 @@ export default function QuizScreen() {
                       style={{
                         color: status.color,
                         fontSize: theme.fontSize.sm,
-                        fontWeight: theme.fontWeight.bold,
-                        fontFamily: theme.fontFamily.number,
+                        fontFamily: theme.fontFamily.numberBold,
                       }}
                     >
                       {idx + 1}
@@ -698,59 +1082,127 @@ export default function QuizScreen() {
                 );
               })}
             </View>
+          </ScrollView>
+        </View>
+      </Modal>
 
-            <View style={{ gap: theme.space.md, flexWrap: 'wrap', flexDirection: 'row', marginTop: theme.space.lg }}>
-              {[
-                { icon: 'check' as const, color: theme.color.success, label: t('contests.quizScreen.answered') },
-                { icon: 'minus' as const, color: theme.color.textMuted, label: t('contests.quizScreen.skipped') },
-                { icon: 'flag' as const, color: theme.color.error, label: t('contests.quizScreen.flagged') },
-                { icon: 'bookmark' as const, color: theme.color.accent, label: t('contests.quizScreen.saved') },
-              ].map((item) => (
-                <View key={item.label} style={{ flexDirection: 'row', alignItems: 'center', gap: theme.space.xs }}>
-                  <Feather name={item.icon} size={theme.fontSize.sm} color={item.color} />
+      <DialogModal
+        visible={activeModal === 'submit'}
+        icon='check-circle'
+        tone={theme.color.accent}
+        title={t('contests.quizScreen.submit_title')}
+        body={t('contests.quizScreen.submit_body', { answered: stats.answered, total: questions.length })}
+        extra={
+          stats.unanswered > 0 || stats.flagged > 0 ? (
+            <View style={{ gap: theme.space.xs, alignSelf: 'stretch' }}>
+              {stats.unanswered > 0 && (
+                <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+                  <Feather name='minus-circle' size={theme.fontSize.sm} color={theme.color.warning} />
                   <Text
                     style={{
-                      color: theme.color.textSecondary,
-                      fontSize: theme.fontSize.xs,
+                      flex: 1,
+                      color: theme.color.warning,
+                      fontSize: theme.fontSize.sm,
                       fontFamily: theme.fontFamily.regular,
                     }}
                   >
-                    {item.label}
+                    {t('contests.quizScreen.submit_unanswered', { count: stats.unanswered })}
                   </Text>
                 </View>
-              ))}
-            </View>
-          </ScrollView>
+              )}
 
-          <TouchableOpacity
-            onPress={handleFinish}
-            disabled={submitting}
+              {stats.flagged > 0 && (
+                <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+                  <Feather name='flag' size={theme.fontSize.sm} color={theme.color.error} />
+                  <Text
+                    style={{
+                      flex: 1,
+                      color: theme.color.error,
+                      fontSize: theme.fontSize.sm,
+                      fontFamily: theme.fontFamily.regular,
+                    }}
+                  >
+                    {t('contests.quizScreen.submit_flagged', { count: stats.flagged })}
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : null
+        }
+        primaryLabel={t('contests.quizScreen.submit_confirm')}
+        onPrimary={submitQuiz}
+        secondaryLabel={t('contests.quizScreen.submit_review')}
+        onSecondary={() => setActiveModal('summary')}
+        onRequestClose={() => setActiveModal(null)}
+      />
+
+      <DialogModal
+        visible={activeModal === 'exit'}
+        icon='log-out'
+        tone={theme.color.error}
+        title={t('contests.quizScreen.exit_title')}
+        body={t('contests.quizScreen.exit_body')}
+        primaryLabel={t('contests.quizScreen.exit_leave')}
+        onPrimary={confirmExit}
+        secondaryLabel={t('contests.quizScreen.exit_stay')}
+        onSecondary={() => {
+          pendingExitActionRef.current = null;
+          setActiveModal(null);
+        }}
+        onRequestClose={() => {
+          pendingExitActionRef.current = null;
+          setActiveModal(null);
+        }}
+      />
+
+      <DialogModal
+        visible={activeModal === 'timeUp'}
+        icon='clock'
+        tone={theme.color.warning}
+        title={t('contests.quizScreen.times_up_title')}
+        body={t('contests.quizScreen.times_up_body_soft')}
+        primaryLabel={t('contests.quizScreen.times_up_submit')}
+        onPrimary={submitQuiz}
+        secondaryLabel={t('contests.quizScreen.times_up_continue')}
+        onSecondary={() => setActiveModal(null)}
+      />
+
+      {submitting && expired && modeConfig.hardTimerStop && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            gap: theme.space.sm,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: theme.color.background + 'E6',
+            pointerEvents: 'none',
+          }}
+        >
+          <Feather name='clock' size={theme.space.xl} color={theme.color.warning} />
+          <Text
             style={{
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: theme.space.md,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: theme.color.accent,
-              opacity: submitting ? 0.6 : 1,
+              fontSize: theme.fontSize.xl,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.bold,
             }}
           >
-            {submitting ? (
-              <ActivityIndicator size="small" color={theme.color.textInverse} />
-            ) : (
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.md,
-                  fontWeight: theme.fontWeight.bold as any,
-                  fontFamily: theme.fontFamily.bold,
-                }}
-              >
-                {t('contests.quizScreen.submit_quiz')}
-              </Text>
-            )}
-          </TouchableOpacity>
+            {t('contests.quizScreen.times_up_title')}
+          </Text>
+          <Text
+            style={{
+              fontSize: theme.fontSize.md,
+              color: theme.color.textSecondary,
+              fontFamily: theme.fontFamily.regular,
+            }}
+          >
+            {t('contests.quizScreen.times_up_body_hard')}
+          </Text>
         </View>
-      </Modal>
+      )}
     </View>
   );
 }
