@@ -102,7 +102,7 @@ function LevelUpBadge({ level, delayMs }: { level: number; delayMs: number }) {
           fontFamily: theme.fontFamily.bold,
         }}
       >
-        {theme.i18n.t('contests.postQuizScreen.level_up', { level, defaultValue: `Level ${level}!` })}
+        {theme.i18n.t('contests.postQuizScreen.level_up', { level })}
       </Text>
     </Animated.View>
   );
@@ -126,6 +126,7 @@ export default function PostQuizScreen() {
   const params = useLocalSearchParams<{
     title?: string;
     subject?: string;
+    topic?: string;
     difficulty?: string;
     questions?: string;
     submission?: string;
@@ -137,6 +138,7 @@ export default function PostQuizScreen() {
     quizId?: string;
     studyPlanSessionId?: string;
     passPercent?: string;
+    timeLimitSecs?: string;
   }>();
 
   const { submission, reviewQuestions, parseError } = useMemo(() => {
@@ -364,7 +366,7 @@ export default function PostQuizScreen() {
   } else if (modeConfig.key === 'studyPlan') {
     rewardBadge = {
       icon: 'calendar',
-      text: t('contests.postQuizScreen.study_plan_session', { defaultValue: 'Study Plan Session' }),
+      text: t('contests.postQuizScreen.study_plan_session'),
       color: accentColor,
       border: accentColor,
       bg: accentColor + '22',
@@ -387,11 +389,8 @@ export default function PostQuizScreen() {
     };
   } else {
     rewardBadge = {
-      text: t('contests.postQuizScreen.qualifying_needed', {
-        percent: passPercent,
-        defaultValue: `Score ${passPercent}%+ to earn Contest EP`,
-      }),
       icon: 'award',
+      text: t('contests.postQuizScreen.qualifying_needed', { percent: passPercent }),
       color: theme.color.warning,
       border: theme.color.warning + '55',
       bg: theme.color.warning + '18',
@@ -441,6 +440,8 @@ export default function PostQuizScreen() {
           subject: params.subject || title,
           difficulty: (params.difficulty as Difficulty) || 'medium',
           questionCount: totalQuestions,
+          ...(params.topic ? { topic: params.topic } : {}),
+          ...(params.timeLimitSecs ? { timeLimitSecs: Number(params.timeLimitSecs) } : {}),
         });
         router.replace({
           pathname: '/contests/[quizId]',
@@ -696,8 +697,8 @@ export default function PostQuizScreen() {
                   fontSize: theme.fontSize.md,
                   fontFamily: theme.fontFamily.bold,
                   color: challengeOutcome === 'won'
-                  ? theme.color.success
-                  : challengeOutcome === 'lost' ? theme.color.error : theme.color.textMuted,
+                    ? theme.color.success
+                    : challengeOutcome === 'lost' ? theme.color.error : theme.color.textMuted,
                 }}
               >
                 {t(`contests.postQuizScreen.challenge_outcome.${challengeOutcome}`)}
