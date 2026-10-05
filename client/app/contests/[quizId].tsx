@@ -16,14 +16,15 @@ import { formatCountdown } from '../../common/utils/dateUtils';
 import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { QuestionCard } from '../../components/contests/QuestionCard';
-import { playSound, releaseSounds } from '../../common/utils/soundManager';
 import { QuizProgressBar } from '../../components/contests/QuizProgressBar';
 import type { QuizType, StartQuizSessionResult } from '../../common/types/types';
 import type { QuizQuestion, AnswerRecord } from '../../common/types/contestTypes';
+import { playSound, primeSounds, releaseSounds } from '../../common/utils/soundManager';
 import { getQuizModeConfig, resolveQuizModeKey } from '../../common/constants/quizModes';
 import type { ClientQuestion, SelectedOption, SubmittedAnswer } from '../../common/types/types';
 
 
+const TIME_UP_SUBMIT_DELAY_MS = 4000;
 const NON_CONTEST_TYPES = ['practice', 'subject', 'challenge'];
 
 type ActiveModal = 'summary' | 'submit' | 'exit' | 'timeUp' | null;
@@ -255,6 +256,7 @@ export default function QuizScreen() {
   const guardActiveRef = useRef(false);
   const pendingExitActionRef = useRef<unknown>(null);
   const submitQuizRef = useRef<() => void>(() => {});
+  const timeUpSubmitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const router = useRouter();
   const { theme } = useTheme();
@@ -327,10 +329,23 @@ export default function QuizScreen() {
     loadSession();
   }, [loadSession]);
 
-  useEffect(() => () => releaseSounds(), []);
+  useEffect(() => {
+    primeSounds().catch(() => {});
+    return () => {
+      if (timeUpSubmitTimeoutRef.current) {
+        clearTimeout(timeUpSubmitTimeoutRef.current);
+        timeUpSubmitTimeoutRef.current = null;
+      }
+      releaseSounds();
+    };
+  }, []);
 
   const submitQuiz = useCallback(async () => {
     if (!session || submittingRef.current) return;
+    if (timeUpSubmitTimeoutRef.current) {
+      clearTimeout(timeUpSubmitTimeoutRef.current);
+      timeUpSubmitTimeoutRef.current = null;
+    }
     submittingRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
@@ -401,6 +416,10 @@ export default function QuizScreen() {
       setTimeout(() => submitQuizRef.current(), 0);
     } else {
       setTimeout(() => setActiveModal('timeUp'), 0);
+      timeUpSubmitTimeoutRef.current = setTimeout(() => {
+        timeUpSubmitTimeoutRef.current = null;
+        submitQuizRef.current();
+      }, TIME_UP_SUBMIT_DELAY_MS);
     }
   }, [modeConfig.hardTimerStop, autoSubmit]);
 
@@ -475,7 +494,7 @@ export default function QuizScreen() {
   const questions = session?.questions ?? [];
   const currentQuestion = questions[currentIndex];
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
-  const locked = submitting || (expired && modeConfig.hardTimerStop);
+  const locked = submitting || expired;
 
   const stats = useMemo(() => {
     const list = Object.values(answers);
@@ -1168,8 +1187,6 @@ export default function QuizScreen() {
         body={t('contests.quizScreen.times_up_body_soft')}
         primaryLabel={t('contests.quizScreen.times_up_submit')}
         onPrimary={submitQuiz}
-        secondaryLabel={t('contests.quizScreen.times_up_continue')}
-        onSecondary={() => setActiveModal(null)}
       />
 
       {submitting && expired && modeConfig.hardTimerStop && (
