@@ -1,28 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useEffect, useRef, useState } from 'react';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 
-
-type QuizResultCardProps = {
-  scorePercent: number;
-};
 
 const SIZE = 160;
 const STROKE_WIDTH = 10;
 
-function easeOutCubic(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-export function QuizResultCard({ scorePercent }: QuizResultCardProps) {
+export function QuizResultCard({ scorePercent }: { scorePercent: number }) {
   const { theme } = useTheme();
-
-  const clamped = Math.max(0, Math.min(100, scorePercent));
-
+  
   const radius = (SIZE - STROKE_WIDTH) / 2;
   const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, scorePercent));
 
   const [animatedPercent, setAnimatedPercent] = useState(0);
   const frameRef = useRef<number | undefined>(undefined);
@@ -34,12 +25,10 @@ export function QuizResultCard({ scorePercent }: QuizResultCardProps) {
 
     const tick = () => {
       const elapsed = Date.now() - start;
-      const t = Math.min(elapsed / duration, 1);
-      setAnimatedPercent(easeOutCubic(t) * clamped);
+      const t = Math.min(elapsed/duration, 1);
+      setAnimatedPercent((1 - Math.pow(1-t, 3)) * clamped);
 
-      if (t < 1) {
-        frameRef.current = requestAnimationFrame(tick);
-      }
+      if (t < 1) frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
@@ -49,54 +38,62 @@ export function QuizResultCard({ scorePercent }: QuizResultCardProps) {
     };
   }, [clamped]);
 
-  const strokeDashoffset = circumference - (animatedPercent / 100) * circumference;
-  const progressColor = theme.isDark ? theme.color.info : '#FFFFFF';
-  const trackColor = theme.isDark ? theme.color.surface : 'rgba(255,255,255,0.25)';
+  const strokeDashoffset = circumference - (animatedPercent/100)*circumference;
 
   return (
-    <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      accessible
+      accessibilityRole='progressbar'
+      accessibilityLabel={`${theme.i18n.t('contests.postQuizScreen.score')}: ${Math.round(clamped)}%`}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
+      style={{
+        width: SIZE,
+        height: SIZE,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Svg width={SIZE} height={SIZE} style={{ position: 'absolute' }}>
         <Circle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={radius}
-          stroke={trackColor}
+          stroke={theme.isDark ? theme.color.surface : 'rgba(255,255,255,0.25)'}
           strokeWidth={STROKE_WIDTH}
-          fill="transparent"
+          fill='transparent'
         />
         <Circle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={radius}
-          stroke={progressColor}
+          stroke={theme.isDark ? theme.color.info : '#FFFFFF'}
           strokeWidth={STROKE_WIDTH}
-          fill="transparent"
-          strokeLinecap="round"
+          fill='transparent'
+          strokeLinecap='round'
           strokeDasharray={circumference}
           strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          transform={`rotate(-90 ${SIZE/2} ${SIZE/2})`}
         />
       </Svg>
 
       <View style={{ alignItems: 'center' }}>
         <Text
           style={{
-            color: '#FFFFFF',
             fontSize: theme.fontSize.xxxl,
-            fontWeight: theme.fontWeight.bold as any,
-            fontFamily: theme.fontFamily.number,
+            fontFamily: theme.fontFamily.numberBold,
+            color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
           }}
         >
           {Math.round(animatedPercent)}%
         </Text>
         <Text
           style={{
-            color: theme.isDark ? theme.color.textSecondary : 'rgba(255,255,255,0.75)',
             fontSize: theme.fontSize.sm,
             fontFamily: theme.fontFamily.light,
+            color: theme.isDark ? theme.color.textSecondary : 'rgba(255,255,255,0.75)',
           }}
         >
-          {theme.i18n.t('components.QuizResultCard.score')}
+          {theme.i18n.t('contests.postQuizScreen.score')}
         </Text>
       </View>
     </View>
