@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
-import { Feather } from '@expo/vector-icons';
 import { View, Text, Modal, Easing } from 'react-native';
+import { Feather, SimpleLineIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Animated, ScrollView, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -320,21 +320,21 @@ export default function PostQuizScreen() {
       key: 'correct' as const,
       icon: 'check' as const,
       value: String(correctCount),
-      labelKey: 'contests.postQuizScreen.correct',
+      labelKey: 'common.correct',
       colorToken: 'success' as const,
     },
     {
       key: 'wrong' as const,
       icon: 'x' as const,
       value: String(wrongCount),
-      labelKey: 'contests.postQuizScreen.wrong',
+      labelKey: 'common.wrong',
       colorToken: 'error' as const,
     },
     {
       key: 'time' as const,
       icon: 'clock' as const,
       value: formatDuration(timeTaken),
-      labelKey: 'contests.postQuizScreen.time',
+      labelKey: 'common.time',
       colorToken: 'textPrimary' as const,
     },
     {
@@ -929,12 +929,17 @@ export default function PostQuizScreen() {
               backgroundColor: theme.color.accent,
             }}
           >
-            <Feather name='book-open' size={theme.fontSize.lg} color={theme.color.textInverse} />
+            <SimpleLineIcons
+              name='book-open'
+              size={theme.fontSize.lg}
+              color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            />
             <Text
               style={{
                 fontSize: theme.fontSize.md,
-                color: theme.color.textInverse,
                 fontFamily: theme.fontFamily.bold,
+                lineHeight: theme.fontSize.md * 1.25,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
               }}
             >
               {t('contests.postQuizScreen.review_answers')}
@@ -948,6 +953,7 @@ export default function PostQuizScreen() {
               color: theme.color.error,
               fontSize: theme.fontSize.xs,
               fontFamily: theme.fontFamily.regular,
+              lineHeight: theme.fontSize.xs * 1.25,
             }}
           >
             {retryError}
@@ -1025,6 +1031,8 @@ export default function PostQuizScreen() {
         visible={showReview}
         transparent
         animationType='slide'
+        statusBarTranslucent={true}
+        navigationBarTranslucent={true}
         onRequestClose={() => setShowReview(false)}
       >
         <TouchableOpacity
