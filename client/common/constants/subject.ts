@@ -7,8 +7,8 @@ export type SubjectVariant = 'error' | 'accent' | 'success' | 'premium' | 'warni
 export type SubjectId =
   | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
   | 'forensic_medicine' | 'pathology' | 'ophthalmology' | 'ent' | 'community_medicine'
-  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology' | 'obstetrics'
-  | 'orthopedics' | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
+  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology_obstetrics' | 'orthopedics'
+  | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
 
 export type SubjectIconKey =
   | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology' 
@@ -37,8 +37,7 @@ export const subjectCatalog = {
   medicine: { id: 'medicine', title: 'Medicine', variant: 'error', iconKey: 'stethoscope' },
   surgery: { id: 'surgery', title: 'Surgery', variant: 'error', iconKey: 'surgery' },
   pediatrics: { id: 'pediatrics', title: 'Pediatrics', variant: 'accent', iconKey: 'baby' },
-  gynaecology: { id: 'gynaecology', title: 'Gynaecology', variant: 'premium', iconKey: 'girl' },
-  obstetrics: { id: 'obstetrics', title: 'Obstetrics', variant: 'premium', iconKey: 'pregnant' },
+  gynaecology_obstetrics: { id: 'gynaecology_obstetrics', title: 'Gynaecology & Obstetrics', variant: 'premium', iconKey: 'girl' },
   orthopedics: { id: 'orthopedics', title: 'Orthopedics', variant: 'warning', iconKey: 'bone' },
   dermatology: { id: 'dermatology', title: 'Dermatology', variant: 'success', iconKey: 'skin' },
   psychiatry: { id: 'psychiatry', title: 'Psychiatry', variant: 'premium', iconKey: 'mind' },
