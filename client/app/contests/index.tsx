@@ -1,37 +1,42 @@
-import { useRouter } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
 import { Loading } from '../../components/common/loading';
-import { ContestCard } from '../../components/ContestCard';
 import { ChipContainer } from '../../components/common/Chip';
 import { normalizeError } from '../../common/api/api.errors';
+import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { CustomSearchBar } from '../../components/CustomSearchBar';
 import { ScreenHeader } from '../../components/common/ScreenHeader';
-import { FeatureContestCard } from '../../components/FeatureContestCard';
-import type { Contest, GetContestsFilter } from '../../common/types/types';
+import { ContestCard } from '../../components/contests/ContestCard';
+import { CustomSearchBar } from '../../components/common/CustomSearchBar';
 import { subjectCatalog, type SubjectId } from '../../common/constants/subject';
-import type { ContestFilter, ContestItem, FeaturedContest } from '../../common/types/contestTypes';
+import { FeatureContestCard } from '../../components/contests/FeatureContestCard';
+import type { Contest, ContestPerformer, GetContestsFilter } from '../../common/types/types';
+import type { ContestItem, ContestFilter, FeaturedContest } from '../../common/types/contestTypes';
 
-const filterChips: ContestFilter[] = ['all', 'premium', ...(Object.keys(subjectCatalog) as SubjectId[])];
 
-const SUBJECT_ALIASES: Record<string, SubjectId> = {
-  'general medicine': 'medicine',
-  'general surgery': 'surgery',
-  otorhinolaryngology: 'ent',
-  'preventive & social medicine': 'community_medicine',
-  orthopaedics: 'orthopedics',
-  anaesthesia: 'anesthesia',
-  paediatrics: 'pediatrics',
+const CONTESTS_PAGE_LIMIT = 30;
+const LIST_STALE_MS = 60_000;
+const PERFORMERS_STALE_MS = 3 * 60_000;
+
+let contestsCache: { contests: Contest[]; at: number } | null = null;
+const performersCache = new Map<string, { list: ContestPerformer[]; at: number }>();
+
+type PerformersState = {
+  status: 'loading' | 'ready' | 'error';
+  list: ContestPerformer[];
 };
 
 const SUBJECT_TO_FILTER_ID: Record<string, SubjectId> = {
-  ...Object.fromEntries(Object.values(subjectCatalog).map((s) => [s.title.toLowerCase(), s.id])),
-  ...SUBJECT_ALIASES,
+  ...Object.fromEntries(
+    Object.values(subjectCatalog).map((s) => [s.title.toLowerCase(), s.id])
+  ),
 };
 
 function subjectToFilterId(subject: string): SubjectId | null {
@@ -47,33 +52,20 @@ function getEpochMs(target?: string | number | Date | { seconds?: number; _secon
     const sec = target.seconds ?? target._seconds;
     if (typeof sec === 'number') return sec * 1000;
   }
+
   return new Date(target as any).getTime();
 }
 
-function formatTimeLeft(endsAt?: string | number | Date | null, nowMs: number = Date.now()): string {
-  const targetMs = getEpochMs(endsAt);
-  const diffMs = targetMs - nowMs;
-
-  if (diffMs <= 0) return '0 mins';
-
-  const totalMinutes = Math.floor(diffMs / 60000);
-  const days = Math.floor(totalMinutes / (24 * 60));
-  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-  const minutes = totalMinutes % 60;
-
-  if (days >= 1) {
-    return `${days} ${days === 1 ? 'day' : 'days'} ${hours} hrs`;
-  }
-  if (hours >= 1) {
-    return `${hours} hrs ${minutes} mins`;
-  }
-  return `${minutes} mins`;
+function isStillOpen(contest: Contest, nowMs: number): boolean {
+  if (contest.status !== 'active') return false;
+  const endMs = getEpochMs(contest.endsAt);
+  return endMs === 0 || endMs > nowMs;
 }
 
-function mapContest(raw: Contest, nowMs: number): ContestItem {
-  const subjectTag = subjectToFilterId(raw.subject);
+function mapContest(raw: Contest): ContestItem {
+  const subjectId = subjectToFilterId(raw.subject);
   const category: Exclude<ContestFilter, 'all'>[] = [
-    ...(subjectTag ? [subjectTag] : []),
+    ...(subjectId ? [subjectId] : []),
     ...(raw.isPremium ? ['premium' as const] : []),
   ];
 
@@ -81,10 +73,11 @@ function mapContest(raw: Contest, nowMs: number): ContestItem {
     id: raw.contestId,
     title: raw.title,
     subject: raw.subject,
+    subjectId,
     category,
     difficulty: raw.difficulty,
     epReward: raw.epReward,
-    timeLeft: formatTimeLeft(raw.endsAt, nowMs),
+    endsAtMs: getEpochMs(raw.endsAt),
     questionsCount: raw.totalQuestions,
     duration: String(Math.round((raw.timeLimitSecs || 1200) / 60)),
     participantsCount: raw.participantCount || 0,
@@ -94,11 +87,9 @@ function mapContest(raw: Contest, nowMs: number): ContestItem {
 }
 
 function pickFeatured(contests: Contest[]): FeaturedContest | null {
-  const weeklyContests = contests.filter(
-    (c) => c.status === 'active' && c.contestType === 'weekly'
-  );
-  const best = weeklyContests.slice().sort((a, b) => (b.participantCount || 0) - (a.participantCount || 0))[0];
-
+  const best = contests
+    .filter((c) => c.contestType === 'weekly')
+    .sort((a, b) => (b.participantCount || 0) - (a.participantCount || 0))[0];
   if (!best) return null;
 
   return {
@@ -112,99 +103,143 @@ function pickFeatured(contests: Contest[]): FeaturedContest | null {
     endsAt: best.endsAt ?? new Date(Date.now() + 3600_000).toISOString(),
   };
 }
-let memoryContestsCache: Contest[] | null = null;
+
 
 export default function ContestsScreen() {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<ContestFilter>('all');
+  const [rawContests, setRawContests] = useState<Contest[]>(contestsCache?.contests ?? []);
+  const [performers, setPerformers] = useState<Record<string, PerformersState>>({});
 
-  const [rawContests, setRawContests] = useState<Contest[]>(memoryContestsCache || []);
-  const [featured, setFeatured] = useState<FeaturedContest | null>(() => (memoryContestsCache ? pickFeatured(memoryContestsCache) : null));
-  const [loading, setLoading] = useState(!memoryContestsCache);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(!contestsCache);
   const [error, setError] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState<number>(Date.now());
 
   const isFetchingRef = useRef(false);
+  const performersInFlightRef = useRef(new Set<string>());
+
   const router = useRouter();
   const { theme } = useTheme();
-
+  const { user } = useAppContext();
+  const insets = useSafeAreaInsets();
   useBottomBar(true, 'contests');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNowMs(Date.now());
-    }, 60000);
+    const timer = setInterval(() => setNowMs(Date.now()), 30_000);
     return () => clearInterval(timer);
   }, []);
 
-  const fetchContests = useCallback(async (isRefresh = false) => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
+  const fetchContests = useCallback(
+    async (mode: 'initial' | 'refresh' | 'silent') => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
 
-    if (!isRefresh && !memoryContestsCache) {
-      setLoading(true);
+      if (mode === 'initial') setLoading(true);
+      if (mode !== 'silent') setError(null);
+
+      try {
+        const filter: GetContestsFilter = { status: 'active', limit: CONTESTS_PAGE_LIMIT };
+        const raw = await api.contest.getContests(filter);
+        const openOnly = raw.filter((c) => isStillOpen(c, Date.now()));
+
+        contestsCache = { contests: openOnly, at: Date.now() };
+        setRawContests(openOnly);
+        setNowMs(Date.now());
+        if (mode === 'refresh') {
+          performersCache.clear();
+          setPerformers({});
+        }
+      } catch (err) {
+        if (mode !== 'silent') setError(normalizeError(err).message);
+      } finally {
+        setLoading(false);
+        isFetchingRef.current = false;
+      }
+    }, []
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!contestsCache) fetchContests('initial');
+      else if (Date.now() - contestsCache.at > LIST_STALE_MS) fetchContests('silent');
+    }, [fetchContests])
+  );
+
+  const loadPerformers = useCallback(async (contestId: string) => {
+    const cached = performersCache.get(contestId);
+    if (cached && Date.now() - cached.at < PERFORMERS_STALE_MS) {
+      setPerformers((prev) => ({
+        ...prev,
+        [contestId]: { status: 'ready', list: cached.list },
+      }));
+      return;
     }
-    setError(null);
+
+    if (performersInFlightRef.current.has(contestId)) return;
+    performersInFlightRef.current.add(contestId);
+    setPerformers((prev) => ({
+      ...prev,
+      [contestId]: { status: 'loading', list: [] },
+    }));
 
     try {
-      const filter: GetContestsFilter = { status: 'active' };
-      const raw = await api.contest.getContests(filter);
-
-      const currentTimestamp = Date.now();
-      const activeOnly = raw.filter((c) => {
-        if (c.status !== 'active') return false;
-        const endMs = getEpochMs(c.endsAt);
-        return endMs === 0 || endMs > currentTimestamp;
-      });
-
-      memoryContestsCache = activeOnly;
-      setRawContests(activeOnly);
-      setFeatured(pickFeatured(activeOnly));
-    } catch (err) {
-      const apiErr = normalizeError(err);
-      setError(apiErr.message);
+      const detail = await api.contest.getContest(contestId);
+      const list = detail?.topPerformers ?? [];
+      performersCache.set(contestId, { list, at: Date.now() });
+      setPerformers((prev) => ({
+        ...prev,
+        [contestId]: { status: 'ready', list },
+      }));
+    } catch {
+      setPerformers((prev) => ({
+        ...prev,
+        [contestId]: { status: 'error', list: [] },
+      }));
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      isFetchingRef.current = false;
+      performersInFlightRef.current.delete(contestId);
     }
   }, []);
 
-  useEffect(() => {
-    if (!memoryContestsCache) {
-      fetchContests(false);
-    }
-  }, [fetchContests]);
+  const openContests = useMemo(
+    () => rawContests.filter((c) => isStillOpen(c, nowMs)),
+    [rawContests, nowMs]
+  );
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchContests(true);
-  }, [fetchContests]);
+  const contests = useMemo(
+    () => openContests.map(mapContest).sort((a, b) => {
+      if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
+      return a.endsAtMs - b.endsAtMs;
+    }), [openContests]
+  );
 
-  const contests = useMemo(() => {
-    return rawContests.map((c) => mapContest(c, nowMs));
-  }, [rawContests, nowMs]);
+  const featured = useMemo(() => pickFeatured(openContests), [openContests]);
 
   const filterOptions = useMemo(() => {
-    return filterChips.map((filter) => {
-      if (filter === 'all' || filter === 'premium') {
-        return { id: filter, labelKey: `contests.filters.${filter}` };
-      }
-      const subjectDef = subjectCatalog[filter as SubjectId];
-      return {
-        id: filter,
-        labelKey: subjectDef?.title ?? filter,
-      };
-    });
-  }, []);
+    const present = new Set<string>();
+    contests.forEach((c) => c.category.forEach((cat) => present.add(cat)));
+
+    const subjectChips = (Object.keys(subjectCatalog) as SubjectId[])
+      .filter((id) => present.has(id))
+      .map((id) => ({ id, labelKey: subjectCatalog[id].title }));
+
+    return [
+      { id: 'all', labelKey: 'contests.filters.all' },
+      ...(present.has('premium') ? [{ id: 'premium', labelKey: 'contests.filters.premium' }] : []),
+      ...subjectChips,
+    ];
+  }, [contests]);
+
+  const effectiveFilter: ContestFilter = filterOptions.some((o) => o.id === activeFilter)
+    ? activeFilter
+    : 'all';
+  const query = search.trim().toLowerCase();
+
+  const showFeatured = !!featured && effectiveFilter === 'all' && query.length === 0;
 
   const filteredContests = useMemo(() => {
     return contests.filter((contest) => {
-      if (featured && contest.id === featured.id) return false;
-      const matchesFilter = activeFilter === 'all' || contest.category.includes(activeFilter);
-      const query = search.trim().toLowerCase();
-
+      if (showFeatured && featured && contest.id === featured.id) return false;
+      const matchesFilter = effectiveFilter === 'all' || contest.category.includes(effectiveFilter);
       const matchesSearch =
         query.length === 0 ||
         contest.title.toLowerCase().includes(query) ||
@@ -212,7 +247,48 @@ export default function ContestsScreen() {
 
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, search, contests, featured]);
+  }, [contests, effectiveFilter, query, showFeatured, featured]);
+
+  const openPreQuiz = (contestId: string) => router.push({ pathname: '/contests/preQuizScreen', params: { contestId } });
+
+  const retryButton = (
+    <TouchableOpacity
+      onPress={() => fetchContests(contests.length === 0 ? 'initial' : 'refresh')}
+      style={{
+        marginTop: theme.space.xs,
+        paddingVertical: theme.space.sm,
+        paddingHorizontal: theme.space.lg,
+        borderRadius: theme.borderRadius.lg,
+        backgroundColor: theme.color.accent,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: theme.fontFamily.bold,
+          color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+        }}
+      >
+        {theme.i18n.t('common.retry')}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const emptyState = (icon: 'search' | 'inbox', message: string) => (
+    <View style={{ gap: theme.space.sm, alignItems: 'center', paddingVertical: theme.space.xxl }}>
+      <Feather name={icon} size={theme.space.xl} color={theme.color.textMuted} />
+      <Text
+        style={{
+          textAlign: 'center',
+          fontSize: theme.fontSize.sm,
+          color: theme.color.textMuted,
+          fontFamily: theme.fontFamily.regular,
+        }}
+      >
+        {message}
+      </Text>
+    </View>
+  );
+
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.color.background }}>
@@ -221,34 +297,27 @@ export default function ContestsScreen() {
           title={theme.i18n.t('contests.title')}
           subtitle={theme.i18n.t('contests.subtitle')}
           showBack={false}
-          containerStyle={{
-            paddingTop: theme.space.lg,
-            paddingBottom: theme.space.sm,
-          }}
+          containerStyle={{ paddingBottom: theme.space.sm }}
           rightElement={
-            <MaterialCommunityIcons
-              name="sword-cross"
-              size={theme.space.lg}
-              color={theme.color.accent}
-              onPress={() => {
-                router.push('/challenges');
-              }}
-            />
+            <TouchableOpacity
+              onPress={() => router.push('/challenges')}
+              hitSlop={10}
+              accessibilityRole='button'
+              accessibilityLabel={theme.i18n.t('challenges.title')}
+            >
+              <MaterialCommunityIcons
+                name='sword-cross'
+                size={theme.space.lg}
+                color={theme.color.accent}
+              />
+            </TouchableOpacity>
           }
         />
 
         <ScrollView
-          contentContainerStyle={{ paddingBottom: theme.space.xl + 55 }}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={theme.color.accent}
-              colors={[theme.color.accent]}
-            />
-          }
+          keyboardShouldPersistTaps='handled'
+          contentContainerStyle={{ paddingBottom: insets.bottom * 2.75 }}
         >
           <View style={{ paddingTop: theme.space.sm, paddingHorizontal: theme.space.md }}>
             <CustomSearchBar
@@ -262,11 +331,11 @@ export default function ContestsScreen() {
 
           <ChipContainer
             options={filterOptions}
-            selectedId={activeFilter}
+            selectedId={effectiveFilter}
             onChange={(id) => setActiveFilter(id as ContestFilter)}
           />
 
-          {featured && (
+          {showFeatured && featured && (
             <View style={{ paddingBottom: theme.space.lg, paddingHorizontal: theme.space.md }}>
               <FeatureContestCard
                 title={featured.title}
@@ -276,7 +345,7 @@ export default function ContestsScreen() {
                 duration={featured.duration}
                 difficulty={featured.difficulty}
                 endsAt={featured.endsAt}
-                onPress={() => router.push({ pathname: '/contests/preQuizScreen', params: { contestId: featured.id } })}
+                onPress={() => openPreQuiz(featured.id)}
               />
             </View>
           )}
@@ -292,18 +361,17 @@ export default function ContestsScreen() {
           >
             <Text
               style={{
-                color: theme.color.textPrimary,
                 fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                color: theme.color.textPrimary,
+                fontFamily: theme.fontFamily.bold,
               }}
             >
               {theme.i18n.t('contests.all_contests')}
             </Text>
             <Text
               style={{
-                color: theme.color.textMuted,
                 fontSize: theme.fontSize.sm,
+                color: theme.color.textMuted,
                 fontFamily: theme.fontFamily.light,
               }}
             >
@@ -311,58 +379,104 @@ export default function ContestsScreen() {
             </Text>
           </View>
 
-          <View style={{ gap: theme.space.md, paddingHorizontal: theme.space.md }}>
-            {error ? (
-              <View style={{ gap: theme.space.sm, alignItems: 'center', paddingVertical: theme.space.xxl }}>
-                <Feather name="alert-circle" size={32} color={theme.color.error} />
+          {error && contests.length > 0 && (
+            <View
+              accessibilityRole='alert'
+              style={{
+                gap: theme.space.sm,
+                flexDirection: 'row',
+                alignItems: 'center',
+                padding: theme.space.sm,
+                marginBottom: theme.space.md,
+                marginHorizontal: theme.space.md,
+                borderWidth: 1,
+                borderRadius: theme.borderRadius.lg,
+                borderColor: theme.color.error + '55',
+                backgroundColor: theme.color.error + '12',
+              }}
+            >
+              <Feather name='alert-circle' size={theme.fontSize.md} color={theme.color.error} />
+              <Text
+                style={{
+                  flex: 1,
+                  color: theme.color.error,
+                  fontSize: theme.fontSize.sm,
+                  fontFamily: theme.fontFamily.regular,
+                }}
+              >
+                {error}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => fetchContests('refresh')}
+                hitSlop={8}
+              >
                 <Text
                   style={{
-                    color: theme.color.textMuted,
+                    color: theme.color.accent,
                     fontSize: theme.fontSize.sm,
-                    fontFamily: theme.fontFamily.regular,
+                    fontFamily: theme.fontFamily.bold,
+                  }}
+                >
+                  {theme.i18n.t('common.retry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={{ gap: theme.space.md, paddingHorizontal: theme.space.md }}>
+            {error && contests.length === 0 ? (
+              <View style={{ gap: theme.space.sm, alignItems: 'center', paddingVertical: theme.space.xxl }}>
+                <Feather name='alert-circle' size={theme.space.xl} color={theme.color.error} />
+                <Text
+                  style={{
                     textAlign: 'center',
+                    fontSize: theme.fontSize.sm,
+                    color: theme.color.textMuted,
+                    fontFamily: theme.fontFamily.regular,
                   }}
                 >
                   {error}
                 </Text>
+
+                {retryButton}
               </View>
             ) : filteredContests.length > 0 ? (
-              filteredContests.map((contest) => (
-                <ContestCard
-                  key={contest.id}
-                  title={contest.title}
-                  subject={contest.subject}
-                  difficulty={contest.difficulty}
-                  epReward={contest.epReward}
-                  timeLeft={contest.timeLeft}
-                  questionsCount={contest.questionsCount}
-                  duration={contest.duration}
-                  participantsCount={contest.participantsCount}
-                  isPro={contest.isPro}
-                  isLive={contest.isLive}
-                  onStartPress={() =>
-                    router.push({ pathname: '/contests/preQuizScreen', params: { contestId: contest.id } })
-                  }
-                />
-              ))
+              filteredContests.map((contest) => {
+                const perf = performers[contest.id];
+                return (
+                  <ContestCard
+                    key={contest.id}
+                    title={contest.title}
+                    subject={contest.subject}
+                    subjectId={contest.subjectId}
+                    difficulty={contest.difficulty}
+                    epReward={contest.epReward}
+                    endsAtMs={contest.endsAtMs}
+                    nowMs={nowMs}
+                    questionsCount={contest.questionsCount}
+                    duration={contest.duration}
+                    participantsCount={contest.participantsCount}
+                    isPro={contest.isPro}
+                    isLive={contest.isLive}
+                    currentUserId={user?.uid}
+                    performers={perf?.status === 'ready' ? perf.list : undefined}
+                    performersLoading={perf?.status === 'loading'}
+                    performersError={perf?.status === 'error'}
+                    onExpand={() => loadPerformers(contest.id)}
+                    onStartPress={() => openPreQuiz(contest.id)}
+                  />
+                );
+              })
+            ) : contests.length === 0 ? (
+              emptyState('inbox', theme.i18n.t('contests.none_active'))
             ) : (
-              <View style={{ gap: theme.space.sm, alignItems: 'center', paddingVertical: theme.space.xxl }}>
-                <Feather name="search" size={32} color={theme.color.textMuted} />
-                <Text
-                  style={{
-                    color: theme.color.textMuted,
-                    fontSize: theme.fontSize.sm,
-                    fontFamily: theme.fontFamily.regular,
-                    textAlign: 'center',
-                  }}
-                >
-                  {theme.i18n.t('contests.no_results')}
-                </Text>
-              </View>
+              emptyState('search', theme.i18n.t('contests.no_results'))
             )}
           </View>
         </ScrollView>
       </View>
+
       {loading && contests.length === 0 && (
         <View
           style={{
@@ -372,8 +486,8 @@ export default function ContestsScreen() {
             left: 0,
             right: 0,
             zIndex: 999,
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
             backgroundColor: theme.color.background,
           }}
         >
