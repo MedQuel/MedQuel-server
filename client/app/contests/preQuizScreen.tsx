@@ -1,305 +1,419 @@
-import { useEffect, useState } from 'react';
-import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import type { ComponentProps } from 'react';
 import { Feather } from '@expo/vector-icons';
+import { View, Text, ScrollView } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 
 import { api } from '../../common/api/api';
 import { useTheme } from '../../theme/ThemeContext';
-import type { Contest, User } from '../../common/types/types';
+import type { Contest } from '../../common/types/types';
 import { Loading } from '../../components/common/loading';
-import { useBottomBar } from '@/common/context/useBottomBar';
 import { normalizeError } from '../../common/api/api.errors';
-import { ContestDetailCard } from '../../components/ContestDetailCard';
-import { ContestDifficultyCard } from '../../components/ContestDifficultyCard';
-import type { PreQuizData, QuizRule, QuizTopic } from '../../common/types/contestTypes';
+import { useAppContext } from '../../common/context/AppContext';
+import { useBottomBar } from '../../common/context/useBottomBar';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { formatRelativeDuration } from '../../common/utils/dateUtils';
+import { ContestDetailCard } from '../../components/contests/ContestDetailCard';
+import { TopPerformersList } from '../../components/contests/TopPerformersList';
+import { ContestDifficultyCard } from '../../components/contests/ContestDifficultyCard';
 
-function buildRules(markingScheme?: Contest['markingScheme']): QuizRule[] {
-  const correct = markingScheme?.correct ?? 4;
-  const wrong = markingScheme?.wrong ?? -1;
-  const skipped = markingScheme?.skipped ?? 0;
 
-  return [
-    { id: '1', points: correct, description: 'points for correct answer', icon: 'plus-circle', color: 'success' },
-    { id: '2', points: wrong, description: 'point for wrong answer', icon: 'minus-circle', color: 'error' },
-    { id: '3', points: skipped, description: 'points for skipped questions', icon: 'minus-circle', color: 'textMuted' },
-    { id: '4', points: 0, description: 'Timer runs from the moment you enter', icon: 'clock', color: 'info' },
-  ];
-}
+type ContestPhase = 'upcoming' | 'active' | 'ended';
+type RuleColorToken = 'success' | 'error' | 'textMuted' | 'info' | 'accent';
 
-function mapDifficulty(difficulty?: Contest['difficulty']): PreQuizData['difficulty'] {
-  if (difficulty === 'medium') return 'intermediate';
+function mapDifficulty(difficulty?: Contest['difficulty']): 'easy' | 'medium' | 'hard' {
   if (difficulty === 'easy' || difficulty === 'hard') return difficulty;
-  return 'intermediate';
+  return 'medium';
 }
 
-function extractTopics(contest: any): QuizTopic[] {
-  const rawList: string[] =
-    (Array.isArray(contest.topics) && contest.topics.length > 0 && contest.topics) ||
-    (Array.isArray(contest.subtopics) && contest.subtopics.length > 0 && contest.subtopics) ||
-    (Array.isArray(contest.topicList) && contest.topicList.length > 0 && contest.topicList) ||
-    (Array.isArray(contest.tags) && contest.tags.length > 0 && contest.tags) ||
-    [];
+function getPhase(contest: Contest, nowMs: number): ContestPhase {
+  const startMs = Date.parse(contest.startsAt);
+  const endMs = Date.parse(contest.endsAt);
 
-  if (rawList.length > 0) {
-    return rawList.map((label: string, i: number) => ({ id: String(i), label: String(label) }));
+  if (contest.status === 'completed' || (Number.isFinite(endMs) && endMs <= nowMs)) {
+    return 'ended';
   }
-
-  if (contest.subject) {
-    return [{ id: '0', label: `${contest.subject} Core Concepts` }];
+  if (contest.status !== 'active' || (Number.isFinite(startMs) && startMs > nowMs)) {
+    return 'upcoming';
   }
-
-  return [{ id: '0', label: 'Clinical Knowledge' }];
+  return 'active';
 }
 
-function mapContestToPreQuizData(
-  contest: Contest,
-  userStats?: { bestScore?: number; attempts?: number; bestRank?: number }
-): PreQuizData {
-  return {
-    contestId: contest.contestId,
-    subtitle: (contest.contestType ?? 'CONTEST').toUpperCase(),
-    title: contest.title,
-    creator: 'MedQuel',
-    creatorSpecialty: contest.subject,
-    qCount: contest.totalQuestions,
-    timeMinutes: Math.round((contest.timeLimitSecs ?? 1200) / 60),
-    epReward: contest.epReward,
-    passPercentage: contest.passPercent ?? 60,
-    bestScore: userStats?.bestScore ?? 0,
-    attempts: userStats?.attempts ?? 0,
-    bestRank: userStats?.bestRank ?? 0,
-    difficulty: mapDifficulty(contest.difficulty),
-    recommended: contest.recommendedLevel ?? 'All Levels',
-    topics: extractTopics(contest),
-    rules: buildRules(contest.markingScheme),
-  };
+function formatPoints(points: number): string {
+  if (points > 0) return `+${points}`;
+  return String(points);
 }
+
 
 export default function PreQuizScreen() {
-  const { theme } = useTheme();
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  const contestId = params.contestId as string | undefined;
-  useBottomBar(false);
-
-  const [data, setData] = useState<PreQuizData | null>(null);
-  const [contestRaw, setContestRaw] = useState<Contest | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [contest, setContest] = useState<Contest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [nowMs, setNowMs] = useState(Date.now());
+
+  const startingRef = useRef(false);
+
+  const router = useRouter();
+  const { theme } = useTheme();
+  const { user } = useAppContext();
+  const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ contestId?: string }>();
+  const contestId = params.contestId;
+  useBottomBar(false);
+
+  const t = (key: string, opts?: Record<string, unknown>) => theme.i18n.t(key, opts);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!contestId) {
-      setError('No contest selected.');
+      setError(t('contests.preQuiz.no_contest'));
       setLoading(false);
       return;
     }
 
     let cancelled = false;
-
-    async function fetchContestAndStats() {
+    (async () => {
       setLoading(true);
       setError(null);
       try {
-        const [contestRes, analyticsRes, userRes] = await Promise.allSettled([
-          api.contest.getContest(contestId!),
-          api.analytics.getAnalytics(),
-          typeof (api as any)?.auth?.getCurrentUser === 'function'
-            ? (api as any).auth.getCurrentUser()
-            : typeof (api as any)?.user?.getProfile === 'function'
-            ? (api as any).user.getProfile()
-            : Promise.resolve(null),
-        ]);
-
+        const result = await api.contest.getContest(contestId);
         if (cancelled) return;
-
-        if (userRes.status === 'fulfilled' && userRes.value) {
-          setCurrentUser(userRes.value);
-        }
-
-        if (contestRes.status === 'fulfilled' && contestRes.value) {
-          const contest = contestRes.value;
-          setContestRaw(contest);
-
-          let userStats = { bestScore: 0, attempts: 0, bestRank: 0 };
-          if (analyticsRes.status === 'fulfilled' && analyticsRes.value) {
-            const analytics = analyticsRes.value;
-            const contestAttempts = (analytics.recentAttempts ?? []).filter(
-              (a: any) => a.contestId === contest.contestId || a.quizId === contest.contestId
-            );
-
-            if (contestAttempts.length > 0) {
-              userStats.attempts = contestAttempts.length;
-              userStats.bestScore = Math.max(...contestAttempts.map((a: any) => a.scorePercent ?? a.score ?? 0));
-            }
-          }
-
-          setData(mapContestToPreQuizData(contest, userStats));
-        } else {
-          throw new Error('Contest details could not be found.');
-        }
+        if (!result) throw new Error(t('contests.preQuiz.not_found'));
+        setContest(result);
       } catch (err) {
-        if (cancelled) return;
-        const apiErr = normalizeError(err);
-        console.log('[preQuiz] fetch failed:', apiErr);
-        setError(apiErr.message);
+        if (!cancelled) setError(normalizeError(err).message);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }
-    fetchContestAndStats();
-    return () => {
-      cancelled = true;
-    };
+    })();
+
+    return () => { cancelled = true };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contestId]);
 
-  const ruleColor = (color: QuizRule['color']): string => {
-    if (color === 'success') return theme.color.success;
-    if (color === 'error') return theme.color.error;
-    if (color === 'info') return theme.color.info;
-    return theme.color.textMuted;
-  };
+  const view = useMemo(() => {
+    if (!contest) return null;
 
-  const handleStartContest = () => {
-    if (!data) return;
+    const marking = contest.markingScheme ?? {
+      correct: 4,
+      wrong: -1,
+      skipped: 0,
+    };
+    const passPercent = contest.passPercent ?? 60;
 
-    const isContestPremium =
-      Boolean((contestRaw as any)?.isPremium) ||
-      Boolean((contestRaw as any)?.requiresPremium) ||
-      contestRaw?.contestType?.toLowerCase() === 'premium' ||
-      params.isPremium === 'true' ||
-      params.isPremium === '1';
+    const rules: {
+      id: string;
+      icon: ComponentProps<typeof Feather>['name'];
+      color: RuleColorToken;
+      value?: string;
+      text: string;
+    }[] = [
+      {
+        id: 'correct',
+        icon: 'plus-circle',
+        color: 'success',
+        value: formatPoints(marking.correct),
+        text: t('contests.preQuiz.rule_correct'),
+      },
+      {
+        id: 'wrong',
+        icon: 'minus-circle',
+        color: 'error',
+        value: formatPoints(marking.wrong),
+        text: t('contests.preQuiz.rule_wrong'),
+      },
+      {
+        id: 'skipped',
+        icon: 'minus-circle',
+        color: 'textMuted',
+        value: formatPoints(marking.skipped),
+        text: t('contests.preQuiz.rule_skipped'),
+      },
+      {
+        id: 'pass',
+        icon: 'target',
+        color: 'accent',
+        text: t('contests.preQuiz.rule_pass', { percent: passPercent }),
+      },
+      {
+        id: 'timer',
+        icon: 'clock',
+        color: 'info',
+        text: t('contests.preQuiz.rule_timer'),
+      },
+      {
+        id: 'best',
+        icon: 'award',
+        color: 'info',
+        text: t('contests.preQuiz.rule_best'),
+      },
+    ];
 
-    const userIsPremium = Boolean(currentUser?.isPremium);
+    const topics = contest.topics?.length > 0
+      ? contest.topics
+      : [t('contests.preQuiz.topic_fallback', { subject: contest.subject })];
 
-    if (isContestPremium && !userIsPremium) {
+    const myPerformer = (contest.topPerformers ?? []).find(
+      (p) => p.userId === user?.uid
+    );
+
+    return {
+      subtitle: t(`contests.preQuiz.type.${contest.contestType}`),
+      timeMinutes: Math.max(1, Math.round((contest.timeLimitSecs || 1200)/60)),
+      passPercent,
+      difficulty: mapDifficulty(contest.difficulty),
+      recommended: contest.recommendedLevel ?? t('contests.preQuiz.all_levels'),
+      rules,
+      topics,
+      myRank: myPerformer?.rank ?? null,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contest, user?.uid]);
+
+  const phase: ContestPhase = contest ? getPhase(contest, nowMs) : 'ended';
+  const needsPremium = !!contest?.isPremium && !user?.isPremium;
+  const canStart = phase === 'active' && !starting;
+
+  const handleStart = async () => {
+    if (!contest || startingRef.current || phase !== 'active') return;
+    if (needsPremium) {
       setShowPremiumModal(true);
       return;
     }
 
-    router.push({
-      pathname: '/contests/[quizId]',
-      params: {
-        quizId: data.contestId,
-        totalQuestions: String(data.qCount),
-        difficulty: data.difficulty,
-        subject: data.creatorSpecialty,
-      },
-    });
+    startingRef.current = true;
+    setStarting(true);
+    setStartError(null);
+
+    try {
+      const session = await api.contest.joinContest(contest.contestId);
+      router.push({
+        pathname: '/contests/[quizId]',
+        params: {
+          quizId: session.sessionId,
+          quizType: session.quizType,
+          contestId: contest.contestId,
+          subject: contest.subject,
+          passPercent: String(contest.passPercent ?? 60),
+          sessionData: encodeURIComponent(JSON.stringify(session)),
+        },
+      });
+    } catch (err) {
+      setStartError(normalizeError(err).message);
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
+    }
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.color.background }}>
-        <Loading message={theme.i18n.t('contests.loading')} />
-      </View>
-    );
-  }
+  const ruleColor = (token: RuleColorToken): string => theme.color[token];
 
-  if (error || !data) {
+  if (loading) {
     return (
       <View
         style={{
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          gap: theme.space.sm,
           backgroundColor: theme.color.background,
-          padding: theme.space.xl,
         }}
       >
-        <Feather name="alert-circle" size={32} color={theme.color.error} />
-        <Text style={{ color: theme.color.textMuted, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular, textAlign: 'center' }}>
-          {error ?? 'Something went wrong.'}
-        </Text>
-        <TouchableOpacity
-          onPress={() => router.push('/contests')}
+        <Loading message={t('contests.loading')} />
+      </View>
+    );
+  }
+
+  if (error || !contest || !view) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          gap: theme.space.sm,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: theme.space.xl,
+          backgroundColor: theme.color.background,
+        }}
+      >
+        <Feather name='alert-circle' size={theme.space.xl} color={theme.color.error} />
+        <Text
           style={{
+            textAlign: 'center',
+            fontSize: theme.fontSize.sm,
+            color: theme.color.textMuted,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
+          {error ?? t('contests.preQuiz.generic_error')}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => router.replace('/contests')}
+          style={{
+            marginTop: theme.space.sm,
             paddingVertical: theme.space.sm,
             paddingHorizontal: theme.space.lg,
             borderRadius: theme.borderRadius.lg,
             backgroundColor: theme.color.accent,
           }}
         >
-          <Text style={{ color: theme.color.textInverse, fontWeight: theme.fontWeight.bold as any, fontFamily: theme.fontFamily.regular }}>
-            {theme.i18n.t('common.back_to_contests')}
+          <Text
+            style={{
+              fontFamily: theme.fontFamily.bold,
+              color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+            }}
+          >
+            {t('common.back_to_contests')}
           </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
-      <View
-        style={{
-          gap: theme.space.md,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingTop: theme.space.lg,
-          paddingBottom: theme.space.sm,
-          paddingHorizontal: theme.space.md,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.push('/contests')}
+  const endMs = Date.parse(contest.endsAt);
+  const startMs = Date.parse(contest.startsAt);
+  const statusColor = phase === 'active'
+    ? theme.color.warning
+    : phase === 'upcoming' ? theme.color.info : theme.color.error;
+  const statusText = phase === 'active'
+    ? t('contests.preQuiz.ends_in', { time: formatRelativeDuration(endMs - nowMs) })
+    : phase === 'upcoming'
+      ? t('contests.preQuiz.starts_in', { time: formatRelativeDuration(startMs - nowMs) })
+      : t('contests.preQuiz.ended');
+
+  const buttonLabel = starting
+    ? t('contests.preQuiz.starting')
+    : phase === 'ended'
+      ? t('contests.preQuiz.btn_ended')
+      : phase === 'upcoming'
+        ? t('contests.preQuiz.btn_upcoming')
+        : needsPremium ? t('common.unlock_and_start') : t('common.start_contest');
+  const buttonColor = needsPremium && phase === 'active' ? theme.color.premium : theme.color.accent;
+
+  const sectionStyle = {
+    gap: theme.space.md,
+    padding: theme.space.md,
+    borderWidth: 1,
+    borderColor: theme.color.border,
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.color.card,
+  } as const;
+
+  const sectionTitle = (icon: ComponentProps<typeof Feather>['name'], label: string, right?: string) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
+        <Feather name={icon} size={theme.fontSize.md} color={theme.color.accent} />
+        <Text
           style={{
-            width: 36,
-            height: 36,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            backgroundColor: theme.color.card,
-            borderRadius: theme.borderRadius.lg,
-            borderColor: theme.color.border,
+            fontSize: theme.fontSize.md,
+            color: theme.color.textPrimary,
+            fontFamily: theme.fontFamily.bold,
           }}
         >
-          <Feather name="chevron-left" size={theme.fontSize.xl} color={theme.color.textPrimary} />
-        </TouchableOpacity>
-
-        <View>
-          <Text
-            style={{
-              color: theme.color.textPrimary,
-              fontSize: theme.fontSize.lg,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.regular,
-            }}
-          >
-            Contest Details
-          </Text>
-          <Text
-            style={{
-              color: theme.color.textMuted,
-              fontSize: theme.fontSize.xs,
-              fontFamily: theme.fontFamily.light,
-            }}
-          >
-            Review before you start
-          </Text>
-        </View>
+          {label}
+        </Text>
       </View>
+
+      {right ? (
+        <Text
+          style={{
+            fontSize: theme.fontSize.sm,
+            color: theme.color.textMuted,
+            fontFamily: theme.fontFamily.regular,
+          }}
+        >
+          {right}
+        </Text>
+      ) : null}
+    </View>
+  );
+
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.color.background }}>
+      <ScreenHeader
+        title={t('contests.preQuiz.title')}
+        subtitle={t('contests.preQuiz.subtitle')}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: theme.space.md, padding: theme.space.md, paddingBottom: 160 }}
+        contentContainerStyle={{
+          gap: theme.space.md,
+          padding: theme.space.md,
+          paddingBottom: insets.bottom * 3.1,
+        }}
       >
         <ContestDetailCard
-          subtitle={data.subtitle}
-          title={data.title}
-          creator={data.creator}
-          creatorSpecialty={data.creatorSpecialty}
-          qCount={data.qCount}
-          timeMinutes={data.timeMinutes}
-          epReward={data.epReward}
-          passPercentage={data.passPercentage}
+          subtitle={view.subtitle}
+          title={contest.title}
+          creator='MedQuel'
+          creatorSpecialty={contest.subject}
+          qCount={contest.totalQuestions}
+          timeMinutes={view.timeMinutes}
+          epReward={contest.epReward}
+          passPercentage={view.passPercent}
         />
 
-        <View style={{ flexDirection: 'row', gap: theme.space.md }}>
-          <View style={{ flex: 1 }}>
-            <ContestDifficultyCard difficulty={data.difficulty} />
+        <View
+          style={{
+            gap: theme.space.sm,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingVertical: theme.space.sm,
+            paddingHorizontal: theme.space.md,
+            borderWidth: 1,
+            borderColor: statusColor + '44',
+            borderRadius: theme.borderRadius.lg,
+            backgroundColor: statusColor + '12',
+          }}
+        >
+          <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+            <Feather name='clock' size={theme.fontSize.md} color={statusColor} />
+            <Text
+              style={{
+                color: statusColor,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              {statusText}
+            </Text>
           </View>
+
+          <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
+            <Feather
+              name='users'
+              size={theme.fontSize.md}
+              color={theme.color.textMuted}
+            />
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.color.textSecondary,
+                fontFamily: theme.fontFamily.number,
+              }}
+            >
+              {(contest.participantCount ?? 0).toLocaleString()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ gap: theme.space.md, flexDirection: 'row' }}>
+          <View style={{ flex: 1 }}>
+            <ContestDifficultyCard difficulty={view.difficulty} />
+          </View>
+
           <View
             style={{
               flex: 1,
@@ -312,36 +426,45 @@ export default function PreQuizScreen() {
               backgroundColor: theme.color.card,
             }}
           >
-            <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
-              Recommended
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.color.textSecondary,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {t('contests.preQuiz.recommended')}
             </Text>
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
-              {data.recommended}
+            <Text
+              style={{
+                fontSize: theme.fontSize.md,
+                color: theme.color.textPrimary,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              {view.recommended}
             </Text>
           </View>
         </View>
 
-        <View
-          style={{
-            gap: theme.space.md,
-            padding: theme.space.md,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.xl,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
-            <Feather name="book-open" size={theme.fontSize.md} color={theme.color.accent} />
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
-              Topics Covered
-            </Text>
-          </View>
+        <View style={sectionStyle}>
+          {sectionTitle(
+            'award',
+            t('contests.topPerformers.title'),
+            view.myRank ? t('contests.topPerformers.your_rank', { rank: view.myRank }) : undefined
+          )}
+          <TopPerformersList
+            performers={contest.topPerformers ?? []}
+            currentUserId={user?.uid}
+          />
+        </View>
 
-          <View style={{ gap: theme.space.sm, flexDirection: 'row', flexWrap: 'wrap' }}>
-            {data.topics.map((topic) => (
+        <View style={sectionStyle}>
+          {sectionTitle('book-open', t('contests.preQuiz.topics'))}
+          <View style={{ flexWrap: 'wrap', gap: theme.space.sm, flexDirection: 'row' }}>
+            {view.topics.map((topic) => (
               <View
-                key={topic.id}
+                key={topic}
                 style={{
                   paddingVertical: theme.space.xs,
                   paddingHorizontal: theme.space.sm,
@@ -351,50 +474,56 @@ export default function PreQuizScreen() {
                   backgroundColor: theme.color.surface,
                 }}
               >
-                <Text style={{ color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
-                  {topic.label}
+                <Text
+                  style={{
+                    fontSize: theme.fontSize.sm,
+                    color: theme.color.textSecondary,
+                    fontFamily: theme.fontFamily.regular,
+                  }}
+                >
+                  {topic}
                 </Text>
               </View>
             ))}
           </View>
         </View>
 
-        <View
-          style={{
-            gap: theme.space.md,
-            padding: theme.space.md,
-            borderWidth: 1,
-            borderColor: theme.color.border,
-            borderRadius: theme.borderRadius.xl,
-            backgroundColor: theme.color.card,
-          }}
-        >
-          <View style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
-            <Feather name="info" size={theme.fontSize.md} color={theme.color.accent} />
-            <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
-              Rules
-            </Text>
-          </View>
-
+        <View style={sectionStyle}>
+          {sectionTitle('info', t('contests.preQuiz.rules'))}
           <View style={{ gap: theme.space.sm }}>
-            {data.rules.map((rule) => (
-              <View key={rule.id} style={{ gap: theme.space.sm, flexDirection: 'row', alignItems: 'center' }}>
-                <View
+            {view.rules.map((rule) => (
+              <View
+                key={rule.id}
+                style={{
+                  gap: theme.space.sm,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                }}
+              >
+                <Feather name={rule.icon} size={theme.fontSize.md} color={ruleColor(rule.color)} />
+                {rule.value !== undefined && (
+                  <Text
+                    style={{
+                      minWidth: theme.space.lg + 4,
+                      color: ruleColor(rule.color),
+                      fontSize: theme.fontSize.md,
+                      fontFamily: theme.fontFamily.numberBold,
+                    }}
+                  >
+                    {rule.value}
+                  </Text>
+                )}
+
+                <Text
                   style={{
-                    width: 28,
-                    height: 28,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: theme.borderRadius.md,
-                    backgroundColor: ruleColor(rule.color) + '18',
+                    flex: 1,
+                    fontSize: theme.fontSize.sm,
+                    color: theme.color.textSecondary,
+                    fontFamily: theme.fontFamily.regular,
+                    lineHeight: theme.fontSize.sm * 1.25,
                   }}
                 >
-                  <Text style={{ color: ruleColor(rule.color), fontSize: theme.fontSize.xs, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.number }}>
-                    {rule.points > 0 ? `+${rule.points}` : rule.points === 0 ? '0' : rule.points}
-                  </Text>
-                </View>
-                <Text style={{ flex: 1, color: theme.color.textSecondary, fontSize: theme.fontSize.sm, fontFamily: theme.fontFamily.regular }}>
-                  {rule.description}
+                  {rule.text}
                 </Text>
               </View>
             ))}
@@ -410,142 +539,207 @@ export default function PreQuizScreen() {
           right: 0,
           gap: theme.space.sm,
           padding: theme.space.md,
+          paddingBottom: insets.bottom * 1.25,
           borderTopWidth: 1,
           borderTopColor: theme.color.border,
           backgroundColor: theme.color.background,
         }}
       >
+        {startError && (
+          <View
+            accessibilityRole='alert'
+            style={{
+              gap: theme.space.sm,
+              flexDirection: 'row',
+              alignItems: 'center',
+              padding: theme.space.sm,
+              borderWidth: 1,
+              borderColor: theme.color.error + '55',
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.color.error + '12',
+            }}
+          >
+            <Feather name='alert-circle' size={theme.fontSize.md} color={theme.color.error} />
+            <Text
+              style={{
+                flex: 1,
+                color: theme.color.error,
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {startError}
+            </Text>
+
+            <TouchableOpacity onPress={() => setStartError(null)} hitSlop={8}>
+              <Feather name='x' size={theme.fontSize.md} color={theme.color.textMuted} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         <TouchableOpacity
-          onPress={handleStartContest}
+          onPress={handleStart}
+          disabled={!canStart}
           activeOpacity={0.85}
+          accessibilityRole='button'
+          accessibilityState={{ disabled: !canStart }}
           style={{
-            gap: theme.space.sm,
+            gap: theme.space.xs,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
             paddingVertical: theme.space.md,
-            borderRadius: theme.borderRadius.lg,
-            backgroundColor: theme.color.accent,
+            borderRadius: theme.borderRadius.xl,
+            backgroundColor: canStart ? buttonColor : theme.color.surface,
+            opacity: canStart || starting ? 1 : 0.7,
           }}
         >
-          <Feather name="zap" size={theme.fontSize.lg} color={theme.color.textPrimary} />
-          <Text style={{ color: theme.color.textPrimary, fontSize: theme.fontSize.md, fontWeight: theme.fontWeight.bold, fontFamily: theme.fontFamily.regular }}>
-            Start Contest
+          {starting ? (
+            <ActivityIndicator
+              size='small'
+              color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            />
+          ) : (
+            <Feather
+              name={phase !== 'active' ? 'lock' : needsPremium ? 'award' : 'zap'}
+              size={theme.fontSize.lg}
+              color={canStart
+                ? theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+                : theme.color.textMuted
+              }
+            />
+          )}
+
+          <Text
+            style={{
+              color: canStart
+                ? theme.isDark ? theme.color.textPrimary : theme.color.textInverse
+                : theme.color.textMuted,
+              fontSize: theme.fontSize.lg,
+              fontFamily: theme.fontFamily.bold,
+              lineHeight: theme.fontSize.lg * 1.25,
+            }}
+          >
+            {buttonLabel}
           </Text>
-          <Feather name="chevron-right" size={theme.fontSize.lg} color={theme.color.textPrimary} />
+
+          {canStart && !starting && (
+            <Feather
+              name='chevron-right'
+              size={theme.fontSize.lg}
+              color={theme.isDark ? theme.color.textPrimary : theme.color.textInverse}
+            />
+          )}
         </TouchableOpacity>
       </View>
 
       <Modal
         visible={showPremiumModal}
         transparent
-        animationType="fade"
+        animationType='fade'
         onRequestClose={() => setShowPremiumModal(false)}
       >
         <View
           style={{
             flex: 1,
-            backgroundColor: theme.color.accent,
-            justifyContent: 'center',
             alignItems: 'center',
-            paddingHorizontal: theme.space.lg,
+            justifyContent: 'center',
+            padding: theme.space.lg,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
           }}
         >
           <View
             style={{
               width: '100%',
-              maxWidth: 340,
-              backgroundColor: theme.color.card,
-              borderRadius: theme.borderRadius.xl,
+              maxWidth: 380,
+              gap: theme.space.md,
+              alignItems: 'center',
+              padding: theme.space.lg,
               borderWidth: 1,
               borderColor: theme.color.border,
-              padding: theme.space.xl,
-              alignItems: 'center',
-              gap: theme.space.md,
+              borderRadius: theme.borderRadius.xl,
+              backgroundColor: theme.color.card,
             }}
           >
             <View
               style={{
-                width: 56,
-                height: 56,
-                borderRadius: theme.borderRadius.full,
-                backgroundColor: theme.color.warning + '20',
+                width: theme.space.xxl * 1.4,
+                height: theme.space.xxl * 1.4,
                 alignItems: 'center',
                 justifyContent: 'center',
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.color.premium + '22',
               }}
             >
-              <Feather name="lock" size={28} color={theme.color.warning} />
+              <Feather name='lock' size={theme.fontSize.xxl} color={theme.color.premium} />
             </View>
 
-            <View style={{ alignItems: 'center', gap: theme.space.xs }}>
-              <Text
-                style={{
-                  color: theme.color.textPrimary,
-                  fontSize: theme.fontSize.lg,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.bold,
-                  textAlign: 'center',
-                }}
-              >
-                Premium Contest
-              </Text>
-              <Text
-                style={{
-                  color: theme.color.textMuted,
-                  fontSize: theme.fontSize.sm,
-                  fontFamily: theme.fontFamily.regular,
-                  textAlign: 'center',
-                  lineHeight: theme.fontSize.sm * 1.5,
-                }}
-              >
-                This contest requires an active premium subscription. Unlock premium access to participate and earn rewards.
-              </Text>
-            </View>
+            <Text
+              style={{
+                fontSize: theme.fontSize.xl,
+                color: theme.color.textPrimary,
+                fontFamily: theme.fontFamily.bold,
+              }}
+            >
+              {t('contests.preQuiz.premium_title')}
+            </Text>
+            <Text
+              style={{
+                textAlign: 'center',
+                fontSize: theme.fontSize.md,
+                color: theme.color.textSecondary,
+                fontFamily: theme.fontFamily.regular,
+                lineHeight: theme.fontSize.md * 1.25,
+              }}
+            >
+              {t('contests.preQuiz.premium_body')}
+            </Text>
 
-            <View style={{ width: '100%', gap: theme.space.sm, marginTop: theme.space.xs }}>
+            <View style={{ width: '100%', gap: theme.space.sm }}>
               <TouchableOpacity
-                activeOpacity={0.85}
                 onPress={() => {
                   setShowPremiumModal(false);
-                  router.push('/subscription');
+                  router.push('/premium');
                 }}
+                activeOpacity={0.85}
                 style={{
-                  paddingVertical: theme.space.md * 0.9,
-                  borderRadius: theme.borderRadius.lg,
-                  backgroundColor: theme.color.accent,
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  paddingVertical: theme.space.sm * 1.5,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.premium,
                 }}
               >
                 <Text
                   style={{
-                    color: theme.color.textInverse,
-                    fontSize: theme.fontSize.sm,
-                    fontWeight: theme.fontWeight.bold,
+                    fontSize: theme.fontSize.md,
                     fontFamily: theme.fontFamily.bold,
+                    color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                   }}
                 >
-                  Get Premium
+                  {t('contests.preQuiz.get_premium')}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                activeOpacity={0.7}
                 onPress={() => setShowPremiumModal(false)}
+                activeOpacity={0.85}
                 style={{
-                  paddingVertical: theme.space.sm,
                   alignItems: 'center',
-                  justifyContent: 'center',
+                  paddingVertical: theme.space.sm * 1.5,
+                  borderWidth: 1,
+                  borderColor: theme.color.border,
+                  borderRadius: theme.borderRadius.lg,
+                  backgroundColor: theme.color.surface,
                 }}
               >
                 <Text
                   style={{
-                    color: theme.color.textSecondary,
-                    fontSize: theme.fontSize.sm,
+                    fontSize: theme.fontSize.md,
+                    color: theme.color.textPrimary,
                     fontFamily: theme.fontFamily.regular,
                   }}
                 >
-                  Maybe Later
+                  {t('contests.preQuiz.maybe_later')}
                 </Text>
               </TouchableOpacity>
             </View>
