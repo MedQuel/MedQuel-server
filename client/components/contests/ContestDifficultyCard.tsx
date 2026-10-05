@@ -1,70 +1,60 @@
 import { View, Text } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import type { Difficulty } from '../../common/types/types';
 
-import { useTheme } from '../theme/ThemeContext';
 
-
-type Difficulty =  'easy' | 'intermediate' | 'hard' ;
-
-type ContestDifficultyCardProps = {
-  difficulty: Difficulty;
-};
-
+const TOTAL_STEPS = 5;
 const DIFFICULTY_STEPS: Record<Difficulty, number> = {
-
   easy: 1,
-  intermediate: 3,
+  medium: 3,
   hard: 5,
 };
 
-const TOTAL_STEPS = 5;
-
-export function ContestDifficultyCard({ difficulty }: ContestDifficultyCardProps) {
+export function ContestDifficultyCard({ difficulty }: { difficulty: Difficulty }) {
   const { theme } = useTheme();
 
   const filledSteps = DIFFICULTY_STEPS[difficulty];
-
   const difficultyColor: Record<Difficulty, string> = {
     easy: theme.color.success,
-    intermediate: theme.color.warning,
+    medium: theme.color.warning,
     hard: theme.color.error,
   };
-
   const activeColor = difficultyColor[difficulty];
 
   return (
     <View
+      accessible
+      accessibilityLabel={`${theme.i18n.t('common.difficulty')}: ${theme.i18n.t(`common.${difficulty}`)}`}
       style={{
+        gap: theme.space.sm,
         padding: theme.space.md,
-        borderRadius: theme.borderRadius.xl,
         borderWidth: 1,
         borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.xl,
         backgroundColor: theme.color.card,
-        gap: theme.space.sm,
       }}
     >
       <Text
         style={{
-          color: theme.color.textSecondary,
           fontSize: theme.fontSize.sm,
+          color: theme.color.textSecondary,
           fontFamily: theme.fontFamily.regular,
         }}
       >
-        {theme.i18n.t('components.ContestDifficultyCard.label')}
+        {theme.i18n.t('common.difficulty')}
       </Text>
 
-      <View style={{ flexDirection: 'row', gap: theme.space.xs }}>
+      <View style={{ gap: theme.space.xs, flexDirection: 'row' }}>
         {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
           <View
             key={i}
             style={{
               flex: 1,
-              height: 6,
+              height: theme.space.xs * 1.5,
               borderRadius: theme.borderRadius.full,
               backgroundColor: i < filledSteps
                 ? activeColor
-                : theme.isDark
-                  ? theme.color.surface
-                  : theme.color.border,
+                : theme.isDark ? theme.color.surface : theme.color.border,
             }}
           />
         ))}
@@ -74,14 +64,11 @@ export function ContestDifficultyCard({ difficulty }: ContestDifficultyCardProps
         style={{
           color: activeColor,
           fontSize: theme.fontSize.md,
-          fontWeight: theme.fontWeight.bold as any,
-          fontFamily: theme.fontFamily.regular,
+          fontFamily: theme.fontFamily.bold,
         }}
       >
-        {theme.i18n.t(`components.ContestDifficultyCard.${difficulty}`)}
+        {theme.i18n.t(`common.${difficulty}`)}
       </Text>
     </View>
   );
 }
-
-export default ContestDifficultyCard;
