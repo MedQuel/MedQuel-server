@@ -17,7 +17,7 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Specialty =
   | 'Anatomy' | 'Biochemistry' | 'Physiology' | 'Microbiology' | 'Pharmacology'
   | 'Forensic Medicine' | 'Pathology' | 'Ophthalmology' | 'ENT' | 'Community Medicine'
-  | 'Medicine' | 'Surgery' | 'Pediatrics' | 'Gynaecology' | 'Obstetrics'
+  | 'Medicine' | 'Surgery' | 'Pediatrics' | 'Gynaecology & Obstetrics'
   | 'Orthopedics' | 'Dermatology' | 'Psychiatry' | 'Anesthesia' | 'Radiology';
 
 
