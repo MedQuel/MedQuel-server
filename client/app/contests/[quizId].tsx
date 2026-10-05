@@ -117,6 +117,8 @@ function DialogModal(props: DialogModalProps) {
     <Modal
       transparent
       animationType='fade'
+      statusBarTranslucent={true}
+      navigationBarTranslucent={true}
       visible={props.visible}
       onRequestClose={props.onRequestClose}
     >
@@ -590,8 +592,8 @@ export default function QuizScreen() {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: theme.space.md,
-          paddingBottom: theme.space.sm,
+          paddingTop: theme.space.sm,
+          paddingBottom: theme.space.md,
           paddingHorizontal: theme.space.md,
         }}
       >
@@ -653,6 +655,7 @@ export default function QuizScreen() {
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.bold,
               color: theme.color[modeConfig.accentToken],
+              lineHeight: theme.fontSize.sm * 1.25,
             }}
           >
             {displayTitle}
@@ -958,6 +961,8 @@ export default function QuizScreen() {
         visible={activeModal === 'summary'}
         transparent
         animationType='slide'
+        statusBarTranslucent={true}
+        navigationBarTranslucent={true}
         onRequestClose={() => setActiveModal(null)}
       >
         <TouchableOpacity
