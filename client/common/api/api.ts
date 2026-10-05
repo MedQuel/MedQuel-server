@@ -634,7 +634,7 @@ const GET_CONTEST_QUERY = gql`
       startsAt
       endsAt
       participantCount
-      topPerformers(limit: 3) { userId displayName photoURL score rank completedAt }
+      topPerformers { userId displayName photoURL score rank completedAt }
     }
   }
 `;
