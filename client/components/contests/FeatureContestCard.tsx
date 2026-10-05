@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 
 
 type FeatureContestCardProps = {
@@ -31,7 +31,6 @@ function getRemainingTime(target: Date) {
   };
 }
 
-
 export function FeatureContestCard(props: FeatureContestCardProps) {
   const endDate = useMemo(() => new Date(props.endsAt), [props.endsAt]);
   const [remaining, setRemaining] = useState(getRemainingTime(endDate));
@@ -42,28 +41,20 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
     const interval = setInterval(() => {
       setRemaining(getRemainingTime(endDate));
     }, 1000);
-
     return () => clearInterval(interval);
   }, [endDate]);
 
-
   return (
     <LinearGradient
-      colors={
-        theme.isDark
-          ? ['#121333', '#0b1041', '#0A1E66']
-          : ['#7e71e2', '#4f44c7', '#2253e4']
-      }
+      colors={theme.isDark ? ['#121333', '#0b1041', '#0A1E66'] : ['#7e71e2', '#4f44c7', '#2253e4']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{
         overflow: 'hidden',
         borderWidth: 1.5,
-        borderColor: theme.isDark ? theme.color.border : 'rgba(255,255,255,0.10)',
         borderRadius: theme.borderRadius.xl,
-        boxShadow: theme.isDark
-          ? '0px 12px 30px rgba(0,0,0,0.30)'
-          : '0px 12px 24px rgba(0,0,0,0.12)',
+        borderColor: theme.isDark ? theme.color.border : 'rgba(255,255,255,0.10)',
+        boxShadow: theme.isDark ? '0px 12px 30px rgba(0,0,0,0.30)' : '0px 12px 24px rgba(0,0,0,0.12)',
       }}
     >
       <View
@@ -100,7 +91,7 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
         }}
       />
 
-      <View style={{ flexDirection: 'column', paddingVertical: theme.space.md, paddingHorizontal: theme.space.md }}>
+      <View style={{ flexDirection: 'column', padding: theme.space.md }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <View style={{ gap: theme.space.xs, flexDirection: 'row', alignItems: 'center' }}>
             <View
@@ -112,38 +103,29 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
                 paddingVertical: theme.space.xs,
                 paddingHorizontal: theme.space.sm,
                 borderRadius: theme.borderRadius.md,
-                backgroundColor: theme.color.error + '22',
+                backgroundColor: theme.color.warning + '22',
               }}
             >
-              <View
-                style={{
-                  width: theme.space.sm * 0.75,
-                  height: theme.space.sm * 0.75,
-                  borderRadius: theme.borderRadius.full,
-                  backgroundColor: theme.color.error,
-                }}
-              />
+              <Feather name='star' size={theme.fontSize.xs + 1} color={theme.color.warning} />
               <Text
                 style={{
-                  color: theme.color.error,
+                  color: theme.color.warning,
                   fontSize: theme.fontSize.xs,
-                  fontWeight: theme.fontWeight.bold,
-                  fontFamily: theme.fontFamily.regular,
+                  fontFamily: theme.fontFamily.bold,
                 }}
               >
-                {theme.i18n.t('common.live')}
+                {theme.i18n.t('contests.featured_badge')}
               </Text>
             </View>
 
             <Text
               style={{
-                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                 fontSize: theme.fontSize.sm,
                 fontFamily: theme.fontFamily.regular,
+                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
               }}
             >
-              {props.participants.toLocaleString()}{' '}
-              {theme.i18n.t('components.FeatureContestCard.competing')}
+              {theme.i18n.t('contests.competing', { participants: props.participants.toLocaleString() })}
             </Text>
           </View>
 
@@ -151,8 +133,7 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
             style={{
               color: theme.color.warning,
               fontSize: theme.fontSize.xxl,
-              fontWeight: theme.fontWeight.bold,
-              fontFamily: theme.fontFamily.number,
+              fontFamily: theme.fontFamily.numberBold,
             }}
           >
             +{props.reward}
@@ -160,43 +141,48 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ gap: theme.space.xs, flexDirection: 'column', justifyContent: 'space-between' }}>
+          <View
+            style={{
+              flex: 1,
+              gap: theme.space.xs,
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
+          >
             <Text
+              numberOfLines={2}
               style={{
-                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                 fontSize: theme.fontSize.xl,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                fontFamily: theme.fontFamily.bold,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
               }}
             >
               {props.title}
             </Text>
             <Text
               style={{
-                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                 fontSize: theme.fontSize.md,
                 fontFamily: theme.fontFamily.regular,
+                color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
               }}
             >
-              {props.questions}{' '}
-              {theme.i18n.t('components.FeatureContestCard.questions')} ·{' '}
-              {props.duration}{' '}
-              {theme.i18n.t('components.FeatureContestCard.min')} ·{' '}
+              {props.questions}{' '}{theme.i18n.t('contests.questions')} ·{' '}
+              {theme.i18n.t('contests.minute', { mins: props.duration })} ·{' '}
               {theme.i18n.t(`common.${props.difficulty}`)}
             </Text>
           </View>
 
           <Text
             style={{
-              color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.regular,
+              color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
               marginBottom: theme.space.md,
             }}
           >
-            {theme.i18n.t('components.FeatureContestCard.ep_reward')}
+            {theme.i18n.t('contests.ep_reward')}
           </Text>
-        </View>
+        </View>F
 
         <View
           style={{
@@ -216,19 +202,19 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
               />
               <Text
                 style={{
-                  color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                   fontSize: theme.fontSize.md,
                   fontFamily: theme.fontFamily.regular,
+                  color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + '77',
                 }}
               >
-                {theme.i18n.t('components.FeatureContestCard.ends_in')}
+                {theme.i18n.t('contests.ends_in')}
               </Text>
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {[remaining.hours, remaining.minutes, remaining.seconds].map(
                 (value, index) => (
-                  <React.Fragment key={index}>
+                  <Fragment key={index}>
                     <View
                       style={{
                         alignItems: 'center',
@@ -239,10 +225,9 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
                     >
                       <Text
                         style={{
-                          color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                           fontSize: theme.fontSize.lg,
-                          fontWeight: theme.fontWeight.bold,
-                          fontFamily: theme.fontFamily.number,
+                          fontFamily: theme.fontFamily.numberBold,
+                          color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
                         }}
                       >
                         {value}
@@ -252,17 +237,16 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
                     {index < 2 && (
                       <Text
                         style={{
-                          color: theme.color.textMuted,
                           fontSize: theme.fontSize.xl,
-                          fontWeight: theme.fontWeight.bold,
-                          fontFamily: theme.fontFamily.number,
+                          color: theme.color.textMuted,
+                          fontFamily: theme.fontFamily.numberBold,
                           marginHorizontal: theme.space.xs,
                         }}
                       >
                         :
                       </Text>
                     )}
-                  </React.Fragment>
+                  </Fragment>
                 )
               )}
             </View>
@@ -270,6 +254,8 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
 
           <Pressable
             onPress={props.onPress}
+            accessibilityRole='button'
+            accessibilityLabel={theme.i18n.t('contests.join_now')}
             style={{
               paddingHorizontal: theme.space.md,
               paddingVertical: theme.space.sm * 1.25,
@@ -282,11 +268,10 @@ export function FeatureContestCard(props: FeatureContestCardProps) {
               style={{
                 color: '#6D28D9',
                 fontSize: theme.fontSize.md,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.regular,
+                fontFamily: theme.fontFamily.bold,
               }}
             >
-              {theme.i18n.t('components.FeatureContestCard.join_now')}
+              {theme.i18n.t('contests.join_now')}
             </Text>
           </Pressable>
         </View>
