@@ -30,6 +30,8 @@
     "back": "Back",
     "prev": "Prev",
     "next": "Next",
+    "wrong": "Wrong",
+    "correct": "Correct",
     "review": "Review",
     "difficulty": "Difficulty",
     "easy": "Easy",
@@ -37,19 +39,23 @@
     "hard": "Hard",
     "rank": "Rank",
     "start": "Start",
-    "start_contest": "Start Contest",
     "subject": "Subject",
     "quizzes": "Quizzes",
+    "question": "Question",
     "questions": "questions",
     "accuracy": "Accuracy",
     "streak": "Streak",
+    "xp": "XP",
     "ep": "EP",
     "ep_points": "EP Points",
     "now": "Now",
     "min": "min",
     "hour": "hour",
+    "time": "Time",
     "this_week": "this week",
+    "start_contest": "Start Contest",
     "unlock_and_start": "Unlock & Start",
+    "back_to_contests": "Back to Contests",
     "view_all": "View all",
     "tabs": {
       "home": "Home",
@@ -360,40 +366,124 @@
     "all_contests": "All Contests",
     "available_suffix": "available",
     "no_results": "No contests match your search",
-    "ep_reward": "EP Reward",
-    "questions": "Qs",
-    "time_left": "left",
-    "minute": "{{mins}}m",
-    "hour": "{{hrs}}h",
     "filters": {
       "all": "All",
       "premium": "Premium"
     },
-    "quizScreen": {
-      "loading": "Loading quiz session...",
-      "load_error": "Could not load quiz session.",
-      "practice_mode": "Practice Mode",
-      "answered": "Answered",
-      "skipped": "Skipped",
-      "flagged": "Flagged",
-      "saved": "Saved",
-      "submit_quiz": "Submit Quiz",
-      "finish": "Finish",
-      "figure_label": "Figure",
-      "answered_count": "{{answered}} / {{total}} Answered"
+    "mode": {
+      "contest": "Contest",
+      "daily": "Daily Challenge",
+      "challenge": "Challenge",
+      "practice": "Practice"
     },
     "postQuizScreen": {
-      "quiz_completed": "Quiz Complete!",
-      "ep_earned": "EP Earned",
-      "practice_mode": "Practice Mode",
-      "correct": "Correct",
-      "wrong": "Wrong",
-      "time": "Time",
-      "skipped": "Skipped",
-      "needs_improvement": "Needs Improvement",
+      "default_title": "Quiz",
+      "parse_error": "We couldn't read your quiz result.",
+      "no_result": "No result to show.",
+      "score": "Score",
+      "earned": "Earned",
+      "xp_earned": "XP Earned",
+      "xp_progress": "Experience Gained",
+      "level_up": "Level {{level}}!",
+      "percentile_high": "Great performance! You passed the qualifying cutoff.",
+      "percentile_low": "Keep practicing to hit the {{percent}}% qualifying score!",
+      "qualifying_needed": "Score {{percent}}%+ to earn Contest EP",
+      "study_plan_session": "Study Plan Session",
+      "study_plan_syncing": "Updating your study plan...",
+      "study_plan_synced": "Study plan updated · {{percent}}% prepared",
+      "view_challenge": "View Challenge",
       "review_answers": "Review Answers",
-      "your_answer": "Your answer"
-    }
+      "completed_title": {
+        "contest": "Contest Complete!",
+        "daily": "Daily Challenge Complete!",
+        "challenge": "Challenge Complete!",
+        "subject": "Practice Complete!",
+        "practice": "Practice Complete!",
+        "studyPlan": "Session Complete!"
+      },
+      "challenge_outcome": {
+        "won": "You won the challenge! 🏆",
+        "lost": "You lost this challenge.",
+        "tied": "It's a tie!",
+        "pending": "Waiting for your opponent to finish..."
+      }
+    },
+    "quizScreen": {
+      "untimed": "Untimed",
+      "bookmark": "Bookmark question",
+      "flag": "Flag question",
+      "close_quiz": "Close quiz",
+      "session_missing": "This quiz session couldn't be restored. Please start it again.",
+      "submit_title": "Submit quiz?",
+      "submit_body": "You answered {{answered}} of {{total}} questions.",
+      "submit_unanswered": "{{count}} unanswered will be marked as skipped.",
+      "submit_flagged": "{{count}} flagged for review.",
+      "submit_confirm": "Submit",
+      "submit_review": "Keep reviewing",
+      "exit_title": "Leave this quiz?",
+      "exit_body": "Your progress will be lost and this attempt can't be resumed.",
+      "exit_leave": "Leave",
+      "exit_stay": "Keep going",
+      "times_up_title": "Time's up!",
+      "times_up_body_hard": "Submitting your answers...",
+      "times_up_body_soft": "Your time is up. Your quiz is being submitted.",
+      "times_up_submit": "Submit now",
+      "times_up_continue": "Keep going"
+    },
+    "topPerformers": {
+      "title": "Top Performers",
+      "empty": "No one has finished yet. Be the first on the board!",
+      "you": "You",
+      "pts": "{{score}} pts",
+      "your_rank": "You're #{{rank}}",
+      "load_error": "Couldn't load top performers."
+    },
+    "preQuiz": {
+      "title": "Contest Details",
+      "subtitle": "Review before you start",
+      "type": {
+        "contest": "CONTEST",
+        "daily": "DAILY CHALLENGE",
+        "live": "LIVE CONTEST",
+        "weekly": "WEEKLY CONTEST"
+      },
+      "all_levels": "All Levels",
+      "pass_percent": "Pass {{percent}}%",
+      "by": "by",
+      "recommended": "Recommended for",
+      "ends_in": "Ends in {{time}}",
+      "starts_in": "Starts in {{time}}",
+      "ended": "This contest has ended",
+      "topics": "Topics Covered",
+      "topic_fallback": "{{subject}} Core Concepts",
+      "rules": "Rules & Marking",
+      "rule_correct": "points for each correct answer",
+      "rule_wrong": "points for each wrong answer",
+      "rule_skipped": "points for each skipped question",
+      "rule_pass": "Score {{percent}}% or more to earn the EP reward",
+      "rule_timer": "The timer starts as soon as you begin and can't be paused",
+      "rule_best": "Your best score counts on the contest leaderboard",
+      "starting": "Starting...",
+      "btn_upcoming": "Not started yet",
+      "btn_ended": "Contest ended",
+      "premium_title": "Premium Contest",
+      "premium_body": "This contest requires an active premium subscription. Unlock premium access to participate and earn rewards.",
+      "get_premium": "Get Premium",
+      "maybe_later": "Maybe Later",
+      "no_contest": "No contest selected.",
+      "not_found": "Contest details could not be found.",
+      "generic_error": "Something went wrong."
+    },
+    "questions": "Qs",
+    "minute": "{{mins}} min",
+    "ep_reward": "EP Reward",
+    "timeLeft": "left",
+    "loading": "Loading contests...",
+    "featured_badge": "Featured",
+    "competing": "{{participants}} competing",
+    "ends_in": "Ends in",
+    "join_now": "Join Now",
+    "none_active": "No active contests right now. Check back soon!"
   },
 
   "chat": {
@@ -802,14 +892,6 @@
         "sun": "Sun"
       }
     },
-    "FeatureContestCard": {
-      "competing": "competing",
-      "questions": "Qs",
-      "min": "min",
-      "ep_reward": "EP Reward",
-      "ends_in": "Ends in",
-      "join_now": "Join Now"
-    },
     "AchievementProgressCard": {
       "progress": "PROGRESS",
       "badges": "badges",
@@ -861,29 +943,6 @@
         "rare": "Rare",
         "common": "Common"
       }
-    },
-    "ContestDetailCard": {
-      "by": "by ",
-      "qs": "Qs",
-      "min": "min",
-      "ep": "EP",
-      "pass_percent": "pass",
-      "start_contest": "Start Contest"
-    },
-    "ContestDifficultyCard": {
-      "label": "Difficulty",
-      "veryEasy": "Very Easy",
-      "easy": "Easy",
-      "intermediate": "Intermediate",
-      "hard": "Hard",
-      "expert": "Expert"
-    },
-    "QuizProgressBar": {
-      "question": "Question"
-    },
-    "QuizResultCard": {
-      "score": "Score",
-      "earned": "Earned"
     }
   }
 }
