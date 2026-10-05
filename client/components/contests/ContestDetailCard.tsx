@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 
-import { useTheme } from '../theme/ThemeContext';
+import { useTheme } from '../../theme/ThemeContext';
 
 
 type ContestDetailCardProps = {
@@ -15,58 +15,68 @@ type ContestDetailCardProps = {
   passPercentage: number;
 };
 
-export function ContestDetailCard({
-  subtitle,
-  title,
-  creator,
-  creatorSpecialty,
-  qCount,
-  timeMinutes,
-  epReward,
-  passPercentage,
-}: ContestDetailCardProps) {
+export function ContestDetailCard(props: ContestDetailCardProps) {
   const { theme } = useTheme();
 
   const infoBlocks = [
     {
       key: 'qs',
-      icon: <Feather name="file-text" size={theme.fontSize.lg} color={theme.color.info} />,
-      label: `${qCount} ${theme.i18n.t('components.ContestDetailCard.qs')}`,
+      icon: (
+        <Feather
+          name='file-text'
+          size={theme.fontSize.lg}
+          color={theme.isDark ? theme.color.info : '#FFFFFF'}
+        />
+      ),
+      label: `${props.qCount} ${theme.i18n.t('contests.questions')}`,
     },
     {
       key: 'time',
-      icon: <Feather name="clock" size={theme.fontSize.lg} color={theme.color.info} />,
-      label: `${timeMinutes} ${theme.i18n.t('components.ContestDetailCard.min')}`,
+      icon: (
+        <Feather
+          name='clock'
+          size={theme.fontSize.lg}
+          color={theme.isDark ? theme.color.info : '#FFFFFF'}
+        />
+      ),
+      label: `${theme.i18n.t('contests.minute', { mins: props.timeMinutes })}`,
     },
     {
       key: 'ep',
-      icon: <MaterialCommunityIcons name="lightning-bolt-outline" size={theme.fontSize.md} color={theme.color.info} />,
-      label: `+${epReward} ${theme.i18n.t('components.ContestDetailCard.ep')}`,
+      icon: (
+        <Feather
+          name='zap'
+          size={theme.fontSize.md}
+          color={theme.isDark ? theme.color.info : '#FFFFFF'}
+        />
+      ),
+      label: `+${props.epReward} ${theme.i18n.t('common.ep')}`,
     },
     {
       key: 'pass',
-      icon: <Feather name="target" size={theme.fontSize.lg} color={theme.color.info} />,
-      label: `${passPercentage}% ${theme.i18n.t('components.ContestDetailCard.pass_percent')}`,
+      icon: (
+        <Feather
+          name='target'
+          size={theme.fontSize.lg}
+          color={theme.isDark ? theme.color.info : '#FFFFFF'}
+        />
+      ),
+      label: `${theme.i18n.t('contests.preQuiz.pass_percent', { percent: props.passPercentage })}`,
     },
   ];
 
   return (
     <View
       style={{
-        backgroundColor: theme.isDark ? theme.color.card : theme.color.error,
-        borderRadius: theme.borderRadius.xl,
         overflow: 'hidden',
-        padding: theme.space.md,
         gap: theme.space.sm,
-        shadowColor: theme.isDark ? '#000000' : theme.color.error,
-        shadowOpacity: theme.isDark ? 0.25 : 0.35,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 5 },
-        elevation: 8,
+        padding: theme.space.md,
+        borderRadius: theme.borderRadius.xl,
+        backgroundColor: theme.isDark ? theme.color.card : theme.color.error,
+        boxShadow: theme.isDark ? '0px 5px 16px rgba(0, 0, 0, 0.25)' : `0px 5px 16px ${theme.color.error}`,
       }}
     >
       <View
-        pointerEvents="none"
         style={{
           position: 'absolute',
           right: -theme.space.xxl,
@@ -74,73 +84,68 @@ export function ContestDetailCard({
           width: 135,
           height: 135,
           borderRadius: theme.borderRadius.full,
-          backgroundColor: theme.isDark
-            ? theme.color.accent + '22'
-            : 'rgba(255,255,255,0.15)',
+          backgroundColor: theme.isDark ? theme.color.accent + '22' : 'rgba(255,255,255,0.15)',
+          pointerEvents: 'none',
         }}
       />
 
       <Text
         style={{
-          color: theme.isDark ? theme.color.info : theme.color.textInverse,
-          fontSize: theme.fontSize.xs,
-          fontWeight: theme.fontWeight.bold as any,
-          fontFamily: theme.fontFamily.regular,
           letterSpacing: 0.8,
           textTransform: 'uppercase',
+          fontSize: theme.fontSize.xs,
+          fontFamily: theme.fontFamily.bold,
+          color: theme.isDark ? theme.color.info : theme.color.textInverse,
         }}
       >
-        {subtitle}
+        {props.subtitle}
       </Text>
 
       <Text
+        numberOfLines={2}
         style={{
-          color: '#FFFFFF',
           fontSize: theme.fontSize.xxl,
-          fontWeight: theme.fontWeight.bold as any,
-          fontFamily: theme.fontFamily.regular,
+          fontFamily: theme.fontFamily.bold,
+          color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
           lineHeight: theme.fontSize.xxl * 1.25,
         }}
-        numberOfLines={2}
       >
-        {title}
+        {props.title}
       </Text>
-
       <Text
+        numberOfLines={1}
         style={{
-          color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + 'BB',
           fontSize: theme.fontSize.sm,
           fontFamily: theme.fontFamily.light,
+          color: theme.isDark ? theme.color.textSecondary : theme.color.textInverse + 'BB',
         }}
-        numberOfLines={1}
       >
-        {`${theme.i18n.t('components.ContestDetailCard.by')}${creator} · ${creatorSpecialty}`}
+        {`${theme.i18n.t('contests.preQuiz.by')}${' '}${props.creator} · ${props.creatorSpecialty}`}
       </Text>
 
-      <View style={{ flexDirection: 'row', gap: theme.space.md, marginTop: theme.space.md }}>
+      <View style={{ gap: theme.space.md, flexDirection: 'row', marginTop: theme.space.md }}>
         {infoBlocks.map((block) => (
           <View
             key={block.key}
             style={{
               flex: 1,
-              alignItems: 'center',
               gap: theme.space.xs,
+              alignItems: 'center',
               paddingVertical: theme.space.sm,
               borderRadius: theme.borderRadius.md,
-              backgroundColor: theme.isDark
-                ? theme.color.surface
-                : 'rgba(255,255,255,0.18)',
+              backgroundColor: theme.isDark ? theme.color.surface : 'rgba(255,255,255,0.18)',
             }}
           >
             {block.icon}
             <Text
-              style={{
-                color: '#FFFFFF',
-                fontSize: theme.fontSize.sm,
-                fontWeight: theme.fontWeight.medium as any,
-                fontFamily: theme.fontFamily.number,
-              }}
               numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              style={{
+                fontSize: theme.fontSize.sm,
+                fontFamily: theme.fontFamily.numberBold,
+                color: theme.isDark ? theme.color.textPrimary : theme.color.textInverse,
+              }}
             >
               {block.label}
             </Text>
@@ -150,6 +155,3 @@ export function ContestDetailCard({
     </View>
   );
 }
-
-export default  
-ContestDetailCard;
