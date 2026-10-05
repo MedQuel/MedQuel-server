@@ -1,5 +1,6 @@
 export type TimeRemaining = { kind: 'expired' } | { kind: 'hours'; value: number } | { kind: 'minutes'; value: number };
 
+
 export function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short',
@@ -55,4 +56,25 @@ export function formatStudyTime(studyHours: number | null | undefined): string {
 
   const hours = Math.round(studyHours*100) / 100;
   return `${hours} hr`;
+}
+
+export function formatCountdown(totalSeconds: number): string {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped%3600) / 60);
+  const s = clamped % 60;
+
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+export function formatDuration(totalSeconds: number): string {
+  if (!totalSeconds || isNaN(totalSeconds) || totalSeconds <= 0) return '0s';
+  const m = Math.floor(totalSeconds / 60);
+  const s = Math.round(totalSeconds % 60);
+
+  if (m > 0 && s > 0) return `${m}m ${s}s`;
+  if (m > 0) return `${m}m`;
+
+  return `${s}s`;
 }
