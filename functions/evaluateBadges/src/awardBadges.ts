@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
+import { publishNotification } from './notify.js';
 import { getActiveBadges } from './badgeCache.js';
 import type { QuizCompletedEvent } from './types.js';
 import { meetsRequirement, computeProgress } from './evaluate.js';
@@ -13,7 +14,10 @@ export async function evaluateAndAwardBadges(db: Firestore, event: QuizCompleted
   const userRef = db.collection('users').doc(event.userId);
   const badges = await getActiveBadges(db);
 
-  return db.runTransaction(async (tx) => {
+  let earnedThisRun: string[] = [];
+
+  const result = await db.runTransaction<AwardResult>(async (tx) => {
+    earnedThisRun = [];
     const [idempotencySnap, userSnap] = await Promise.all([
       tx.get(idempotencyRef),
       tx.get(userRef),
@@ -27,7 +31,6 @@ export async function evaluateAndAwardBadges(db: Firestore, event: QuizCompleted
     const badgeProgress: Record<string, number> = { ...(userData.badgeProgress ?? {}) };
 
     const newlyEarned: string[] = [];
-
     for (const badge of badges) {
       if (earnedSet.has(badge.badgeId)) continue;
 
@@ -43,23 +46,8 @@ export async function evaluateAndAwardBadges(db: Firestore, event: QuizCompleted
           ...(userData.badgeEarnedAt ?? {}),
           ...Object.fromEntries(newlyEarned.map((id) => [id, FieldValue.serverTimestamp()])),
         },
-        updatedAt: FieldValue.serverTimestamp()
+        updatedAt: FieldValue.serverTimestamp(),
       });
-
-      if (userData.notifPrefs?.achievementAlerts !== false) {
-        const notifRef = db.collection('notifications').doc();
-        tx.set(notifRef, {
-          userId: event.userId,
-          type: 'badge_unlocked',
-          title: newlyEarned.length === 1 ? 'New badge unlocked!' : `${newlyEarned.length} new badges unlocked!`,
-          body: newlyEarned.length === 1
-            ? `You've earned the "${newlyEarned[0]}" badge.`
-            : `You've earned ${newlyEarned.length} new badges.`,
-          data: { badgeIds: newlyEarned },
-          isRead: false,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-      }
     } else if (Object.keys(badgeProgress).length > 0) {
       tx.update(userRef, { badgeProgress });
     }
@@ -71,6 +59,22 @@ export async function evaluateAndAwardBadges(db: Firestore, event: QuizCompleted
       processedAt: FieldValue.serverTimestamp(),
     });
 
+    earnedThisRun = newlyEarned;
     return 'applied';
   });
+
+  if (result === 'applied' && earnedThisRun.length > 0) {
+    const names = earnedThisRun.map((id) => badges.find((b) => b.badgeId === id)?.name ?? id);
+    await publishNotification({
+      userId: event.userId,
+      type: 'achievements',
+      kind: 'badge_unlocked',
+      title: names.length === 1 ? 'New badge unlocked!' : `${names.length} new badges unlocked!`,
+      body: names.length === 1 ? `You've earned the "${names[0]}" badge.` : `You've earned: ${names.join(', ')}.`,
+      data: { badgeIds: earnedThisRun.join(',') },
+      dedupeKey: `badge_${event.sessionId}`,
+    });
+  }
+
+  return result;
 }
