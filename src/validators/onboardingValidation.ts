@@ -40,10 +40,10 @@ export const VALID_YEAR_OPTIONS = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Fina
 export type YearOfStudy = (typeof VALID_YEAR_OPTIONS)[number];
 
 export const VALID_SPECIALTIES = [
-  'Anatomy', 'Biochemistry', 'Physiology', 'Microbiology', 'Pharmacology',
-  'Forensic Medicine', 'Pathology', 'Ophthalmology', 'ENT', 'Community Medicine',
-  'Medicine', 'Surgery', 'Pediatrics', 'Gynaecology', 'Obstetrics',
-  'Orthopedics', 'Dermatology', 'Psychiatry', 'Anesthesia', 'Radiology'
+  'Anatomy', 'Anesthesiology', 'Biochemistry', 'Community Medicine',
+  'Dermatology', 'ENT', 'Forensic Medicine & Toxicology', 'Gynaecology & Obstetrics',
+  'Medicine', 'Microbiology', 'Ophthalmology', 'Orthopedics', 'Pathology',
+  'Pediatrics', 'Pharmacology', 'Physiology', 'Psychiatry', 'Radiology', 'Surgery'
 ] as const;
 export type Specialty = (typeof VALID_SPECIALTIES)[number];
 
