@@ -15,10 +15,10 @@ export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export type Specialty =
-  | 'Anatomy' | 'Biochemistry' | 'Physiology' | 'Microbiology' | 'Pharmacology'
-  | 'Forensic Medicine' | 'Pathology' | 'Ophthalmology' | 'ENT' | 'Community Medicine'
-  | 'Medicine' | 'Surgery' | 'Pediatrics' | 'Gynaecology & Obstetrics'
-  | 'Orthopedics' | 'Dermatology' | 'Psychiatry' | 'Anesthesia' | 'Radiology';
+  | 'Anatomy' | 'Anesthesiology' | 'Biochemistry' | 'Community Medicine'
+  | 'Dermatology' | 'ENT' | 'Forensic Medicine & Toxicology' | 'Gynaecology & Obstetrics'
+  | 'Medicine' | 'Microbiology' | 'Ophthalmology' | 'Orthopedics' | 'Pathology'
+  | 'Pediatrics' | 'Pharmacology' | 'Physiology' | 'Psychiatry' | 'Radiology' | 'Surgery'
 
 
 // -----> User
