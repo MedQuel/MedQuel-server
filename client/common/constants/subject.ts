@@ -3,17 +3,15 @@ import { Ionicons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-ico
 
 
 export type SubjectVariant = 'error' | 'accent' | 'success' | 'premium' | 'warning';
-
 export type SubjectId =
-  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
-  | 'forensic_medicine' | 'pathology' | 'ophthalmology' | 'ent' | 'community_medicine'
-  | 'medicine' | 'surgery' | 'pediatrics' | 'gynaecology_obstetrics' | 'orthopedics'
-  | 'dermatology' | 'psychiatry' | 'anesthesia' | 'radiology';
-
+  | 'anatomy' | 'anesthesiology' | 'biochemistry' | 'community_medicine'
+  | 'dermatology' | 'ent' | 'forensic_medicine_toxicology' | 'gynaecology_obstetrics'
+  | 'medicine' | 'microbiology' | 'ophthalmology' | 'orthopedics' | 'pathology'
+  | 'pediatrics' | 'pharmacology' | 'physiology' | 'psychiatry' | 'radiology' | 'surgery';
 export type SubjectIconKey =
-  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology' 
-  | 'forensic' | 'pathology' | 'eye' | 'ear' | 'community' 
-  | 'stethoscope' | 'surgery' | 'baby' | 'girl' | 'pregnant'
+  | 'anatomy' | 'biochemistry' | 'physiology' | 'microbiology' | 'pharmacology'
+  | 'forensic' | 'pathology' | 'eye' | 'ear' | 'community'
+  | 'stethoscope' | 'surgery' | 'baby' | 'girl'
   | 'bone' | 'skin' | 'mind' | 'needle' | 'radiology';
 
 export type SubjectDefinition = {
@@ -25,33 +23,30 @@ export type SubjectDefinition = {
 
 export const subjectCatalog = {
   anatomy: { id: 'anatomy', title: 'Anatomy', variant: 'premium', iconKey: 'anatomy' },
+  anesthesiology: { id: 'anesthesiology', title: 'Anesthesiology', variant: 'accent', iconKey: 'needle' },
   biochemistry: { id: 'biochemistry', title: 'Biochemistry', variant: 'success', iconKey: 'biochemistry' },
-  physiology: { id: 'physiology', title: 'Physiology', variant: 'error', iconKey: 'physiology' },
-  microbiology: { id: 'microbiology', title: 'Microbiology', variant: 'success', iconKey: 'microbiology' },
-  pharmacology: { id: 'pharmacology', title: 'Pharmacology', variant: 'accent', iconKey: 'pharmacology' },
-  forensic_medicine: { id: 'forensic_medicine', title: 'Forensic Medicine', variant: 'warning', iconKey: 'forensic' },
-  pathology: { id: 'pathology', title: 'Pathology', variant: 'premium', iconKey: 'pathology' },
-  ophthalmology: { id: 'ophthalmology', title: 'Ophthalmology', variant: 'accent', iconKey: 'eye' },
-  ent: { id: 'ent', title: 'ENT', variant: 'warning', iconKey: 'ear' },
   community_medicine: { id: 'community_medicine', title: 'Community Medicine', variant: 'success', iconKey: 'community' },
-  medicine: { id: 'medicine', title: 'Medicine', variant: 'error', iconKey: 'stethoscope' },
-  surgery: { id: 'surgery', title: 'Surgery', variant: 'error', iconKey: 'surgery' },
-  pediatrics: { id: 'pediatrics', title: 'Pediatrics', variant: 'accent', iconKey: 'baby' },
-  gynaecology_obstetrics: { id: 'gynaecology_obstetrics', title: 'Gynaecology & Obstetrics', variant: 'premium', iconKey: 'girl' },
-  orthopedics: { id: 'orthopedics', title: 'Orthopedics', variant: 'warning', iconKey: 'bone' },
   dermatology: { id: 'dermatology', title: 'Dermatology', variant: 'success', iconKey: 'skin' },
+  ent: { id: 'ent', title: 'ENT', variant: 'warning', iconKey: 'ear' },
+  forensic_medicine_toxicology: { id: 'forensic_medicine_toxicology', title: 'Forensic Medicine & Toxicology', variant: 'warning', iconKey: 'forensic' },
+  gynaecology_obstetrics: { id: 'gynaecology_obstetrics', title: 'Gynaecology & Obstetrics', variant: 'premium', iconKey: 'girl' },
+  medicine: { id: 'medicine', title: 'Medicine', variant: 'error', iconKey: 'stethoscope' },
+  microbiology: { id: 'microbiology', title: 'Microbiology', variant: 'success', iconKey: 'microbiology' },
+  ophthalmology: { id: 'ophthalmology', title: 'Ophthalmology', variant: 'accent', iconKey: 'eye' },
+  orthopedics: { id: 'orthopedics', title: 'Orthopedics', variant: 'warning', iconKey: 'bone' },
+  pathology: { id: 'pathology', title: 'Pathology', variant: 'premium', iconKey: 'pathology' },
+  pediatrics: { id: 'pediatrics', title: 'Pediatrics', variant: 'accent', iconKey: 'baby' },
+  pharmacology: { id: 'pharmacology', title: 'Pharmacology', variant: 'accent', iconKey: 'pharmacology' },
+  physiology: { id: 'physiology', title: 'Physiology', variant: 'error', iconKey: 'physiology' },
   psychiatry: { id: 'psychiatry', title: 'Psychiatry', variant: 'premium', iconKey: 'mind' },
-  anesthesia: { id: 'anesthesia', title: 'Anesthesia', variant: 'accent', iconKey: 'needle' },
   radiology: { id: 'radiology', title: 'Radiology', variant: 'error', iconKey: 'radiology' },
+  surgery: { id: 'surgery', title: 'Surgery', variant: 'error', iconKey: 'surgery' },
 } as const satisfies Record<SubjectId, SubjectDefinition>;
 
 
 type IconProps = { size: number; color: string };
 
-export const subjectIcons: Record<
-  SubjectIconKey,
-  (props: IconProps) => React.ReactElement
-> = {
+export const subjectIcons: Record<SubjectIconKey, (props: IconProps) => React.ReactElement> = {
   anatomy: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human', size, color }),
   biochemistry: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'flask-outline', size, color }),
   physiology: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'heart-pulse', size, color }),
@@ -66,7 +61,6 @@ export const subjectIcons: Record<
   surgery: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'content-cut', size, color }),
   baby: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'baby-face-outline', size, color }),
   girl: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human-female', size, color }),
-  pregnant: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'human-pregnant', size, color }),
   bone: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'bone', size, color }),
   skin: ({ size, color }) => React.createElement(FontAwesome5, { name: 'allergies', size: size * 0.85, color }),
   mind: ({ size, color }) => React.createElement(MaterialCommunityIcons, { name: 'head-cog-outline', size, color }),
