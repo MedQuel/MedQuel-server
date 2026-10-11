@@ -17,10 +17,11 @@ import { NotChallengeParticipantError, ChallengeSessionAlreadyStartedError } fro
 import { SessionNotFoundError, ContestNotFoundError, ChallengeNotFoundError } from '../utils/errors.js';
 
 
-const MIN_QUESTIONS_FOR_PERFECT_BADGE = 5;
+const REPEAT_ATTEMPT_EP_RATIO = 0.25;
 const FAST_COMPLETION_RATIO = 0.5;
-const MIN_QUESTIONS_FOR_SUBJECT_MASTERY = 20;
 const SUBJECT_MASTERY_THRESHOLD = 0.7;
+const MIN_QUESTIONS_FOR_PERFECT_BADGE = 5;
+const MIN_QUESTIONS_FOR_SUBJECT_MASTERY = 20;
 
 const TOPIC_CACHE_TTL_MS = 60*60*1000;
 const topicCache = new Map<string, TopicCacheEntry>();
@@ -402,6 +403,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const now = Timestamp.now();
     const previousLevel = userData.currentLevel ?? 1;
     const previousLongestStreak = userData.longestStreak ?? 0;
+    const isRepeatContestAttempt = isContestMode && contestLeaderboardSnap?.exists === true;
 
     const streak = updateStreak(
       userData.lastActiveDate instanceof Timestamp ? userData.lastActiveDate.toDate() : null,
@@ -418,12 +420,13 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       isFirstActivityToday: streak.isFirstActivityToday,
     });
 
-    const epEarned = computeEpEarned({
+    let epEarned = computeEpEarned({
       isContestMode,
       scorePercent: grading.scorePercent,
       passPercent: session.passPercent,
       epBaseReward: session.epBaseReward,
     });
+    if (isRepeatContestAttempt) epEarned = Math.round(epEarned * REPEAT_ATTEMPT_EP_RATIO);
 
     const updatedXpPoints = (userData.xpPoints ?? 0) + xpEarned;
     const updatedEpPoints = (userData.epPoints ?? 0) + epEarned;
