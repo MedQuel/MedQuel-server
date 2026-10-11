@@ -17,7 +17,7 @@ service cloud.firestore {
           'currentStreak', 'longestStreak', 'lastActiveDate',
           'totalQuestions', 'totalCorrect', 'studyHours',
           'stats', 'badges', 'badgeProgress', 'badgeEarnedAt',
-          'notifPrefs', 'quizPrefs', 'createdAt',
+          'notifPrefs', 'quizPrefs', 'notifTokens', 'createdAt',
           'describesYou', 'studyLevel', 'yearOfStudy', 'specialties',
           'targetExam', 'contentScope', 'focusSubjects',
           'displayNameLower'
@@ -59,23 +59,6 @@ service cloud.firestore {
     match /leaderboard/{period}/entries/{userId} {
       allow read: if request.auth != null;
       allow write: if false;
-    }
-
-
-    // ─────> Chat rooms
-    match /chatRooms/{roomId} {
-      allow read: if request.auth != null;
-      allow write: if false; // room metadata is backend/admin managed
-
-      match /messages/{messageId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null
-                      && request.auth.uid == request.resource.data.userId
-                      && request.resource.data.text is string
-                      && request.resource.data.text.size() > 0
-                      && request.resource.data.text.size() <= 1000;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      }
     }
 
 
