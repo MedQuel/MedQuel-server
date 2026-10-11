@@ -9,8 +9,8 @@ import { DuplicateFriendRequestError, FriendRequestCooldownError, FriendRequestN
 
 const DECLINE_COOLDOWN_MS = 3 * 24*60*60*1000;
 
-const SEARCH_RESULTS_LIMIT = 20;
-const MIN_SEARCH_QUERY_LENGTH = 2;
+const SEARCH_RESULTS_LIMIT = 15;
+const MIN_SEARCH_QUERY_LENGTH = 3;
 
 export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 export interface FriendRequestDTO {
@@ -122,15 +122,19 @@ async function getRelationshipStatus(viewerUid: string, targetUid: string, db: F
   return 'NONE';
 }
 
-async function buildRelationshipContext(viewerUid: string, db: Firestore): Promise<RelationshipContext> {
-  const [friendsSnap, sentSnap, receivedSnap] = await Promise.all([
-    db.collection('users').doc(viewerUid).collection('friends').get(),
+async function buildRelationshipContextFor(viewerUid: string, candidateIds: string[], db: Firestore): Promise<RelationshipContext> {
+  const friendRefs = candidateIds.map((id) =>
+    db.collection('users').doc(viewerUid).collection('friends').doc(id)
+  );
+
+  const [friendSnaps, sentSnap, receivedSnap] = await Promise.all([
+    friendRefs.length > 0 ? db.getAll(...friendRefs) : Promise.resolve([]),
     db.collection('friendRequests').where('fromUid', '==', viewerUid).where('status', '==', 'pending').get(),
     db.collection('friendRequests').where('toUid', '==', viewerUid).where('status', '==', 'pending').get(),
   ]);
 
   return {
-    friendIds: new Set(friendsSnap.docs.map((d) => d.id)),
+    friendIds: new Set(friendSnaps.filter((s) => s.exists).map((s) => s.id)),
     sentPendingIds: new Set(sentSnap.docs.map((d) => d.data().toUid)),
     receivedPendingIds: new Set(receivedSnap.docs.map((d) => d.data().fromUid)),
   };
@@ -395,26 +399,22 @@ export async function searchUsers(callerUid: string, query: string, db: Firestor
     .collection('users')
     .where('displayNameLower', '>=', lower)
     .where('displayNameLower', '<=', lower + '\uf8ff')
+    .limit(SEARCH_RESULTS_LIMIT + 1)
     .get();
 
-  const ctx = await buildRelationshipContext(callerUid, db);
+  const candidates = snap.docs.filter((d) => d.id !== callerUid).slice(0, SEARCH_RESULTS_LIMIT);
+  const ctx = await buildRelationshipContextFor(callerUid, candidates.map((d) => d.id), db);
 
-  const results: UserSearchResultDTO[] = [];
-  for (const doc of snap.docs) {
-    if (doc.id === callerUid) continue;
-    if (results.length >= SEARCH_RESULTS_LIMIT) break;
-
+  return candidates.map((doc) => {
     const data = doc.data();
-    results.push({
+    return {
       uid: doc.id,
       displayName: data.displayName,
       photoURL: data.photoURL ?? null,
       targetExam: data.targetExam,
       relationshipStatus: resolveStatusFromContext(ctx, doc.id),
-    });
-  }
-
-  return results;
+    };
+  });
 }
 
 export async function getPendingFriendRequests(callerUid: string, db: Firestore): Promise<FriendRequestDTO[]> {
