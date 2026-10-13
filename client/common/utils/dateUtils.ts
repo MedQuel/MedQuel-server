@@ -1,5 +1,7 @@
-export type TimeRemaining = { kind: 'expired' } | { kind: 'hours'; value: number } | { kind: 'minutes'; value: number };
+import type { useTheme } from '../../theme/ThemeContext';
 
+
+export type TimeRemaining = { kind: 'expired' } | { kind: 'hours'; value: number } | { kind: 'minutes'; value: number };
 
 export function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
@@ -77,4 +79,28 @@ export function formatDuration(totalSeconds: number): string {
   if (m > 0) return `${m}m`;
 
   return `${s}s`;
+}
+
+export function formatRelativeTime(
+  iso: string,
+  theme: ReturnType<typeof useTheme>['theme'],
+  now: number = Date.now()
+): string {
+  const t = theme.i18n.t.bind(theme.i18n);
+  const created = new Date(iso).getTime();
+  const mins = Math.floor(Math.max(0, now-created) / 60_000);
+
+  if (mins < 1) return t('notifications.time.now');
+  if (mins < 60) return t('notifications.time.minutes', { count: mins });
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return t('notifications.time.hours', { count: hours });
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return t('notifications.time.days', { count: days });
+
+  return new Date(created).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  });
 }
