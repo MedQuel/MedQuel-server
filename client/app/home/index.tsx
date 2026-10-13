@@ -13,6 +13,7 @@ import { getTodayKey } from '../../common/utils/dateUtils';
 import { useAppContext } from '../../common/context/AppContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
 import { useHomeDashboard } from '../../common/hooks/useHomeDashboard';
+import { useUnreadCount } from '../../common/notifications/notificationStore';
 
 import { Loading } from '../../components/common/loading';
 import { StudyPlanCard } from '../../components/home/StudyPlanCard';
@@ -46,8 +47,9 @@ export default function HomeScreen() {
   const { authStatus, user, userLoading, userError } = useAppContext();
 
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+  const unreadCount = useUnreadCount();
   useBottomBar(true, 'home');
 
   const todayKey = getTodayKey();
@@ -182,6 +184,7 @@ export default function HomeScreen() {
         xpPoints={user.xpPoints}
         lastActiveDate={user.lastActiveDate}
         photoURL={user.photoURL}
+        unreadCount={unreadCount}
         onNotificationsPress={() => router.push('/notifications')}
       />
 
