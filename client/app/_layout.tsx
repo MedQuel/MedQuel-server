@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import { Slot } from 'expo-router';
 import { useFonts } from 'expo-font';
+import Constants from 'expo-constants';
 import * as NavigationBar from 'expo-navigation-bar';
 import { View, Platform, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AuthGate } from '../common/navigation/AuthGate';
-import { AppProvider } from '../common/context/AppContext';
 import { ThemeProvider, useTheme } from '../theme/ThemeContext';
 import { AppBottomBar } from '../components/common/AppBottomBar';
 import { LayoutProvider } from '../common/context/LayoutContext';
+import { AppProvider, useAppContext } from '../common/context/AppContext';
+import { usePushNotifications } from '../common/notifications/usePushNotifications';
 
 
 function SystemChrome() {
@@ -31,12 +33,25 @@ function SystemChrome() {
     />
   );
 }
+
+function PushNotificationsMount() {
+  const { authStatus, user } = useAppContext();
+  usePushNotifications(authStatus === 'authenticated' ? user?.uid : null);
+  return null;
+}
+function PushNotificationsRuntime() {
+  if (Platform.OS === 'web' || Constants.appOwnership === 'expo') return null;
+  return <PushNotificationsMount />;
+}
+
 function AppShell() {
   const { theme } = useTheme();
+
   return (
     <AppProvider>
       <AuthGate>
         <LayoutProvider>
+          <PushNotificationsRuntime />
           <SafeAreaView
             style={{ flex: 1, backgroundColor: theme.color.background }}
             edges={['top', 'left', 'right']}
