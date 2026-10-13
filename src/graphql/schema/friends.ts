@@ -24,6 +24,7 @@ export const friendsTypeDefs = `#graphql
   type HeadToHead {
     wins: Int!
     losses: Int!
+    draws: Int!
   }
   type FriendSummary {
     uid: ID!
