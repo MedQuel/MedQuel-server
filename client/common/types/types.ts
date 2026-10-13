@@ -14,6 +14,11 @@ export type BadgeStatus = 'earned' | 'in_progress' | 'locked';
 export type UserRole = 'student' | 'admin' | 'reviewer';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type NotificationType =
+  | 'streak' | 'contest' | 'level' | 'leaderboard'
+  | 'achievements' | 'chat' | 'dailyChallenge' | 'premium'
+  | 'studyPlan' | 'friends' | 'challenge' | 'announcement';
+
 export type Specialty =
   | 'Anatomy' | 'Anesthesiology' | 'Biochemistry' | 'Community Medicine'
   | 'Dermatology' | 'ENT' | 'Forensic Medicine & Toxicology' | 'Gynaecology & Obstetrics'
@@ -123,6 +128,7 @@ export interface FriendRequest {
 export interface HeadToHead {
   wins: number;
   losses: number;
+  draws: number;
 }
 export interface FriendSummary {
   uid: string;
@@ -565,12 +571,18 @@ export interface VerifyPaymentInput {
 
 // -----> Notifications
 export interface AppNotification {
-  notifId: string;
-  type: string;
+  notificationId: string;
+  type: NotificationType;
+  kind: string;
   title: string;
   body: string;
+  data: string;
   isRead: boolean;
   createdAt: string;
+}
+export interface GetNotificationsResult {
+  notifications: AppNotification[];
+  nextCursor: string | null;
 }
 
 
