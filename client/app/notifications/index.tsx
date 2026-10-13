@@ -1,364 +1,383 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ScrollView, View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from 'expo-router';
-import { useTheme } from "../../theme/ThemeContext";
+import { useCallback, memo, useMemo } from 'react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SectionList, RefreshControl, ActivityIndicator } from 'react-native';
+
+import { useTheme } from '../../theme/ThemeContext';
 import { useBottomBar } from '../../common/context/useBottomBar';
-import { NotificationType } from "../../common/constants/notification";
+import { formatRelativeTime } from '../../common/utils/dateUtils';
+import { ScreenHeader } from '../../components/common/ScreenHeader';
+import { useUnreadCount } from '../../common/notifications/notificationStore';
+import { useNotifications } from '../../common/notifications/useNotifications';
+import { getNotificationText } from '../../common/notifications/notificationText';
+import type { AppNotification, NotificationType } from '../../common/types/types';
+import { routeForNotification } from '../../common/notifications/notificationRoutes';
 
-function withOpacity(hex: string, opacity: number) {
-  const bigint = parseInt(hex.replace("#", ""), 16);
-  const r = Math.floor(bigint / 65536) % 256;
-  const g = Math.floor(bigint / 256) % 256;
-  const b = bigint % 256;
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
 
-type ColorKey =
-  | "accent"
-  | "success"
-  | "warning"
-  | "danger"
-  | "info"
-  | "premium";
-
+type ColorKey = 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'premium';
 interface TypeConfig {
   icon: string;
   colorKey: ColorKey;
 }
-
-const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
-  streak: { icon: "fire", colorKey: "danger" },
-  contest: { icon: "trophy-outline", colorKey: "warning" },
-  level: { icon: "star-outline", colorKey: "accent" },
-  leaderboard: { icon: "trending-up", colorKey: "success" },
-  achievements: { icon: "medal-outline", colorKey: "warning" },
-  chat: { icon: "chat-outline", colorKey: "accent" },
-  dailyChallenge: {
-    icon: "book-open-blank-variant-outline",
-    colorKey: "accent",
-  },
-  premium: { icon: "crown-outline", colorKey: "premium" },
-  studyPlan: { icon: "bullseye", colorKey: "success" },
-};
-
-interface NotificationItem {
-  id: string;
-  type: NotificationType;
+interface NotificationSection {
+  key: 'unread' | 'earlier';
   title: string;
-  description: string;
-  time: string;
-  unread: boolean;
-  section: "UNREAD" | "READ";
+  data: AppNotification[];
 }
 
-const NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: "1",
-    type: "streak",
-    title: "Streak at Risk!",
-    description: "Don't break your 24-day streak. Complete today's challenge.",
-    time: "2m",
-    unread: true,
-    section: "UNREAD",
-  },
-  {
-    id: "2",
-    type: "contest",
-    title: "New Contest Live",
-    description: "Cardiology Grand Prix has started. 500 EP prize pool!",
-    time: "15m",
-    unread: true,
-    section: "READ",
-  },
-  {
-    id: "3",
-    type: "level",
-    title: "Level Up!",
-    description: "You've reached Level 12. New challenges are unlocked.",
-    time: "1h",
-    unread: true,
-    section: "UNREAD",
-  },
-  {
-    id: "4",
-    type: "leaderboard",
-    title: "Rank Improved",
-    description: "You climbed from #139 to #127 globally this week.",
-    time: "2h",
-    unread: false,
-    section: "READ",
-  },
-  {
-    id: "5",
-    type: "achievements",
-    title: "Badge Earned",
-    description: "Gold Medalist — scored 95%+ in Grand Medical Championship.",
-    time: "3h",
-    unread: false,
-    section: "READ",
-  },
-  {
-    id: "6",
-    type: "chat",
-    title: "Discussion Reply",
-    description: "Dr. Sarah K. replied to your question in Cardiology Room.",
-    time: "4h",
-    unread: false,
-    section: "READ",
-  },
-  {
-    id: "7",
-    type: "dailyChallenge",
-    title: "Daily Challenge",
-    description: "Today's Anatomy challenge is available. +150 EP awaits.",
-    time: "6h",
-    unread: false,
-    section: "READ",
-  },
-  {
-    id: "8",
-    type: "premium",
-    title: "Premium Trial",
-    description: "Try Premium free for 7 days. Access all contests!",
-    time: "1d",
-    unread: false,
-    section: "READ",
-  },
-  {
-    id: "9",
-    type: "studyPlan",
-    title: "Weekly Goal",
-    description: "You completed 50 questions this week. Keep it up!",
-    time: "2d",
-    unread: false,
-    section: "READ",
-  },
-];
+function withOpacity(hex: string, opacity: number) {
+  const bigint = parseInt(hex.replace('#', ''), 16);
+  const r = Math.floor(bigint/65536) % 256;
+  const g = Math.floor(bigint/256) % 256;
+  const b = bigint % 256;
 
-function NotificationCard({ item }: { item: NotificationItem }) {
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+const TYPE_CONFIG: Record<NotificationType, TypeConfig> = {
+  streak: { icon: 'fire', colorKey: 'danger' },
+  contest: { icon: 'trophy-outline', colorKey: 'warning' },
+  level: { icon: 'star-outline', colorKey: 'accent' },
+  leaderboard: { icon: 'trending-up', colorKey: 'success' },
+  achievements: { icon: 'medal-outline', colorKey: 'warning' },
+  chat: { icon: 'chat-outline', colorKey: 'accent' },
+  dailyChallenge: { icon: 'book-open-blank-variant-outline', colorKey: 'accent' },
+  premium: { icon: 'crown-outline', colorKey: 'premium' },
+  studyPlan: { icon: 'bullseye', colorKey: 'success' },
+  friends: { icon: 'account-plus-outline', colorKey: 'info' },
+  challenge: { icon: 'sword-cross', colorKey: 'warning' },
+  announcement: { icon: 'bullhorn-outline', colorKey: 'info' },
+};
+const FALLBACK_CONFIG: TypeConfig = {
+  icon: 'bell-outline',
+  colorKey: 'accent',
+};
+
+const NotificationCard = memo(function NotificationCardComponent({ item, onPress }: {
+  item: AppNotification;
+  onPress: (item: AppNotification) => void;
+}) {
   const { theme } = useTheme();
-  const colors = theme.color;
+
   const iconColorMap: Record<ColorKey, string> = {
-    accent: colors.accent,
-    success: colors.success,
-    warning: colors.warning,
-    danger: colors.error,
-    info: colors.info,
-    premium: colors.premium,
+    accent: theme.color.accent,
+    success: theme.color.success,
+    warning: theme.color.warning,
+    danger: theme.color.error,
+    info: theme.color.info,
+    premium: theme.color.premium,
   };
 
-  const { icon, colorKey } = TYPE_CONFIG[item.type];
-  const iconColor = iconColorMap[colorKey] ?? colors.accent;
+  const { icon, colorKey } = TYPE_CONFIG[item.type] ?? FALLBACK_CONFIG;
+  const iconColor = iconColorMap[colorKey] ?? theme.color.accent;
+  const { title, body } = getNotificationText(item, theme);
+  const time = formatRelativeTime(item.createdAt, theme);
+  const unread = !item.isRead;
 
   return (
-    <View
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => onPress(item)}
+      accessibilityRole='button'
+      accessibilityLabel={`${unread ? `${theme.i18n.t('notifications.a11y.unread')}. ` : ''}${title}. ${body}. ${time}`}
       style={{
-        backgroundColor: item.unread ? colors.surface : colors.card,
-        borderRadius: theme.borderRadius.lg,
-        padding: theme.space.md - 3,
-        flexDirection: "row",
-        alignItems: "center",
         gap: theme.space.sm,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: theme.space.md - 3,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: theme.color.border,
+        borderRadius: theme.borderRadius.lg,
+        backgroundColor: unread ? theme.color.surface : theme.color.card,
       }}
     >
       <View
         style={{
+          flexShrink: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
           padding: theme.space.sm,
           borderRadius: theme.borderRadius.lg,
-          alignItems: "center",
-          justifyContent: "center",
           backgroundColor: withOpacity(iconColor, 0.15),
-          flexShrink: 0,
         }}
       >
-        <MaterialCommunityIcons
-          name={icon as any}
-          size={theme.fontSize.md}
-          color={iconColor}
-        />
+        <MaterialCommunityIcons name={icon as any} size={theme.fontSize.md} color={iconColor} />
       </View>
+
       <View style={{ flex: 1 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text
+            numberOfLines={1}
             style={{
-              fontSize: theme.fontSize.sm,
-              fontWeight: theme.fontWeight.medium,
-              fontFamily: theme.fontFamily.regular,
-              color: colors.textPrimary,
-              paddingRight: theme.space.xs,
               flexShrink: 1,
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.bold,
+              paddingRight: theme.space.xs,
             }}
           >
-            {item.title}
+            {title}
           </Text>
           <Text
-            style={{ fontSize: theme.fontSize.xs, color: colors.textMuted }}
+            style={{
+              fontSize: theme.fontSize.xs,
+              color: theme.color.textMuted,
+              fontFamily: theme.fontFamily.number,
+            }}
           >
-            {item.time}
+            {time}
           </Text>
         </View>
+
         <Text
+          numberOfLines={3}
           style={{
             fontSize: theme.fontSize.xs,
+            color: theme.color.textSecondary,
             fontFamily: theme.fontFamily.regular,
-            color: colors.textSecondary,
-            paddingTop: 2,
+            paddingTop: theme.space.xs * 0.5,
           }}
         >
-          {item.description}
+          {body}
         </Text>
-        {item.unread && (
+
+        {unread && (
           <View
             style={{
               width: theme.space.xs,
               height: theme.space.xs,
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: colors.accent,
               marginTop: theme.space.xs,
+              borderRadius: theme.borderRadius.full,
+              backgroundColor: theme.color.accent,
             }}
           />
         )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
-}
+});
 
-function Section({
-  label,
-  items,
-}: {
-  label: string;
-  items: NotificationItem[];
-}) {
-  const { theme } = useTheme();
-  const colors = theme.color;
-  if (items.length === 0) return null;
-  return (
-    <>
-      <Text
-        style={{
-          fontSize: theme.fontSize.sm,
-          fontWeight: theme.fontWeight.medium,
-          fontFamily: theme.fontFamily.regular,
-          color: colors.textMuted,
-          letterSpacing: 0.5,
-          marginTop: label === "UNREAD" ? theme.space.md : theme.space.md + 3,
-          marginBottom:
-            label === "UNREAD" ? theme.space.sm + 2 : theme.space.sm + 2,
-        }}
-      >
-        {label}
-      </Text>
-      <View style={{ gap: theme.space.sm }}>
-        {items.map((item) => (
-          <NotificationCard key={item.id} item={item} />
-        ))}
-      </View>
-    </>
-  );
-}
 
 export default function NotificationsScreen() {
-  const { theme } = useTheme();
-  const { isDark } = theme;
   const router = useRouter();
-  const colors = theme.color;
+  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   useBottomBar(false);
 
-  const [notifications, setNotifications] =
-    useState<NotificationItem[]>(NOTIFICATIONS);
+  const {
+    items,
+    status,
+    refreshing,
+    loadingMore,
+    refresh,
+    retry,
+    loadMore,
+    markRead,
+    markAllRead,
+  } = useNotifications();
+  const unreadCount = useUnreadCount();
 
-  const unread = notifications.filter((n) => n.unread);
-  const Read = notifications.filter((n) => !n.unread);
+  const sections = useMemo<NotificationSection[]>(() => {
+    const all: NotificationSection[] = [
+      {
+        key: 'unread',
+        title: theme.i18n.t('notifications.sectionUnread'),
+        data: items.filter((n) => !n.isRead),
+      },
+      {
+        key: 'earlier',
+        title: theme.i18n.t('notifications.sectionEarlier'),
+        data: items.filter((n) => n.isRead),
+      },
+    ];
+    return all.filter((s) => s.data.length > 0);
+  }, [items, theme.i18n]);
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-  };
+  const handlePress = useCallback(
+    (item: AppNotification) => {
+      markRead(item.notificationId).catch(() => {});
+      const route = routeForNotification(item);
+      if (route) router.push(route as never);
+    }, [markRead, router]
+  );
 
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={{
-        paddingHorizontal: theme.space.md,
-        paddingBottom: 50,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingTop: theme.space.lg,
-          paddingBottom: theme.space.sm,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-          <TouchableOpacity
-            onPress={() => router.push('/home')}
-            style={{
-              padding: theme.space.xs + 2,
-              borderRadius: theme.borderRadius.lg,
-              backgroundColor: isDark ? colors.card : colors.surface,
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={theme.fontSize.lg}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          <View style={{ paddingLeft: theme.space.md }}>
-            <Text
-              style={{
-                fontSize: theme.fontSize.lg,
-                fontWeight: theme.fontWeight.bold,
-                fontFamily: theme.fontFamily.bold,
-                color: colors.textPrimary,
-              }}
-            >
-              Notifications
-            </Text>
-            <Text
-              style={{
-                fontSize: theme.fontSize.sm,
-                fontFamily: theme.fontFamily.regular,
-                color: colors.textMuted,
-                paddingTop: 2,
-              }}
-            >
-              {unread.length} unread
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity onPress={handleMarkAllRead}>
+  const hasNoNotifications = status === 'ready' && items.length === 0;
+  const subtitle = hasNoNotifications
+    ? theme.i18n.t('notifications.noNotifications')
+    : unreadCount >= 100
+      ? theme.i18n.t('notifications.unreadMany')
+      : theme.i18n.t('notifications.unreadCount', { count: unreadCount });
+  const canMarkAll = unreadCount > 0;
+
+  const header = (
+    <ScreenHeader
+      title={theme.i18n.t('notifications.title')}
+      subtitle={subtitle}
+      onBack={() => router.canGoBack()
+        ? router.back()
+        : router.replace('/home')
+      }
+      rightElement={
+        <TouchableOpacity
+          onPress={markAllRead}
+          disabled={!canMarkAll}
+          accessibilityRole='button'
+          accessibilityState={{ disabled: !canMarkAll }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text
             style={{
               fontSize: theme.fontSize.sm,
               fontFamily: theme.fontFamily.regular,
-              color: colors.accent,
+              color: canMarkAll ? theme.color.accent : theme.color.textMuted,
             }}
           >
-            Mark all read
+            {theme.i18n.t('notifications.markAllRead')}
           </Text>
         </TouchableOpacity>
-      </View>
+      }
+      containerStyle={{ marginHorizontal: -theme.space.md }}
+    />
+  );
 
-      <Section label="UNREAD" items={unread} />
-      <Section label="READ" items={Read} />
-    </ScrollView>
+  const empty = (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.space.lg,
+      }}
+    >
+      {status === 'loading' ? (
+        <ActivityIndicator color={theme.color.accent} />
+      ) : status === 'error' ? (
+        <>
+          <MaterialCommunityIcons
+            name='cloud-alert-outline'
+            size={theme.space.xl * 1.25}
+            color={theme.color.textMuted}
+          />
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textSecondary,
+              fontFamily: theme.fontFamily.regular,
+              marginTop: theme.space.sm,
+            }}
+          >
+            {theme.i18n.t('notifications.error')}
+          </Text>
+
+          <TouchableOpacity
+            onPress={retry}
+            accessibilityRole='button'
+            style={{
+              marginTop: theme.space.md,
+              paddingVertical: theme.space.sm,
+              paddingHorizontal: theme.space.lg,
+              borderRadius: theme.borderRadius.lg,
+              backgroundColor: theme.color.accent,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.color.background,
+                fontFamily: theme.fontFamily.regular,
+              }}
+            >
+              {theme.i18n.t('notifications.retry')}
+            </Text>
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <MaterialCommunityIcons
+            name='bell-outline'
+            size={theme.space.xl * 1.25}
+            color={theme.color.textMuted}
+          />
+          <Text
+            style={{
+              fontSize: theme.fontSize.md,
+              color: theme.color.textPrimary,
+              fontFamily: theme.fontFamily.regular,
+              marginTop: theme.space.sm,
+            }}
+          >
+            {theme.i18n.t('notifications.emptyTitle')}
+          </Text>
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: theme.fontSize.sm,
+              color: theme.color.textMuted,
+              fontFamily: theme.fontFamily.regular,
+              marginTop: theme.space.xs,
+            }}
+          >
+            {theme.i18n.t('notifications.emptyBody')}
+          </Text>
+        </>
+      )}
+    </View>
+  );
+
+  return (
+    <SectionList
+      style={{ flex: 1, backgroundColor: theme.color.background }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingBottom: insets.bottom * 1.5,
+        paddingHorizontal: theme.space.md,
+      }}
+      sections={sections}
+      keyExtractor={(item) => item.notificationId}
+      renderItem={({ item }) => (
+        <View style={{ marginBottom: theme.space.sm }}>
+          <NotificationCard item={item} onPress={handlePress} />
+        </View>
+      )}
+      renderSectionHeader={({ section }) => (
+        <Text
+          style={{
+            letterSpacing: 0.5,
+            fontSize: theme.fontSize.sm,
+            color: theme.color.textMuted,
+            fontFamily: theme.fontFamily.regular,
+            marginTop: theme.space.md,
+            marginBottom: theme.space.sm + 2,
+            backgroundColor: theme.color.background,
+          }}
+        >
+          {section.title}
+        </Text>
+      )}
+      ListHeaderComponent={header}
+      ListEmptyComponent={empty}
+      ListFooterComponent={
+        loadingMore ? (
+          <ActivityIndicator style={{ paddingVertical: theme.space.md }} color={theme.color.accent} />
+        ) : null
+      }
+      stickySectionHeadersEnabled={false}
+      onEndReached={loadMore}
+      onEndReachedThreshold={0.4}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={refresh}
+          tintColor={theme.color.accent}
+          colors={[theme.color.accent]}
+        />
+      }
+      initialNumToRender={10}
+      windowSize={7}
+      showsVerticalScrollIndicator={false}
+    />
   );
 }
