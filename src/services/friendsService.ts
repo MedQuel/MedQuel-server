@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
+import { publishNotification } from '../pubsub/publisher.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
 import { NotOnboardedError, UserNotFoundError } from '../utils/errors.js';
 import { SelfFriendRequestError, AlreadyFriendsError, NotFriendsError } from '../utils/errors.js';
@@ -30,7 +31,7 @@ export interface FriendSummaryDTO {
   currentLevel: number;
   currentStreak: number;
   epPoints: number;
-  headToHead: { wins: number; losses: number };
+  headToHead: { wins: number; losses: number; draws: number };
   addedAt: string;
 }
 interface RelationshipContext {
@@ -59,7 +60,7 @@ export interface PublicProfileDTO {
   badges: string[];
   friends: FriendSummaryDTO[];
   relationshipStatus: FriendRelationshipStatus;
-  headToHead: { wins: number; losses: number } | null;
+  headToHead: { wins: number; losses: number; draws: number } | null;
   comparison: { xpDelta: number; epDelta: number; streakDelta: number; levelDelta: number };
 }
 
@@ -170,7 +171,7 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
   const forwardRef = db.collection('friendRequests').doc(requestDocId(callerUid, targetUid));
   const reverseRef = db.collection('friendRequests').doc(requestDocId(targetUid, callerUid));
 
-  return db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     const [forwardSnap, reverseSnap] = await Promise.all([
       tx.get(forwardRef),
       tx.get(reverseRef),
@@ -192,12 +193,12 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
       const targetFriendRef = db.collection('users').doc(targetUid).collection('friends').doc(callerUid);
       tx.set(callerFriendRef, {
         ...buildFriendSummary(targetUid, targetData),
-        headToHead: { wins: 0, losses: 0 },
+        headToHead: { wins: 0, losses: 0, draws: 0 },
         addedAt: now,
       });
       tx.set(targetFriendRef, {
         ...buildFriendSummary(callerUid, callerData),
-        headToHead: { wins: 0, losses: 0 },
+        headToHead: { wins: 0, losses: 0, draws: 0 },
         addedAt: now,
       });
 
@@ -242,12 +243,37 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
       respondedAt: null,
     };
   });
+
+  const now = Date.now();
+  if (result.status === 'accepted') {
+    await publishNotification({
+      userId: targetUid,
+      type: 'friends',
+      kind: 'friend_request_accepted',
+      title: 'Friend request accepted',
+      body: `${callerData.displayName ?? 'Someone'} is now your friend.`,
+      data: { friendUid: callerUid, actorName: callerData.displayName ?? '' },
+      dedupeKey: `friendAcc_${result.requestId}_${now}`,
+    });
+  } else {
+    await publishNotification({
+      userId: targetUid,
+      type: 'friends',
+      kind: 'friend_request_received',
+      title: 'New friend request',
+      body: `${callerData.displayName ?? 'Someone'} wants to be your friend.`,
+      data: { requestId: result.requestId, fromUid: callerUid, actorName: callerData.displayName ?? '' },
+      dedupeKey: `friendReq_${result.requestId}_${now}`,
+    });
+  }
+
+  return result;
 }
 
 export async function respondFriendRequest(callerUid: string, requestId: string, accept: boolean, db: Firestore): Promise<boolean> {
   const requestRef = db.collection('friendRequests').doc(requestId);
 
-  await db.runTransaction(async (tx) => {
+  const accepted = await db.runTransaction(async (tx) => {
     const snap = await tx.get(requestRef);
     if (!snap.exists) throw new FriendRequestNotFoundError();
 
@@ -260,7 +286,7 @@ export async function respondFriendRequest(callerUid: string, requestId: string,
 
     if (!accept) {
       tx.update(requestRef, { status: 'declined', respondedAt: now });
-      return;
+      return null;
     }
 
     const [fromSnap, toSnap] = await Promise.all([
@@ -275,15 +301,32 @@ export async function respondFriendRequest(callerUid: string, requestId: string,
     const toFriendRef = db.collection('users').doc(data.toUid).collection('friends').doc(data.fromUid);
     tx.set(fromFriendRef, {
       ...buildFriendSummary(data.toUid, toSnap.data()!),
-      headToHead: { wins: 0, losses: 0 },
+      headToHead: { wins: 0, losses: 0, draws: 0 },
       addedAt: now,
     });
     tx.set(toFriendRef, {
       ...buildFriendSummary(data.fromUid, fromSnap.data()!),
-      headToHead: { wins: 0, losses: 0 },
+      headToHead: { wins: 0, losses: 0, draws: 0 },
       addedAt: now,
     });
+
+    return {
+      fromUid: data.fromUid as string,
+      accepterName: (toSnap.data()!.displayName ?? 'Someone') as string,
+    };
   });
+
+  if (accepted) {
+    await publishNotification({
+      userId: accepted.fromUid,
+      type: 'friends',
+      kind: 'friend_request_accepted',
+      title: 'Friend request accepted',
+      body: `${accepted.accepterName} accepted your friend request.`,
+      data: { friendUid: callerUid, actorName: accepted.accepterName },
+      dedupeKey: `friendAcc_${requestId}_${Date.now()}`,
+    });
+  }
 
   return true;
 }
@@ -335,8 +378,8 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
   let headToHead: PublicProfileDTO['headToHead'] = null;
   if (relationshipStatus === 'FRIENDS') {
     const friendDoc = await db.collection('users').doc(viewerUid).collection('friends').doc(trimmedTarget).get();
-    const h2h = friendDoc.data()?.headToHead ?? { wins: 0, losses: 0 };
-    headToHead = { wins: h2h.wins ?? 0, losses: h2h.losses ?? 0 };
+    const h2h = friendDoc.data()?.headToHead ?? { wins: 0, losses: 0, draws: 0 }
+    headToHead = { wins: h2h.wins ?? 0, losses: h2h.losses ?? 0, draws: h2h.draws ?? 0 };
   }
 
   return {
@@ -371,6 +414,7 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
         headToHead: {
           wins: data.headToHead?.wins ?? 0,
           losses: data.headToHead?.losses ?? 0,
+          draws: data.headToHead?.draws ?? 0,
         },
         addedAt: data.addedAt instanceof Timestamp
           ? data.addedAt.toDate().toISOString()
@@ -443,6 +487,7 @@ export async function getFriends(callerUid: string, db: Firestore): Promise<Frie
       headToHead: {
         wins: data.headToHead?.wins ?? 0,
         losses: data.headToHead?.losses ?? 0,
+        draws: data.headToHead?.draws ?? 0,
       },
       addedAt: (data.addedAt as Timestamp).toDate().toISOString(),
     };
