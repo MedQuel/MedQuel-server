@@ -7,6 +7,7 @@ import { isUnshippedFeature, AuthorizationError, AuthenticationError, NotImpleme
 import type { Badge, HomeData, AnalyticsData } from '../types/types';
 import type { ChatRoom, GetChatMessagesResult } from '../types/types';
 import type { StudyPlan, GenerateStudyPlanInput } from '../types/types';
+import type { AppNotification, GetNotificationsResult } from '../types/types';
 import type { Contest, GetContestsFilter, GetContestsResult } from '../types/types';
 import type { User, QuizPrefs, NotifPrefs, UpdateProfileInput } from '../types/types';
 import type { CompleteOnboardingInput, CompleteOnboardingResult } from '../types/types';
@@ -24,6 +25,7 @@ const IMPLEMENTED_OPERATIONS = {
   'user.updateProfile': true,
   'user.updateNotifPrefs': true,
   'user.updateQuizPrefs': true,
+
   'friends.sendFriendRequest': true,
   'friends.respondFriendRequest': true,
   'friends.removeFriend': true,
@@ -31,26 +33,41 @@ const IMPLEMENTED_OPERATIONS = {
   'friends.searchUsers': true,
   'friends.getPendingFriendRequests': true,
   'friends.getFriends': true,
+
   'home.getHomeData': true,
+  'notification.getNotifications': true,
+  'notification.getUnreadCount': true,
+  'notification.markRead': true,
+  'notification.markAllRead': true,
+  'notification.registerDeviceToken': true,
+  'notification.unregisterDeviceToken': true,
+
   'quiz.getTopicsForSubject': true,
   'quiz.startQuizSession': true,
   'quiz.submitQuizSession': true,
+
   'contest.getContests': true,
   'contest.getContest': true,
   'contest.joinContest': true,
+
   'challenge.createChallenge': true,
   'challenge.respondChallenge': true,
   'challenge.getChallenge': true,
   'challenge.getChallenges': true,
+
   'leaderboard.getLeaderboard': true,
+
   'studyPlan.getStudyPlan': true,
   'studyPlan.generateStudyPlan': true,
   'studyPlan.markStudySessionComplete': true,
+
   'chat.getChatRooms': false, //
   'chat.getChatMessages': false, //
   'chat.sendMessage': false, //
+
   'achievement.getAchievements': true,
   'analytics.getAnalytics': true,
+
   'subscription.getPlans': false, //
   'subscription.verifyPayment': false, //
   'subscription.initiatePayment': false, //
@@ -320,14 +337,11 @@ const GET_USER_PROFILE_QUERY = gql`
         currentLevel
         currentStreak
         epPoints
-        headToHead { wins losses }
+        headToHead { wins losses draws }
         addedAt
       }
       relationshipStatus
-      headToHead {
-        wins
-        losses
-      }
+      headToHead { wins losses draws }
       comparison {
         xpDelta
         epDelta
@@ -369,10 +383,7 @@ const GET_FRIENDS_QUERY = gql`
       currentLevel
       currentStreak
       epPoints
-      headToHead {
-        wins
-        losses
-      }
+      headToHead { wins losses draws }
       addedAt
     }
   }
@@ -481,6 +492,115 @@ export const homeApi = {
       )
     ).getHomeData,
     () => Mock.MOCK_HOME_DATA
+  ),
+};
+
+
+// -----> Notifications <-----
+const GET_NOTIFICATIONS_QUERY = gql`
+  query GetNotifications($limit: Int, $cursor: String) {
+    getNotifications(limit: $limit, cursor: $cursor) {
+      notifications {
+        notificationId
+        type
+        kind
+        title
+        body
+        data
+        isRead
+        createdAt
+      }
+      nextCursor
+    }
+  }
+`;
+const GET_UNREAD_NOTIFICATION_COUNT_QUERY = gql`
+  query GetUnreadNotificationCount {
+    getUnreadNotificationCount
+  }
+`;
+const MARK_NOTIFICATION_READ_MUTATION = gql`
+  mutation MarkNotificationRead($notificationId: ID!) {
+    markNotificationRead(notificationId: $notificationId) {
+      notificationId
+      isRead
+    }
+  }
+`;
+const MARK_ALL_NOTIFICATIONS_READ_MUTATION = gql`
+  mutation MarkAllNotificationsRead {
+    markAllNotificationsRead
+  }
+`;
+const REGISTER_DEVICE_TOKEN_MUTATION = gql`
+  mutation RegisterDeviceToken($token: String!) {
+    registerDeviceToken(token: $token)
+  }
+`;
+const UNREGISTER_DEVICE_TOKEN_MUTATION = gql`
+  mutation UnregisterDeviceToken($token: String!) {
+    unregisterDeviceToken(token: $token)
+  }
+`;
+
+
+export const notificationApi = {
+  getNotifications: (limit=20, cursor?: string | null) => withMockFallback(
+    'notification.getNotifications', async () => (
+      await graphqlRequest<
+        { getNotifications: GetNotificationsResult },
+        { limit: number; cursor?: string }
+      >(
+        GET_NOTIFICATIONS_QUERY,
+        { limit, cursor: cursor ?? undefined },
+        { idempotent: true }
+      )
+    ).getNotifications, () => Mock.buildMockNotificationsResult(cursor)
+  ),
+
+  getUnreadCount: () => withMockFallback(
+    'notification.getUnreadCount', async () => (
+      await graphqlRequest<{ getUnreadNotificationCount: number }>(
+        GET_UNREAD_NOTIFICATION_COUNT_QUERY,
+        undefined,
+        { idempotent: true }
+      )
+    ).getUnreadNotificationCount, () => Mock.MOCK_NOTIFICATIONS.filter((n) => !n.isRead).length
+  ),
+
+  markRead: (notificationId: string) => withMockFallback(
+    'notification.markRead', async () => (
+      await graphqlRequest<
+        { markNotificationRead: Pick<AppNotification, 'notificationId' | 'isRead'> },
+        { notificationId: string }
+      >(MARK_NOTIFICATION_READ_MUTATION, { notificationId })
+    ).markNotificationRead, () => ({ notificationId, isRead: true })
+  ),
+
+  markAllRead: () => withMockFallback(
+    'notification.markAllRead', async () => (
+      await graphqlRequest<{ markAllNotificationsRead: number }>(
+        MARK_ALL_NOTIFICATIONS_READ_MUTATION
+      )
+    ).markAllNotificationsRead, () => Mock.MOCK_NOTIFICATIONS.filter((n) => !n.isRead).length
+  ),
+
+  registerDeviceToken: (token: string) => withMockFallback(
+    'notification.registerDeviceToken', async () => (
+      await graphqlRequest<
+        { registerDeviceToken: boolean },
+        { token: string }
+      >(REGISTER_DEVICE_TOKEN_MUTATION, { token })
+    ).registerDeviceToken, () => true
+  ),
+
+  unregisterDeviceToken: (token: string) => withMockFallback(
+    'notification.unregisterDeviceToken', async () => (
+      await graphqlRequest<
+        { unregisterDeviceToken: boolean },
+        { token: string }
+      >(UNREGISTER_DEVICE_TOKEN_MUTATION, { token })
+    ).unregisterDeviceToken, () => true
   ),
 };
 
@@ -1250,6 +1370,7 @@ export const api = {
   user: userApi,
   friends: friendsApi,
   home: homeApi,
+  notification: notificationApi,
   quiz: quizApi,
   contest: contestApi,
   challenge: challengeApi,
