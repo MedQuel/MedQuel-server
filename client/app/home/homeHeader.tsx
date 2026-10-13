@@ -16,6 +16,7 @@ export default function HomeHeader({
   xpPoints,
   lastActiveDate,
   photoURL,
+  unreadCount = 0,
   onNotificationsPress,
   onAvatarPress,
 }: {
@@ -24,11 +25,13 @@ export default function HomeHeader({
   xpPoints: number;
   lastActiveDate?: string | Date | null;
   photoURL?: string | null;
+  unreadCount?: number;
   onNotificationsPress?: () => void;
   onAvatarPress?: () => void;
 }) {
   const { theme } = useTheme();
   const isActiveToday = lastActiveDate ? isSameDay(new Date(lastActiveDate), new Date()) : false;
+  const hasUnreadNotifications = unreadCount > 0;
 
   return (
     <View
@@ -114,6 +117,8 @@ export default function HomeHeader({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onNotificationsPress}
+          accessibilityRole='button'
+          accessibilityLabel={theme.i18n.t('notifications.title')}
           style={{
             width: theme.space.xl + theme.space.xs,
             height: theme.space.xl + theme.space.xs,
@@ -131,19 +136,35 @@ export default function HomeHeader({
             size={theme.fontSize.md}
             color={theme.color.textSecondary}
           />
-          <View
-            style={{
-              position: 'absolute',
-              top: -(theme.space.xs * 0.5),
-              right: -(theme.space.xs * 0.5),
-              width: theme.space.sm,
-              height: theme.space.sm,
-              borderWidth: 1,
-              borderColor: theme.color.background,
-              borderRadius: theme.borderRadius.full,
-              backgroundColor: theme.color.error,
-            }}
-          />
+          {hasUnreadNotifications && (
+            <View
+              style={{
+                position: 'absolute',
+                top: -(theme.space.xs * 0.5),
+                right: -(theme.space.xs * 0.5),
+                height: theme.space.sm,
+                minWidth: theme.space.sm,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: theme.space.xs * 0.35,
+                borderWidth: 1,
+                borderColor: theme.color.background,
+                borderRadius: theme.borderRadius.full,
+                backgroundColor: theme.color.error,
+              }}
+            >
+              <Text
+                style={{
+                  lineHeight: theme.fontSize.xs,
+                  color: theme.color.textInverse,
+                  fontSize: theme.fontSize.xs * 0.8,
+                  fontFamily: theme.fontFamily.number,
+                }}
+              >
+                {unreadCount >= 100 ? '99+' : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         <UserLevelChip
