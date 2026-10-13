@@ -9,6 +9,7 @@
     "icon": "./assets/icons/icon.png",
     "userInterfaceStyle": "light",
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/android-icon-foreground.png",
         "backgroundImage": "./assets/icons/android-icon-background.png",
@@ -23,6 +24,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icons/android-icon-monochrome.png",
+          "color": "#1D6FE0"
+        }
+      ],
       [
         "expo-navigation-bar",
         {
