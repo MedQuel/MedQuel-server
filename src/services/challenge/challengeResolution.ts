@@ -2,6 +2,8 @@ import type { Firestore } from 'firebase-admin/firestore';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
 import { ChallengeNotFoundError } from '../../utils/errors.js';
+import { publishNotification } from '../../pubsub/publisher.js';
+import type { NotificationEvent } from '../../types/notificationTypes.js';
 
 
 interface ChallengeResultInput {
@@ -21,15 +23,21 @@ export async function recordChallengeResult(
   db: Firestore
 ): Promise<ChallengeOutcome> {
   const ref = db.collection('challenges').doc(challengeId);
+  let pendingNotifications: NotificationEvent[] = [];
 
-  return db.runTransaction(async (tx) => {
+  const outcome = await db.runTransaction(async (tx) => {
+    pendingNotifications = [];
+
     const snap = await tx.get(ref);
     if (!snap.exists) throw new ChallengeNotFoundError();
     const data = snap.data()!;
 
     const myState = data.participantStatus[uid];
     if (myState?.completedAt) {
-      return { status: data.status, winnerUid: data.winnerUid ?? null };
+      return {
+        status: data.status as string,
+        winnerUid: (data.winnerUid ?? null) as string | null,
+      };
     }
 
     const now = Timestamp.now();
@@ -51,7 +59,22 @@ export async function recordChallengeResult(
         [`participantStatus.${uid}`]: myUpdatedState,
         updatedAt: now,
       });
-      return { status: 'active', winnerUid: null };
+
+      participants
+        .filter((p) => p !== uid && data.participantStatus[p]?.completedAt == null)
+        .forEach((opponentUid) => {
+          pendingNotifications.push({
+            userId: opponentUid,
+            type: 'challenge',
+            kind: 'challenge_opponent_finished',
+            title: 'Your turn!',
+            body: `Your friend finished the ${data.subject} challenge. Beat their score!`,
+            data: { challengeId, subject: data.subject },
+            dedupeKey: `chFinished_${challengeId}_${uid}`,
+          });
+        });
+
+      return { status: 'active', winnerUid: null as string | null };
     }
 
     const scores = participants.map((p) => ({
@@ -61,18 +84,24 @@ export async function recordChallengeResult(
     const topScore = Math.max(...scores.map((s) => s.score));
     const winners = scores.filter((s) => s.score === topScore).map((s) => s.uid);
     const isDraw = winners.length > 1;
-    const winnerUid = isDraw ? null : winners[0];
+    const winnerUid = isDraw ? null : winners[0]!;
 
     const userRefs = participants.map((p) => db.collection('users').doc(p));
-    const userSnaps = await Promise.all(userRefs.map((r) => tx.get(r)));
+    const friendRefs = participants.map((p) => {
+      const opponent = participants.find((x) => x !== p)!;
+      return db.collection('users').doc(p).collection('friends').doc(opponent);
+    });
+    const [userSnaps, friendSnaps] = await Promise.all([
+      Promise.all(userRefs.map((r) => tx.get(r))),
+      Promise.all(friendRefs.map((r) => tx.get(r))),
+    ]);
 
     userSnaps.forEach((userSnap, i) => {
       if (!userSnap.exists) return;
 
-      const p = participants[i];
-      const epToCredit = isDraw || p === winnerUid
-        ? data.rewards.winnerEp
-        : data.rewards.participationEp;
+      const p = participants[i]!;
+      const isWinner = !isDraw && p === winnerUid;
+      const epToCredit = isDraw || isWinner ? data.rewards.winnerEp : data.rewards.participationEp;
       const userData = userSnap.data()!;
 
       tx.update(userRefs[i]!, {
@@ -80,20 +109,29 @@ export async function recordChallengeResult(
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      tx.set(db.collection('notifications').doc(), {
+      if (friendSnaps[i]!.exists) {
+        const field = isDraw
+          ? 'headToHead.draws'
+          : isWinner ? 'headToHead.wins' : 'headToHead.losses';
+        tx.update(friendRefs[i]!, { [field]: FieldValue.increment(1) });
+      }
+
+      pendingNotifications.push({
         userId: p,
-        type: 'challenge_result',
+        type: 'challenge',
+        kind: isDraw
+          ? 'challenge_draw'
+          : isWinner ? 'challenge_won' : 'challenge_lost',
         title: isDraw
           ? "It's a draw!"
-          : p === winnerUid ? 'You won your challenge!' : 'Challenge complete',
+          : isWinner ? 'You won your challenge!' : 'Challenge complete',
         body: isDraw
           ? `You tied in ${data.subject} — +${epToCredit} EP.`
-          : p === winnerUid
+          : isWinner
             ? `You beat your friend in ${data.subject} — +${epToCredit} EP.`
             : `You lost this round in ${data.subject} — +${epToCredit} EP for playing.`,
-        data: { challengeId },
-        isRead: false,
-        createdAt: now,
+        data: { challengeId, subject: data.subject, epEarned: String(epToCredit) },
+        dedupeKey: `chResult_${challengeId}_${p}`,
       });
     });
 
@@ -105,6 +143,10 @@ export async function recordChallengeResult(
       updatedAt: now,
     });
 
-    return { status: 'completed', winnerUid };
+    return { status: 'completed', winnerUid: winnerUid as string | null };
   });
+
+  await Promise.all(pendingNotifications.map((event) => publishNotification(event)));
+
+  return outcome;
 }
