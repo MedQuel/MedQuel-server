@@ -9,6 +9,7 @@ import { studyPlanTypeDefs } from './studyPlan.js';
 import { challengeTypeDefs } from './challenge.js';
 import { leaderboardTypeDefs } from './leaderboard.js';
 import { achievementsTypeDefs } from './achievements.js';
+import { notificationTypeDefs } from './notification.js';
 
 
 export const typeDefs = [
@@ -23,4 +24,5 @@ export const typeDefs = [
   leaderboardTypeDefs,
   achievementsTypeDefs,
   studyPlanTypeDefs,
+  notificationTypeDefs,
 ];
