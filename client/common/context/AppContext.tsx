@@ -1,14 +1,14 @@
-import React, { createContext, useCallback, useEffect, useState, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useCallback, useEffect, useState, useMemo } from 'react';
 
 import { api } from '../api/api';
 import type { User } from '../types/types';
+import { unregisterPushToken } from '../notifications/usePushNotifications';
 import { ApiError, AuthenticationError, NotOnboardedError } from '../api/api.errors';
 import { auth, subscribeToAuthChanges, signOut as firebaseSignOut } from '../firebase/firebase';
 
 
 const USER_CACHE_KEY = 'medquel:lastKnownUser';
-
 export type AuthStatus =
   | 'checking'
   | 'needsEmailVerification'
@@ -150,7 +150,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [fetchUser]
   );
 
-  const logout = useCallback(async () => { await firebaseSignOut() }, []);
+  const logout = useCallback(async () => {
+    if (user?.uid) await unregisterPushToken(user.uid).catch(() => {});
+    await firebaseSignOut();
+  }, [user?.uid]);
 
   const isPremium = !!user?.isPremium;
 
