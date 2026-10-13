@@ -2,6 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { Firestore, Query } from 'firebase-admin/firestore';
 
 import type { BigQueryService } from './bigqueryService.js';
+import { publishNotification } from '../pubsub/publisher.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
 import { computeChallengeRewards } from './challenge/challengeRewards.js';
 import type { ValidatedCreateChallenge } from '../validators/challengeValidation.js';
@@ -88,7 +89,7 @@ async function hasBlockingPendingChallenge(callerUid: string, targetUid: string,
 export async function createChallenge(callerUid: string, input: ValidatedCreateChallenge, db: Firestore) {
   if (input.toUid === callerUid) throw new SelfChallengeError();
 
-  await assertOnboarded(callerUid, db);
+  const callerData = await assertOnboarded(callerUid, db);
   await assertOnboarded(input.toUid, db);
   await assertFriends(callerUid, input.toUid, db);
 
@@ -139,6 +140,16 @@ export async function createChallenge(callerUid: string, input: ValidatedCreateC
   };
   await ref.set({ ...doc, challengeId: ref.id });
 
+  await publishNotification({
+    userId: input.toUid,
+    type: 'challenge',
+    kind: 'challenge_invite',
+    title: 'New challenge!',
+    body: `${callerData.displayName ?? 'A friend'} challenged you to a ${input.difficulty} ${input.subject} quiz.`,
+    data: { challengeId: ref.id, fromUid: callerUid, actorName: callerData.displayName ?? '', subject: input.subject },
+    dedupeKey: `chInvite_${ref.id}`,
+  });
+
   return mapChallengeDoc(ref.id, { ...doc, challengeId: ref.id });
 }
 
@@ -173,6 +184,18 @@ export async function respondChallenge(
       status: 'declined',
       updatedAt: now,
     });
+
+    const invitee = await assertOnboarded(callerUid, db);
+    await publishNotification({
+      userId: data.createdBy,
+      type: 'challenge',
+      kind: 'challenge_declined',
+      title: 'Challenge declined',
+      body: `${invitee.displayName ?? 'Your friend'} declined your ${data.subject} challenge.`,
+      data: { challengeId, actorName: invitee.displayName ?? '', subject: data.subject },
+      dedupeKey: `chDecline_${challengeId}`,
+    });
+
     const updated = await ref.get();
 
     return mapChallengeDoc(ref.id, updated.data()!);
@@ -210,6 +233,16 @@ export async function respondChallenge(
   });
 
   const updated = await ref.get();
+
+  await publishNotification({
+    userId: data.createdBy,
+    type: 'challenge',
+    kind: 'challenge_accepted',
+    title: 'Challenge accepted!',
+    body: `${inviteeData.displayName ?? 'Your friend'} accepted. Time to play!`,
+    data: { challengeId, actorName: inviteeData.displayName ?? '', subject: data.subject },
+    dedupeKey: `chAccept_${challengeId}`,
+  });
 
   return mapChallengeDoc(ref.id, updated.data()!);
 }
