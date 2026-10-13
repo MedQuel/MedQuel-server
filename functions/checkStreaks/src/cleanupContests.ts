@@ -3,7 +3,7 @@ import type { Firestore } from 'firebase-admin/firestore';
 
 
 const MAX_PER_RUN = 25;
-const RETENTION_DAYS = 30;
+const RETENTION_DAYS = 15;
 
 export async function cleanupOldContests(db: Firestore, now: Date): Promise<number> {
   const cutoff = Timestamp.fromMillis(now.getTime() - RETENTION_DAYS * 24*60*60*1000);

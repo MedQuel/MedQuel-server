@@ -4,6 +4,8 @@ import type { Firestore, Transaction } from 'firebase-admin/firestore';
 import type { ContestTemplate } from './types.js';
 
 
+const DUE_TOLERANCE_MS = 5*60*1000;
+
 async function claimRotationTemplateIfDue(db: Firestore, templateId: string): Promise<ContestTemplate | null> {
   const ref = db.collection('contestTemplates').doc(templateId);
 
@@ -16,7 +18,7 @@ async function claimRotationTemplateIfDue(db: Firestore, templateId: string): Pr
 
     const now = Timestamp.now();
     const intervalMs = data.generationIntervalHrs * 60 * 60 * 1000;
-    const isDue = !data.lastGeneratedAt || now.toMillis()-data.lastGeneratedAt.toMillis() >= intervalMs;
+    const isDue = !data.lastGeneratedAt || now.toMillis()-data.lastGeneratedAt.toMillis() >= intervalMs-DUE_TOLERANCE_MS;
     if (!isDue) return null;
 
     tx.update(ref, { lastGeneratedAt: now, updatedAt: now });

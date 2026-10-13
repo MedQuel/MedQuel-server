@@ -16,6 +16,10 @@ export interface GenerationOutcome {
   difficulty?: ContestDifficulty;
 }
 
+function floorToHour(d: Date): Date {
+  return new Date(Math.floor(d.getTime()/3_600_000) * 3_600_000);
+}
+
 async function pickSubjectWithEnoughQuestions(
   subjectPool: string[],
   difficulty: ContestDifficulty,
@@ -69,7 +73,7 @@ export async function generateRotationContest(template: ContestTemplate, db: Fir
     contestType,
     questionIds: picked.questionIds,
     timeLimitSecs,
-    startsAt: new Date(),
+    startsAt: floorToHour(new Date()),
   });
 
   await db.collection('contests').doc(contestId).set(doc);
@@ -109,7 +113,7 @@ export async function generateGrandChampionshipContest(template: ContestTemplate
     contestType: 'weekly',
     questionIds: picked.questionIds,
     timeLimitSecs,
-    startsAt: mondayStart,
+    startsAt: floorToHour(mondayStart),
     endsAtOverride: sundayEnd,
   });
 
