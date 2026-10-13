@@ -306,3 +306,12 @@ export class ChallengeSessionAlreadyStartedError extends GraphQLError {
     super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
   }
 }
+
+/**
+ * Throw when a notification is not found.
+ */
+export class NotificationNotFoundError extends GraphQLError {
+  constructor(message = 'Notification not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
