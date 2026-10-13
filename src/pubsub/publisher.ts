@@ -1,4 +1,5 @@
 import { PubSub } from '@google-cloud/pubsub';
+import type { NotificationEvent } from '../types/notificationTypes.js';
 
 
 export interface QuizCompletedEvent {
@@ -35,12 +36,36 @@ export async function publishQuizCompleted(event: QuizCompletedEvent): Promise<v
 
   try {
     const dataBuffer = Buffer.from(JSON.stringify(event));
-    await getPubSub().topic(topicName).publishMessage({ data: dataBuffer, attributes: { eventType: 'quiz_completed' } });
+    await getPubSub()
+      .topic(topicName)
+      .publishMessage({
+        data: dataBuffer,
+        attributes: { eventType: 'quiz_completed' },
+      });
   } catch (err) {
     if ((err as { code?: number }).code === 5) {
       console.warn(`[pubsub] Topic "${topicName}" not found yet — skipping publish.`);
       return;
     }
     console.error('[pubsub] Failed to publish quiz_completed event:', err);
+  }
+}
+
+export async function publishNotification(event: NotificationEvent): Promise<void> {
+  const topicName = process.env.PUBSUB_TOPIC_NOTIFICATIONS;
+  if (!topicName) {
+    console.warn('[pubsub] PUBSUB_TOPIC_NOTIFICATIONS not set — skipping notification publish.');
+    return;
+  }
+
+  try {
+    await getPubSub()
+      .topic(topicName)
+      .publishMessage({
+        data: Buffer.from(JSON.stringify(event)),
+        attributes: { eventType: 'notification_requested' },
+      });
+  } catch (err) {
+    console.error('[pubsub] Failed to publish notification event:', err);
   }
 }
