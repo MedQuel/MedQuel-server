@@ -93,7 +93,7 @@ export function releaseSounds(): void {
 
   for (const player of players.values()) {
     try {
-      player.release();
+      player.remove();
     } catch {}
   }
   players.clear();
