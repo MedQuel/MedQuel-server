@@ -4,6 +4,7 @@ import type { Badge, AnalyticsData } from '../types/types';
 import type { Plan, InitiatePaymentResult } from '../types/types';
 import type { Challenge, CreateChallengeInput } from '../types/types';
 import type { LeaderboardResult, LeaderboardPeriod } from '../types/types';
+import type { AppNotification, GetNotificationsResult } from '../types/types';
 import type { StudyPlan, MarkStudySessionCompleteResult } from '../types/types';
 import type { ChatRoom, ChatMessage, GetChatMessagesResult } from '../types/types';
 import type { FriendSummary, FriendRequest, PublicProfile, UserSearchResult } from '../types/types';
@@ -64,7 +65,7 @@ export const MOCK_FRIENDS: FriendSummary[] = [
     currentLevel: 9,
     currentStreak: 14,
     epPoints: 2680,
-    headToHead: { wins: 3, losses: 1 },
+    headToHead: { wins: 3, losses: 1, draws: 0 },
     addedAt: new Date(Date.now() - 20*86400000).toISOString(),
   },
   {
@@ -74,7 +75,7 @@ export const MOCK_FRIENDS: FriendSummary[] = [
     currentLevel: 15,
     currentStreak: 41,
     epPoints: 4120,
-    headToHead: { wins: 1, losses: 4 },
+    headToHead: { wins: 1, losses: 4, draws: 0 },
     addedAt: new Date(Date.now() - 5*86400000).toISOString(),
   },
 ];
@@ -742,7 +743,9 @@ export const MOCK_ACHIEVEMENTS: Badge[] = [
 ];
 
 
-// -----> Home / Analytics <-----
+// -----> Home / Notifications <-----
+const minutesAgo = (m: number) => new Date(Date.now()-m * 60_000).toISOString();
+
 export const MOCK_HOME_DATA: HomeData = {
   dailyChallenge: {
     date: new Date().toISOString().slice(0, 10),
@@ -760,6 +763,55 @@ export const MOCK_HOME_DATA: HomeData = {
   }),
 };
 
+export const MOCK_NOTIFICATIONS: AppNotification[] = [
+  {
+    notificationId: 'n1',
+    type: 'friends',
+    kind: 'friend_request_received',
+    title: 'New friend request',
+    body: 'Dr. Sarah K. wants to be your friend.',
+    data: JSON.stringify({ requestId: 'r1', fromUid: 'u2', actorName: 'Dr. Sarah K.' }),
+    isRead: false,
+    createdAt: minutesAgo(2),
+  },
+  {
+    notificationId: 'n2',
+    type: 'challenge',
+    kind: 'challenge_invite',
+    title: 'New challenge!',
+    body: 'Aman challenged you to a Cardiology quiz.',
+    data: JSON.stringify({ challengeId: 'c1', actorName: 'Aman', subject: 'Medicine' }),
+    isRead: false,
+    createdAt: minutesAgo(15),
+  },
+  {
+    notificationId: 'n3',
+    type: 'achievements',
+    kind: 'badge_unlocked',
+    title: 'New badge unlocked!',
+    body: 'You\'ve earned the "Sharpshooter" badge.',
+    data: '{}',
+    isRead: true,
+    createdAt: minutesAgo(180),
+  },
+  {
+    notificationId: 'n4',
+    type: 'streak',
+    kind: 'streak_at_risk',
+    title: 'Streak at risk!',
+    body: "Don't break your 24-day streak.",
+    data: '{}',
+    isRead: true,
+    createdAt: minutesAgo(60*26),
+  },
+];
+
+export function buildMockNotificationsResult(_cursor?: string | null): GetNotificationsResult {
+  return { notifications: MOCK_NOTIFICATIONS, nextCursor: null };
+}
+
+
+// -----> Analytics <-----
 export const MOCK_ANALYTICS: AnalyticsData = {
   overallAccuracy: 70.2,
   avgScore: 68.4,
