@@ -227,6 +227,73 @@
     }
   },
 
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount_one": "{{count}} unread",
+    "unreadCount_other": "{{count}} unread",
+    "unreadMany": "99+ unread",
+    "noNotifications": "No notifications",
+    "markAllRead": "Mark all read",
+    "sectionUnread": "UNREAD",
+    "sectionEarlier": "EARLIER",
+    "retry": "Try again",
+    "emptyTitle": "You're all caught up",
+    "emptyBody": "Friend requests, challenges, badges and contest updates will show up here.",
+    "error": "We couldn't load your notifications.",
+    "someone": "Someone",
+    "a11y": { "unread": "Unread" },
+    "time": {
+      "now": "now",
+      "minutes": "{{count}}m",
+      "hours": "{{count}}h",
+      "days": "{{count}}d"
+    },
+    "channels": {
+      "social": "Friends & challenges",
+      "contests": "Contests & leaderboard",
+      "progress": "Progress & streaks",
+      "account": "Account & announcements"
+    },
+    "kinds": {
+      "friend_request_received": {
+        "title": "New friend request",
+        "body": "{{actorName}} wants to be your friend."
+      },
+      "friend_request_accepted": {
+        "title": "Friend request accepted",
+        "body": "{{actorName}} is now your friend."
+      },
+      "challenge_invite": {
+        "title": "New challenge!",
+        "body": "{{actorName}} challenged you to a {{subject}} quiz."
+      },
+      "challenge_accepted": {
+        "title": "Challenge accepted!",
+        "body": "{{actorName}} accepted your {{subject}} challenge. Time to play!"
+      },
+      "challenge_declined": {
+        "title": "Challenge declined",
+        "body": "{{actorName}} declined your {{subject}} challenge."
+      },
+      "challenge_opponent_finished": {
+        "title": "Your turn!",
+        "body": "Your friend finished the {{subject}} challenge. Beat their score!"
+      },
+      "challenge_won": {
+        "title": "You won your challenge!",
+        "body": "You beat your friend in {{subject}} — +{{epEarned}} EP."
+      },
+      "challenge_lost": {
+        "title": "Challenge complete",
+        "body": "You lost this round in {{subject}} — +{{epEarned}} EP for playing."
+      },
+      "challenge_draw": {
+        "title": "It's a draw!",
+        "body": "You tied in {{subject}} — +{{epEarned}} EP."
+      }
+    }
+  },
+
   "challenges": {
     "title": "Challenges",
     "subtitle": "Duel your friends head-to-head",
