@@ -14,10 +14,10 @@ export const WEEKDAY_OFFSET: Record<Weekday, number> = {
 };
 
 export const VALID_SPECIALTIES = [
-  'Anatomy', 'Biochemistry', 'Physiology', 'Microbiology', 'Pharmacology',
-  'Forensic Medicine', 'Pathology', 'Ophthalmology', 'ENT', 'Community Medicine',
-  'Medicine', 'Surgery', 'Pediatrics', 'Gynaecology', 'Obstetrics',
-  'Orthopedics', 'Dermatology', 'Psychiatry', 'Anesthesia', 'Radiology',
+  'Anatomy', 'Anesthesiology', 'Biochemistry', 'Community Medicine',
+  'Dermatology', 'ENT', 'Forensic Medicine & Toxicology', 'Gynaecology & Obstetrics',
+  'Medicine', 'Microbiology', 'Ophthalmology', 'Orthopedics', 'Pathology',
+  'Pediatrics', 'Pharmacology', 'Physiology', 'Psychiatry', 'Radiology', 'Surgery'
 ];
 
 const QUIZ_XP_BASE_BY_DIFFICULTY: Record<'easy' | 'medium' | 'hard', number> = {
