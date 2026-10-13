@@ -13,7 +13,10 @@ import { startQuizSessionResolver, submitQuizSessionResolver } from './quiz.js';
 import { createChallengeResolver, respondChallengeResolver } from './challenge.js';
 import { removeFriendResolver, getPendingFriendRequestsResolver } from './friends.js';
 import { sendFriendRequestResolver, respondFriendRequestResolver } from './friends.js';
+import { registerDeviceTokenResolver, unregisterDeviceTokenResolver } from './notification.js';
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
+import { getNotificationsResolver, getUnreadNotificationCountResolver } from './notification.js';
+import { markNotificationReadResolver, markAllNotificationsReadResolver } from './notification.js';
 import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
 
 
@@ -35,6 +38,8 @@ export const resolvers = {
     getAnalytics: getAnalyticsResolver,
     getAchievements: getAchievementsResolver,
     getStudyPlan: getStudyPlanResolver,
+    getNotifications: getNotificationsResolver,
+    getUnreadNotificationCount: getUnreadNotificationCountResolver,
   },
   Mutation: {
     completeOnboarding: completeOnboardingResolver,
@@ -51,6 +56,10 @@ export const resolvers = {
     respondChallenge: respondChallengeResolver,
     generateStudyPlan: generateStudyPlanResolver,
     markStudySessionComplete: markStudySessionCompleteResolver,
+    markNotificationRead: markNotificationReadResolver,
+    markAllNotificationsRead: markAllNotificationsReadResolver,
+    registerDeviceToken: registerDeviceTokenResolver,
+    unregisterDeviceToken: unregisterDeviceTokenResolver,
   },
   Contest: {
     topPerformers: getTopPerformersResolver,
