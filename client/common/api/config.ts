@@ -1,5 +1,4 @@
-// Central config — single place to flip environment, endpoints,
-// and the mock-data behavior used across the whole API layer.
+// Central config — single place to flip env, endpoints and the mock-data behavior used across the whole API layer.
 import { Platform } from 'react-native';
 
 
@@ -26,14 +25,11 @@ export const config = {
     return `${config.apiBaseUrl}/graphql`;
   },
 
-  requestTimeoutMs: envNumber(
-    process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS,
-    15000
-  ),
+  requestTimeoutMs: envNumber(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS, 15000),
 
   useMockData: envBool(process.env.EXPO_PUBLIC_USE_MOCK_DATA, false),
   autoFallbackOnError: envBool(process.env.EXPO_PUBLIC_AUTO_FALLBACK_ON_ERROR, true),
-  mockDelayMs: envNumber(process.env.EXPO_PUBLIC_MOCK_DELAY_MS, 450),
+  mockDelayMs: envNumber(process.env.EXPO_PUBLIC_MOCK_DELAY_MS, 500),
   logMockFallbacks: isDev,
 
   google: {
@@ -82,8 +78,7 @@ function validateConfig(): void {
       throw new Error(message);
     } else {
       // In production we don't want a misconfigured release to hard-crash on boot for every user at once
-      // - log to console (picked up by whatever crash/log reporting is wired in later)
-      // and let Firebase's own errors surface per-action instead.
+      // - log to console (picked up by whatever crash/log reporting is wired in later) and let Firebase's own errors surface per-action instead.
       console.error(message);
     }
   }
