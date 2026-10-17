@@ -1,7 +1,7 @@
 {
   "name": "medquel-api",
   "version": "1.0.0",
-  "description": "MedQuel backend - GraphQL API",
+  "description": "GraphQL API for the MedQuel medical learning platform",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -9,16 +9,20 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js"
+    "test": "node --test",
+    "check": "npm run typecheck && npm run build"
   },
-  "license": "ISC",
-  "homepage": "https://github.com/MedQuel/MedQuel-app#readme",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "homepage": "https://github.com/MedQuel/MedQuel-server#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MedQuel/MedQuel-app.git"
+    "url": "git+https://github.com/MedQuel/MedQuel-server.git"
   },
   "bugs": {
-    "url": "https://github.com/MedQuel/MedQuel-app/issues"
+    "url": "https://github.com/MedQuel/MedQuel-server/issues"
   },
   "dependencies": {
     "@apollo/server": "^5.5.1",
