@@ -1,5 +1,5 @@
 # Builder: compile TypeScript -> dist/
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm run build
 
 
 # Runner: prod deps + Nginx sidecar
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 RUN apk add --no-cache nginx bash
 
