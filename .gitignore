@@ -34,10 +34,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# local env files and credentials
 .env
-.env*.local
+.env.*
+!.env.example
 config/serviceAccountKey.json
+config/*-service-account*.json
+*.service-account.json
 
 # typescript
 *.tsbuildinfo
@@ -53,4 +56,4 @@ modules/test.txt
 # dev tools
 get-token-script/
 nginx-dev.conf
-helper.md
+tmp/
