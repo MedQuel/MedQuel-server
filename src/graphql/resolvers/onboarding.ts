@@ -25,6 +25,8 @@ function buildUserDocument(uid: string, email: string, data: ReturnType<typeof v
     focusSubjects: data.focusSubjects,
     isPremium: false,
     subscriptionId: null,
+    premiumExpiresAt: null,
+    premiumPlanId: null,
     xpPoints: 0,
     epPoints: 0,
     currentLevel: 1,
