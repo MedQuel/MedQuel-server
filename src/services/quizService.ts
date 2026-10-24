@@ -10,6 +10,7 @@ import { recordChallengeResult, type ChallengeOutcome } from './challenge/challe
 import { updateStreak, computeXpEarned, computeEpEarned, computeLevelFromXp } from './xpEpService.js';
 import type { ValidatedStartQuizSession, ValidatedSubmitQuizSession } from '../validators/quizValidation.js';
 
+import { isPremiumActive } from '../utils/premium.js';
 import { ContestNotActiveError, ChallengeNotActiveError } from '../utils/errors.js';
 import { ForbiddenError, NotOnboardedError, AuthenticationError } from '../utils/errors.js';
 import { InsufficientQuestionsError, SessionAlreadyCompletedError } from '../utils/errors.js';
@@ -113,7 +114,7 @@ export async function fetchOnboardedUser(context: GraphQLContext): Promise<Onboa
   if (!doc.exists) throw new NotOnboardedError();
 
   const data = doc.data()!;
-  return { uid, isPremium: data.isPremium === true };
+  return { uid, isPremium: isPremiumActive(data) };
 }
 
 function reorderByIds(ids: string[], questions: QuestionForQuiz[]): QuestionForQuiz[] {

@@ -4,6 +4,7 @@ import { homeTypeDefs } from './home.js';
 import { quizTypeDefs } from './quiz.js';
 import { friendsTypeDefs } from './friends.js';
 import { contestTypeDefs } from './contest.js';
+import { paymentTypeDefs } from './payment.js';
 import { analyticsTypeDefs } from './analytics.js';
 import { studyPlanTypeDefs } from './studyPlan.js';
 import { challengeTypeDefs } from './challenge.js';
@@ -17,6 +18,7 @@ export const typeDefs = [
   userTypeDefs,
   quizTypeDefs,
   homeTypeDefs,
+  paymentTypeDefs,
   friendsTypeDefs,
   contestTypeDefs,
   challengeTypeDefs,

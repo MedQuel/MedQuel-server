@@ -18,11 +18,14 @@ import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from 
 import { getNotificationsResolver, getUnreadNotificationCountResolver } from './notification.js';
 import { markNotificationReadResolver, markAllNotificationsReadResolver } from './notification.js';
 import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
+import { getPlansResolver, initiatePaymentResolver, verifyPaymentResolver, getPaymentStatusResolver} from './payment.js';
 
 
 export const resolvers = {
   Query: {
     me: meResolver,
+    getPlans: getPlansResolver,
+    getPaymentStatus: getPaymentStatusResolver,
     getHomeData: getHomeDataResolver,
     getTopicsForSubject: getTopicsForSubjectResolver,
     getFriends: getFriendsResolver,
@@ -43,6 +46,8 @@ export const resolvers = {
   },
   Mutation: {
     completeOnboarding: completeOnboardingResolver,
+    initiatePayment: initiatePaymentResolver,
+    verifyPayment: verifyPaymentResolver,
     updateProfile: updateProfileResolver,
     updateQuizPrefs: updateQuizPrefsResolver,
     updateNotifPrefs: updateNotifPrefsResolver,

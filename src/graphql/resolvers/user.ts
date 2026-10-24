@@ -1,6 +1,7 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
 import type { GraphQLContext } from '../context.js';
+import { isPremiumActive } from '../../utils/premium.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
 import { deriveDescribesYouFromStudyLevel } from '../../validators/onboardingValidation.js';
 import { validateQuizPrefsInput, validateNotifPrefsInput, validateUpdateProfileInput } from '../../validators/profileValidation.js';
@@ -9,15 +10,15 @@ import type { CurrentProfileForUpdate, QuizPrefsInput, NotifPrefsInput, UpdatePr
 
 export const DEFAULT_NOTIF_PREFS = {
   pushEnabled: true,
-  emailDigest: true,
+  emailDigest: false,
   rankAlerts: true,
   contestReminders: false,
-  achievementAlerts: false,
+  achievementAlerts: true,
 };
 export const DEFAULT_QUIZ_PREFS = {
   defaultDifficulty: 'medium' as const,
-  timerSound: false,
-  autoSubmit: false,
+  timerSound: true,
+  autoSubmit: true,
 };
 
 function toISOString(value: unknown): string {
@@ -40,8 +41,12 @@ export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
     yearOfStudy: data.yearOfStudy ?? null,
     specialties: data.specialties ?? [],
     institution: data.institution ?? null,
-    isPremium: data.isPremium ?? false,
+    isPremium: isPremiumActive(data),
     subscriptionId: data.subscriptionId ?? null,
+    premiumExpiresAt: data.premiumExpiresAt instanceof Timestamp
+      ? data.premiumExpiresAt.toDate().toISOString()
+      : null,
+    premiumPlanId: data.premiumPlanId ?? null,
     xpPoints: data.xpPoints ?? 0,
     epPoints: data.epPoints ?? 0,
     currentLevel: data.currentLevel ?? 1,

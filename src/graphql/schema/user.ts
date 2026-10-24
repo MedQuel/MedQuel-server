@@ -53,6 +53,8 @@ export const userTypeDefs = `#graphql
     institution: String
     isPremium: Boolean!
     subscriptionId: String
+    premiumExpiresAt: String
+    premiumPlanId: String
     xpPoints: Int!
     epPoints: Int!
     currentLevel: Int!

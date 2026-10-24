@@ -315,3 +315,39 @@ export class NotificationNotFoundError extends GraphQLError {
     super(message, { extensions: { code: 'NOT_FOUND' } });
   }
 }
+
+/**
+ * Throw when a plan doesn't exist or isn't active.
+ */
+export class PlanNotFoundError extends GraphQLError {
+  constructor(message = 'This plan is not available.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when a payments/{orderId} doc doesn't exist or doesn't belong to the caller.
+ */
+export class PaymentNotFoundError extends GraphQLError {
+  constructor(message = 'Payment not found.') {
+    super(message, { extensions: { code: 'NOT_FOUND' } });
+  }
+}
+
+/**
+ * Throw when the Razorpay checkout signature doesn't match.
+ */
+export class InvalidPaymentSignatureError extends GraphQLError {
+  constructor(message = 'Payment verification failed.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}
+
+/**
+ * Throw when a payment is in a state that can't be activated (refunded, amount mismatch, not captured).
+ */
+export class PaymentStateError extends GraphQLError {
+  constructor(message = 'This payment cannot be completed.') {
+    super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
+  }
+}

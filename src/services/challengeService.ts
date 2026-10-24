@@ -8,6 +8,7 @@ import { computeChallengeRewards } from './challenge/challengeRewards.js';
 import type { ValidatedCreateChallenge } from '../validators/challengeValidation.js';
 import type { ChallengeDocument, ParticipantState } from '../types/challengeTypes.js';
 
+import { isPremiumActive } from '../utils/premium.js';
 import { NotFriendsError, UserNotFoundError, SelfChallengeError } from '../utils/errors.js';
 import { ChallengeNotPendingError, DuplicatePendingChallengeError } from '../utils/errors.js';
 import { InsufficientQuestionsError, ChallengeAlreadyRespondedError } from '../utils/errors.js';
@@ -205,7 +206,7 @@ export async function respondChallenge(
     assertOnboarded(data.createdBy, db),
     assertOnboarded(callerUid, db),
   ]);
-  const includePremium = creatorData.isPremium === true;
+  const includePremium = isPremiumActive(creatorData);
 
   const questions = await bigqueryService.fetchQuestions({
     subject: data.subject,
