@@ -38,6 +38,7 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+config/
 config/serviceAccountKey.json
 config/*-service-account*.json
 *.service-account.json
