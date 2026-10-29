@@ -1,15 +1,14 @@
 .git
 .gitignore
 .gitmodules
+.gitattributes
 .gcloudignore
-
-# Monorepo siblings: never upload these to Cloud Build
-client/
 
 # Backend build artifacts / secrets
 node_modules/
 dist/
 .env
+.env.example
 config/serviceAccountKey.json
 *.md
 npm-debug.log
@@ -26,12 +25,10 @@ firebase-debug.log
 # Infrastructure files
 infra/
 
-# Cloud Functions artifacts - not needed inside the Docker build.
-functions/
-
 # Scripts
 scripts/
 
 # Throwaway dev tools, not part of the deployed backend
 get-token-script/
 nginx.local.conf
+tmp/
