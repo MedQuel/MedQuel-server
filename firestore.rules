@@ -1,5 +1,6 @@
 rules_version = '2';
 
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -90,6 +91,9 @@ service cloud.firestore {
       allow read, write: if false;
     }
     match /processedActivityEvents/{sessionId} {
+      allow read, write: if false;
+    }
+    match /webhookEvents/{eventId} {
       allow read, write: if false;
     }
 
