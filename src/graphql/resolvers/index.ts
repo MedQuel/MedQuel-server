@@ -7,6 +7,7 @@ import { meResolver, updateProfileResolver } from './user.js';
 import { getContestsResolver, getContestResolver } from './contest.js';
 import { getChallengeResolver, getChallengesResolver } from './challenge.js';
 import { getTopPerformersResolver, joinContestResolver } from './contest.js';
+import { initiatePaymentResolver, verifyPaymentResolver } from './payment.js';
 import { updateNotifPrefsResolver, updateQuizPrefsResolver } from './user.js';
 import { getTopicsForSubjectResolver, getQuizSessionResolver } from './quiz.js';
 import { startQuizSessionResolver, submitQuizSessionResolver } from './quiz.js';
@@ -17,14 +18,15 @@ import { registerDeviceTokenResolver, unregisterDeviceTokenResolver } from './no
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
 import { getNotificationsResolver, getUnreadNotificationCountResolver } from './notification.js';
 import { markNotificationReadResolver, markAllNotificationsReadResolver } from './notification.js';
+import { getPlansResolver, getPaymentStatusResolver, getPremiumStatusResolver } from './payment.js';
 import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
-import { getPlansResolver, initiatePaymentResolver, verifyPaymentResolver, getPaymentStatusResolver} from './payment.js';
 
 
 export const resolvers = {
   Query: {
     me: meResolver,
     getPlans: getPlansResolver,
+    getPremiumStatus: getPremiumStatusResolver,
     getPaymentStatus: getPaymentStatusResolver,
     getHomeData: getHomeDataResolver,
     getTopicsForSubject: getTopicsForSubjectResolver,
