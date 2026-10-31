@@ -22,6 +22,7 @@ const MAX_CHALLENGES_LIMIT = 50;
 export interface GetChallengesFilter {
   status?: string | null;
   limit?: number | null;
+  excludeExpired?: boolean | null;
 }
 
 function mapChallengeDoc(id: string, data: FirebaseFirestore.DocumentData) {
@@ -269,6 +270,10 @@ export async function getChallenges(callerUid: string, filter: GetChallengesFilt
     MAX_CHALLENGES_LIMIT
   );
   const snap = await query.limit(limit).get();
+  const challenges = snap.docs.map((doc) => mapChallengeDoc(doc.id, doc.data()));
 
-  return snap.docs.map((doc) => mapChallengeDoc(doc.id, doc.data()));
+  if (!filter.excludeExpired) return challenges;
+
+  const nowMs = Date.now();
+  return challenges.filter((challenge) => new Date(challenge.expiresAt).getTime() > nowMs);
 }

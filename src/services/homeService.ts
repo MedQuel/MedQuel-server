@@ -9,6 +9,9 @@ import { getContests, getPersonalizedContests } from './contestService.js';
 const TREND_WINDOW_DAYS = 7;
 const CANDIDATE_POOL_SIZE = 20;
 const HOME_ACTIVE_CONTESTS_LIMIT = 5;
+function isContestExpired(endsAt: string, nowMs: number): boolean {
+  return new Date(endsAt).getTime() <= nowMs;
+}
 export interface PerformanceTrendPointDTO {
   date: string;
   accuracy: number | null;
@@ -27,15 +30,21 @@ export interface HomeDataResult {
   performanceTrend: PerformanceTrendPointDTO[];
 }
 
-async function fetchActiveContestsForHome(db: Firestore, focusSubjects: string[]): Promise<HomeDataResult['activeContests']> {
+async function fetchActiveContestsForHome(
+  db: Firestore,
+  focusSubjects: string[],
+  now: Date,
+): Promise<HomeDataResult['activeContests']> {
   const filter = { status: 'active', limit: CANDIDATE_POOL_SIZE };
 
   const { contests } = focusSubjects.length > 0
     ? await getPersonalizedContests(filter, focusSubjects, db)
     : await getContests(filter, db);
 
+  const nowMs = now.getTime();
+
   return contests
-    .slice()
+    .filter((contest) => !isContestExpired(contest.endsAt, nowMs))
     .sort((a, b) => {
       const aPriority = a.contestType === 'live' ? 0 : 1;
       const bPriority = b.contestType === 'live' ? 0 : 1;
@@ -91,7 +100,7 @@ export async function getHomeData(uid: string, db: Firestore): Promise<HomeDataR
   const now = new Date();
 
   const [activeContests, performanceTrend] = await Promise.all([
-    fetchActiveContestsForHome(db, focusSubjects),
+    fetchActiveContestsForHome(db, focusSubjects, now),
     fetchLast7DaysTrend(userRef, now),
   ]);
 

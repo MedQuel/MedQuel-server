@@ -40,12 +40,11 @@ export const challengeTypeDefs = `#graphql
     questionCount: Int!
     timeLimitSecs: Int
   }
-
   input GetChallengesFilter {
     status: ChallengeStatus
     limit: Int
+    excludeExpired: Boolean
   }
-
   extend type Query {
     getChallenge(challengeId: ID!): Challenge
     getChallenges(filter: GetChallengesFilter): [Challenge!]!
