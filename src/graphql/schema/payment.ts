@@ -46,8 +46,25 @@ export const paymentTypeDefs = `#graphql
     premiumExpiresAt: String
   }
 
+  enum PremiumState {
+    active
+    expired
+    none
+  }
+  type PremiumStatus {
+    state: PremiumState!
+    isPremium: Boolean!
+    planId: String
+    planName: String
+    planDurationDays: Int
+    premiumExpiresAt: String
+    daysRemaining: Int!
+    lastPurchasedAt: String
+  }
+
   extend type Query {
     getPlans: [Plan!]!
+    getPremiumStatus: PremiumStatus!
     getPaymentStatus(orderId: ID!): PaymentStatus!
   }
   extend type Mutation {
