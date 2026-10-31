@@ -1,9 +1,10 @@
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
-import { validatePlanId, validateOrderId } from '../../validators/paymentValidation.js';
+import type { VerifyPaymentInput } from '../../validators/paymentValidation.js';
+import { getPaymentStatus, getPremiumStatus } from '../../services/paymentService.js';
+import { getPlans, verifyPayment, initiatePayment } from '../../services/paymentService.js';
 import { getRazorpayKeyId, getRazorpayClient } from '../../services/payment/razorpayClient.js';
-import { type VerifyPaymentInput, validateVerifyPaymentInput } from '../../validators/paymentValidation.js';
-import { getPlans, verifyPayment, initiatePayment, getPaymentStatus } from '../../services/paymentService.js';
+import { validatePlanId, validateOrderId, validateVerifyPaymentInput } from '../../validators/paymentValidation.js';
 
 
 export async function getPlansResolver(_parent: unknown, _args: unknown, context: GraphQLContext) {
@@ -43,6 +44,15 @@ export async function getPaymentStatusResolver(_parent: unknown, args: { orderId
   return getPaymentStatus(
     context.user.uid,
     orderId,
+    context.db
+  );
+}
+
+export async function getPremiumStatusResolver(_parent: unknown, _args: unknown, context: GraphQLContext) {
+  if (!context.user) throw new AuthenticationError();
+
+  return getPremiumStatus(
+    context.user.uid,
     context.db
   );
 }
