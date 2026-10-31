@@ -4,14 +4,16 @@ import type { Auth } from 'firebase-admin/auth';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
 
-import { isPremiumActive } from '../utils/premium.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
 import { activatePremium } from './payment/activatePremium.js';
 import { getRazorpayKeySecret } from './payment/razorpayClient.js';
+import { isPremiumActive, getPremiumExpiryMs } from '../utils/premium.js';
 import type { ValidatedVerifyPayment } from '../validators/paymentValidation.js';
-import { PaymentStateError, InvalidPaymentSignatureError } from '../utils/errors.js';
+import { InvalidPaymentSignatureError, PaymentStateError } from '../utils/errors.js';
 import { NotOnboardedError, PlanNotFoundError, PaymentNotFoundError } from '../utils/errors.js';
 
+
+const DAY_MS = 24 * 60*60*1000;
 
 export interface PlanDTO {
   planId: string;
@@ -40,6 +42,16 @@ export interface VerifyPaymentResultDTO {
   premiumExpiresAt: string | null;
   premiumPlanId: string | null;
 }
+export interface PremiumStatusDTO {
+  state: 'active' | 'expired' | 'none';
+  isPremium: boolean;
+  planId: string | null;
+  planName: string | null;
+  planDurationDays: number | null;
+  premiumExpiresAt: string | null;
+  daysRemaining: number;
+  lastPurchasedAt: string | null;
+}
 export interface PaymentStatusDTO {
   orderId: string;
   status: string;
@@ -66,7 +78,7 @@ function signaturesMatch(expectedHex: string, receivedHex: string): boolean {
   const expected = Buffer.from(expectedHex, 'hex');
   const received = Buffer.from(receivedHex, 'hex');
 
-  return (expected.length === received.length && crypto.timingSafeEqual(expected, received));
+  return expected.length === received.length && crypto.timingSafeEqual(expected, received);
 }
 
 
@@ -198,8 +210,8 @@ export async function getPaymentStatus(uid: string, orderId: string, db: Firesto
   ]);
   if (!paymentSnap.exists || paymentSnap.data()!.userId !== uid) throw new PaymentNotFoundError();
 
-  const user = userSnap.data();
   const payment = paymentSnap.data()!;
+  const user = userSnap.data();
   const active = isPremiumActive(user);
 
   return {
@@ -209,6 +221,46 @@ export async function getPaymentStatus(uid: string, orderId: string, db: Firesto
     isPremium: active,
     premiumExpiresAt: active && user?.premiumExpiresAt instanceof Timestamp
       ? user.premiumExpiresAt.toDate().toISOString()
+      : null,
+  };
+}
+
+export async function getPremiumStatus(uid: string, db: Firestore): Promise<PremiumStatusDTO> {
+  const userSnap = await db.collection('users').doc(uid).get();
+  if (!userSnap.exists) throw new NotOnboardedError();
+
+  const user = userSnap.data()!;
+  const nowMs = Date.now();
+  const active = isPremiumActive(user, nowMs);
+  const expiryMs = getPremiumExpiryMs(user);
+
+  const planId: string | null = typeof user.premiumPlanId === 'string' ? user.premiumPlanId : null;
+  const subscriptionId: string | null = typeof user.subscriptionId === 'string' ? user.subscriptionId : null;
+
+  const [planSnap, subscriptionSnap] = await Promise.all([
+    planId ? db.collection('plans').doc(planId).get() : Promise.resolve(null),
+    subscriptionId ? db.collection('subscriptions').doc(subscriptionId).get() : Promise.resolve(null),
+  ]);
+
+  const plan = planSnap?.exists ? planSnap.data()! : null;
+  const subscription = subscriptionSnap?.exists ? subscriptionSnap.data()! : null;
+
+  const state: PremiumStatusDTO['state'] = active
+    ? 'active'
+    : expiryMs !== null && planId !== null ? 'expired' : 'none';
+
+  return {
+    state,
+    isPremium: active,
+    planId: state === 'none' ? null : planId,
+    planName: state === 'none' ? null : (plan?.name ?? null),
+    planDurationDays: state === 'none' ? null : (plan?.durationDays ?? null),
+    premiumExpiresAt: state === 'none' || expiryMs === null ? null : new Date(expiryMs).toISOString(),
+    daysRemaining: active && expiryMs !== null
+      ? Math.max(0, Math.ceil((expiryMs-nowMs) / DAY_MS))
+      : 0,
+    lastPurchasedAt: state !== 'none' && subscription?.createdAt instanceof Timestamp
+      ? subscription.createdAt.toDate().toISOString()
       : null,
   };
 }
