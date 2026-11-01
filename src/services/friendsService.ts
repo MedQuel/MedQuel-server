@@ -30,6 +30,7 @@ export interface FriendSummaryDTO {
   photoURL: string | null;
   currentLevel: number;
   currentStreak: number;
+  xpPoints: number;
   epPoints: number;
   headToHead: { wins: number; losses: number; draws: number };
   addedAt: string;
@@ -93,6 +94,18 @@ function buildFriendSummary(uid: string, data: FirebaseFirestore.DocumentData) {
     currentStreak: data.currentStreak ?? 0,
     epPoints: data.epPoints ?? 0,
   };
+}
+
+async function getCurrentPhotoURLs(friendIds: string[], db: Firestore): Promise<Map<string, string | null>> {
+  const userRefs = friendIds.map((id) => db.collection('users').doc(id));
+  if (userRefs.length === 0) return new Map();
+
+  const userSnaps = await db.getAll(...userRefs);
+  return new Map(
+    userSnaps
+      .filter((doc) => doc.exists)
+      .map((doc) => [doc.id, doc.data()?.photoURL ?? null])
+  );
 }
 
 function mapFriendRequestDoc(data: FirebaseFirestore.DocumentData): FriendRequestDTO {
@@ -374,6 +387,10 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
     .orderBy('displayName', 'asc')
     .limit(20)
     .get();
+  const currentPhotoURLs = await getCurrentPhotoURLs(
+    friendsSnap.docs.map((friendDoc) => friendDoc.id),
+    db
+  );
 
   let headToHead: PublicProfileDTO['headToHead'] = null;
   if (relationshipStatus === 'FRIENDS') {
@@ -407,9 +424,10 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
       return {
         uid: friendDoc.id,
         displayName: data.displayName ?? 'Unknown',
-        photoURL: data.photoURL ?? null,
+        photoURL: currentPhotoURLs.get(friendDoc.id) ?? null,
         currentLevel: data.currentLevel ?? 1,
         currentStreak: data.currentStreak ?? 0,
+        xpPoints: data.xpPoints ?? 0,
         epPoints: data.epPoints ?? 0,
         headToHead: {
           wins: data.headToHead?.wins ?? 0,
@@ -474,15 +492,17 @@ export async function getPendingFriendRequests(callerUid: string, db: Firestore)
 
 export async function getFriends(callerUid: string, db: Firestore): Promise<FriendSummaryDTO[]> {
   const snap = await db.collection('users').doc(callerUid).collection('friends').orderBy('displayName', 'asc').get();
+  const currentPhotoURLs = await getCurrentPhotoURLs(snap.docs.map((doc) => doc.id), db);
 
   return snap.docs.map((doc) => {
     const data = doc.data();
     return {
       uid: doc.id,
       displayName: data.displayName ?? 'Unknown',
-      photoURL: data.photoURL ?? null,
+      photoURL: currentPhotoURLs.get(doc.id) ?? null,
       currentLevel: data.currentLevel ?? 1,
       currentStreak: data.currentStreak ?? 0,
+      xpPoints: data.xpPoints ?? 0,
       epPoints: data.epPoints ?? 0,
       headToHead: {
         wins: data.headToHead?.wins ?? 0,
