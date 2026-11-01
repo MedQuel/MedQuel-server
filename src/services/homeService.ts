@@ -36,6 +36,7 @@ async function fetchActiveContestsForHome(db: Firestore, focusSubjects: string[]
 
   return contests
     .slice()
+    .filter((contest) => new Date(contest.endsAt).getTime() > Date.now())
     .sort((a, b) => {
       const aPriority = a.contestType === 'live' ? 0 : 1;
       const bPriority = b.contestType === 'live' ? 0 : 1;
