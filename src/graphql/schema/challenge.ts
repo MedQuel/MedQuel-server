@@ -43,7 +43,6 @@ export const challengeTypeDefs = `#graphql
   input GetChallengesFilter {
     status: ChallengeStatus
     limit: Int
-    excludeExpired: Boolean
   }
   extend type Query {
     getChallenge(challengeId: ID!): Challenge
