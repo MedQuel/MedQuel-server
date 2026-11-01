@@ -32,6 +32,7 @@ export const friendsTypeDefs = `#graphql
     photoURL: String
     currentLevel: Int!
     currentStreak: Int!
+    xpPoints: Int!
     epPoints: Int!
     headToHead: HeadToHead!
     addedAt: String!
