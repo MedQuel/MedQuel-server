@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { MAX_QUESTION_COUNT } from '../services/bigqueryService.js';
+import { MAX_QUESTION_COUNT } from '../utils/limits.js';
 
 
 const MIN_QUESTION_COUNT = 2;
