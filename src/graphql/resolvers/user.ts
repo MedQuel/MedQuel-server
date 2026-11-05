@@ -1,8 +1,10 @@
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+import { MAX_FRIENDS } from '../../utils/limits.js';
 import type { GraphQLContext } from '../context.js';
 import { isPremiumActive } from '../../utils/premium.js';
 import { AuthenticationError, NotOnboardedError } from '../../utils/errors.js';
+import { propagateProfileIdentity } from '../../services/profilePropagation.js';
 import { deriveDescribesYouFromStudyLevel } from '../../validators/onboardingValidation.js';
 import { validateQuizPrefsInput, validateNotifPrefsInput, validateUpdateProfileInput } from '../../validators/profileValidation.js';
 import type { CurrentProfileForUpdate, QuizPrefsInput, NotifPrefsInput, UpdateProfileInput } from '../../validators/profileValidation.js';
@@ -41,6 +43,8 @@ export function mapUserDoc(uid: string, data: FirebaseFirestore.DocumentData) {
     yearOfStudy: data.yearOfStudy ?? null,
     specialties: data.specialties ?? [],
     institution: data.institution ?? null,
+    friendCount: data.friendCount ?? 0,
+    friendLimit: MAX_FRIENDS,
     isPremium: isPremiumActive(data),
     subscriptionId: data.subscriptionId ?? null,
     premiumExpiresAt: data.premiumExpiresAt instanceof Timestamp
@@ -105,15 +109,28 @@ export async function updateProfileResolver(_parent: unknown, args: { input: Upd
   };
 
   const validated = validateUpdateProfileInput(args.input, current);
-  if (validated.displayName) {
-    (validated).displayNameLower = validated.displayName.toLowerCase();
-  }
+  if (validated.displayName) (validated).displayNameLower = validated.displayName.toLowerCase();
   if (Object.keys(validated).length === 0) return mapUserDoc(uid, data);
+
+  const photoChanged = validated.photoURL !== undefined && validated.photoURL !== (data.photoURL ?? null);
+  const nameChanged = validated.displayName !== undefined && validated.displayName !== data.displayName;
 
   await userRef.update({
     ...validated,
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  if (photoChanged || nameChanged) {
+    await propagateProfileIdentity(
+      uid,
+      {
+        displayName: nameChanged ? validated.displayName : undefined,
+        photoURL: photoChanged ? validated.photoURL : undefined,
+      },
+      context.db
+    );
+  }
+
   const updatedDoc = await userRef.get();
 
   return mapUserDoc(uid, updatedDoc.data()!);
