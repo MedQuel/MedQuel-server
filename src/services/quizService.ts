@@ -80,6 +80,7 @@ export interface StartQuizSessionResult {
   timeLimitSecs: number | null;
   totalQuestions: number;
   questions: QuestionForQuiz[];
+  fallbackApplied: boolean;
   startedAt: string;
 }
 export interface SubmitQuizSessionResult {
@@ -244,6 +245,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
   let passPercent: number;
   let topic: string | null;
   let timeLimitSecs: number | null;
+  let fallbackApplied = false;
 
   const sessionRef = db.collection('quizSessions').doc();
 
@@ -302,17 +304,18 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
     topic = input.topic;
     timeLimitSecs = input.timeLimitSecs;
 
-    questions = await bigqueryService.fetchQuestions({
+    const fetched = await bigqueryService.fetchQuestionsWithFallback({
       subject: input.subject,
       difficulty: input.difficulty,
       questionCount: input.questionCount,
       includePremium: user.isPremium,
       topic,
     });
+    questions = fetched.questions;
+    fallbackApplied = fetched.fallbackApplied;
 
-    if (questions.length < input.questionCount) {
-      const topicNote = topic ? ` for topic "${topic}"` : '';
-      throw new InsufficientQuestionsError(`Not enough ${difficulty} questions available for ${subject}${topicNote}. Found only ${questions.length}.`);
+    if (questions.length === 0) {
+      throw new InsufficientQuestionsError(`There are no ${subject} questions available yet. Please try another subject.`);
     }
 
     questionIds = questions.map((q) => q.questionId);
@@ -351,6 +354,7 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
 
   return {
     sessionId: sessionRef.id,
+    fallbackApplied,
     quizType: input.quizType,
     subject,
     difficulty,
