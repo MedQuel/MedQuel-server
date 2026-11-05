@@ -351,3 +351,23 @@ export class PaymentStateError extends GraphQLError {
     super(message, { extensions: { code: 'FAILED_PRECONDITION' } });
   }
 }
+
+/**
+ * Throw when the caller already has the maximum number of friends and tries to add another.
+ */
+export class FriendListFullError extends GraphQLError {
+  constructor(limit: number) {
+    super(`Your friend list is full (${limit} friends). Remove a friend to add someone new.`, {
+      extensions: { code: 'FRIEND_LIST_FULL' },
+    });
+  }
+}
+
+/**
+ * Throw when the OTHER person's friend list is full. The sender is told, so they are not left waiting for a request that can never be accepted.
+ */
+export class TargetFriendListFullError extends GraphQLError {
+  constructor(message = "This user's friend list is full, so they can't accept new friends right now.") {
+    super(message, { extensions: { code: 'TARGET_FRIEND_LIST_FULL' } });
+  }
+}
