@@ -51,6 +51,8 @@ export const userTypeDefs = `#graphql
     yearOfStudy: String
     specialties: [String!]!
     institution: String
+    friendCount: Int!
+    friendLimit: Int!
     isPremium: Boolean!
     subscriptionId: String
     premiumExpiresAt: String
