@@ -1,17 +1,28 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import type { Firestore } from 'firebase-admin/firestore';
+import type { Firestore, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
+import { MAX_FRIENDS } from '../utils/limits.js';
 import { publishNotification } from '../pubsub/publisher.js';
 import { checkRateLimit } from '../middleware/rateLimiter.js';
+
 import { NotOnboardedError, UserNotFoundError } from '../utils/errors.js';
+import { FriendListFullError, TargetFriendListFullError } from '../utils/errors.js';
 import { SelfFriendRequestError, AlreadyFriendsError, NotFriendsError } from '../utils/errors.js';
 import { DuplicateFriendRequestError, FriendRequestCooldownError, FriendRequestNotFoundError } from '../utils/errors.js';
 
 
-const DECLINE_COOLDOWN_MS = 3 * 24*60*60*1000;
-
 const SEARCH_RESULTS_LIMIT = 15;
 const MIN_SEARCH_QUERY_LENGTH = 3;
+const DECLINE_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
+
+const PROFILE_FIELDS = [
+  'displayName',
+  'photoURL',
+  'currentLevel',
+  'currentStreak',
+  'xpPoints',
+  'epPoints',
+];
 
 export type FriendRequestStatus = 'pending' | 'accepted' | 'declined';
 export interface FriendRequestDTO {
@@ -62,7 +73,12 @@ export interface PublicProfileDTO {
   friends: FriendSummaryDTO[];
   relationshipStatus: FriendRelationshipStatus;
   headToHead: { wins: number; losses: number; draws: number } | null;
-  comparison: { xpDelta: number; epDelta: number; streakDelta: number; levelDelta: number };
+  comparison: {
+    xpDelta: number;
+    epDelta: number;
+    streakDelta: number;
+    levelDelta: number;
+  };
 }
 
 export interface UserSearchResultDTO {
@@ -85,27 +101,54 @@ async function assertUserOnboarded(uid: string, db: Firestore): Promise<Firebase
   return doc.data()!;
 }
 
-function buildFriendSummary(uid: string, data: FirebaseFirestore.DocumentData) {
-  return {
-    uid,
-    displayName: data.displayName ?? 'Unknown',
-    photoURL: data.photoURL ?? null,
-    currentLevel: data.currentLevel ?? 1,
-    currentStreak: data.currentStreak ?? 0,
-    epPoints: data.epPoints ?? 0,
-  };
+function newFriendLink(addedAt: Timestamp) {
+  return { addedAt, headToHead: { wins: 0, losses: 0, draws: 0 } };
 }
 
-async function getCurrentPhotoURLs(friendIds: string[], db: Firestore): Promise<Map<string, string | null>> {
-  const userRefs = friendIds.map((id) => db.collection('users').doc(id));
-  if (userRefs.length === 0) return new Map();
+function friendCountOf(userData: FirebaseFirestore.DocumentData | undefined): number {
+  return typeof userData?.friendCount === 'number' ? userData.friendCount : 0;
+}
 
-  const userSnaps = await db.getAll(...userRefs);
-  return new Map(
-    userSnaps
-      .filter((doc) => doc.exists)
-      .map((doc) => [doc.id, doc.data()?.photoURL ?? null])
-  );
+async function hydrateProfiles(uids: string[], db: Firestore): Promise<Map<string, FirebaseFirestore.DocumentData>> {
+  if (uids.length === 0) return new Map();
+
+  const refs = uids.map((id) => db.collection('users').doc(id));
+  const snaps = await db.getAll(...refs, { fieldMask: PROFILE_FIELDS });
+
+  return new Map(snaps.filter((doc) => doc.exists).map((doc) => [doc.id, doc.data()!]));
+}
+
+function buildFriendList(
+  friendDocs: QueryDocumentSnapshot[],
+  profiles: Map<string, FirebaseFirestore.DocumentData>
+): FriendSummaryDTO[] {
+  const friends: FriendSummaryDTO[] = [];
+
+  for (const doc of friendDocs) {
+    const profile = profiles.get(doc.id);
+    if (!profile) continue;
+
+    const link = doc.data();
+    friends.push({
+      uid: doc.id,
+      displayName: profile.displayName ?? 'Unknown',
+      photoURL: profile.photoURL ?? null,
+      currentLevel: profile.currentLevel ?? 1,
+      currentStreak: profile.currentStreak ?? 0,
+      xpPoints: profile.xpPoints ?? 0,
+      epPoints: profile.epPoints ?? 0,
+      headToHead: {
+        wins: link.headToHead?.wins ?? 0,
+        losses: link.headToHead?.losses ?? 0,
+        draws: link.headToHead?.draws ?? 0,
+      },
+      addedAt: link.addedAt instanceof Timestamp
+        ? link.addedAt.toDate().toISOString()
+        : new Date().toISOString(),
+    });
+  }
+
+  return friends.sort((a, b) => a.displayName.localeCompare(b.displayName));
 }
 
 function mapFriendRequestDoc(data: FirebaseFirestore.DocumentData): FriendRequestDTO {
@@ -124,14 +167,23 @@ function mapFriendRequestDoc(data: FirebaseFirestore.DocumentData): FriendReques
 async function getRelationshipStatus(viewerUid: string, targetUid: string, db: Firestore): Promise<FriendRelationshipStatus> {
   if (viewerUid === targetUid) return 'SELF';
 
-  const friendSnap = await db.collection('users').doc(viewerUid).collection('friends').doc(targetUid).get();
+  const friendSnap = await db
+    .collection('users')
+    .doc(viewerUid)
+    .collection('friends')
+    .doc(targetUid)
+    .get();
   if (friendSnap.exists) return 'FRIENDS';
 
   const forwardSnap = await db.collection('friendRequests').doc(requestDocId(viewerUid, targetUid)).get();
-  if (forwardSnap.exists && forwardSnap.data()!.status === 'pending') return 'REQUEST_SENT';
+  if (forwardSnap.exists && forwardSnap.data()!.status === 'pending') {
+    return 'REQUEST_SENT';
+  }
 
   const reverseSnap = await db.collection('friendRequests').doc(requestDocId(targetUid, viewerUid)).get();
-  if (reverseSnap.exists && reverseSnap.data()!.status === 'pending') return 'REQUEST_RECEIVED';
+  if (reverseSnap.exists && reverseSnap.data()!.status === 'pending') {
+    return 'REQUEST_RECEIVED';
+  }
 
   return 'NONE';
 }
@@ -178,9 +230,19 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
     assertUserOnboarded(targetUid, db),
   ]);
 
-  const existingFriendSnap = await db.collection('users').doc(callerUid).collection('friends').doc(targetUid).get();
+  const existingFriendSnap = await db
+    .collection('users')
+    .doc(callerUid)
+    .collection('friends')
+    .doc(targetUid)
+    .get();
   if (existingFriendSnap.exists) throw new AlreadyFriendsError();
 
+  if (friendCountOf(callerData) >= MAX_FRIENDS) throw new FriendListFullError(MAX_FRIENDS);
+  if (friendCountOf(targetData) >= MAX_FRIENDS) throw new TargetFriendListFullError();
+
+  const callerRef = db.collection('users').doc(callerUid);
+  const targetRef = db.collection('users').doc(targetUid);
   const forwardRef = db.collection('friendRequests').doc(requestDocId(callerUid, targetUid));
   const reverseRef = db.collection('friendRequests').doc(requestDocId(targetUid, callerUid));
 
@@ -192,6 +254,17 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
     const now = Timestamp.now();
 
     if (reverseSnap.exists && reverseSnap.data()!.status === 'pending') {
+      const [freshCaller, freshTarget] = await Promise.all([
+        tx.get(callerRef),
+        tx.get(targetRef),
+      ]);
+      if (!freshCaller.exists || !freshTarget.exists) throw new UserNotFoundError();
+
+      const callerCount = friendCountOf(freshCaller.data());
+      const targetCount = friendCountOf(freshTarget.data());
+      if (callerCount >= MAX_FRIENDS) throw new FriendListFullError(MAX_FRIENDS);
+      if (targetCount >= MAX_FRIENDS) throw new TargetFriendListFullError();
+
       tx.update(reverseRef, { status: 'accepted', respondedAt: now });
       tx.set(forwardRef, {
         requestId: forwardRef.id,
@@ -202,18 +275,10 @@ export async function sendFriendRequest(callerUid: string, toUid: string, db: Fi
         respondedAt: now,
       });
 
-      const callerFriendRef = db.collection('users').doc(callerUid).collection('friends').doc(targetUid);
-      const targetFriendRef = db.collection('users').doc(targetUid).collection('friends').doc(callerUid);
-      tx.set(callerFriendRef, {
-        ...buildFriendSummary(targetUid, targetData),
-        headToHead: { wins: 0, losses: 0, draws: 0 },
-        addedAt: now,
-      });
-      tx.set(targetFriendRef, {
-        ...buildFriendSummary(callerUid, callerData),
-        headToHead: { wins: 0, losses: 0, draws: 0 },
-        addedAt: now,
-      });
+      tx.set(callerRef.collection('friends').doc(targetUid), newFriendLink(now));
+      tx.set(targetRef.collection('friends').doc(callerUid), newFriendLink(now));
+      tx.update(callerRef, { friendCount: callerCount+1 });
+      tx.update(targetRef, { friendCount: targetCount+1 });
 
       return {
         requestId: forwardRef.id,
@@ -302,26 +367,27 @@ export async function respondFriendRequest(callerUid: string, requestId: string,
       return null;
     }
 
+    const fromRef = db.collection('users').doc(data.fromUid);
+    const toRef = db.collection('users').doc(data.toUid);
     const [fromSnap, toSnap] = await Promise.all([
-      tx.get(db.collection('users').doc(data.fromUid)),
-      tx.get(db.collection('users').doc(data.toUid)),
+      tx.get(fromRef),
+      tx.get(toRef),
     ]);
     if (!fromSnap.exists || !toSnap.exists) throw new UserNotFoundError();
 
+    const fromCount = friendCountOf(fromSnap.data());
+    const toCount = friendCountOf(toSnap.data());
+    if (toCount >= MAX_FRIENDS) throw new FriendListFullError(MAX_FRIENDS);
+    if (fromCount >= MAX_FRIENDS) {
+      throw new TargetFriendListFullError("This person's friend list filled up, so this request can no longer be accepted.");
+    }
+
     tx.update(requestRef, { status: 'accepted', respondedAt: now });
 
-    const fromFriendRef = db.collection('users').doc(data.fromUid).collection('friends').doc(data.toUid);
-    const toFriendRef = db.collection('users').doc(data.toUid).collection('friends').doc(data.fromUid);
-    tx.set(fromFriendRef, {
-      ...buildFriendSummary(data.toUid, toSnap.data()!),
-      headToHead: { wins: 0, losses: 0, draws: 0 },
-      addedAt: now,
-    });
-    tx.set(toFriendRef, {
-      ...buildFriendSummary(data.fromUid, fromSnap.data()!),
-      headToHead: { wins: 0, losses: 0, draws: 0 },
-      addedAt: now,
-    });
+    tx.set(fromRef.collection('friends').doc(data.toUid), newFriendLink(now));
+    tx.set(toRef.collection('friends').doc(data.fromUid), newFriendLink(now));
+    tx.update(fromRef, { friendCount: fromCount+1 });
+    tx.update(toRef, { friendCount: toCount+1 });
 
     return {
       fromUid: data.fromUid as string,
@@ -348,19 +414,37 @@ export async function removeFriend(callerUid: string, friendUid: string, db: Fir
   const targetUid = friendUid?.trim();
   if (!targetUid) throw new UserNotFoundError();
 
-  const callerFriendRef = db.collection('users').doc(callerUid).collection('friends').doc(targetUid);
-  const targetFriendRef = db.collection('users').doc(targetUid).collection('friends').doc(callerUid);
+  const callerRef = db.collection('users').doc(callerUid);
+  const targetRef = db.collection('users').doc(targetUid);
   const forwardRef = db.collection('friendRequests').doc(requestDocId(callerUid, targetUid));
   const reverseRef = db.collection('friendRequests').doc(requestDocId(targetUid, callerUid));
 
   await db.runTransaction(async (tx) => {
-    const callerFriendSnap = await tx.get(callerFriendRef);
+    const callerFriendRef = callerRef.collection('friends').doc(targetUid);
+    const targetFriendRef = targetRef.collection('friends').doc(callerUid);
+
+    const [callerFriendSnap, callerSnap, targetSnap] = await Promise.all([
+      tx.get(callerFriendRef),
+      tx.get(callerRef),
+      tx.get(targetRef),
+    ]);
     if (!callerFriendSnap.exists) throw new NotFriendsError();
 
     tx.delete(callerFriendRef);
     tx.delete(targetFriendRef);
     tx.delete(forwardRef);
     tx.delete(reverseRef);
+
+    if (callerSnap.exists) {
+      tx.update(callerRef, {
+        friendCount: Math.max(0, friendCountOf(callerSnap.data())-1),
+      });
+    }
+    if (targetSnap.exists) {
+      tx.update(targetRef, {
+        friendCount: Math.max(0, friendCountOf(targetSnap.data())-1),
+      });
+    }
   });
 
   return true;
@@ -384,18 +468,22 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
     .collection('users')
     .doc(trimmedTarget)
     .collection('friends')
-    .orderBy('displayName', 'asc')
+    .orderBy('addedAt', 'desc')
     .limit(20)
     .get();
-  const currentPhotoURLs = await getCurrentPhotoURLs(
-    friendsSnap.docs.map((friendDoc) => friendDoc.id),
-    db
-  );
+
+  const friendProfiles = await hydrateProfiles(friendsSnap.docs.map((friendDoc) => friendDoc.id), db);
 
   let headToHead: PublicProfileDTO['headToHead'] = null;
   if (relationshipStatus === 'FRIENDS') {
-    const friendDoc = await db.collection('users').doc(viewerUid).collection('friends').doc(trimmedTarget).get();
-    const h2h = friendDoc.data()?.headToHead ?? { wins: 0, losses: 0, draws: 0 }
+    const friendDoc = await db
+      .collection('users')
+      .doc(viewerUid)
+      .collection('friends')
+      .doc(trimmedTarget)
+      .get();
+
+    const h2h = friendDoc.data()?.headToHead ?? { wins: 0, losses: 0, draws: 0 };
     headToHead = { wins: h2h.wins ?? 0, losses: h2h.losses ?? 0, draws: h2h.draws ?? 0 };
   }
 
@@ -419,26 +507,7 @@ export async function getUserProfile(viewerUid: string, targetUid: string, db: F
     studyHours: target.studyHours ?? 0,
     quizzesCompleted: target.stats?.completedSessions ?? target.stats?.contestsPlayed ?? 0,
     badges: target.badges ?? [],
-    friends: friendsSnap.docs.map((friendDoc) => {
-      const data = friendDoc.data();
-      return {
-        uid: friendDoc.id,
-        displayName: data.displayName ?? 'Unknown',
-        photoURL: currentPhotoURLs.get(friendDoc.id) ?? null,
-        currentLevel: data.currentLevel ?? 1,
-        currentStreak: data.currentStreak ?? 0,
-        xpPoints: data.xpPoints ?? 0,
-        epPoints: data.epPoints ?? 0,
-        headToHead: {
-          wins: data.headToHead?.wins ?? 0,
-          losses: data.headToHead?.losses ?? 0,
-          draws: data.headToHead?.draws ?? 0,
-        },
-        addedAt: data.addedAt instanceof Timestamp
-          ? data.addedAt.toDate().toISOString()
-          : new Date().toISOString(),
-      };
-    }),
+    friends: buildFriendList(friendsSnap.docs, friendProfiles),
     relationshipStatus,
     headToHead,
     comparison: {
@@ -464,7 +533,9 @@ export async function searchUsers(callerUid: string, query: string, db: Firestor
     .limit(SEARCH_RESULTS_LIMIT + 1)
     .get();
 
-  const candidates = snap.docs.filter((d) => d.id !== callerUid).slice(0, SEARCH_RESULTS_LIMIT);
+  const candidates = snap.docs
+    .filter((d) => d.id !== callerUid)
+    .slice(0, SEARCH_RESULTS_LIMIT);
   const ctx = await buildRelationshipContextFor(callerUid, candidates.map((d) => d.id), db);
 
   return candidates.map((doc) => {
@@ -491,25 +562,13 @@ export async function getPendingFriendRequests(callerUid: string, db: Firestore)
 }
 
 export async function getFriends(callerUid: string, db: Firestore): Promise<FriendSummaryDTO[]> {
-  const snap = await db.collection('users').doc(callerUid).collection('friends').orderBy('displayName', 'asc').get();
-  const currentPhotoURLs = await getCurrentPhotoURLs(snap.docs.map((doc) => doc.id), db);
+  const snap = await db
+    .collection('users')
+    .doc(callerUid)
+    .collection('friends')
+    .limit(MAX_FRIENDS)
+    .get();
+  const profiles = await hydrateProfiles(snap.docs.map((doc) => doc.id), db);
 
-  return snap.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      uid: doc.id,
-      displayName: data.displayName ?? 'Unknown',
-      photoURL: currentPhotoURLs.get(doc.id) ?? null,
-      currentLevel: data.currentLevel ?? 1,
-      currentStreak: data.currentStreak ?? 0,
-      xpPoints: data.xpPoints ?? 0,
-      epPoints: data.epPoints ?? 0,
-      headToHead: {
-        wins: data.headToHead?.wins ?? 0,
-        losses: data.headToHead?.losses ?? 0,
-        draws: data.headToHead?.draws ?? 0,
-      },
-      addedAt: (data.addedAt as Timestamp).toDate().toISOString(),
-    };
-  });
+  return buildFriendList(snap.docs, profiles);
 }
