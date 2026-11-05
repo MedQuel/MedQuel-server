@@ -69,6 +69,7 @@ export const quizTypeDefs = `#graphql
     timeLimitSecs: Int
     totalQuestions: Int!
     questions: [Question!]!
+    fallbackApplied: Boolean!
     startedAt: String!
   }
 
