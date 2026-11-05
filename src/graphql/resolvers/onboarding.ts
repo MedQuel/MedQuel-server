@@ -1,5 +1,6 @@
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
+import { MAX_FRIENDS } from '../../utils/limits.js';
 import type { GraphQLContext } from '../context.js';
 import { AuthenticationError } from '../../utils/errors.js';
 import { DEFAULT_NOTIF_PREFS, DEFAULT_QUIZ_PREFS } from './user.js';
@@ -23,6 +24,8 @@ function buildUserDocument(uid: string, email: string, data: ReturnType<typeof v
     institution: data.institution,
     contentScope: data.contentScope,
     focusSubjects: data.focusSubjects,
+    friendCount: 0,
+    friendLimit: MAX_FRIENDS,
     isPremium: false,
     subscriptionId: null,
     premiumExpiresAt: null,
