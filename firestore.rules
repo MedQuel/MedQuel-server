@@ -19,7 +19,7 @@ service cloud.firestore {
           'isPremium', 'subscriptionId', 'premiumExpiresAt', 'premiumPlanId',
           'xpPoints', 'epPoints', 'currentLevel', 'currentStreak', 'longestStreak',
           'lastActiveDate', 'totalQuestions', 'totalCorrect', 'studyHours',
-          'stats', 'badges', 'badgeProgress', 'badgeEarnedAt',
+          'stats', 'badges', 'badgeProgress', 'badgeEarnedAt', 'friendCount',
           'notifPrefs', 'quizPrefs', 'notifTokens', 'createdAt',
         ]);
 
