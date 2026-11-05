@@ -43,23 +43,6 @@ function mapEntry(doc: QueryDocumentSnapshot | DocumentSnapshot): LeaderboardEnt
   };
 }
 
-async function hydratePhotoURLs(entries: LeaderboardEntryDTO[], db: Firestore): Promise<LeaderboardEntryDTO[]> {
-  const userRefs = entries.map((entry) => db.collection('users').doc(entry.userId));
-  if (userRefs.length === 0) return entries;
-
-  const userSnaps = await db.getAll(...userRefs);
-  const photoURLs = new Map(
-    userSnaps
-      .filter((doc) => doc.exists)
-      .map((doc) => [doc.id, doc.data()?.photoURL ?? null])
-  );
-
-  return entries.map((entry) => ({
-    ...entry,
-    photoURL: photoURLs.get(entry.userId) ?? null,
-  }));
-}
-
 function chunk<T>(items: T[], size: number): T[][] {
   const result: T[][] = [];
   for (let i=0; i<items.length; i+=size) {
@@ -69,11 +52,16 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 
-async function getGlobalLeaderboard(uid: string, db: Firestore, period: LeaderboardPeriodInput, periodKey: string): Promise<LeaderboardResult> {
+async function getGlobalLeaderboard(
+  uid: string,
+  db: Firestore,
+  period: LeaderboardPeriodInput,
+  periodKey: string
+): Promise<LeaderboardResult> {
   const entriesRef = db.collection('leaderboard').doc(periodKey).collection('entries');
 
   const topSnap = await entriesRef.orderBy('epPoints', 'desc').limit(TOP_N_DISPLAY).get();
-  const entries = await hydratePhotoURLs(topSnap.docs.map(mapEntry), db);
+  const entries = topSnap.docs.map(mapEntry);
 
   const myEntryInTop = entries.find((e) => e.userId === uid);
   if (myEntryInTop) {
@@ -89,8 +77,7 @@ async function getGlobalLeaderboard(uid: string, db: Firestore, period: Leaderbo
   const myEntrySnap = await entriesRef.doc(uid).get();
   if (!myEntrySnap.exists) return { period, periodKey, entries, myEntry: null, myRank: null };
 
-  const [myEntry] = await hydratePhotoURLs([mapEntry(myEntrySnap)], db);
-  if (!myEntry) throw new Error('Failed to hydrate the current leaderboard entry.');
+  const myEntry = mapEntry(myEntrySnap);
 
   const aheadCount = await entriesRef.where('epPoints', '>', myEntry.epPoints).count().get();
   const myRank = aheadCount.data().count + 1;
@@ -98,7 +85,12 @@ async function getGlobalLeaderboard(uid: string, db: Firestore, period: Leaderbo
   return { period, periodKey, entries, myEntry, myRank };
 }
 
-async function getFriendsLeaderboard(uid: string, db: Firestore, period: LeaderboardPeriodInput, periodKey: string): Promise<LeaderboardResult> {
+async function getFriendsLeaderboard(
+  uid: string,
+  db: Firestore,
+  period: LeaderboardPeriodInput,
+  periodKey: string
+): Promise<LeaderboardResult> {
   const friendsSnap = await db.collection('users').doc(uid).collection('friends').get();
   const friendIds = friendsSnap.docs.map((doc) => doc.id);
 
@@ -107,8 +99,10 @@ async function getFriendsLeaderboard(uid: string, db: Firestore, period: Leaderb
   const entriesRef = db.collection('leaderboard').doc(periodKey).collection('entries');
   const idChunks = chunk(targetIds, FRIENDS_CHUNK_SIZE);
 
-  const snaps = await Promise.all(idChunks.map(
-    (ids) => entriesRef.where(FieldPath.documentId(), 'in', ids).get())
+  const snaps = await Promise.all(
+    idChunks.map((ids) =>
+      entriesRef.where(FieldPath.documentId(), 'in', ids).get()
+    )
   );
 
   const entries = snaps
@@ -116,11 +110,10 @@ async function getFriendsLeaderboard(uid: string, db: Firestore, period: Leaderb
     .map(mapEntry)
     .sort((a, b) => b.epPoints - a.epPoints)
     .map((entry, index) => ({ ...entry, rank: index+1, prevRank: 0 }));
-  const hydratedEntries = await hydratePhotoURLs(entries, db);
 
-  const myEntry = hydratedEntries.find((e) => e.userId === uid) ?? null;
+  const myEntry = entries.find((e) => e.userId === uid) ?? null;
 
-  return { period, periodKey, entries: hydratedEntries, myEntry, myRank: myEntry?.rank ?? null };
+  return { period, periodKey, entries, myEntry, myRank: myEntry?.rank ?? null };
 }
 
 
