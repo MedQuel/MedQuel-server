@@ -56,10 +56,11 @@ export interface ContestTemplate {
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  perSubject?: boolean;
+  runAtHoursIST?: number[];
+  subjectQueue?: string[];
 }
 
-// Input shape for the seed script — everything except server-managed fields.
 export type ContestTemplateSeedInput = Omit<
-  ContestTemplate,
-  'templateId' | 'lastGeneratedAt' | 'createdAt' | 'updatedAt' | 'createdBy'
+  ContestTemplate, 'templateId' | 'lastGeneratedAt' | 'createdAt' | 'updatedAt' | 'createdBy' | 'subjectQueue'
 >;
