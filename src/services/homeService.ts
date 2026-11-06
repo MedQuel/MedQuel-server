@@ -1,14 +1,15 @@
 import { FieldPath } from 'firebase-admin/firestore';
 import type { Firestore, DocumentReference } from 'firebase-admin/firestore';
 
+import { getContests } from './contestService.js';
 import { NotOnboardedError } from '../utils/errors.js';
 import { toISTDateKey, istDateKeyDaysAgo } from '../utils/istDate.js';
-import { getContests, getPersonalizedContests } from './contestService.js';
 import { buildDailyChallengeForUser, type DailyChallengeDTO } from './dailyChallengeService.js';
 
 
+const LIVE_LIMIT = 3;
+const REGULAR_LIMIT = 5;
 const TREND_WINDOW_DAYS = 7;
-const CANDIDATE_POOL_SIZE = 20;
 const HOME_ACTIVE_CONTESTS_LIMIT = 5;
 
 export interface PerformanceTrendPointDTO {
@@ -22,20 +23,59 @@ export interface HomeDataResult {
 }
 
 async function fetchActiveContestsForHome(db: Firestore, focusSubjects: string[]): Promise<HomeDataResult['activeContests']> {
-  const filter = { status: 'active', limit: CANDIDATE_POOL_SIZE };
+  const base = { status: 'active' };
 
-  const { contests } = focusSubjects.length > 0
-    ? await getPersonalizedContests(filter, focusSubjects, db)
-    : await getContests(filter, db);
+  const regularQuery = async () => {
+    if (focusSubjects.length === 0) {
+      return (
+        await getContests(
+          { ...base, contestType: 'contest', limit: REGULAR_LIMIT },
+          db
+        )
+      ).contests;
+    }
 
-  return contests
-    .slice()
-    .filter((contest) => new Date(contest.endsAt).getTime() > Date.now())
+    const personalized = (
+      await getContests(
+        { ...base, contestType: 'contest', subjects: focusSubjects, limit: REGULAR_LIMIT },
+        db
+      )
+    ).contests;
+    if (personalized.length >= REGULAR_LIMIT) return personalized;
+
+    const general = (
+      await getContests(
+        { ...base, contestType: 'contest', limit: REGULAR_LIMIT },
+        db
+      )
+    ).contests;
+
+    const seen = new Set(personalized.map((c) => c.contestId));
+    return [
+      ...personalized,
+      ...general.filter((c) => !seen.has(c.contestId)),
+    ].slice(0, REGULAR_LIMIT);
+  };
+
+  const [live, weekly, regular] = await Promise.all([
+    getContests({ ...base, contestType: 'live', limit: LIVE_LIMIT }, db).then(
+      (r) => r.contests
+    ),
+    getContests({ ...base, contestType: 'weekly', limit: 1 }, db).then(
+      (r) => r.contests
+    ),
+    regularQuery(),
+  ]);
+
+  const now = Date.now();
+  const priority = (type: string) => type === 'live' ? 0 : type === 'weekly' ? 1 : 2;
+
+  return [...live, ...weekly, ...regular]
+    .filter((contest) => new Date(contest.endsAt).getTime() > now)
     .sort((a, b) => {
-      const aPriority = a.contestType === 'live' ? 0 : 1;
-      const bPriority = b.contestType === 'live' ? 0 : 1;
-      if (aPriority !== bPriority) return aPriority - bPriority;
-
+      if (priority(a.contestType) !== priority(b.contestType)) {
+        return priority(a.contestType) - priority(b.contestType);
+      }
       return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
     })
     .slice(0, HOME_ACTIVE_CONTESTS_LIMIT);
