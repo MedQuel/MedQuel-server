@@ -15,6 +15,7 @@ export interface QuizCompletedEvent {
   score: number;
   scorePercent: number;
   timeTaken: number;
+  studySecs: number;
   epEarned: number;
   xpEarned: number;
   completedAt: string;
