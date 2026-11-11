@@ -9,11 +9,12 @@ export interface BadgeSeed {
   requirementType: 'threshold' | 'arrayLength' | 'boolean';
   requirementField: string;
   requirementValue: number;
+  rewardPremiumDays: number;
   isActive: boolean;
 }
+type BadgeDefinition = Omit<BadgeSeed, 'rewardPremiumDays'>;
 
-
-export const BADGE_CATALOG: BadgeSeed[] = [
+const BADGE_DEFINITIONS: BadgeDefinition[] = [
   // ---- Streaks —> flame / red ----
   { badgeId: 'streak_3', name: 'Getting Started', description: 'Study for 3 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Common', category: 'streak', requirementType: 'threshold', requirementField: 'currentStreak', requirementValue: 3, isActive: true },
   { badgeId: 'streak_7', name: 'Week Warrior', description: 'Study for 7 consecutive days', iconKey: 'flame', variant: 'red', rarity: 'Common', category: 'streak', requirementType: 'threshold', requirementField: 'currentStreak', requirementValue: 7, isActive: true },
@@ -90,6 +91,55 @@ export const BADGE_CATALOG: BadgeSeed[] = [
   { badgeId: 'top3_20', name: 'Leaderboard Legend', description: 'Finish top 3 in 20 contests', iconKey: 'medal', variant: 'gold', rarity: 'Legendary', category: 'rank', requirementType: 'threshold', requirementField: 'stats.top3Finishes', requirementValue: 20, isActive: true },
 
   // ---- Special ----
-  { badgeId: 'premium_member', name: 'Premium Member', description: 'Unlocked premium tier', iconKey: 'gem', variant: 'purple', rarity: 'Epic', category: 'special', requirementType: 'boolean', requirementField: 'isPremium', requirementValue: 1, isActive: true },
+  { badgeId: 'premium_member', name: 'Premium Member', description: 'Unlocked premium tier', iconKey: 'gem', variant: 'purple', rarity: 'Epic', category: 'special', requirementType: 'boolean', requirementField: 'hasEverPurchased', requirementValue: 1, isActive: true },
   { badgeId: 'social_learner', name: 'Social Learner', description: '50 messages in discussion rooms', iconKey: 'users', variant: 'blue', rarity: 'Common', category: 'special', requirementType: 'threshold', requirementField: 'chatMessageCount', requirementValue: 50, isActive: false },
 ];
+
+
+export const MAX_REWARD_PREMIUM_DAYS = 30;
+export const REWARD_DAYS_BY_RARITY: Record<BadgeSeed['rarity'], number> = {
+  Common: 1,
+  Rare: 2,
+  Epic: 3,
+  Legendary: 5,
+};
+
+const NO_REWARD_BADGE_IDS = new Set<string>(['premium_member', 'social_learner']);
+const PREMIUM_DERIVED_FIELDS = new Set<string>([
+  'isPremium',
+  'premiumExpiresAt',
+  'premiumPlanId',
+  'subscriptionId',
+  'hasEverPurchased',
+]);
+
+export const BADGE_CATALOG: BadgeSeed[] = BADGE_DEFINITIONS.map((badge) => ({
+  ...badge,
+  rewardPremiumDays: NO_REWARD_BADGE_IDS.has(badge.badgeId)
+    ? 0
+    : REWARD_DAYS_BY_RARITY[badge.rarity],
+}));
+
+export function validateBadgeCatalog(catalog: BadgeSeed[] = BADGE_CATALOG): string[] {
+  const problems: string[] = [];
+  const seen = new Set<string>();
+
+  for (const b of catalog) {
+    if (seen.has(b.badgeId)) problems.push(`${b.badgeId}: duplicate badgeId.`);
+    seen.add(b.badgeId);
+
+    if (!b.requirementField.trim()) problems.push(`${b.badgeId}: requirementField is empty.`);
+
+    if (!(b.requirementValue > 0)) problems.push(`${b.badgeId}: requirementValue must be > 0.`);
+
+    if (!Number.isInteger(b.rewardPremiumDays) || b.rewardPremiumDays < 0 || b.rewardPremiumDays > MAX_REWARD_PREMIUM_DAYS) {
+      problems.push(`${b.badgeId}: rewardPremiumDays must be an integer between 0 and ${MAX_REWARD_PREMIUM_DAYS}, got ${b.rewardPremiumDays}.`);
+    }
+
+    if (PREMIUM_DERIVED_FIELDS.has(b.requirementField) && b.rewardPremiumDays !== 0) {
+      problems.push(`${b.badgeId}: requires "${b.requirementField}" (premium-derived), so its reward must be 0 to avoid a premium -> badge -> premium loop.`);
+    }
+  }
+
+  return problems;
+}
