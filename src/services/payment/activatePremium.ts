@@ -111,6 +111,7 @@ export async function activatePremium(input: ActivationInput, db: Firestore, aut
 
       tx.update(userRef, {
         isPremium: true,
+        hasEverPurchased: true,
         premiumExpiresAt: expiresAt,
         premiumPlanId: planId,
         subscriptionId,
