@@ -13,6 +13,7 @@ export const achievementsTypeDefs = `#graphql
     category: String!
     requirementValue: Float!
     currentProgress: Float!
+    rewardPremiumDays: Int!
     status: BadgeStatus!
     earnedAt: String
   }
