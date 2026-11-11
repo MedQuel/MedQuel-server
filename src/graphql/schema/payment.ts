@@ -1,4 +1,23 @@
 export const paymentTypeDefs = `#graphql
+  enum PremiumSource { paid reward }
+  enum PremiumState { active expired none }
+  enum VerifyPaymentStatus { activated pending }
+
+  type PremiumRewardBadge {
+    badgeId: ID!
+    name: String!
+    iconKey: String!
+    variant: String!
+    rarity: String!
+    days: Int!
+  }
+  type PendingPremiumReward {
+    totalDays: Int!
+    premiumExpiresAt: String
+    premiumActive: Boolean!
+    badges: [PremiumRewardBadge!]!
+  }
+
   type Plan {
     planId: ID!
     name: String!
@@ -21,15 +40,10 @@ export const paymentTypeDefs = `#graphql
     prefillName: String
     prefillEmail: String
   }
-
   input VerifyPaymentInput {
     orderId: ID!
     paymentId: ID!
     signature: String!
-  }
-  enum VerifyPaymentStatus {
-    activated
-    pending
   }
   type VerifyPaymentResult {
     status: VerifyPaymentStatus!
@@ -45,12 +59,6 @@ export const paymentTypeDefs = `#graphql
     isPremium: Boolean!
     premiumExpiresAt: String
   }
-
-  enum PremiumState {
-    active
-    expired
-    none
-  }
   type PremiumStatus {
     state: PremiumState!
     isPremium: Boolean!
@@ -60,15 +68,19 @@ export const paymentTypeDefs = `#graphql
     premiumExpiresAt: String
     daysRemaining: Int!
     lastPurchasedAt: String
+    source: PremiumSource
+    rewardPremiumDaysTotal: Int!
   }
 
   extend type Query {
     getPlans: [Plan!]!
     getPremiumStatus: PremiumStatus!
     getPaymentStatus(orderId: ID!): PaymentStatus!
+    getPendingPremiumReward: PendingPremiumReward
   }
   extend type Mutation {
     initiatePayment(planId: ID!): PaymentOrder!
     verifyPayment(input: VerifyPaymentInput!): VerifyPaymentResult!
+    acknowledgePremiumReward(badgeIds: [ID!]!): Boolean!
   }
 `;
