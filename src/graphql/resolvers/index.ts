@@ -17,6 +17,7 @@ import { sendFriendRequestResolver, respondFriendRequestResolver } from './frien
 import { registerDeviceTokenResolver, unregisterDeviceTokenResolver } from './notification.js';
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
 import { getNotificationsResolver, getUnreadNotificationCountResolver } from './notification.js';
+import { getPendingPremiumRewardResolver, acknowledgePremiumRewardResolver } from './payment.js';
 import { markNotificationReadResolver, markAllNotificationsReadResolver } from './notification.js';
 import { getPlansResolver, getPaymentStatusResolver, getPremiumStatusResolver } from './payment.js';
 import { getStudyPlanResolver, generateStudyPlanResolver, markStudySessionCompleteResolver } from './studyPlan.js';
@@ -28,6 +29,7 @@ export const resolvers = {
     getPlans: getPlansResolver,
     getPremiumStatus: getPremiumStatusResolver,
     getPaymentStatus: getPaymentStatusResolver,
+    getPendingPremiumReward: getPendingPremiumRewardResolver,
     getHomeData: getHomeDataResolver,
     getTopicsForSubject: getTopicsForSubjectResolver,
     getFriends: getFriendsResolver,
@@ -50,6 +52,7 @@ export const resolvers = {
     completeOnboarding: completeOnboardingResolver,
     initiatePayment: initiatePaymentResolver,
     verifyPayment: verifyPaymentResolver,
+    acknowledgePremiumReward: acknowledgePremiumRewardResolver,
     updateProfile: updateProfileResolver,
     updateQuizPrefs: updateQuizPrefsResolver,
     updateNotifPrefs: updateNotifPrefsResolver,
