@@ -20,6 +20,7 @@ service cloud.firestore {
           'xpPoints', 'epPoints', 'currentLevel', 'currentStreak', 'longestStreak',
           'lastActiveDate', 'totalQuestions', 'totalCorrect', 'studyHours',
           'stats', 'badges', 'badgeProgress', 'badgeEarnedAt', 'friendCount',
+          'hasEverPurchased', 'rewardPremiumDaysTotal', 'pendingPremiumRewards',
           'notifPrefs', 'quizPrefs', 'notifTokens', 'createdAt',
         ]);
 
