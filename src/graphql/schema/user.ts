@@ -57,6 +57,8 @@ export const userTypeDefs = `#graphql
     subscriptionId: String
     premiumExpiresAt: String
     premiumPlanId: String
+    rewardPremiumDaysTotal: Int!
+    pendingPremiumReward: PendingPremiumReward
     xpPoints: Int!
     epPoints: Int!
     currentLevel: Int!
