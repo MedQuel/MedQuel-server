@@ -45,12 +45,14 @@ export interface VerifyPaymentResultDTO {
 export interface PremiumStatusDTO {
   state: 'active' | 'expired' | 'none';
   isPremium: boolean;
+  source: 'paid' | 'reward' | null;
   planId: string | null;
   planName: string | null;
   planDurationDays: number | null;
   premiumExpiresAt: string | null;
   daysRemaining: number;
   lastPurchasedAt: string | null;
+  rewardPremiumDaysTotal: number;
 }
 export interface PaymentStatusDTO {
   orderId: string;
@@ -236,6 +238,9 @@ export async function getPremiumStatus(uid: string, db: Firestore): Promise<Prem
 
   const planId: string | null = typeof user.premiumPlanId === 'string' ? user.premiumPlanId : null;
   const subscriptionId: string | null = typeof user.subscriptionId === 'string' ? user.subscriptionId : null;
+  const rewardPremiumDaysTotal = typeof user.rewardPremiumDaysTotal === 'number' && user.rewardPremiumDaysTotal > 0
+    ? Math.trunc(user.rewardPremiumDaysTotal)
+    : 0;
 
   const [planSnap, subscriptionSnap] = await Promise.all([
     planId ? db.collection('plans').doc(planId).get() : Promise.resolve(null),
@@ -245,13 +250,15 @@ export async function getPremiumStatus(uid: string, db: Firestore): Promise<Prem
   const plan = planSnap?.exists ? planSnap.data()! : null;
   const subscription = subscriptionSnap?.exists ? subscriptionSnap.data()! : null;
 
-  const state: PremiumStatusDTO['state'] = active
-    ? 'active'
-    : expiryMs !== null && planId !== null ? 'expired' : 'none';
+  const state: PremiumStatusDTO['state'] = active ? 'active' : expiryMs !== null ? 'expired' : 'none';
+  const source: PremiumStatusDTO['source'] = state === 'none'
+    ? null
+    : planId !== null || (state === 'expired' && user.hasEverPurchased === true) ? 'paid' : 'reward';
 
   return {
     state,
     isPremium: active,
+    source,
     planId: state === 'none' ? null : planId,
     planName: state === 'none' ? null : (plan?.name ?? null),
     planDurationDays: state === 'none' ? null : (plan?.durationDays ?? null),
@@ -262,5 +269,6 @@ export async function getPremiumStatus(uid: string, db: Firestore): Promise<Prem
     lastPurchasedAt: state !== 'none' && subscription?.createdAt instanceof Timestamp
       ? subscription.createdAt.toDate().toISOString()
       : null,
+    rewardPremiumDaysTotal,
   };
 }
