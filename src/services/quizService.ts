@@ -18,11 +18,16 @@ import { NotChallengeParticipantError, ChallengeSessionAlreadyStartedError } fro
 import { SessionNotFoundError, ContestNotFoundError, ChallengeNotFoundError } from '../utils/errors.js';
 
 
-const REPEAT_ATTEMPT_EP_RATIO = 0.25;
 const FAST_COMPLETION_RATIO = 0.5;
+const REPEAT_ATTEMPT_EP_RATIO = 0.25;
 const SUBJECT_MASTERY_THRESHOLD = 0.7;
+const MIN_QUESTIONS_FOR_FAST_BADGE = 5;
 const MIN_QUESTIONS_FOR_PERFECT_BADGE = 5;
 const MIN_QUESTIONS_FOR_SUBJECT_MASTERY = 20;
+const MIN_ANSWERED_RATIO_FOR_FAST = 0.8;
+const MIN_SCORE_PERCENT_FOR_FAST_BADGE = 60;
+const MAX_STUDY_SECS_PER_ANSWERED_QUESTION = 120;
+const FAST_COMPLETION_MAX_SECS_PER_QUESTION = 90;
 
 const TOPIC_CACHE_TTL_MS = 60*60*1000;
 const topicCache = new Map<string, TopicCacheEntry>();
@@ -235,6 +240,8 @@ export async function startQuizSession(input: ValidatedStartQuizSession, context
   const { db, bigqueryService } = context;
   const user = await fetchOnboardedUser(context);
 
+  checkRateLimit(`startQuizSession:${user.uid}`, { limit: 10, windowMs: 60_000 });
+
   let contestTitle: string | null = null;
   let subject: string;
   let difficulty: string;
@@ -382,6 +389,11 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     bigqueryService
   );
 
+  const totalInSession = grading.results.length;
+  const answeredCount = grading.correctCount + grading.wrongCount;
+  const answeredRatio = totalInSession > 0 ? answeredCount/totalInSession : 0;
+  const hasActivity = answeredCount > 0;
+
   const isContestMode = session.quizType === 'contest' || session.quizType === 'daily';
 
   const sessionRef = db.collection('quizSessions').doc(session.sessionId);
@@ -410,15 +422,21 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const previousLongestStreak = userData.longestStreak ?? 0;
     const isRepeatContestAttempt = isContestMode && contestLeaderboardSnap?.exists === true;
 
-    const streak = updateStreak(
-      userData.lastActiveDate instanceof Timestamp ? userData.lastActiveDate.toDate() : null,
-      now.toDate(),
-      userData.currentStreak ?? 0,
-      previousLongestStreak
-    );
+    const streak = hasActivity
+      ? updateStreak(
+          userData.lastActiveDate instanceof Timestamp ? userData.lastActiveDate.toDate() : null,
+          now.toDate(),
+          userData.currentStreak ?? 0,
+          previousLongestStreak
+        )
+      : {
+          currentStreak: userData.currentStreak ?? 0,
+          longestStreak: previousLongestStreak,
+          isFirstActivityToday: false,
+        };
 
     const xpEarned = computeXpEarned({
-      totalQuestions: grading.results.length,
+      totalQuestions: totalInSession,
       correctCount: grading.correctCount,
       skippedCount: grading.skippedCount,
       scorePercent: grading.scorePercent,
@@ -436,20 +454,34 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const updatedXpPoints = (userData.xpPoints ?? 0) + xpEarned;
     const updatedEpPoints = (userData.epPoints ?? 0) + epEarned;
     const updatedCurrentLevel = computeLevelFromXp(updatedXpPoints);
-    const updatedTotalQuestions = (userData.totalQuestions ?? 0) + grading.results.length;
+    const updatedTotalQuestions = (userData.totalQuestions ?? 0) + answeredCount;
     const updatedTotalCorrect = (userData.totalCorrect ?? 0) + grading.correctCount;
 
     const timeTaken = Math.max(0, Math.round((now.toMillis()-session.startedAt.toMillis()) / 1000));
-    const updatedStudyHours = (userData.studyHours ?? 0) + timeTaken/3600;
+
+    const studyCapSecs = session.timeLimitSecs !== null && session.timeLimitSecs > 0 ? session.timeLimitSecs : Infinity;
+    const creditedStudySecs = Math.min(timeTaken, answeredCount*MAX_STUDY_SECS_PER_ANSWERED_QUESTION, studyCapSecs);
+    const updatedStudyHours = (userData.studyHours ?? 0) + creditedStudySecs/3600;
 
     const currentStats = userData.stats ?? {};
 
-    const isHighContestScore = isContestMode && grading.scorePercent >= 90;
-    const isHardContest = isContestMode && session.difficulty === 'hard';
-    const isPerfectQuiz = grading.scorePercent === 100 && grading.results.length >= MIN_QUESTIONS_FOR_PERFECT_BADGE;
-    const isFastCompletion = session.timeLimitSecs !== null && session.timeLimitSecs > 0 && timeTaken <= session.timeLimitSecs*FAST_COMPLETION_RATIO;
+    const countsTowardContestStats = isContestMode && !isRepeatContestAttempt;
+    const isHighContestScore = countsTowardContestStats && grading.scorePercent >= 90;
+    const isHardContest = countsTowardContestStats && session.difficulty === 'hard';
+    const isPerfectQuiz = !isRepeatContestAttempt && grading.scorePercent === 100 && totalInSession >= MIN_QUESTIONS_FOR_PERFECT_BADGE;
 
-    const updatedContestsPlayed = (currentStats.contestsPlayed ?? 0) + (isContestMode ? 1 : 0);
+    const fastLimitSecs = session.timeLimitSecs !== null && session.timeLimitSecs > 0
+      ? Math.min(session.timeLimitSecs, totalInSession*FAST_COMPLETION_MAX_SECS_PER_QUESTION)
+      : 0;
+    const isFastCompletion =
+      !isRepeatContestAttempt &&
+      fastLimitSecs > 0 &&
+      totalInSession >= MIN_QUESTIONS_FOR_FAST_BADGE &&
+      answeredRatio >= MIN_ANSWERED_RATIO_FOR_FAST &&
+      grading.scorePercent >= MIN_SCORE_PERCENT_FOR_FAST_BADGE &&
+      timeTaken <= fastLimitSecs * FAST_COMPLETION_RATIO;
+
+    const updatedContestsPlayed = (currentStats.contestsPlayed ?? 0) + (countsTowardContestStats ? 1 : 0);
     const updatedContests90Plus = (currentStats.contests90Plus ?? 0) + (isHighContestScore ? 1 : 0);
     const updatedHardContestsDone = (currentStats.hardContestsDone ?? 0) + (isHardContest ? 1 : 0);
     const updatedPerfectQuizzes = (currentStats.perfectQuizzes ?? 0) + (isPerfectQuiz ? 1 : 0);
@@ -458,20 +490,18 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     const subjectStats = { ...(currentStats.subjectStats ?? {}) };
     const prevSubjectStat = subjectStats[session.subject] ?? { attempted: 0, correct: 0 };
     const newSubjectStat = {
-      attempted: prevSubjectStat.attempted + grading.results.length,
+      attempted: prevSubjectStat.attempted + answeredCount,
       correct: prevSubjectStat.correct + grading.correctCount,
     };
     subjectStats[session.subject] = newSubjectStat;
 
     const masteredSubjects: string[] = currentStats.masteredSubjects ?? [];
     const newSubjectAccuracy = newSubjectStat.attempted > 0 ? newSubjectStat.correct/newSubjectStat.attempted : 0;
-    const justMasteredSubject = 
+    const justMasteredSubject =
       newSubjectStat.attempted >= MIN_QUESTIONS_FOR_SUBJECT_MASTERY &&
       newSubjectAccuracy >= SUBJECT_MASTERY_THRESHOLD &&
       !masteredSubjects.includes(session.subject);
     const updatedMasteredSubjects = justMasteredSubject ? [...masteredSubjects, session.subject] : masteredSubjects;
-
-    const timeTakenSecsFinal = timeTaken;
 
     const answersMap = Object.fromEntries(
       grading.results.map((r) => [
@@ -489,7 +519,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       scorePercent: grading.scorePercent,
       epEarned,
       xpEarned,
-      timeTaken: timeTakenSecsFinal,
+      timeTaken,
       completedAt: now,
     });
 
@@ -499,11 +529,12 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
       currentLevel: updatedCurrentLevel,
       currentStreak: streak.currentStreak,
       longestStreak: streak.longestStreak,
-      lastActiveDate: now,
+      lastActiveDate: hasActivity ? now : (userData.lastActiveDate ?? now),
       totalQuestions: updatedTotalQuestions,
       totalCorrect: updatedTotalCorrect,
       studyHours: updatedStudyHours,
       stats: {
+        ...currentStats,
         contestsPlayed: updatedContestsPlayed,
         contests90Plus: updatedContests90Plus,
         hardContestsDone: updatedHardContestsDone,
@@ -531,11 +562,12 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     }
 
     return {
-      timeTaken: timeTakenSecsFinal,
       xpEarned,
       epEarned,
       updatedXpPoints,
       updatedEpPoints,
+      timeTaken,
+      studySecs: creditedStudySecs,
       updatedCurrentLevel,
       updatedCurrentStreak: streak.currentStreak,
       leveledUp: updatedCurrentLevel > previousLevel,
@@ -563,13 +595,14 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
     quizType: session.quizType,
     contestId: session.contestId,
     subject: session.subject,
-    totalQuestions: grading.results.length,
+    totalQuestions: totalInSession,
     correctCount: grading.correctCount,
     wrongCount: grading.wrongCount,
     skippedCount: grading.skippedCount,
     score: grading.score,
     scorePercent: grading.scorePercent,
     timeTaken: txResult.timeTaken,
+    studySecs: txResult.studySecs,
     epEarned: txResult.epEarned,
     xpEarned: txResult.xpEarned,
     completedAt: new Date().toISOString(),
@@ -577,7 +610,7 @@ export async function submitQuizSession(input: ValidatedSubmitQuizSession, conte
 
   return {
     sessionId: session.sessionId,
-    totalQuestions: grading.results.length,
+    totalQuestions: totalInSession,
     correctCount: grading.correctCount,
     wrongCount: grading.wrongCount,
     skippedCount: grading.skippedCount,
