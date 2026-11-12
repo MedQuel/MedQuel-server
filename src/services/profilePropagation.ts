@@ -8,12 +8,14 @@ const LIVE_PERIODS = ['weekly', 'monthly', 'allTime'] as const;
 export interface ProfileIdentityChange {
   displayName?: string;
   photoURL?: string | null;
+  specialization?: string;
 }
 
 export async function propagateProfileIdentity(uid: string, change: ProfileIdentityChange, db: Firestore): Promise<void> {
   const patch: Record<string, unknown> = {};
   if (change.displayName !== undefined) patch.displayName = change.displayName;
   if (change.photoURL !== undefined) patch.photoURL = change.photoURL;
+  if (change.specialization !== undefined) patch.specialization = change.specialization;
   if (Object.keys(patch).length === 0) return;
 
   const now = new Date();
