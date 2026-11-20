@@ -9,7 +9,7 @@ import { PaymentNotFoundError, PaymentStateError } from '../../utils/errors.js';
 
 const DAY_MS = 24 * 60*60*1000;
 
-export type ActivationSource = 'verify' | 'webhook';
+export type ActivationSource = 'verify' | 'webhook' | 'play';
 export interface ActivationInput {
   orderId: string;
   paymentId: string;
@@ -38,7 +38,7 @@ async function syncPremiumClaim(auth: Auth, uid: string, premiumUntilMs: number)
 }
 
 
-// The ONLY place that turns a paid order into premium. Called by verifyPayment AND the webhook.
+// The ONLY place that turns a paid order into premium. Called by verifyPayment (Razorpay), verifyPlayPurchase (Google Play) AND the Razorpay webhook.
 export async function activatePremium(input: ActivationInput, db: Firestore, auth: Auth): Promise<ActivationResult> {
   const paymentRef = db.collection('payments').doc(input.orderId);
 
@@ -52,6 +52,10 @@ export async function activatePremium(input: ActivationInput, db: Firestore, aut
       const planId: string = payment.planId;
 
       if (payment.status === 'captured') {
+        if (!(payment.expiresAt instanceof Timestamp)) {
+          throw new PaymentStateError('Captured payment is missing a valid expiry timestamp.');
+        }
+
         return {
           userId,
           planId,
@@ -83,6 +87,7 @@ export async function activatePremium(input: ActivationInput, db: Firestore, aut
         currentExpiryMs > now.toMillis() ? currentExpiryMs : now.toMillis();
       const expiresAt = Timestamp.fromMillis(startMs + payment.durationDays*DAY_MS);
 
+      const provider: string = payment.provider ?? 'razorpay';
       const subscriptionId = `sub_${input.orderId}`;
       const subscriptionRef = db.collection('subscriptions').doc(subscriptionId);
 
@@ -90,9 +95,10 @@ export async function activatePremium(input: ActivationInput, db: Firestore, aut
         subscriptionId,
         userId,
         planId,
-        provider: 'razorpay',
-        razorpayOrderId: input.orderId,
-        razorpayPaymentId: input.paymentId,
+        provider,
+        ...(provider === 'play'
+          ? { playOrderId: input.paymentId, playProductId: payment.playProductId ?? null, isTestPurchase: payment.isTestPurchase === true }
+          : { razorpayOrderId: input.orderId, razorpayPaymentId: input.paymentId }),
         status: 'active',
         startsAt: Timestamp.fromMillis(startMs),
         expiresAt,
