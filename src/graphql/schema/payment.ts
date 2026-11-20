@@ -20,6 +20,7 @@ export const paymentTypeDefs = `#graphql
 
   type Plan {
     planId: ID!
+    playProductId: String
     name: String!
     tagline: String
     badge: String
@@ -52,6 +53,17 @@ export const paymentTypeDefs = `#graphql
     premiumPlanId: String
   }
 
+  type PlayPurchaseSession {
+    planId: ID!
+    planName: String!
+    productId: String!
+    obfuscatedAccountId: String!
+  }
+  input VerifyPlayPurchaseInput {
+    productId: String!
+    purchaseToken: String!
+  }
+
   type PaymentStatus {
     orderId: ID!
     status: String!
@@ -81,6 +93,8 @@ export const paymentTypeDefs = `#graphql
   extend type Mutation {
     initiatePayment(planId: ID!): PaymentOrder!
     verifyPayment(input: VerifyPaymentInput!): VerifyPaymentResult!
+    initiatePlayPurchase(planId: ID!): PlayPurchaseSession!
+    verifyPlayPurchase(input: VerifyPlayPurchaseInput!): VerifyPaymentResult!
     acknowledgePremiumReward(badgeIds: [ID!]!): Boolean!
   }
 `;
