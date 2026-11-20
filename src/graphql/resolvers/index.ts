@@ -14,6 +14,7 @@ import { startQuizSessionResolver, submitQuizSessionResolver } from './quiz.js';
 import { createChallengeResolver, respondChallengeResolver } from './challenge.js';
 import { removeFriendResolver, getPendingFriendRequestsResolver } from './friends.js';
 import { sendFriendRequestResolver, respondFriendRequestResolver } from './friends.js';
+import { initiatePlayPurchaseResolver, verifyPlayPurchaseResolver } from './payment.js';
 import { registerDeviceTokenResolver, unregisterDeviceTokenResolver } from './notification.js';
 import { getUserProfileResolver, searchUsersResolver, getFriendsResolver } from './friends.js';
 import { getNotificationsResolver, getUnreadNotificationCountResolver } from './notification.js';
@@ -52,6 +53,8 @@ export const resolvers = {
     completeOnboarding: completeOnboardingResolver,
     initiatePayment: initiatePaymentResolver,
     verifyPayment: verifyPaymentResolver,
+    initiatePlayPurchase: initiatePlayPurchaseResolver,
+    verifyPlayPurchase: verifyPlayPurchaseResolver,
     acknowledgePremiumReward: acknowledgePremiumRewardResolver,
     updateProfile: updateProfileResolver,
     updateQuizPrefs: updateQuizPrefsResolver,
