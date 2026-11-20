@@ -5,8 +5,10 @@ import { getPaymentStatus, getPremiumStatus } from '../../services/paymentServic
 import { validateAcknowledgeBadgeIds } from '../../validators/premiumRewardValidation.js';
 import { getPlans, verifyPayment, initiatePayment } from '../../services/paymentService.js';
 import { getRazorpayKeyId, getRazorpayClient } from '../../services/payment/razorpayClient.js';
+import { initiatePlayPurchase, verifyPlayPurchase } from '../../services/payment/playPurchaseService.js';
 import { acknowledgePremiumReward, getPendingPremiumReward } from '../../services/premiumRewardService.js';
 import { validatePlanId, validateOrderId, validateVerifyPaymentInput } from '../../validators/paymentValidation.js';
+import { validatePlayPurchaseInput, type VerifyPlayPurchaseInput } from '../../validators/playPurchaseValidation.js';
 
 
 export async function getPlansResolver(_parent: unknown, _args: unknown, context: GraphQLContext) {
@@ -36,6 +38,29 @@ export async function verifyPaymentResolver(_parent: unknown, args: { input: Ver
     context.db,
     context.auth,
     getRazorpayClient()
+  );
+}
+
+export async function initiatePlayPurchaseResolver(_parent: unknown, args: { planId: string }, context: GraphQLContext) {
+  if (!context.user) throw new AuthenticationError();
+  const planId = validatePlanId(args.planId);
+
+  return initiatePlayPurchase(
+    context.user.uid,
+    planId,
+    context.db
+  );
+}
+
+export async function verifyPlayPurchaseResolver(_parent: unknown, args: { input: VerifyPlayPurchaseInput }, context: GraphQLContext) {
+  if (!context.user) throw new AuthenticationError();
+  const validated = validatePlayPurchaseInput(args.input);
+
+  return verifyPlayPurchase(
+    context.user.uid,
+    validated,
+    context.db,
+    context.auth
   );
 }
 
