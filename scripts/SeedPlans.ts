@@ -12,7 +12,7 @@ const COMMON_FEATURES = [
   'Deep performance analysis',
   'Advanced analytics',
   'Personalized recommendations',
-  'Ad-free experience',
+  // 'Ad-free experience',
   'Early access to new features',
   'Priority support',
 ];
@@ -20,6 +20,7 @@ const COMMON_FEATURES = [
 const PLANS = [
   {
     planId: 'pro_1m',
+    playProductId: 'pro_1m',
     name: 'PRO',
     tagline: '1 month',
     badge: null,
@@ -29,6 +30,7 @@ const PLANS = [
   },
   {
     planId: 'pro_plus_3m',
+    playProductId: 'pro_plus_3m',
     name: 'PRO PLUS',
     tagline: '3 months',
     badge: 'Most Popular',
@@ -38,6 +40,7 @@ const PLANS = [
   },
   {
     planId: 'master_12m',
+    playProductId: 'master_12m',
     name: 'MASTER',
     tagline: '1 year',
     badge: 'Best Value',
