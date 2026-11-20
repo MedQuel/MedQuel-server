@@ -371,3 +371,22 @@ export class TargetFriendListFullError extends GraphQLError {
     super(message, { extensions: { code: 'TARGET_FRIEND_LIST_FULL' } });
   }
 }
+
+/**
+ * Throw when a Google Play purchase token is malformed, unknown to Google, or doesn't match the product the client claims it bought.
+ */
+export class PlayPurchaseInvalidError extends GraphQLError {
+  constructor(message = 'This purchase could not be verified.') {
+    super(message, { extensions: { code: 'BAD_USER_INPUT' } });
+  }
+}
+
+/**
+ * Throw when we could not reach Google Play to verify a purchase (network, permissions, quota).
+ * The client must keep the purchase unconsumed and retry later.
+ */
+export class PlayVerificationUnavailableError extends GraphQLError {
+  constructor(message = 'Purchase verification is temporarily unavailable. Please try again shortly.') {
+    super(message, { extensions: { code: 'SERVICE_UNAVAILABLE' } });
+  }
+}
