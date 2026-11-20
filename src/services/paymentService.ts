@@ -17,6 +17,7 @@ const DAY_MS = 24 * 60*60*1000;
 
 export interface PlanDTO {
   planId: string;
+  playProductId: string | null;
   name: string;
   tagline: string | null;
   badge: string | null;
@@ -65,6 +66,7 @@ export interface PaymentStatusDTO {
 function mapPlanDoc(id: string, data: FirebaseFirestore.DocumentData): PlanDTO {
   return {
     planId: id,
+    playProductId: typeof data.playProductId === 'string' ? data.playProductId : null,
     name: data.name,
     tagline: data.tagline ?? null,
     badge: data.badge ?? null,
