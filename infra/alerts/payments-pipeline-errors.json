@@ -1,0 +1,29 @@
+{
+  "displayName": "Payments pipeline errors",
+  "combiner": "OR",
+  "conditions": [
+    {
+      "displayName": "Error logged by Play verification, Play notifications or the Razorpay webhook",
+      "conditionThreshold": {
+        "filter": "metric.type=\"logging.googleapis.com/user/payments_pipeline_errors\" AND resource.type=\"cloud_run_revision\"",
+        "comparison": "COMPARISON_GT",
+        "thresholdValue": 0,
+        "duration": "0s",
+        "aggregations": [
+          {
+            "alignmentPeriod": "300s",
+            "perSeriesAligner": "ALIGN_SUM",
+            "crossSeriesReducer": "REDUCE_SUM"
+          }
+        ],
+        "trigger": { "count": 1 }
+      }
+    }
+  ],
+  "alertStrategy": { "autoClose": "1800s" },
+  "notificationChannels": ["projects/medquel-prod/notificationChannels/1237581298889189850"],
+  "documentation": {
+    "content": "Check Cloud Logging: filter by service medquel-api ([play] errors), playrtdn or paymentwebhook, severity ERROR.",
+    "mimeType": "text/markdown"
+  }
+}
