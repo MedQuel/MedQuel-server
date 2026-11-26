@@ -11,6 +11,7 @@ import { challengeTypeDefs } from './challenge.js';
 import { leaderboardTypeDefs } from './leaderboard.js';
 import { achievementsTypeDefs } from './achievements.js';
 import { notificationTypeDefs } from './notification.js';
+import { accountDeletionTypeDefs } from './accountDeletion.js';
 
 
 export const typeDefs = [
@@ -27,4 +28,5 @@ export const typeDefs = [
   achievementsTypeDefs,
   studyPlanTypeDefs,
   notificationTypeDefs,
+  accountDeletionTypeDefs,
 ];
