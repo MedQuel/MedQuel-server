@@ -4,6 +4,7 @@ import { getLeaderboardResolver } from './leaderboard.js';
 import { getAchievementsResolver } from './achievements.js';
 import { completeOnboardingResolver } from './onboarding.js';
 import { meResolver, updateProfileResolver } from './user.js';
+import { deleteMyAccountResolver } from './accountDeletion.js';
 import { getContestsResolver, getContestResolver } from './contest.js';
 import { getChallengeResolver, getChallengesResolver } from './challenge.js';
 import { getTopPerformersResolver, joinContestResolver } from './contest.js';
@@ -51,6 +52,7 @@ export const resolvers = {
   },
   Mutation: {
     completeOnboarding: completeOnboardingResolver,
+    deleteMyAccount: deleteMyAccountResolver,
     initiatePayment: initiatePaymentResolver,
     verifyPayment: verifyPaymentResolver,
     initiatePlayPurchase: initiatePlayPurchaseResolver,
